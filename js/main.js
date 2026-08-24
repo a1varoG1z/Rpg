@@ -4,26 +4,9 @@
   const isNewGame = !loaded;
   let state = loaded || createNewState();
   window.STATE = state;
-  recalcDerived(state);
-  if (!state.combat.monster) spawnMonster(state);
 
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => UI.switchScreen(btn.dataset.screen));
-  });
-
-  $('monsterTapZone').addEventListener('click', () => {
-    tapAttack(state);
-    UI.renderBattle(state);
-    UI.drainEvents(state);
-  });
-
-  document.querySelectorAll('.alloc-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (allocateStat(state, btn.dataset.stat)) {
-        saveGame(state);
-        UI.renderHero(state);
-      }
-    });
   });
 
   $('settingsBtn').addEventListener('click', () => $('settingsModal').classList.remove('hidden'));
@@ -35,24 +18,37 @@
     }
   });
 
-  $('itemModalClose').addEventListener('click', UI.closeModal);
-  $('itemModal').addEventListener('click', (e) => { if (e.target.id === 'itemModal') UI.closeModal(); });
-
+  $('fighterModalClose').addEventListener('click', () => $('fighterModal').classList.add('hidden'));
+  $('fighterModal').addEventListener('click', (e) => { if (e.target.id === 'fighterModal') $('fighterModal').classList.add('hidden'); });
+  $('gearModalClose').addEventListener('click', () => $('gearModal').classList.add('hidden'));
+  $('gearModal').addEventListener('click', (e) => { if (e.target.id === 'gearModal') $('gearModal').classList.add('hidden'); });
+  $('pickerModalClose').addEventListener('click', () => $('pickerModal').classList.add('hidden'));
+  $('pickerModal').addEventListener('click', (e) => { if (e.target.id === 'pickerModal') $('pickerModal').classList.add('hidden'); });
+  $('summonRevealClose').addEventListener('click', () => $('summonRevealModal').classList.add('hidden'));
   $('offlineClose').addEventListener('click', () => $('offlineModal').classList.add('hidden'));
 
-  const offlineSummary = isNewGame ? null : computeOfflineProgress(state);
-  if (offlineSummary) UI.showOfflineModal(offlineSummary);
+  $('battleSkipBtn').addEventListener('click', () => {
+    const view = window.__battleView;
+    if (view) UI.stepBattle(view, true);
+  });
+  $('battleCloseBtn').addEventListener('click', () => {
+    $('battleOverlay').classList.add('hidden');
+    window.__battleView = null;
+    UI.renderTopbar(state);
+    UI.renderScreen(activeScreen, state);
+  });
+
+  const energyGained = isNewGame ? 0 : computeOfflineEnergy(state);
+  if (energyGained > 0) UI.showOfflineModal(energyGained);
   saveGame(state);
 
   UI.renderTopbar(state);
   UI.renderScreen(activeScreen, state);
 
   setInterval(() => {
-    tickCombat(state, 0.2);
-    UI.drainEvents(state);
+    tickEnergy(state, 1);
     UI.renderTopbar(state);
-    if (activeScreen === 'battle') UI.renderBattle(state);
-  }, 200);
+  }, 1000);
 
   setInterval(() => saveGame(state), 15000);
   document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(state); });

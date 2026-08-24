@@ -1,214 +1,275 @@
-// Motor de combate: generación de monstruos, ataques, habilidades y recompensas.
-const EVENTS = [];
-function emit(type, data) { EVENTS.push(Object.assign({ type }, data || {})); }
+// Motor de combate por bandas: filas de hasta 3 luchadores luchan contra la fila
+// activa rival, turno a turno, hasta que una banda entera cae.
+let unitSeq = 1;
 
-const MONSTER_ATK_SPEED_BASE = 0.7;
-const TAP_COOLDOWN_MS = 200;
-let lastTapTime = 0;
-
-function spawnMonster(state) {
-  const loc = locationById(state.combat.locationId);
-  const wave = state.combat.wave;
-  const isBoss = wave % BOSS_WAVE_INTERVAL === 0;
-  const growth = Math.pow(WAVE_GROWTH, wave - 1);
-
-  let hp = loc.base.hp * growth;
-  let atk = loc.base.atk * growth;
-  let def = loc.base.def * growth;
-  let gold = loc.base.gold * growth;
-  let xp = loc.base.xp * growth;
-
-  let def2 = { name: '', emoji: '' };
-  if (isBoss) {
-    hp *= BOSS_HP_MULT; atk *= BOSS_ATK_MULT; def *= BOSS_DEF_MULT;
-    gold *= BOSS_REWARD_MULT; xp *= BOSS_REWARD_MULT;
-    def2 = loc.boss;
-  } else {
-    def2 = loc.monsters[Math.floor(Math.random() * loc.monsters.length)];
-  }
-
-  state.combat.monster = {
-    name: def2.name, emoji: def2.emoji, isBoss,
-    hp: Math.round(hp), maxHp: Math.round(hp),
-    atk: atk, def: def,
-    goldReward: Math.round(gold), xpReward: Math.round(xp),
+function buildUnitStats(defId, level, extraMult) {
+  const def = fighterDef(defId);
+  const w = CLASS_INFO[def.class].weights;
+  const mult = rarityInfo(def.rarity).mult * levelGrowth(level) * (extraMult || 1);
+  return {
+    maxHp: Math.round(w.hp * mult), atk: Math.round(w.atk * mult), def: Math.round(w.def * mult),
+    agi: Math.round(w.agi * mult), wis: Math.round(w.wis * mult),
   };
-  state.combat.heroAtkTimer = 0;
-  state.combat.monsterAtkTimer = 0;
 }
 
-function ensureMonster(state) {
-  if (!state.combat.monster) spawnMonster(state);
+function makeUnit(side, defId, level, extraMult, sourceUid) {
+  const def = fighterDef(defId);
+  const stats = buildUnitStats(defId, level, extraMult);
+  return {
+    id: 'u' + (unitSeq++), side, defId, sourceUid: sourceUid || null,
+    name: def.name, element: def.element, class: def.class, rarity: def.rarity,
+    level, maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
+    skillId: def.skillId, cooldown: 0, buffs: [], debuffs: [], stunTurns: 0, alive: true,
+  };
 }
 
-function rollDamage(atk, def, critChance, critMult) {
-  const base = Math.max(1, atk - def * 0.5);
-  const variance = base * (0.9 + Math.random() * 0.2);
+function makePlayerUnit(state, uid, level) {
+  const entry = rosterEntry(state, uid);
+  const def = fighterDef(entry.defId);
+  const stats = fighterStats(state, entry);
+  return {
+    id: 'u' + (unitSeq++), side: 'player', defId: entry.defId, sourceUid: uid,
+    name: def.name, element: def.element, class: def.class, rarity: def.rarity,
+    level: entry.level, maxHp: stats.hp, hp: stats.hp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
+    skillId: def.skillId, cooldown: 0, buffs: [], debuffs: [], stunTurns: 0, alive: true,
+  };
+}
+
+function buildPlayerRows(state) {
+  return state.band.map(row => row.filter(Boolean).map(uid => makePlayerUnit(state, uid)));
+}
+
+function buildEnemyBand(zoneIdx, stageIdx) {
+  const zone = ZONES[zoneIdx];
+  const isBoss = stageIdx === STAGES_PER_ZONE - 1;
+  const globalIdx = zoneIdx * STAGES_PER_ZONE + stageIdx;
+  const level = Math.max(1, 1 + globalIdx);
+  const rows = [[], [], []];
+  if (isBoss) {
+    rows[0] = [makeUnit('enemy', zone.pool[0], level)];
+    rows[1] = [makeUnit('enemy', zone.pool[1], level), makeUnit('enemy', zone.pool[0], level)];
+    rows[2] = [makeUnit('enemy', zone.pool[2], level + 3, 1.7)];
+  } else {
+    const unitCount = 1 + Math.min(2, Math.floor(stageIdx / 3));
+    const rowCount = stageIdx < 3 ? 1 : 2;
+    for (let r = 0; r < rowCount; r++) {
+      const row = [];
+      for (let i = 0; i < unitCount; i++) {
+        const pick = zone.pool[Math.floor(Math.random() * Math.min(2, zone.pool.length))];
+        row.push(makeUnit('enemy', pick, level));
+      }
+      rows[r] = row;
+    }
+  }
+  return { rows, isBoss, level };
+}
+
+function stageRewards(zoneIdx, stageIdx, isBoss) {
+  const globalIdx = zoneIdx * STAGES_PER_ZONE + stageIdx;
+  const texel = Math.round((20 + globalIdx * 8) * (isBoss ? 3 : 1));
+  const fighterXp = Math.round((15 + globalIdx * 4) * (isBoss ? 2.5 : 1));
+  const drops = { pixite: 0, voxite: 0, doxite: 0, gear: null };
+  if (isBoss) {
+    drops.voxite = 1;
+    if (Math.random() < 0.3) drops.doxite = 1;
+    if (Math.random() < 0.7) drops.gear = generateGear(Math.random() < 0.5 ? 'arma' : 'armadura', gearDropRarity(globalIdx));
+  } else {
+    if (Math.random() < 0.35) drops.pixite = 1;
+    if (Math.random() < 0.3) drops.gear = generateGear(Math.random() < 0.5 ? 'arma' : 'armadura', gearDropRarity(globalIdx));
+  }
+  return { texel, fighterXp, drops };
+}
+
+function gearDropRarity(globalIdx) {
+  const roll = Math.random() + globalIdx * 0.01;
+  if (roll > 0.97) return 'epico';
+  if (roll > 0.85) return 'raro';
+  if (roll > 0.55) return 'infrecuente';
+  return 'comun';
+}
+
+function buildArenaBand(rank) {
+  const level = Math.max(1, Math.round(rank * 1.8));
+  const highRarityChance = Math.min(0.5, rank * 0.02);
+  const rows = [[], [], []];
+  for (let r = 0; r < 3; r++) {
+    const row = [];
+    const count = r === 0 ? 3 : (r === 1 ? (rank > 5 ? 3 : 2) : (rank > 12 ? 3 : (rank > 6 ? 2 : 0)));
+    for (let i = 0; i < count; i++) {
+      const pool = Math.random() < highRarityChance
+        ? FIGHTERS.filter(f => f.rarity === 'epico' || f.rarity === 'legendario')
+        : FIGHTERS.filter(f => f.rarity === 'comun' || f.rarity === 'infrecuente' || f.rarity === 'raro');
+      const def = pool[Math.floor(Math.random() * pool.length)];
+      row.push(makeUnit('enemy', def.id, level));
+    }
+    rows[r] = row;
+  }
+  return { rows, level };
+}
+
+// --- Motor de turnos ---
+function elementDamageMult(a, d) { return elementMultiplier(a, d); }
+
+function pickTarget(row) {
+  const alive = row.filter(u => u.alive);
+  if (alive.length === 0) return null;
+  if (Math.random() < 0.7) {
+    return alive.reduce((min, u) => (u.hp < min.hp ? u : min), alive[0]);
+  }
+  return alive[Math.floor(Math.random() * alive.length)];
+}
+
+function applyDamage(log, attacker, target, rawAmount, isCrit, label) {
+  const before = target.hp;
+  target.hp = Math.max(0, target.hp - rawAmount);
+  log.push({ type: 'attack', attackerId: attacker.id, targetId: target.id, amount: rawAmount, isCrit, label });
+  if (before > 0 && target.hp <= 0) {
+    target.alive = false;
+    log.push({ type: 'faint', unitId: target.id, side: target.side });
+  }
+}
+
+function computeDamage(attacker, target, mult, useWis) {
+  const power = useWis ? attacker.wis : attacker.atk;
+  const atkBuff = attacker.buffs.find(b => b.stat === 'atk');
+  const power2 = power * (1 + (atkBuff ? atkBuff.pct : 0));
+  const defDebuff = target.debuffs.find(b => b.stat === 'def');
+  const defBuff = target.buffs.find(b => b.stat === 'def');
+  let defVal = target.def * (1 + (defBuff ? defBuff.pct : 0)) * (1 - (defDebuff ? defDebuff.pct : 0));
+  const base = Math.max(1, power2 - defVal * 0.5);
+  const elMult = elementDamageMult(attacker.element, target.element);
+  const variance = 0.9 + Math.random() * 0.2;
+  const critChance = Math.min(40, 5 + attacker.agi * 0.15);
   const isCrit = Math.random() * 100 < critChance;
-  const dmg = isCrit ? variance * critMult : variance;
+  const dmg = base * elMult * mult * variance * (isCrit ? 1.5 : 1);
   return { amount: Math.max(1, Math.round(dmg)), isCrit };
 }
 
-function damageMonster(state, amount, isCrit) {
-  const m = state.combat.monster;
-  if (!m) return;
-  m.hp -= amount;
-  emit('damage', { target: 'monster', amount, isCrit });
-  if (m.hp <= 0) killMonster(state);
+function tickTimers(unit) {
+  unit.buffs = unit.buffs.filter(b => --b.turnsLeft > 0);
+  unit.debuffs = unit.debuffs.filter(b => --b.turnsLeft > 0);
 }
 
-function killMonster(state) {
-  const m = state.combat.monster;
-  state.hero.gold += m.goldReward;
-  state.stats.totalGoldEarned += m.goldReward;
-  state.stats.totalKills++;
-  const leveled = addXp(state, m.xpReward);
-  emit('kill', { name: m.name, gold: m.goldReward, xp: m.xpReward, isBoss: m.isBoss });
-  if (leveled) emit('levelup', { level: state.hero.level });
-
-  const dropChance = m.isBoss ? 1 : 0.12;
-  if (Math.random() < dropChance) {
-    const slot = SLOTS[Math.floor(Math.random() * SLOTS.length)];
-    const item = generateItem(slot, state.hero.level, m.isBoss);
-    addItemToInventory(state, item);
-    emit('drop', { item });
+function performTurn(log, unit, ownRow, enemyRow) {
+  if (!unit.alive) return;
+  if (unit.stunTurns > 0) {
+    unit.stunTurns--;
+    log.push({ type: 'stunned', unitId: unit.id });
+    return;
   }
+  const skill = SKILL_TYPES[unit.skillId];
+  const useSkill = unit.cooldown <= 0;
+  if (useSkill) unit.cooldown = skill.cooldown;
+  else unit.cooldown--;
 
-  if (m.isBoss) {
-    const loc = locationById(state.combat.locationId);
-    const idx = LOCATIONS.findIndex(l => l.id === loc.id);
-    const next = LOCATIONS[idx + 1];
-    if (next && !isLocationUnlocked(state, next.id)) {
-      state.progress.unlockedLocations.push(next.id);
-      state.progress.bestWave[next.id] = 0;
-      emit('locationUnlock', { location: next });
-    }
-  }
-
-  const bw = state.progress.bestWave[state.combat.locationId] || 0;
-  if (state.combat.wave > bw) state.progress.bestWave[state.combat.locationId] = state.combat.wave;
-
-  state.combat.wave++;
-  state.combat.monster = null;
-  spawnMonster(state);
-}
-
-function damageHero(state, amount) {
-  const h = state.hero;
-  h.hp -= amount;
-  emit('damage', { target: 'hero', amount, isCrit: false });
-  if (h.hp <= 0) {
-    h.hp = 0;
-    state.combat.respawnTimer = 3;
-    emit('herodeath', {});
-  }
-}
-
-function skillDef(id) { return SKILLS.find(s => s.id === id); }
-
-function useSkill(state, skillId) {
-  const def = skillDef(skillId);
-  const learned = state.skills[skillId];
-  if (!def || !learned || learned.level <= 0) return false;
-  if (state.hero.level < def.unlockLevel) return false;
-  const cd = state.combat.skillCooldowns[skillId] || 0;
-  if (cd > 0) return false;
-  if (state.combat.respawnTimer > 0) return false;
-  ensureMonster(state);
-
-  if (def.power) {
-    const hits = def.hits || 1;
-    for (let i = 0; i < hits; i++) {
-      const dmg = Math.round(state.hero.derived.atk * def.power(learned.level));
-      damageMonster(state, dmg, false);
-      if (!state.combat.monster) break;
-    }
-  }
-  if (def.buffPct) {
-    state.combat.buff = { type: 'atk', pct: def.buffPct(learned.level), timeLeft: def.buffDuration };
-    recalcDerived(state);
-  }
-  if (def.healPct) {
-    state.hero.hp = Math.min(state.hero.derived.maxHp, state.hero.hp + Math.round(state.hero.derived.maxHp * def.healPct(learned.level)));
-  }
-  state.combat.skillCooldowns[skillId] = def.cooldown(learned.level);
-  emit('skillused', { skillId });
-  return true;
-}
-
-function upgradeSkill(state, skillId) {
-  const def = skillDef(skillId);
-  const learned = state.skills[skillId];
-  if (!def || !learned) return false;
-  if (state.hero.level < def.unlockLevel) return false;
-  if (learned.level >= def.maxLevel) return false;
-  const cost = def.cost(learned.level);
-  if (state.hero.gold < cost) return false;
-  state.hero.gold -= cost;
-  learned.level++;
-  return true;
-}
-
-function tapAttack(state) {
-  const now = Date.now();
-  if (now - lastTapTime < TAP_COOLDOWN_MS) return;
-  if (state.combat.respawnTimer > 0) return;
-  lastTapTime = now;
-  ensureMonster(state);
-  const dmg = Math.max(1, Math.round(state.hero.derived.atk * 0.25));
-  damageMonster(state, dmg, false);
-  emit('tap', {});
-}
-
-function travelToLocation(state, locId) {
-  if (!isLocationUnlocked(state, locId)) return false;
-  state.combat.locationId = locId;
-  state.combat.wave = Math.max(1, state.progress.bestWave[locId] || 1);
-  state.combat.monster = null;
-  state.combat.buff = null;
-  spawnMonster(state);
-  return true;
-}
-
-function tickCombat(state, dt) {
-  recalcDerived(state);
-  const c = state.combat;
-
-  if (c.respawnTimer > 0) {
-    c.respawnTimer -= dt;
-    if (c.respawnTimer <= 0) {
-      c.respawnTimer = 0;
-      state.hero.hp = state.hero.derived.maxHp;
-    }
+  if (!useSkill) {
+    const target = pickTarget(enemyRow);
+    if (!target) return;
+    const { amount, isCrit } = computeDamage(unit, target, 1.0, false);
+    applyDamage(log, unit, target, amount, isCrit, null);
     return;
   }
 
-  ensureMonster(state);
-
-  for (const id in c.skillCooldowns) {
-    if (c.skillCooldowns[id] > 0) c.skillCooldowns[id] = Math.max(0, c.skillCooldowns[id] - dt);
+  log.push({ type: 'skill', unitId: unit.id, skillName: skill.name });
+  switch (skill.kind) {
+    case 'damage': {
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const { amount, isCrit } = computeDamage(unit, target, skill.mult, false);
+      applyDamage(log, unit, target, amount, isCrit, skill.name);
+      if (skill.selfBuff) { unit.buffs.push({ stat: skill.selfBuff.stat, pct: skill.selfBuff.pct, turnsLeft: skill.selfBuff.turns }); log.push({ type: 'buff', unitId: unit.id, stat: skill.selfBuff.stat, pct: skill.selfBuff.pct }); }
+      break;
+    }
+    case 'damageRow': {
+      enemyRow.filter(u => u.alive).forEach(target => {
+        const { amount, isCrit } = computeDamage(unit, target, skill.mult, true);
+        applyDamage(log, unit, target, amount, isCrit, skill.name);
+      });
+      break;
+    }
+    case 'heal': {
+      const amount = Math.round(unit.maxHp * skill.pct);
+      unit.hp = Math.min(unit.maxHp, unit.hp + amount);
+      log.push({ type: 'heal', unitId: unit.id, targetId: unit.id, amount });
+      break;
+    }
+    case 'healRow': {
+      ownRow.filter(u => u.alive).forEach(ally => {
+        const amount = Math.round(ally.maxHp * skill.pct);
+        ally.hp = Math.min(ally.maxHp, ally.hp + amount);
+        log.push({ type: 'heal', unitId: unit.id, targetId: ally.id, amount });
+      });
+      break;
+    }
+    case 'buffSelf': {
+      unit.buffs.push({ stat: skill.stat, pct: skill.pct, turnsLeft: skill.turns });
+      log.push({ type: 'buff', unitId: unit.id, stat: skill.stat, pct: skill.pct });
+      break;
+    }
+    case 'buffRow': {
+      ownRow.filter(u => u.alive).forEach(ally => {
+        ally.buffs.push({ stat: skill.stat, pct: skill.pct, turnsLeft: skill.turns });
+        log.push({ type: 'buff', unitId: ally.id, stat: skill.stat, pct: skill.pct });
+      });
+      break;
+    }
+    case 'debuff': {
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      target.debuffs.push({ stat: skill.stat, pct: skill.pct, turnsLeft: skill.turns });
+      log.push({ type: 'debuff', unitId: unit.id, targetId: target.id, stat: skill.stat, pct: skill.pct });
+      break;
+    }
+    case 'stun': {
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const success = Math.random() < skill.chance;
+      if (success) target.stunTurns = (target.stunTurns || 0) + skill.turns;
+      log.push({ type: 'stunattempt', unitId: unit.id, targetId: target.id, success });
+      break;
+    }
   }
+}
 
-  if (c.buff) {
-    c.buff.timeLeft -= dt;
-    if (c.buff.timeLeft <= 0) { c.buff = null; recalcDerived(state); }
-  }
+function rowAlive(row) { return row.some(u => u.alive); }
 
-  const h = state.hero;
-  c.heroAtkTimer += dt;
-  const heroInterval = 1 / Math.max(0.1, h.derived.atkSpeed);
-  if (c.heroAtkTimer >= heroInterval) {
-    c.heroAtkTimer -= heroInterval;
-    const { amount, isCrit } = rollDamage(h.derived.atk, c.monster.def, h.derived.critChance, h.derived.critMult);
-    damageMonster(state, amount, isCrit);
-  }
+function simulateBattle(playerRows, enemyRows) {
+  const log = [];
+  let pIdx = 0, eIdx = 0;
+  while (pIdx < 3 && !rowAlive(playerRows[pIdx])) pIdx++;
+  while (eIdx < 3 && !rowAlive(enemyRows[eIdx])) eIdx++;
+  if (pIdx < 3) log.push({ type: 'row_enter', side: 'player', rowIndex: pIdx });
+  if (eIdx < 3) log.push({ type: 'row_enter', side: 'enemy', rowIndex: eIdx });
 
-  if (!c.monster) return;
-  const monsterInterval = 1 / MONSTER_ATK_SPEED_BASE;
-  c.monsterAtkTimer += dt;
-  if (c.monsterAtkTimer >= monsterInterval) {
-    c.monsterAtkTimer -= monsterInterval;
-    const { amount } = rollDamage(c.monster.atk, h.derived.def, 0, 1);
-    damageHero(state, amount);
+  let ticks = 0;
+  while (pIdx < 3 && eIdx < 3 && ticks < 300) {
+    ticks++;
+    const pRow = playerRows[pIdx], eRow = enemyRows[eIdx];
+    const order = [...pRow, ...eRow].filter(u => u.alive).sort((a, b) => b.agi - a.agi || Math.random() - 0.5);
+    for (const unit of order) {
+      if (!unit.alive) continue;
+      tickTimers(unit);
+      const ownRow = unit.side === 'player' ? pRow : eRow;
+      const enemyRow = unit.side === 'player' ? eRow : pRow;
+      if (!rowAlive(ownRow) || !rowAlive(enemyRow)) break;
+      performTurn(log, unit, ownRow, enemyRow);
+      if (!rowAlive(eRow)) break;
+      if (!rowAlive(pRow)) break;
+    }
+    if (!rowAlive(pRow)) {
+      log.push({ type: 'row_clear', side: 'player', rowIndex: pIdx });
+      pIdx++;
+      while (pIdx < 3 && !rowAlive(playerRows[pIdx])) pIdx++;
+      if (pIdx < 3) log.push({ type: 'row_enter', side: 'player', rowIndex: pIdx });
+    }
+    if (!rowAlive(eRow)) {
+      log.push({ type: 'row_clear', side: 'enemy', rowIndex: eIdx });
+      eIdx++;
+      while (eIdx < 3 && !rowAlive(enemyRows[eIdx])) eIdx++;
+      if (eIdx < 3) log.push({ type: 'row_enter', side: 'enemy', rowIndex: eIdx });
+    }
   }
+  const result = eIdx >= 3 ? 'victoria' : 'derrota';
+  log.push({ type: 'battle_end', result });
+  return { log, result };
 }
