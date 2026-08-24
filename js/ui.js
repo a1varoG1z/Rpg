@@ -226,7 +226,7 @@ UI.openFighterModal = function (state, uid) {
   body.appendChild(statsPanel);
 
   const skillPanel = el('div', 'panel');
-  skillPanel.innerHTML = `<h3>${skill.name}</h3><p class="settings-info">${skill.desc}</p><div class="stat-row"><span>Enfriamiento</span><span>${skill.cooldown} turnos</span></div>`;
+  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p><p class="settings-info">Se carga peleando: golpea o recibe daño para llenar la barra morada y desatarla.</p>`;
   body.appendChild(skillPanel);
 
   const sefPanel = el('div', 'panel');
@@ -480,42 +480,95 @@ UI.openGearModal = function (state, gearUid) {
 };
 
 // ---------- Batalla ----------
-UI.openBattle = function (state, playerRowsOriginal, enemyRowsOriginal, opts) {
-  const simRows = JSON.parse(JSON.stringify({ p: playerRowsOriginal, e: enemyRowsOriginal }));
-  const { log, result } = simulateBattle(simRows.p, simRows.e);
-  const unitById = {};
-  [...playerRowsOriginal, ...enemyRowsOriginal].flat().forEach(u => { unitById[u.id] = u; });
-
+// El jugador elige, choque a choque, cuál de sus combinaciones (filas de la
+// Formación) envía contra la fila activa del rival — igual que en D.o.T., donde
+// puedes repartir tus 3 combinaciones para contrarrestar al enemigo sobre la
+// marcha. Cada combinación solo se usa una vez por batalla.
+UI.openBattle = function (state, playerRowsRaw, enemyRowsRaw, opts) {
+  const playerGroups = playerRowsRaw.map((row, idx) => ({ idx, row, used: false })).filter(g => g.row.length > 0);
+  const enemyRows = enemyRowsRaw.filter(r => r.length > 0);
   const view = {
-    playerRows: playerRowsOriginal, enemyRows: enemyRowsOriginal, unitById, log, idx: 0,
-    activeP: 0, activeE: 0, timer: null, opts, state, result,
+    state, opts, playerGroups, enemyRows, enemyIdx: 0,
+    currentPlayerRow: null, currentEnemyRow: null, unitById: {}, log: [], idx: 0, timer: null,
   };
   window.__battleView = view;
   $('battleTitle').textContent = opts.title;
   $('battleResult').classList.add('hidden');
+  $('groupPickerPanel').classList.add('hidden');
   $('battleLog').innerHTML = '';
-  UI.renderBattleRows(view);
   $('battleOverlay').classList.remove('hidden');
-  UI.stepBattle(view, false);
+  UI.promptNextClash(view);
 };
 
-UI.renderBattleRows = function (view) {
-  const renderSide = (rows, activeIdx, activeElId, queuedElId, side) => {
-    const activeEl = $(activeElId);
-    activeEl.innerHTML = '';
-    const row = rows[activeIdx] || [];
-    row.forEach(u => activeEl.appendChild(UI.battleUnitCard(u)));
-    const queuedEl = $(queuedElId);
-    queuedEl.innerHTML = '';
-    for (let i = activeIdx + 1; i < 3; i++) {
-      if (!rows[i] || rows[i].length === 0) continue;
-      const mini = el('div', 'queued-row-mini');
-      rows[i].forEach(u => { const s = creatureCanvas(u.defId, 26); mini.appendChild(s); });
-      queuedEl.appendChild(mini);
-    }
-  };
-  renderSide(view.playerRows, view.activeP, 'playerActiveRow', 'playerQueuedRows', 'player');
-  renderSide(view.enemyRows, view.activeE, 'enemyActiveRow', 'enemyQueuedRows', 'enemy');
+UI.promptNextClash = function (view) {
+  if (view.enemyIdx >= view.enemyRows.length) { UI.endBattle(view, 'victoria'); return; }
+  const remaining = view.playerGroups.filter(g => !g.used);
+  if (remaining.length === 0) { UI.endBattle(view, 'derrota'); return; }
+  UI.renderClashPreview(view);
+  if (remaining.length === 1) UI.commitGroup(view, remaining[0]);
+  else UI.showGroupPicker(view, remaining);
+};
+
+UI.renderClashPreview = function (view) {
+  const enemyRow = view.enemyRows[view.enemyIdx];
+  const activeEl = $('enemyActiveRow');
+  activeEl.innerHTML = '';
+  enemyRow.forEach(u => activeEl.appendChild(UI.battleUnitCard(u)));
+  const queuedEl = $('enemyQueuedRows');
+  queuedEl.innerHTML = '';
+  for (let i = view.enemyIdx + 1; i < view.enemyRows.length; i++) {
+    const mini = el('div', 'queued-row-mini');
+    view.enemyRows[i].forEach(u => mini.appendChild(creatureCanvas(u.defId, 26)));
+    queuedEl.appendChild(mini);
+  }
+  $('playerActiveRow').innerHTML = '';
+  const reserveEl = $('playerQueuedRows');
+  reserveEl.innerHTML = '';
+  view.playerGroups.filter(g => !g.used).forEach(g => {
+    const mini = el('div', 'queued-row-mini');
+    g.row.forEach(u => mini.appendChild(creatureCanvas(u.defId, 26)));
+    reserveEl.appendChild(mini);
+  });
+};
+
+UI.showGroupPicker = function (view, remaining) {
+  const panel = $('groupPickerPanel');
+  const list = $('groupPickerList');
+  list.innerHTML = '';
+  remaining.forEach(group => {
+    const btn = el('button', 'group-picker-btn');
+    group.row.forEach(u => btn.appendChild(creatureCanvas(u.defId, 40)));
+    btn.addEventListener('click', () => UI.commitGroup(view, group));
+    list.appendChild(btn);
+  });
+  panel.classList.remove('hidden');
+};
+
+UI.commitGroup = function (view, group) {
+  $('groupPickerPanel').classList.add('hidden');
+  group.used = true;
+  const playerRow = group.row;
+  const enemyRow = view.enemyRows[view.enemyIdx];
+  view.currentPlayerRow = playerRow;
+  view.currentEnemyRow = enemyRow;
+  view.unitById = {};
+  [...playerRow, ...enemyRow].forEach(u => { view.unitById[u.id] = u; });
+
+  const clone = JSON.parse(JSON.stringify({ p: playerRow, e: enemyRow }));
+  const { log } = simulateRowFight(clone.p, clone.e);
+  view.log = log; view.idx = 0;
+
+  $('playerActiveRow').innerHTML = '';
+  playerRow.forEach(u => $('playerActiveRow').appendChild(UI.battleUnitCard(u)));
+  const reserveEl = $('playerQueuedRows');
+  reserveEl.innerHTML = '';
+  view.playerGroups.filter(g => !g.used).forEach(g => {
+    const mini = el('div', 'queued-row-mini');
+    g.row.forEach(u => mini.appendChild(creatureCanvas(u.defId, 26)));
+    reserveEl.appendChild(mini);
+  });
+
+  UI.stepBattle(view, false);
 };
 
 UI.battleUnitCard = function (u) {
@@ -527,6 +580,11 @@ UI.battleUnitCard = function (u) {
   fill.style.width = Math.max(0, u.hp / u.maxHp * 100) + '%';
   hpBar.appendChild(fill);
   card.appendChild(hpBar);
+  const ultBar = el('div', 'ult-bar');
+  const ultFill = el('div', 'ult-fill');
+  ultFill.style.width = (u.ultCharge || 0) + '%';
+  ultBar.appendChild(ultFill);
+  card.appendChild(ultBar);
   card.appendChild(el('div', 'battle-unit-name', u.name));
   return card;
 };
@@ -537,6 +595,13 @@ UI.updateUnitCardHp = function (u) {
   const fill = cardEl.querySelector('.hp-fill');
   if (fill) fill.style.width = Math.max(0, u.hp / u.maxHp * 100) + '%';
   if (!u.alive) cardEl.classList.add('fainted');
+};
+
+UI.updateUnitCardCharge = function (u) {
+  const cardEl = document.querySelector(`.battle-unit[data-unit-id="${u.id}"]`);
+  if (!cardEl) return;
+  const fill = cardEl.querySelector('.ult-fill');
+  if (fill) fill.style.width = (u.ultCharge || 0) + '%';
 };
 
 UI.logLine = function (text) {
@@ -550,7 +615,7 @@ UI.logLine = function (text) {
 UI.stepBattle = function (view, instant) {
   if (view.timer) { clearTimeout(view.timer); view.timer = null; }
   const advance = () => {
-    if (view.idx >= view.log.length) { UI.finishBattle(view); return; }
+    if (view.idx >= view.log.length) { UI.onClashDone(view); return; }
     const ev = view.log[view.idx++];
     UI.applyBattleEvent(view, ev);
     if (!instant) view.timer = setTimeout(advance, 420);
@@ -559,20 +624,23 @@ UI.stepBattle = function (view, instant) {
   advance();
 };
 
+UI.onClashDone = function (view) {
+  if (!rowAlive(view.currentEnemyRow)) view.enemyIdx++;
+  UI.promptNextClash(view);
+};
+
 UI.applyBattleEvent = function (view, ev) {
   const u = ev.unitId ? view.unitById[ev.unitId] : null;
   const attacker = ev.attackerId ? view.unitById[ev.attackerId] : null;
   const target = ev.targetId ? view.unitById[ev.targetId] : null;
   switch (ev.type) {
-    case 'row_enter':
-      if (ev.side === 'player') view.activeP = ev.rowIndex; else view.activeE = ev.rowIndex;
-      UI.renderBattleRows(view);
+    case 'ult':
+      u.ultCharge = 0;
+      UI.updateUnitCardCharge(u);
+      UI.logLine(`💥 ¡${u.name} desata su ULTI: ${ev.skillName}!`);
       break;
-    case 'row_clear':
-      UI.logLine((ev.side === 'player' ? 'Tu fila' : 'Fila rival') + ' ha caído.');
-      break;
-    case 'skill':
-      UI.logLine(`✨ ${u.name} usa ${ev.skillName}`);
+    case 'charge':
+      if (u) { u.ultCharge = ev.value; UI.updateUnitCardCharge(u); }
       break;
     case 'attack':
       target.hp = Math.max(0, target.hp - ev.amount);
@@ -597,7 +665,6 @@ UI.applyBattleEvent = function (view, ev) {
       break;
     case 'buff':
     case 'debuff':
-      break;
     case 'battle_end':
       break;
   }
@@ -611,10 +678,10 @@ UI.spawnBattleFloat = function (unitId, text, crit) {
   setTimeout(() => fl.remove(), 800);
 };
 
-UI.finishBattle = function (view) {
-  const outcome = view.opts.onEnd(view.result);
+UI.endBattle = function (view, result) {
+  const outcome = view.opts.onEnd(result);
   const body = $('battleResultBody');
-  if (view.result === 'victoria') {
+  if (result === 'victoria') {
     let html = `<h3>🏆 ¡Victoria!</h3>`;
     if (outcome && outcome.rewards) {
       html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>`;

@@ -165,6 +165,19 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .battle-unit { position: relative; width: 78px; text-align: center; transition: opacity 0.3s; }
 .battle-unit.fainted { opacity: 0.25; filter: grayscale(1); }
 .battle-unit .hp-bar.small { height: 7px; margin-top: 2px; }
+.ult-bar { height: 5px; width: 100%; background: #1a1410; border: 1px solid #000; border-radius: 3px; overflow: hidden; margin-top: 2px; }
+.ult-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #c98fe8, #e8a23c); transition: width 0.25s ease-out; }
+
+#groupPickerPanel { flex-shrink: 0; text-align: center; padding: 6px 0; }
+#groupPickerPanel.hidden { display: none; }
+.group-picker-title { font-family: 'Press Start 2P', monospace; font-size: 0.65rem; color: var(--gold); margin-bottom: 8px; }
+.group-picker-list { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.group-picker-btn {
+  display: flex; gap: 2px; padding: 8px 10px; background: var(--panel); border: 2px solid var(--gold-dim);
+  border-radius: 10px;
+}
+.group-picker-btn .creature-canvas { width: 40px; height: 45px; }
+.group-picker-btn:active { border-color: var(--gold); }
 .battle-unit-name { font-size: 0.6rem; color: var(--cream-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hp-bar { width: 100%; background: #1a1410; border: 1px solid #000; border-radius: 5px; overflow: hidden; }
 .hp-fill { height: 100%; width: 100%; background: linear-gradient(#5fd15f, #2e8b2e); transition: width 0.25s ease-out; }

@@ -19,7 +19,7 @@ function makeUnit(side, defId, level, extraMult, sourceUid) {
     id: 'u' + (unitSeq++), side, defId, sourceUid: sourceUid || null,
     name: def.name, element: def.element, class: def.class, rarity: def.rarity,
     level, maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
-    skillId: def.skillId, cooldown: 0, buffs: [], debuffs: [], stunTurns: 0, alive: true,
+    skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], stunTurns: 0, alive: true,
   };
 }
 
@@ -31,7 +31,7 @@ function makePlayerUnit(state, uid, level) {
     id: 'u' + (unitSeq++), side: 'player', defId: entry.defId, sourceUid: uid,
     name: def.name, element: def.element, class: def.class, rarity: def.rarity,
     level: entry.level, maxHp: stats.hp, hp: stats.hp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
-    skillId: def.skillId, cooldown: 0, buffs: [], debuffs: [], stunTurns: 0, alive: true,
+    skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], stunTurns: 0, alive: true,
   };
 }
 
@@ -119,6 +119,9 @@ function pickTarget(row) {
   return alive[Math.floor(Math.random() * alive.length)];
 }
 
+const ULT_CHARGE_MAX = 100;
+const ULT_CHARGE_ON_HIT = 9;
+
 function applyDamage(log, attacker, target, rawAmount, isCrit, label) {
   const before = target.hp;
   target.hp = Math.max(0, target.hp - rawAmount);
@@ -126,6 +129,9 @@ function applyDamage(log, attacker, target, rawAmount, isCrit, label) {
   if (before > 0 && target.hp <= 0) {
     target.alive = false;
     log.push({ type: 'faint', unitId: target.id, side: target.side });
+  } else if (target.alive) {
+    target.ultCharge = Math.min(ULT_CHARGE_MAX, target.ultCharge + ULT_CHARGE_ON_HIT);
+    log.push({ type: 'charge', unitId: target.id, value: target.ultCharge });
   }
 }
 
@@ -158,19 +164,23 @@ function performTurn(log, unit, ownRow, enemyRow) {
     return;
   }
   const skill = SKILL_TYPES[unit.skillId];
-  const useSkill = unit.cooldown <= 0;
-  if (useSkill) unit.cooldown = skill.cooldown;
-  else unit.cooldown--;
+  const useUlt = unit.ultCharge >= ULT_CHARGE_MAX;
 
-  if (!useSkill) {
+  if (!useUlt) {
     const target = pickTarget(enemyRow);
     if (!target) return;
     const { amount, isCrit } = computeDamage(unit, target, 1.0, false);
     applyDamage(log, unit, target, amount, isCrit, null);
+    if (unit.alive) {
+      const gain = Math.round(22 + unit.agi * 0.4);
+      unit.ultCharge = Math.min(ULT_CHARGE_MAX, unit.ultCharge + gain);
+      log.push({ type: 'charge', unitId: unit.id, value: unit.ultCharge });
+    }
     return;
   }
 
-  log.push({ type: 'skill', unitId: unit.id, skillName: skill.name });
+  unit.ultCharge = 0;
+  log.push({ type: 'ult', unitId: unit.id, skillName: skill.name });
   switch (skill.kind) {
     case 'damage': {
       const target = pickTarget(enemyRow);
@@ -233,43 +243,25 @@ function performTurn(log, unit, ownRow, enemyRow) {
 
 function rowAlive(row) { return row.some(u => u.alive); }
 
-function simulateBattle(playerRows, enemyRows) {
+// Resuelve el choque entre TU combinación elegida (3 luchadores) y la fila
+// activa del rival, turno a turno, hasta que un bando entero caiga.
+function simulateRowFight(playerRow, enemyRow) {
   const log = [];
-  let pIdx = 0, eIdx = 0;
-  while (pIdx < 3 && !rowAlive(playerRows[pIdx])) pIdx++;
-  while (eIdx < 3 && !rowAlive(enemyRows[eIdx])) eIdx++;
-  if (pIdx < 3) log.push({ type: 'row_enter', side: 'player', rowIndex: pIdx });
-  if (eIdx < 3) log.push({ type: 'row_enter', side: 'enemy', rowIndex: eIdx });
-
   let ticks = 0;
-  while (pIdx < 3 && eIdx < 3 && ticks < 300) {
+  while (rowAlive(playerRow) && rowAlive(enemyRow) && ticks < 150) {
     ticks++;
-    const pRow = playerRows[pIdx], eRow = enemyRows[eIdx];
-    const order = [...pRow, ...eRow].filter(u => u.alive).sort((a, b) => b.agi - a.agi || Math.random() - 0.5);
+    const order = [...playerRow, ...enemyRow].filter(u => u.alive).sort((a, b) => b.agi - a.agi || Math.random() - 0.5);
     for (const unit of order) {
       if (!unit.alive) continue;
       tickTimers(unit);
-      const ownRow = unit.side === 'player' ? pRow : eRow;
-      const enemyRow = unit.side === 'player' ? eRow : pRow;
-      if (!rowAlive(ownRow) || !rowAlive(enemyRow)) break;
-      performTurn(log, unit, ownRow, enemyRow);
-      if (!rowAlive(eRow)) break;
-      if (!rowAlive(pRow)) break;
-    }
-    if (!rowAlive(pRow)) {
-      log.push({ type: 'row_clear', side: 'player', rowIndex: pIdx });
-      pIdx++;
-      while (pIdx < 3 && !rowAlive(playerRows[pIdx])) pIdx++;
-      if (pIdx < 3) log.push({ type: 'row_enter', side: 'player', rowIndex: pIdx });
-    }
-    if (!rowAlive(eRow)) {
-      log.push({ type: 'row_clear', side: 'enemy', rowIndex: eIdx });
-      eIdx++;
-      while (eIdx < 3 && !rowAlive(enemyRows[eIdx])) eIdx++;
-      if (eIdx < 3) log.push({ type: 'row_enter', side: 'enemy', rowIndex: eIdx });
+      const ownRow = unit.side === 'player' ? playerRow : enemyRow;
+      const foeRow = unit.side === 'player' ? enemyRow : playerRow;
+      if (!rowAlive(ownRow) || !rowAlive(foeRow)) break;
+      performTurn(log, unit, ownRow, foeRow);
+      if (!rowAlive(playerRow) || !rowAlive(enemyRow)) break;
     }
   }
-  const result = eIdx >= 3 ? 'victoria' : 'derrota';
+  const result = rowAlive(enemyRow) ? (rowAlive(playerRow) ? 'empate' : 'derrota') : 'victoria';
   log.push({ type: 'battle_end', result });
   return { log, result };
 }

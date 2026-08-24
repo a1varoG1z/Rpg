@@ -12,9 +12,10 @@ El progreso se guarda automáticamente en el dispositivo (`localStorage`).
 
 ## Mecánicas
 
-- **Banda 3×3**: coloca hasta 9 luchadores en una cuadrícula de 3 filas; en combate luchan fila contra fila hasta que una banda entera cae.
+- **Banda 3×3**: coloca hasta 9 luchadores en una cuadrícula de 3 filas (3 combinaciones de hasta 3).
+- **Elige tu combinación cada choque**: al entrar en combate, el rival revela su fila y tú eliges con cuál de tus 3 combinaciones responder — puedes reservar tu mejor equipo o reaccionar a lo que enseña el enemigo. Cada combinación solo se usa una vez por batalla; si no derrota a la fila rival, la siguiente combinación que envíes retoma el combate donde quedó.
 - **Elementos y clases**: 5 elementos (Fuego/Viento/Tierra/Rayo/Agua, con ventajas tipo piedra-papel-tijera) y 5 clases (Campeón, Pícaro, Gurú, Brujo, Explorador) con roles de combate distintos (tanque, daño físico, daño mágico, híbrido, soporte).
-- **Combate por turnos**: cada luchador ataca o usa su habilidad (con enfriamiento) según su agilidad; la batalla se resuelve y se reproduce a modo de repetición animada, con opción de saltar al resultado.
+- **Combate con ULTI cargable**: cada luchador ataca automáticamente según su agilidad; golpear o recibir daño llena su barra de ULTI, y al completarse desata su habilidad especial en vez de un golpe normal. La batalla se reproduce animada, con opción de saltar al resultado de cada choque.
 - **Invocación (gacha)**: 3 tipos de cristal (Pixite, Voxite, Doxite) con tasas de rareza distintas, obtenidos jugando o comprados con Gemas (moneda ganable en el juego, sin dinero real).
 - **Fusión (SEF) y evolución**: invocar duplicados de un luchador aumenta su fusión (0/5); al llegar a 5/5 evoluciona a su forma superior. La Superfusión sacrifica un luchador totalmente fusionado para dar una ⭐ permanente a otro.
 - **Mapa por etapas**: 6 zonas con 8 etapas cada una (la 8ª es el jefe de zona); cada intento cuesta Energía, que se regenera con el tiempo.
@@ -23,7 +24,7 @@ El progreso se guarda automáticamente en el dispositivo (`localStorage`).
 
 ## Sprites pixel-art originales
 
-`js/sprite.js` genera cada criatura por código: una silueta base según su clase, coloreada según su elemento, con contorno y sombreado automáticos. Es un sistema propio, sin assets externos ni arte con copyright.
+`js/sprite.js` genera cada criatura por código: una silueta de bestia/criatura distinta según su clase (acorazada, alada, flotante...), coloreada según su elemento, con sombreado en dos tonos, contorno, brillo especular y sombra de suelo. Es un sistema propio, sin assets externos ni arte con copyright.
 
 ## Desarrollo
 

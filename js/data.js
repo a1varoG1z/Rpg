@@ -33,15 +33,15 @@ const CLASS_INFO = {
 };
 
 const SKILL_TYPES = {
-  golpe: { name: 'Golpe Certero', cooldown: 3, kind: 'damage', mult: 2.0, target: 'single', desc: 'Un golpe demoledor a un enemigo.' },
-  furia: { name: 'Furia Salvaje', cooldown: 3, kind: 'damage', mult: 1.5, target: 'single', selfBuff: { stat: 'atk', pct: 0.15, turns: 2 }, desc: 'Golpea con fuerza y se enardece.' },
-  arrasar: { name: 'Arrasar', cooldown: 4, kind: 'damageRow', mult: 1.05, target: 'row', desc: 'Daño mágico a toda la fila enemiga.' },
-  curar: { name: 'Bendición Sanadora', cooldown: 4, kind: 'heal', pct: 0.3, target: 'self', desc: 'Recupera parte de su propia vida.' },
-  bendicion: { name: 'Aura Vital', cooldown: 4, kind: 'healRow', pct: 0.16, target: 'row-ally', desc: 'Cura a toda su fila.' },
-  escudo: { name: 'Muro de Escamas', cooldown: 3, kind: 'buffSelf', stat: 'def', pct: 0.35, turns: 3, desc: 'Refuerza su propia defensa.' },
-  grito: { name: 'Grito de Guerra', cooldown: 3, kind: 'buffRow', stat: 'atk', pct: 0.2, turns: 3, desc: 'Aumenta el ataque de su fila.' },
-  debilitar: { name: 'Marca Débil', cooldown: 3, kind: 'debuff', stat: 'def', pct: 0.25, turns: 3, target: 'single', desc: 'Reduce la defensa de un enemigo.' },
-  aturdir: { name: 'Onda de Trueno', cooldown: 5, kind: 'stun', turns: 1, chance: 0.65, target: 'single', desc: 'Puede aturdir a un enemigo.' },
+  golpe: { name: 'Golpe Certero', kind: 'damage', mult: 2.0, target: 'single', desc: 'Un golpe demoledor a un enemigo.' },
+  furia: { name: 'Furia Salvaje', kind: 'damage', mult: 1.5, target: 'single', selfBuff: { stat: 'atk', pct: 0.15, turns: 2 }, desc: 'Golpea con fuerza y se enardece.' },
+  arrasar: { name: 'Arrasar', kind: 'damageRow', mult: 1.05, target: 'row', desc: 'Daño mágico a toda la fila enemiga.' },
+  curar: { name: 'Bendición Sanadora', kind: 'heal', pct: 0.3, target: 'self', desc: 'Recupera parte de su propia vida.' },
+  bendicion: { name: 'Aura Vital', kind: 'healRow', pct: 0.16, target: 'row-ally', desc: 'Cura a toda su fila.' },
+  escudo: { name: 'Muro de Escamas', kind: 'buffSelf', stat: 'def', pct: 0.35, turns: 3, desc: 'Refuerza su propia defensa.' },
+  grito: { name: 'Grito de Guerra', kind: 'buffRow', stat: 'atk', pct: 0.2, turns: 3, desc: 'Aumenta el ataque de su fila.' },
+  debilitar: { name: 'Marca Débil', kind: 'debuff', stat: 'def', pct: 0.25, turns: 3, target: 'single', desc: 'Reduce la defensa de un enemigo.' },
+  aturdir: { name: 'Onda de Trueno', kind: 'stun', turns: 1, chance: 0.65, target: 'single', desc: 'Puede aturdir a un enemigo.' },
 };
 
 // family: agrupa forma base + evolución. evolvesTo: id de la forma evolucionada (o null).
