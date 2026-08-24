@@ -11,13 +11,42 @@ const SPR_HALF = 10, SPR_W = SPR_HALF * 2, SPR_H = 20, SPR_CELL = 6;
 const CAT_EMPTY = 0, CAT_BODY = 1, CAT_OUT_DARK = 2, CAT_OUT_LIGHT = 3, CAT_SHADE = 4,
   CAT_HILITE = 5, CAT_EYE = 6, CAT_CHEEK = 7, CAT_ACCENT = 8, CAT_PATCH = 9, CAT_SHINE = 10;
 
-function lighten(hex, amt) {
+// Conversión RGB<->HSL para poder desplazar el TONO (no solo el brillo) al
+// aclarar u oscurecer — la diferencia entre un sombreado plano ("pillow
+// shading") y uno con temperatura de color real: las luces se calientan
+// hacia el amarillo, las sombras se enfrían hacia el azul/púrpura.
+function hexToHsl(hex) {
   const n = parseInt(hex.slice(1), 16);
-  const r = Math.min(255, (n >> 16) + amt);
-  const g = Math.min(255, ((n >> 8) & 0xff) + amt);
-  const b = Math.min(255, (n & 0xff) + amt);
-  return '#' + [r, g, b].map(v => Math.max(0, Math.round(v)).toString(16).padStart(2, '0')).join('');
+  const r = (n >> 16) / 255, g = ((n >> 8) & 0xff) / 255, b = (n & 0xff) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0; const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return [h, s * 100, l * 100];
 }
+function hslToHex(h, s, l) {
+  h = ((h % 360) + 360) % 360; s = Math.max(0, Math.min(100, s)) / 100; l = Math.max(0, Math.min(100, l)) / 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+  let r, g, b;
+  if (h < 60) [r, g, b] = [c, x, 0]; else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x]; else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c]; else [r, g, b] = [c, 0, x];
+  const toHex = v => Math.round((v + m) * 255).toString(16).padStart(2, '0');
+  return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+// lightDelta en puntos de luminosidad (-100..100); hueShift en grados;
+// satDelta en puntos de saturación.
+function shiftShade(hex, lightDelta, hueShift, satDelta) {
+  const [h, s, l] = hexToHsl(hex);
+  return hslToHex(h + (hueShift || 0), s + (satDelta || 0), l + lightDelta);
+}
+function lighten(hex, amt) { return shiftShade(hex, amt / 2.55, 0, 0); }
 function darken(hex, amt) { return lighten(hex, -amt); }
 function mix(hexA, hexB, t) {
   const a = parseInt(hexA.slice(1), 16), b = parseInt(hexB.slice(1), 16);
@@ -138,18 +167,19 @@ function drawCreatureSprite(canvas, fighterId) {
   const grid = getSpriteGrid(def.class);
   const el = ELEMENT_INFO[def.element];
   const glowEye = def.class === 'brujo' || def.class === 'guru';
-  const outlineBase = darken(el.color, 78);
+  // Luces cálidas (tono hacia el amarillo, +hue), sombras frías (hacia el
+  // azul/púrpura, -hue) y más saturadas — nunca solo "más claro/oscuro".
   const palette = {
     [CAT_BODY]: el.color,
-    [CAT_HILITE]: lighten(el.color, 42),
-    [CAT_SHADE]: darken(el.color, 32),
-    [CAT_OUT_DARK]: mix(outlineBase, '#1a1006', 0.4),
-    [CAT_OUT_LIGHT]: mix(el.color, outlineBase, 0.55),
-    [CAT_EYE]: glowEye ? el.glow : darken(el.color, 85),
-    [CAT_CHEEK]: darken(el.color, 18),
+    [CAT_HILITE]: shiftShade(el.color, 20, 18, -8),
+    [CAT_SHADE]: shiftShade(el.color, -18, -22, 12),
+    [CAT_OUT_DARK]: shiftShade(el.color, -46, -28, 10),
+    [CAT_OUT_LIGHT]: shiftShade(el.color, -8, 10, -5),
+    [CAT_EYE]: glowEye ? el.glow : shiftShade(el.color, -50, -30, 15),
+    [CAT_CHEEK]: shiftShade(el.color, -12, -18, 8),
     [CAT_ACCENT]: el.glow,
-    [CAT_PATCH]: lighten(el.color, 78),
-    [CAT_SHINE]: '#fffdf6',
+    [CAT_PATCH]: shiftShade(el.color, 34, 22, -14),
+    [CAT_SHINE]: '#fff8ec',
   };
   canvas.width = SPR_W * SPR_CELL;
   canvas.height = SPR_H * SPR_CELL;
