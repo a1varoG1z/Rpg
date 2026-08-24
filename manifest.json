@@ -1,0 +1,14 @@
+{
+  "name": "Defensor de Texel",
+  "short_name": "D. Texel",
+  "description": "RPG idle de mazmorras inspirado en D.o.T.: Defender of Texel",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#171009",
+  "theme_color": "#171009",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

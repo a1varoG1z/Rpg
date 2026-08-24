@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Defensor de Texel</title>
+<meta name="description" content="RPG idle de mazmorras inspirado en D.o.T.: Defender of Texel">
+<meta name="theme-color" content="#1a1410">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Defensor de Texel">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon.svg">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <header id="topbar">
+    <div class="resource gold" title="Oro">🪙 <span id="goldVal">0</span></div>
+    <div class="resource gems" title="Gemas">💎 <span id="gemVal">0</span></div>
+    <button id="settingsBtn" class="icon-btn" aria-label="Ajustes">⚙️</button>
+  </header>
+
+  <div id="locBar">
+    <span id="locEmoji">🌲</span>
+    <span id="locName">Linde del Bosque</span>
+    <span class="sep">·</span>
+    <span>Oleada <span id="waveVal">1</span></span>
+  </div>
+
+  <main id="screens">
+
+    <section id="screen-battle" class="screen active">
+      <div class="battle-scene" id="battleScene">
+        <div class="combatant hero-side">
+          <div class="lvl-badge">Nv. <span id="heroLevelBattle">1</span></div>
+          <div class="sprite" id="heroSprite">💂</div>
+          <div class="hp-bar"><div class="hp-fill" id="heroHpFill"></div></div>
+          <div class="hp-text" id="heroHpText">50/50</div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="combatant monster-side" id="monsterTapZone">
+          <div class="boss-tag hidden" id="bossTag">⚔ JEFE ⚔</div>
+          <div class="sprite" id="monsterSprite">🐺</div>
+          <div class="hp-bar"><div class="hp-fill enemy" id="monsterHpFill"></div></div>
+          <div class="hp-text" id="monsterHpText">30/30</div>
+          <div class="monster-name" id="monsterName">Lobo</div>
+        </div>
+        <div id="floatingNumbers"></div>
+        <div id="respawnOverlay" class="hidden">
+          <div>Has caído...</div>
+          <div id="respawnTimer">3</div>
+        </div>
+      </div>
+      <div class="tap-hint">👆 Toca al enemigo para golpear</div>
+      <div class="wave-progress"><div class="wave-fill" id="waveFill"></div></div>
+      <div class="skills-bar" id="skillsBar"></div>
+    </section>
+
+    <section id="screen-hero" class="screen">
+      <h2 class="screen-title">Héroe</h2>
+      <div class="panel hero-summary">
+        <div class="hero-avatar">💂</div>
+        <div class="hero-summary-info">
+          <div class="hero-name">Defensor</div>
+          <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+          <div class="xp-text"><span id="heroLevelVal">1</span> · <span id="xpText">0/76</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Estadísticas</h3>
+        <div class="stat-row"><span>⚔️ Ataque</span><span id="statAtk">0</span></div>
+        <div class="stat-row"><span>🛡️ Defensa</span><span id="statDef">0</span></div>
+        <div class="stat-row"><span>❤️ Vida máx.</span><span id="statHp">0</span></div>
+        <div class="stat-row"><span>💢 Crítico</span><span id="statCrit">0%</span></div>
+        <div class="stat-row"><span>⏱️ Vel. ataque</span><span id="statSpeed">0/s</span></div>
+      </div>
+      <div class="panel">
+        <h3>Puntos de característica <span id="statPointsVal" class="badge">0</span></h3>
+        <div class="alloc-row">
+          <div class="alloc-info"><b>Fuerza</b><small>+ATK / +DEF</small></div>
+          <span id="strVal">0</span>
+          <button class="alloc-btn" data-stat="str">+</button>
+        </div>
+        <div class="alloc-row">
+          <div class="alloc-info"><b>Agilidad</b><small>+Crítico / +Vel.</small></div>
+          <span id="agiVal">0</span>
+          <button class="alloc-btn" data-stat="agi">+</button>
+        </div>
+        <div class="alloc-row">
+          <div class="alloc-info"><b>Vitalidad</b><small>+Vida máx.</small></div>
+          <span id="vitVal">0</span>
+          <button class="alloc-btn" data-stat="vit">+</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Equipo</h3>
+        <div class="paperdoll" id="paperdoll"></div>
+      </div>
+    </section>
+
+    <section id="screen-inventory" class="screen">
+      <h2 class="screen-title">Inventario <span class="badge" id="invCount">0/40</span></h2>
+      <div class="item-grid" id="itemGrid"></div>
+      <div class="empty-hint hidden" id="invEmptyHint">Tu inventario está vacío. ¡Derrota enemigos para conseguir objetos!</div>
+    </section>
+
+    <section id="screen-skills" class="screen">
+      <h2 class="screen-title">Habilidades</h2>
+      <div id="skillList"></div>
+    </section>
+
+    <section id="screen-map" class="screen">
+      <h2 class="screen-title">Mapa</h2>
+      <div id="locationList"></div>
+    </section>
+
+  </main>
+
+  <nav id="bottomnav">
+    <button class="nav-btn active" data-screen="battle"><span class="nav-icon">⚔️</span><span>Combate</span></button>
+    <button class="nav-btn" data-screen="hero"><span class="nav-icon">🧍</span><span>Héroe</span></button>
+    <button class="nav-btn" data-screen="inventory"><span class="nav-icon">🎒</span><span>Objetos</span></button>
+    <button class="nav-btn" data-screen="skills"><span class="nav-icon">✨</span><span>Habil.</span></button>
+    <button class="nav-btn" data-screen="map"><span class="nav-icon">🗺️</span><span>Mapa</span></button>
+  </nav>
+</div>
+
+<div id="itemModal" class="modal hidden">
+  <div class="modal-box">
+    <button class="modal-close" id="itemModalClose">✕</button>
+    <div id="itemModalBody"></div>
+  </div>
+</div>
+
+<div id="offlineModal" class="modal hidden">
+  <div class="modal-box">
+    <h3>🌙 Bienvenido de nuevo</h3>
+    <div id="offlineBody"></div>
+    <button class="primary-btn" id="offlineClose">Continuar</button>
+  </div>
+</div>
+
+<div id="settingsModal" class="modal hidden">
+  <div class="modal-box">
+    <button class="modal-close" id="settingsModalClose">✕</button>
+    <h3>⚙️ Ajustes</h3>
+    <p class="settings-info">Defensor de Texel — progreso guardado automáticamente en este dispositivo.</p>
+    <button class="danger-btn" id="resetBtn">Reiniciar partida</button>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
