@@ -156,6 +156,15 @@ const GEAR_SLOTS = {
   armadura: { label: 'Armadura', icon: '🥋', names: { comun: 'Cota Sencilla', infrecuente: 'Cota Reforzada', raro: 'Placas Rúnicas', epico: 'Coraza Encantada', legendario: 'Coraza Ancestral' }, stat: 'def' },
 };
 
+// --- Tienda: equipo nuevo (nivel 0) por Texel, y objetos consumibles ---
+const GEAR_SHOP_PRICES = { comun: 60, infrecuente: 150, raro: 350, epico: 800, legendario: 2000 };
+
+const CONSUMABLES = {
+  pocion_menor: { label: 'Poción Menor', icon: '🧪', desc: 'Cura al 40% de su vida máxima a toda la banda.', healPct: 0.4, price: 40, currency: 'texel' },
+  pocion_mayor: { label: 'Poción Mayor', icon: '⚗️', desc: 'Cura al 100% de su vida máxima a toda la banda.', healPct: 1.0, price: 120, currency: 'texel' },
+  pluma_fenix: { label: 'Pluma Fénix', icon: '🪶', desc: 'Revive a un luchador caído con el 50% de su vida.', revivePct: 0.5, price: 12, currency: 'gemas' },
+};
+
 const MAX_ENERGY = 60;
 const ENERGY_REGEN_SECONDS = 45; // 1 punto cada 45s
 const BAND_ROWS = 3;

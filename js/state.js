@@ -31,6 +31,8 @@ function createNewState() {
     // Las 3 líneas (de las 8 posibles) que actúan como combinaciones de
     // combate. Por defecto las 3 filas, igual que el comportamiento previo.
     combinations: ['fila1', 'fila2', 'fila3'],
+    // Objetos consumibles comprados en la Tienda (pociones, plumas fénix).
+    items: { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 },
   };
 }
 
@@ -126,6 +128,24 @@ function generateGear(slot, rarity) {
 function addGear(state, gear) {
   if (state.gearInventory.length >= MAX_GEAR) return false;
   state.gearInventory.push(gear);
+  return true;
+}
+
+// --- Tienda ---
+function buyShopGear(state, slot, rarity) {
+  const price = GEAR_SHOP_PRICES[rarity];
+  if (state.currencies.texel < price) return false;
+  if (state.gearInventory.length >= MAX_GEAR) return false;
+  state.currencies.texel -= price;
+  addGear(state, generateGear(slot, rarity));
+  return true;
+}
+
+function buyConsumable(state, itemId) {
+  const item = CONSUMABLES[itemId];
+  if (state.currencies[item.currency] < item.price) return false;
+  state.currencies[item.currency] -= item.price;
+  state.items[itemId] = (state.items[itemId] || 0) + 1;
   return true;
 }
 
@@ -317,6 +337,7 @@ function loadGame() {
     if (!state || state.version !== 2 || !state.roster) return null;
     if (!state.settings) state.settings = { infiniteEnergy: false };
     if (!state.combinations) state.combinations = ['fila1', 'fila2', 'fila3'];
+    if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     return state;
   } catch (e) { return null; }
 }

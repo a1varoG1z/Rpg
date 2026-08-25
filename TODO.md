@@ -36,6 +36,14 @@ se indica explícitamente.
       entre combates, y solo se cobra la recompensa de la etapa al superar
       el último nodo. Cada etapa tiene siempre 2-3 nodos de combate como
       mínimo (antes algunas etapas tempranas eran un solo combate)
+- [x] **Tienda**: pestaña nueva "🛒 Tienda" con equipo nuevo (arma/armadura al
+      azar por rareza, pagado en Texel) y objetos curativos/revividores
+      (Poción Menor, Poción Mayor en Texel; Pluma Fénix en Gemas). Para que
+      curar/revivir tenga sentido dentro de un recorrido con varios combates,
+      la vida y los desmayos de la banda ahora persisten ENTRE nodos de una
+      misma etapa (`run.hpMap`/`run.faintedSet`, antes cada nodo curaba sola
+      a la banda al completo); la pantalla de recorrido muestra la vida/estado
+      de cada luchador y botones para usar objetos entre combates
 
 ## Pendiente — sistemas grandes (necesitan diseño propio, iteración aparte)
 
@@ -50,8 +58,6 @@ se indica explícitamente.
   - [ ] Ampliar el número de mapas/zonas (van a crecer mucho los jefes) —
         depende del roster masivo (14.1-14.3), que aún no está creado
   - [ ] Sprites de escenario/paisaje pendientes (ver lista de sprites no-personaje)
-- [ ] **Tienda**: comprar objetos (equipo) y objetos curativos/revividores,
-      necesarios porque un escenario puede tener varios combates seguidos
 - [ ] **Habilidad de líder de banda**: una criatura (sobre todo legendarias)
       puede tener una habilidad pasiva que bonifica a todo el equipo cuando
       esa criatura ocupa el centro de la formación

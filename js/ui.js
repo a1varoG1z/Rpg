@@ -104,6 +104,7 @@ UI.renderScreen = function (name, state) {
   else if (name === 'invocar') UI.renderInvocar(state);
   else if (name === 'arena') UI.renderArena(state);
   else if (name === 'equipo') UI.renderEquipo(state);
+  else if (name === 'tienda') UI.renderTienda(state);
 };
 
 // ---------- Mapa ----------
@@ -169,7 +170,10 @@ UI.startStageBattle = function (state, zoneIdx, stageIdx) {
   }
   const { rows, isBoss } = buildEnemyBand(zoneIdx, stageIdx);
   const encounters = rows.filter(r => r.length > 0);
-  window.__stageRun = { zoneIdx, stageIdx, isBoss, encounters, nodeIdx: 0, failed: false };
+  // hpMap/faintedSet llevan la cuenta de la vida de cada luchador ENTRE nodos
+  // del recorrido: a diferencia de antes, ya no se cura sola al pasar de
+  // encuentro — de ahí que la Tienda venda pociones y plumas fénix.
+  window.__stageRun = { zoneIdx, stageIdx, isBoss, encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set() };
   UI.renderStageRun(state);
 };
 
@@ -201,21 +205,114 @@ UI.renderStageRun = function (state) {
   wrap.appendChild(path);
 
   if (run.nodeIdx < run.encounters.length) {
+    const bandUids = state.band.flat().filter(Boolean);
+    const bandStatus = el('div', 'stage-run-band');
+    bandUids.forEach(uid => {
+      const entry = rosterEntry(state, uid);
+      if (!entry) return;
+      const status = runFighterStatus(state, run, uid);
+      const card = el('div', 'stage-run-fighter' + (status.fainted ? ' fainted' : ''));
+      card.appendChild(creatureCanvas(entry.defId, 40));
+      const hpBar = el('div', 'hp-bar small');
+      const fill = el('div', 'hp-fill');
+      fill.style.width = Math.max(0, status.hp / status.maxHp * 100) + '%';
+      hpBar.appendChild(fill);
+      card.appendChild(hpBar);
+      if (status.fainted) card.appendChild(el('div', 'fainted-icon', '💀'));
+      bandStatus.appendChild(card);
+    });
+    wrap.appendChild(bandStatus);
+
+    const hasFainted = bandUids.some(uid => run.faintedSet.has(uid));
+    const hasDamaged = bandUids.some(uid => { const st = runFighterStatus(state, run, uid); return !st.fainted && st.hp < st.maxHp; });
+    if (hasDamaged || hasFainted) {
+      const itemsRow = el('div', 'stage-run-items');
+      if (hasDamaged) {
+        ['pocion_menor', 'pocion_mayor'].forEach(itemId => {
+          const count = state.items[itemId] || 0;
+          if (count <= 0) return;
+          const item = CONSUMABLES[itemId];
+          const btn = el('button', 'mini-btn', item.icon + ' ' + item.label + ' (' + count + ')');
+          btn.addEventListener('click', () => UI.useStageRunItem(state, itemId));
+          itemsRow.appendChild(btn);
+        });
+      }
+      if (hasFainted && (state.items.pluma_fenix || 0) > 0) {
+        const item = CONSUMABLES.pluma_fenix;
+        const btn = el('button', 'mini-btn', item.icon + ' ' + item.label + ' (' + state.items.pluma_fenix + ')');
+        btn.addEventListener('click', () => UI.useStageRunItem(state, 'pluma_fenix'));
+        itemsRow.appendChild(btn);
+      }
+      wrap.appendChild(itemsRow);
+    }
+
     const preview = el('div', 'stage-run-preview');
     run.encounters[run.nodeIdx].forEach(u => preview.appendChild(creatureCanvas(u.defId, 56)));
     wrap.appendChild(preview);
     const fightBtn = el('button', 'primary-btn', 'Luchar (encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length + ')');
+    fightBtn.disabled = bandUids.every(uid => run.faintedSet.has(uid));
     fightBtn.addEventListener('click', () => UI.fightStageRunNode(state));
     wrap.appendChild(fightBtn);
   }
 };
 
+function runFighterStatus(state, run, uid) {
+  const entry = rosterEntry(state, uid);
+  const stats = fighterStats(state, entry);
+  const fainted = run.faintedSet.has(uid);
+  const hp = fainted ? 0 : (run.hpMap[uid] !== undefined ? run.hpMap[uid] : stats.hp);
+  return { hp, maxHp: stats.hp, fainted };
+}
+
+UI.useStageRunItem = function (state, itemId) {
+  const run = window.__stageRun;
+  if (!run || (state.items[itemId] || 0) <= 0) return;
+  const item = CONSUMABLES[itemId];
+  const bandUids = state.band.flat().filter(Boolean);
+  if (item.healPct) {
+    bandUids.forEach(uid => {
+      if (run.faintedSet.has(uid)) return;
+      const entry = rosterEntry(state, uid);
+      const stats = fighterStats(state, entry);
+      const current = run.hpMap[uid] !== undefined ? run.hpMap[uid] : stats.hp;
+      run.hpMap[uid] = Math.min(stats.hp, current + Math.round(stats.hp * item.healPct));
+    });
+  } else if (item.revivePct) {
+    const target = bandUids.find(uid => run.faintedSet.has(uid));
+    if (!target) return;
+    const entry = rosterEntry(state, target);
+    const stats = fighterStats(state, entry);
+    run.faintedSet.delete(target);
+    run.hpMap[target] = Math.round(stats.hp * item.revivePct);
+  }
+  state.items[itemId]--;
+  saveGame(state);
+  UI.renderTopbar(state);
+  UI.renderStageRun(state);
+  UI.showToast(item.icon + ' ' + item.label + ' usada');
+};
+
 UI.fightStageRunNode = function (state) {
   const run = window.__stageRun;
   const enemyRow = run.encounters[run.nodeIdx];
-  UI.openBattle(state, buildPlayerCombinations(state), [enemyRow], {
+  const playerCombos = buildPlayerCombinations(state);
+  // Aplica el HP/estado con el que ha llegado cada luchador de nodos
+  // anteriores de este recorrido — ya no se cura solo al pasar de encuentro.
+  playerCombos.forEach(row => row.forEach(u => {
+    if (!u.sourceUid) return;
+    if (run.faintedSet.has(u.sourceUid)) { u.hp = 0; u.alive = false; }
+    else if (run.hpMap[u.sourceUid] !== undefined) { u.hp = Math.min(u.maxHp, run.hpMap[u.sourceUid]); }
+  }));
+  UI.openBattle(state, playerCombos, [enemyRow], {
     title: ZONES[run.zoneIdx].name + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length,
-    onEnd: (result) => {
+    onEnd: (result, view) => {
+      if (view) {
+        view.playerGroups.forEach(g => g.row.forEach(u => {
+          if (!u.sourceUid) return;
+          run.hpMap[u.sourceUid] = u.hp;
+          if (u.alive) run.faintedSet.delete(u.sourceUid); else run.faintedSet.add(u.sourceUid);
+        }));
+      }
       if (result !== 'victoria') {
         run.failed = true;
         state.stats.battlesLost++;
@@ -613,6 +710,63 @@ UI.renderEquipo = function (state) {
   });
 };
 
+// ---------- Tienda ----------
+UI.renderTienda = function (state) {
+  const gearWrap = $('shopGearPanels');
+  gearWrap.innerHTML = '';
+  ['arma', 'armadura'].forEach(slot => {
+    const slotInfo = GEAR_SLOTS[slot];
+    const panel = el('div', 'shop-row');
+    panel.appendChild(el('div', 'shop-row-icon', slotInfo.icon));
+    const info = el('div', 'shop-row-info');
+    info.appendChild(el('div', 'shop-row-title', slotInfo.label));
+    const buyRow = el('div', 'shop-buy-row');
+    RARITIES.forEach(rarity => {
+      const price = GEAR_SHOP_PRICES[rarity.id];
+      const btn = el('button', 'shop-buy-btn');
+      btn.style.borderColor = rarity.color;
+      btn.innerHTML = `${rarity.icon}<br>🪙${price}`;
+      btn.disabled = state.currencies.texel < price || state.gearInventory.length >= MAX_GEAR;
+      btn.addEventListener('click', () => {
+        if (buyShopGear(state, slot, rarity.id)) {
+          saveGame(state);
+          UI.renderTopbar(state);
+          UI.renderTienda(state);
+          UI.showToast(`${slotInfo.icon} ${GEAR_SLOTS[slot].names[rarity.id]} comprado`);
+        }
+      });
+      buyRow.appendChild(btn);
+    });
+    info.appendChild(buyRow);
+    panel.appendChild(info);
+    gearWrap.appendChild(panel);
+  });
+
+  const itemWrap = $('shopItemPanels');
+  itemWrap.innerHTML = '';
+  Object.keys(CONSUMABLES).forEach(itemId => {
+    const item = CONSUMABLES[itemId];
+    const panel = el('div', 'shop-row');
+    panel.appendChild(el('div', 'shop-row-icon', item.icon));
+    const info = el('div', 'shop-row-info');
+    info.appendChild(el('div', 'shop-row-title', item.label + ' <span class="badge">' + (state.items[itemId] || 0) + '</span>'));
+    info.appendChild(el('div', 'settings-info', item.desc));
+    const buyBtn = el('button', 'primary-btn', 'Comprar (' + (item.currency === 'texel' ? '🪙' : '💎') + item.price + ')');
+    buyBtn.disabled = state.currencies[item.currency] < item.price;
+    buyBtn.addEventListener('click', () => {
+      if (buyConsumable(state, itemId)) {
+        saveGame(state);
+        UI.renderTopbar(state);
+        UI.renderTienda(state);
+        UI.showToast(item.icon + ' ' + item.label + ' comprada');
+      }
+    });
+    info.appendChild(buyBtn);
+    panel.appendChild(info);
+    itemWrap.appendChild(panel);
+  });
+};
+
 UI.openGearModal = function (state, gearUid) {
   const g = gearItem(state, gearUid);
   const rarity = rarityInfo(g.rarity);
@@ -874,7 +1028,7 @@ UI.spawnBattleFloat = function (unitId, text, crit) {
 };
 
 UI.endBattle = function (view, result) {
-  const outcome = view.opts.onEnd(result);
+  const outcome = view.opts.onEnd(result, view);
   const body = $('battleResultBody');
   if (outcome && outcome.intermediate) {
     body.innerHTML = `<h3>✅ Encuentro superado</h3><p class="settings-info">Continúa por el resto de la etapa.</p>`;

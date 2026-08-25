@@ -135,6 +135,12 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .stage-run-connector { width: 18px; height: 3px; background: var(--gold-dim); opacity: 0.5; }
 .stage-run-connector.cleared { background: var(--green); opacity: 1; }
 .stage-run-preview { display: flex; justify-content: center; gap: 6px; padding: 10px 0; flex-wrap: wrap; }
+.stage-run-band { display: flex; justify-content: center; gap: 8px; padding: 8px 0; flex-wrap: wrap; }
+.stage-run-fighter { width: 44px; text-align: center; position: relative; }
+.stage-run-fighter.fainted { opacity: 0.5; }
+.stage-run-fighter .hp-bar.small { height: 5px; margin-top: 2px; }
+.fainted-icon { position: absolute; top: 0; right: 0; font-size: 0.9rem; }
+.stage-run-items { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; }
 
 /* ---------- Formación ---------- */
 .formation-grid { display: flex; flex-direction: column; gap: 8px; }
@@ -158,6 +164,19 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .line-picker-label { font-size: 0.6rem; color: var(--cream-dim); }
 
 .picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 50vh; overflow-y: auto; margin-top: 8px; }
+
+/* ---------- Tienda ---------- */
+.shop-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px dashed #3a2c17; }
+.shop-row:last-child { border-bottom: none; }
+.shop-row-icon { font-size: 1.8rem; width: 40px; text-align: center; flex-shrink: 0; }
+.shop-row-info { flex: 1; }
+.shop-row-title { font-weight: bold; font-size: 0.85rem; margin-bottom: 4px; }
+.shop-buy-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.shop-buy-btn {
+  flex: 1; min-width: 56px; background: #1f1811; border: 2px solid var(--gold-dim); border-radius: 8px; color: var(--cream);
+  font-size: 0.65rem; padding: 6px 2px; line-height: 1.5;
+}
+.shop-buy-btn:disabled { opacity: 0.35; }
 
 /* ---------- Modales ---------- */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.72); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
