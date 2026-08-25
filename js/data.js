@@ -56,10 +56,15 @@ const SKILL_TYPES = {
 // Cada familia evoluciona exactamente 2 veces (3 formas), igual que en D.o.T.,
 // pero según su "tier" de partida ocupa un tramo distinto de la escalera de 5
 // rarezas — así, no todas llegan a Legendario:
-//   Tier 1 (topo, heraldo):            Común → Infrecuente → Raro
-//   Tier 2 (triton, vidente):          Infrecuente → Raro → Épico
+//   Tier 1 (topo, heraldo, electro,
+//           marina):                   Común → Infrecuente → Raro
+//   Tier 2 (triton, vidente, marejada,
+//           gea):                      Infrecuente → Raro → Épico
 //   Tier 3 (ascua, nigro, lagarto,
-//           duende, chispa):           Raro → Épico → Legendario
+//           duende, chispa, piroman,
+//           brisa):                    Raro → Épico → Legendario
+// La mayoría son bestias/criaturas; piroman, brisa, marejada, gea, electro
+// y marina son luchadores humanizados (3 masculinos, 3 femeninos).
 const FIGHTERS = [
   // --- Tier 3: llegan a Legendario ---
   { id: 'ascua_raro', name: 'Cachorro de Ascua', element: 'fuego', class: 'campeon', rarity: 'raro', family: 'ascua', evolvesTo: 'ascua_epico', skillId: 'escudo' },
@@ -82,6 +87,15 @@ const FIGHTERS = [
   { id: 'chispa_epico', name: 'Oráculo de Tormenta', element: 'rayo', class: 'guru', rarity: 'epico', family: 'chispa', evolvesTo: 'chispa_legendario', skillId: 'bendicion', image: 'chispa_epico.png' },
   { id: 'chispa_legendario', name: 'Tirano de la Tormenta', element: 'rayo', class: 'guru', rarity: 'legendario', family: 'chispa', evolvesTo: null, skillId: 'bendicion', image: 'chispa_legendario.png' },
 
+  // --- Tier 3 humanizados ---
+  { id: 'piroman_raro', name: 'Aprendiz de las Pavesas', element: 'fuego', class: 'brujo', rarity: 'raro', family: 'piroman', evolvesTo: 'piroman_epico', skillId: 'debilitar' },
+  { id: 'piroman_epico', name: 'Piromante Maldito', element: 'fuego', class: 'brujo', rarity: 'epico', family: 'piroman', evolvesTo: 'piroman_legendario', skillId: 'debilitar' },
+  { id: 'piroman_legendario', name: 'Señor de las Cenizas Eternas', element: 'fuego', class: 'brujo', rarity: 'legendario', family: 'piroman', evolvesTo: null, skillId: 'debilitar' },
+
+  { id: 'brisa_raro', name: 'Exploradora de las Corrientes', element: 'viento', class: 'explorador', rarity: 'raro', family: 'brisa', evolvesTo: 'brisa_epico', skillId: 'debilitar' },
+  { id: 'brisa_epico', name: 'Arquera de las Nubes', element: 'viento', class: 'explorador', rarity: 'epico', family: 'brisa', evolvesTo: 'brisa_legendario', skillId: 'debilitar' },
+  { id: 'brisa_legendario', name: 'Soberana del Vendaval', element: 'viento', class: 'explorador', rarity: 'legendario', family: 'brisa', evolvesTo: null, skillId: 'debilitar' },
+
   // --- Tier 2: llegan a Épico ---
   { id: 'triton_infrecuente', name: 'Renacuajo Ágil', element: 'agua', class: 'explorador', rarity: 'infrecuente', family: 'triton', evolvesTo: 'triton_raro', skillId: 'debilitar', image: 'triton_infrecuente.png' },
   { id: 'triton_raro', name: 'Tritón Errante', element: 'agua', class: 'explorador', rarity: 'raro', family: 'triton', evolvesTo: 'triton_epico', skillId: 'debilitar', image: 'triton_raro.png' },
@@ -91,6 +105,15 @@ const FIGHTERS = [
   { id: 'vidente_raro', name: 'Vidente de Cenizas', element: 'fuego', class: 'guru', rarity: 'raro', family: 'vidente', evolvesTo: 'vidente_epico', skillId: 'curar', image: 'vidente_raro.png' },
   { id: 'vidente_epico', name: 'Profeta de Brasas', element: 'fuego', class: 'guru', rarity: 'epico', family: 'vidente', evolvesTo: null, skillId: 'curar', image: 'vidente_epico.png' },
 
+  // --- Tier 2 humanizados ---
+  { id: 'marejada_infrecuente', name: 'Escudero de Coral', element: 'agua', class: 'campeon', rarity: 'infrecuente', family: 'marejada', evolvesTo: 'marejada_raro', skillId: 'grito' },
+  { id: 'marejada_raro', name: 'Caballero de las Mareas', element: 'agua', class: 'campeon', rarity: 'raro', family: 'marejada', evolvesTo: 'marejada_epico', skillId: 'grito' },
+  { id: 'marejada_epico', name: 'Guardián del Abismo', element: 'agua', class: 'campeon', rarity: 'epico', family: 'marejada', evolvesTo: null, skillId: 'grito' },
+
+  { id: 'gea_infrecuente', name: 'Aprendiza de Gea', element: 'tierra', class: 'guru', rarity: 'infrecuente', family: 'gea', evolvesTo: 'gea_raro', skillId: 'curar' },
+  { id: 'gea_raro', name: 'Chamana de Raíces', element: 'tierra', class: 'guru', rarity: 'raro', family: 'gea', evolvesTo: 'gea_epico', skillId: 'curar' },
+  { id: 'gea_epico', name: 'Druida Ancestral', element: 'tierra', class: 'guru', rarity: 'epico', family: 'gea', evolvesTo: null, skillId: 'curar' },
+
   // --- Tier 1: llegan a Raro ---
   { id: 'topo_comun', name: 'Topo Acorazado', element: 'tierra', class: 'campeon', rarity: 'comun', family: 'topo', evolvesTo: 'topo_infrecuente', skillId: 'golpe', image: 'topo_comun.png' },
   { id: 'topo_infrecuente', name: 'Topo de Granito', element: 'tierra', class: 'campeon', rarity: 'infrecuente', family: 'topo', evolvesTo: 'topo_raro', skillId: 'golpe', image: 'topo_infrecuente.png' },
@@ -99,6 +122,15 @@ const FIGHTERS = [
   { id: 'heraldo_comun', name: 'Heraldo Menor', element: 'rayo', class: 'brujo', rarity: 'comun', family: 'heraldo', evolvesTo: 'heraldo_infrecuente', skillId: 'aturdir', image: 'heraldo_comun.png' },
   { id: 'heraldo_infrecuente', name: 'Heraldo del Relámpago', element: 'rayo', class: 'brujo', rarity: 'infrecuente', family: 'heraldo', evolvesTo: 'heraldo_raro', skillId: 'aturdir', image: 'heraldo_infrecuente.png' },
   { id: 'heraldo_raro', name: 'Heraldo del Trueno', element: 'rayo', class: 'brujo', rarity: 'raro', family: 'heraldo', evolvesTo: null, skillId: 'aturdir', image: 'heraldo_raro.png' },
+
+  // --- Tier 1 humanizados ---
+  { id: 'electro_comun', name: 'Corredor Eléctrico', element: 'rayo', class: 'explorador', rarity: 'comun', family: 'electro', evolvesTo: 'electro_infrecuente', skillId: 'debilitar' },
+  { id: 'electro_infrecuente', name: 'Cazador de Tormentas', element: 'rayo', class: 'explorador', rarity: 'infrecuente', family: 'electro', evolvesTo: 'electro_raro', skillId: 'debilitar' },
+  { id: 'electro_raro', name: 'Rastreador del Trueno', element: 'rayo', class: 'explorador', rarity: 'raro', family: 'electro', evolvesTo: null, skillId: 'debilitar' },
+
+  { id: 'marina_comun', name: 'Grumete Marina', element: 'agua', class: 'picaro', rarity: 'comun', family: 'marina', evolvesTo: 'marina_infrecuente', skillId: 'furia' },
+  { id: 'marina_infrecuente', name: 'Pirata de las Mareas', element: 'agua', class: 'picaro', rarity: 'infrecuente', family: 'marina', evolvesTo: 'marina_raro', skillId: 'furia' },
+  { id: 'marina_raro', name: 'Corsaria Abisal', element: 'agua', class: 'picaro', rarity: 'raro', family: 'marina', evolvesTo: null, skillId: 'furia' },
 ];
 function fighterDef(id) { return FIGHTERS.find(f => f.id === id); }
 
