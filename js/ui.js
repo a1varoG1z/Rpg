@@ -9,22 +9,52 @@ function el(tag, className, html) { const e = document.createElement(tag); if (c
 // ---------- Tarjetas de criatura reutilizables ----------
 // Si el luchador tiene arte real asignado (data.js -> image), se usa esa
 // imagen; si no, se genera un sprite pixel-art por código como respaldo.
+// Dibuja el sprite en diferido (siguiente frame) en vez de bloquear el hilo
+// principal: cuando se listan muchas tarjetas de golpe (Colección, selector
+// de Formación) dibujarlas todas de forma síncrona notaba como un "bloqueo"
+// o tarjetas a medio pintar. Con esto cada tarjeta aparece con un pequeño
+// fundido en cuanto está lista, sin congelar el resto de la pantalla.
 function creatureCanvas(defId, sizePx) {
   const def = fighterDef(defId);
   if (def && def.image) {
     const img = document.createElement('img');
-    img.className = 'creature-canvas';
-    img.src = 'assets/creatures/' + def.image;
+    img.className = 'creature-canvas creature-canvas-loading';
     img.alt = def.name;
     img.loading = 'lazy';
     if (sizePx) { img.style.width = sizePx + 'px'; img.style.height = 'auto'; }
+    img.addEventListener('load', () => img.classList.remove('creature-canvas-loading'), { once: true });
+    img.src = 'assets/creatures/' + def.image;
     return img;
   }
   const canvas = document.createElement('canvas');
-  canvas.className = 'creature-canvas';
+  canvas.className = 'creature-canvas creature-canvas-loading';
   if (sizePx) { canvas.style.width = sizePx + 'px'; canvas.style.height = (sizePx * SPR_H / SPR_W) + 'px'; }
-  drawCreatureSprite(canvas, defId);
+  requestAnimationFrame(() => {
+    drawCreatureSprite(canvas, defId);
+    canvas.classList.remove('creature-canvas-loading');
+  });
   return canvas;
+}
+
+// mode: 'reciente' (orden de obtención, más nuevo primero), 'nombre',
+// 'familia', 'elemento', 'tier' (rareza, más alta primero), 'copias' (SEF).
+function sortRosterEntries(roster, mode) {
+  const list = [...roster];
+  switch (mode) {
+    case 'nombre':
+      return list.sort((a, b) => fighterDef(a.defId).name.localeCompare(fighterDef(b.defId).name));
+    case 'familia':
+      return list.sort((a, b) => fighterDef(a.defId).family.localeCompare(fighterDef(b.defId).family) || b.level - a.level);
+    case 'elemento':
+      return list.sort((a, b) => ELEMENT_ORDER.indexOf(fighterDef(a.defId).element) - ELEMENT_ORDER.indexOf(fighterDef(b.defId).element) || b.level - a.level);
+    case 'copias':
+      return list.sort((a, b) => b.sef - a.sef || rarityIndex(fighterDef(b.defId).rarity) - rarityIndex(fighterDef(a.defId).rarity));
+    case 'reciente':
+      return list.reverse();
+    case 'tier':
+    default:
+      return list.sort((a, b) => rarityIndex(fighterDef(b.defId).rarity) - rarityIndex(fighterDef(a.defId).rarity) || b.level - a.level);
+  }
 }
 
 function creatureCard(state, entry, opts) {
@@ -34,12 +64,14 @@ function creatureCard(state, entry, opts) {
   const card = el('div', 'creature-card rarity-' + def.rarity);
   card.style.setProperty('--rc', rarity.color);
   card.style.setProperty('--rg', rarity.glow);
+  if (entry.isNew) card.appendChild(el('div', 'new-badge', '¡Nuevo!'));
   const wrap = el('div', 'creature-canvas-wrap');
   wrap.appendChild(creatureCanvas(entry.defId));
   card.appendChild(wrap);
   const badge = el('div', 'creature-elclass');
   badge.textContent = ELEMENT_INFO[def.element].icon + CLASS_INFO[def.class].icon;
   card.appendChild(badge);
+  card.appendChild(el('div', 'creature-tier-icon', rarity.icon));
   card.appendChild(el('div', 'creature-name', def.name));
   card.appendChild(el('div', 'creature-level', 'Nv. ' + entry.level));
   const sef = el('div', 'sef-bar');
@@ -181,7 +213,7 @@ UI.renderBanda = function (state) {
   $('rosterCount').textContent = state.roster.length;
   const rGrid = $('rosterGrid');
   rGrid.innerHTML = '';
-  const sorted = [...state.roster].sort((a, b) => rarityIndex(fighterDef(b.defId).rarity) - rarityIndex(fighterDef(a.defId).rarity) || b.level - a.level);
+  const sorted = sortRosterEntries(state.roster, UI.rosterSortMode);
   const bandUids = state.band.flat().filter(Boolean);
   sorted.forEach(entry => {
     const card = creatureCard(state, entry, { inBand: bandUids.includes(entry.uid) });
@@ -214,14 +246,16 @@ UI.openFormationPicker = function (state, row, col) {
 UI.openFighterModal = function (state, uid) {
   const entry = rosterEntry(state, uid);
   if (!entry) return;
+  if (entry.isNew) { entry.isNew = false; saveGame(state); }
   const def = fighterDef(entry.defId);
   const rarity = rarityInfo(def.rarity);
-  const stats = fighterStats(state, entry);
+  const { total: stats, bonus: gearBonus } = fighterStatsBreakdown(state, entry);
   const skill = SKILL_TYPES[def.skillId];
   const body = $('fighterModalBody');
   body.innerHTML = '';
   const head = el('div', 'fighter-modal-head');
-  head.appendChild(creatureCanvas(entry.defId, 90));
+  const portrait = creatureCanvas(entry.defId, 90);
+  head.appendChild(portrait);
   const info = el('div');
   info.innerHTML = `<div class="item-modal-name" style="color:${rarity.color}">${def.name}</div>
     <div class="item-modal-rarity">${rarity.label} · ${ELEMENT_INFO[def.element].label} ${ELEMENT_INFO[def.element].icon} · ${CLASS_INFO[def.class].label} ${CLASS_INFO[def.class].icon}</div>
@@ -230,13 +264,13 @@ UI.openFighterModal = function (state, uid) {
   head.appendChild(info);
   body.appendChild(head);
 
+  const statRow = (icon, label, key) => {
+    const boost = gearBonus[key] ? ` <span class="stat-boost">+${gearBonus[key]}</span>` : '';
+    return `<div class="stat-row"><span>${icon} ${label}</span><span>${stats[key] - (gearBonus[key] || 0)}${boost}</span></div>`;
+  };
   const statsPanel = el('div', 'panel');
-  statsPanel.innerHTML = `
-    <div class="stat-row"><span>❤️ Vida</span><span>${stats.hp}</span></div>
-    <div class="stat-row"><span>⚔️ Ataque</span><span>${stats.atk}</span></div>
-    <div class="stat-row"><span>🛡️ Defensa</span><span>${stats.def}</span></div>
-    <div class="stat-row"><span>💨 Agilidad</span><span>${stats.agi}</span></div>
-    <div class="stat-row"><span>🧠 Sabiduría</span><span>${stats.wis}</span></div>`;
+  statsPanel.innerHTML = statRow('❤️', 'Vida', 'hp') + statRow('⚔️', 'Ataque', 'atk') + statRow('🛡️', 'Defensa', 'def')
+    + statRow('💨', 'Agilidad', 'agi') + statRow('🧠', 'Sabiduría', 'wis');
   body.appendChild(statsPanel);
 
   const skillPanel = el('div', 'panel');
@@ -244,11 +278,30 @@ UI.openFighterModal = function (state, uid) {
   body.appendChild(skillPanel);
 
   const sefPanel = el('div', 'panel');
+  const evoText = !def.evolvesTo ? 'Forma máxima: los duplicados se convierten en Texel.'
+    : entry.readyToEvolve ? '¡Fusión completa! Ya puedes evolucionarlo a <b>' + fighterDef(def.evolvesTo).name + '</b>.'
+    : 'Al llegar a 5/5 podrás evolucionarlo a <b>' + fighterDef(def.evolvesTo).name + '</b>. Consíguelo invocando duplicados.';
   sefPanel.innerHTML = `<h3>Fusión (SEF) <span class="badge">${entry.sef}/5</span></h3>
     <div class="sef-bar big"><div class="sef-fill" style="width:${entry.sef / 5 * 100}%"></div></div>
-    <p class="settings-info">${def.evolvesTo ? 'Al llegar a 5/5 evoluciona a <b>' + fighterDef(def.evolvesTo).name + '</b>. Consíguelo invocando duplicados.' : 'Forma máxima: los duplicados se convierten en Texel.'}</p>`;
+    <p class="settings-info">${evoText}</p>`;
   if (entry.stars > 0) sefPanel.innerHTML += `<div class="stat-row"><span>Superfusión</span><span>${'★'.repeat(entry.stars)}${'☆'.repeat(3 - entry.stars)}</span></div>`;
   body.appendChild(sefPanel);
+  if (entry.readyToEvolve && def.evolvesTo) {
+    const evoBtn = el('button', 'primary-btn evolve-btn', '✨ Evolucionar a ' + fighterDef(def.evolvesTo).name);
+    evoBtn.addEventListener('click', () => {
+      evoBtn.disabled = true;
+      evoBtn.textContent = '✨ Evolucionando...';
+      portrait.classList.add('evolve-flash');
+      setTimeout(() => {
+        const newDefId = evolveFighter(state, uid);
+        saveGame(state);
+        UI.renderTopbar(state);
+        if (activeScreen === 'banda') UI.renderBanda(state);
+        if (newDefId) UI.openFighterModal(state, uid);
+      }, 700);
+    });
+    body.appendChild(evoBtn);
+  }
   if (entry.stars < 3) {
     const superBtn = el('button', 'primary-btn', 'Superfusionar (sacrificar otro luchador)');
     superBtn.addEventListener('click', () => UI.openSuperFusePicker(state, uid));
@@ -315,7 +368,7 @@ UI.openGearPickerForFighter = function (state, fighterUid, slotKey) {
     const rarity = rarityInfo(g.rarity);
     const cell = el('div', 'item-cell');
     cell.style.borderColor = rarity.color;
-    cell.innerHTML = `<div class="item-icon">${GEAR_SLOTS[g.slot].icon}</div><div class="item-plus">+${g.level}</div>`;
+    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div><div class="item-icon">${GEAR_SLOTS[g.slot].icon}</div><div class="item-plus">+${g.level}</div>`;
     cell.addEventListener('click', () => { equipGear(state, fighterUid, g.uid); saveGame(state); $('pickerModal').classList.add('hidden'); UI.openFighterModal(state, fighterUid); });
     list.appendChild(cell);
   });
@@ -372,7 +425,7 @@ UI.showSingleReveal = function (result) {
   const rarity = rarityInfo(def.rarity);
   const body = $('summonRevealBody');
   body.className = 'reveal-flash rarity-' + def.rarity;
-  const outcomeText = { nuevo: '¡Nuevo luchador!', duplicado: 'Duplicado · SEF ' + result.sef + '/5', evolucion: '¡Evolución!', duplicado_max: 'Convertido en Texel', inventario_lleno: 'Colección llena · Convertido en Texel' }[result.outcome];
+  const outcomeText = { nuevo: '¡Nuevo luchador!', duplicado: 'Duplicado · SEF ' + result.sef + '/5', listo_evolucionar: '✨ ¡Listo para evolucionar!', duplicado_max: 'Convertido en Texel', inventario_lleno: 'Colección llena · Convertido en Texel' }[result.outcome];
   body.innerHTML = `<div class="reveal-canvas-wrap"></div><div class="item-modal-name" style="color:${rarity.color}">${def.name}</div><div class="item-modal-rarity">${rarity.label}</div><div class="reveal-outcome">${outcomeText}</div>`;
   body.querySelector('.reveal-canvas-wrap').appendChild(creatureCanvas(result.defId, 120));
   $('summonRevealClose').classList.remove('hidden');
@@ -384,17 +437,22 @@ UI.showMultiReveal = function (results) {
   body.className = '';
   body.innerHTML = '<h3>Resultados</h3>';
   const grid = el('div', 'item-grid');
-  results.forEach(r => {
+  body.appendChild(grid);
+  $('summonRevealClose').classList.add('hidden');
+  $('summonRevealModal').classList.remove('hidden');
+  // Revelado escalonado: cada cristal se abre uno detrás de otro en vez de
+  // aparecer todo de golpe, para que se note la invocación de los 10.
+  results.forEach((r, i) => {
     const def = fighterDef(r.defId);
     const rarity = rarityInfo(def.rarity);
-    const cell = el('div', 'item-cell');
+    const cell = el('div', 'item-cell reveal-cell-pop');
     cell.style.borderColor = rarity.color;
+    cell.style.boxShadow = '0 0 14px ' + rarity.glow;
+    cell.style.animationDelay = (i * 0.1) + 's';
     cell.appendChild(creatureCanvas(r.defId, 56));
     grid.appendChild(cell);
   });
-  body.appendChild(grid);
-  $('summonRevealClose').classList.remove('hidden');
-  $('summonRevealModal').classList.remove('hidden');
+  setTimeout(() => $('summonRevealClose').classList.remove('hidden'), results.length * 100 + 450);
 };
 
 // ---------- Arena ----------
@@ -463,7 +521,7 @@ UI.renderEquipo = function (state) {
     const owner = equippedGearOwner(state, g.uid);
     const cell = el('div', 'item-cell');
     cell.style.borderColor = rarity.color;
-    cell.innerHTML = `<div class="item-icon">${GEAR_SLOTS[g.slot].icon}</div><div class="item-plus">+${g.level}</div>${owner ? '<div class="equipped-dot"></div>' : ''}`;
+    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div><div class="item-icon">${GEAR_SLOTS[g.slot].icon}</div><div class="item-plus">+${g.level}</div>${owner ? '<div class="equipped-dot"></div>' : ''}`;
     cell.addEventListener('click', () => UI.openGearModal(state, g.uid));
     grid.appendChild(cell);
   });

@@ -9,6 +9,12 @@
     btn.addEventListener('click', () => UI.switchScreen(btn.dataset.screen));
   });
 
+  UI.rosterSortMode = 'reciente';
+  $('rosterSortSelect').addEventListener('change', (e) => {
+    UI.rosterSortMode = e.target.value;
+    UI.renderBanda(state);
+  });
+
   $('settingsBtn').addEventListener('click', () => {
     $('infiniteEnergyToggle').checked = state.settings.infiniteEnergy;
     $('settingsModal').classList.remove('hidden');

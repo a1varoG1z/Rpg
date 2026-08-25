@@ -55,6 +55,18 @@ function fighterStats(state, entry) {
   return stats;
 }
 
+// Igual que fighterStats, pero separa qué parte de cada estadística viene
+// del equipo (arma/armadura) para poder destacarla en otro color en la UI.
+function fighterStatsBreakdown(state, entry) {
+  const total = fighterStats(state, entry);
+  const arma = entry.gearArma && gearItem(state, entry.gearArma);
+  const armadura = entry.gearArmadura && gearItem(state, entry.gearArmadura);
+  const bonus = { hp: 0, atk: 0, def: 0, agi: 0, wis: 0 };
+  if (arma) { bonus.atk += gearStatValue(arma); bonus.wis += Math.round(gearStatValue(arma) * 0.4); }
+  if (armadura) { bonus.def += gearStatValue(armadura); bonus.hp += Math.round(gearStatValue(armadura) * 2.4); }
+  return { total, bonus };
+}
+
 function gearStatValue(gear) {
   const base = { comun: 4, infrecuente: 7, raro: 12, epico: 20, legendario: 32 }[gear.rarity];
   return Math.round(base * (1 + gear.level * 0.15));
@@ -162,21 +174,40 @@ function applySummonResult(state, defId) {
       state.currencies.texel += 50;
       return { defId, outcome: 'inventario_lleno' };
     }
-    entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null };
+    entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null, isNew: true, readyToEvolve: false };
     state.roster.push(entry);
     return { defId, outcome: 'nuevo', uid: entry.uid };
   }
-  if (entry.sef >= 5 && !def.evolvesTo) {
-    state.currencies.texel += 40 * rarityInfo(def.rarity).mult;
-    return { defId, outcome: 'duplicado_max', uid: entry.uid };
+  if (entry.sef >= 5) {
+    if (!def.evolvesTo) {
+      state.currencies.texel += 40 * rarityInfo(def.rarity).mult;
+      return { defId, outcome: 'duplicado_max', uid: entry.uid };
+    }
+    // La fusión (SEF 5/5) ya no evoluciona sola: se queda lista y el
+    // jugador la dispara a mano desde la ficha del luchador (evolveFighter).
+    entry.readyToEvolve = true;
+    return { defId, outcome: 'listo_evolucionar', uid: entry.uid };
   }
   entry.sef = Math.min(5, entry.sef + 1);
   if (entry.sef >= 5 && def.evolvesTo) {
-    entry.defId = def.evolvesTo;
-    entry.sef = 0;
-    return { defId: def.evolvesTo, outcome: 'evolucion', uid: entry.uid, fromId: defId };
+    entry.readyToEvolve = true;
+    return { defId, outcome: 'listo_evolucionar', uid: entry.uid };
   }
   return { defId, outcome: 'duplicado', uid: entry.uid, sef: entry.sef };
+}
+
+// Dispara manualmente la evolución de un luchador con SEF 5/5. Devuelve el
+// nuevo defId si evolucionó, o null si no cumplía las condiciones.
+function evolveFighter(state, uid) {
+  const entry = rosterEntry(state, uid);
+  if (!entry) return null;
+  const def = fighterDef(entry.defId);
+  if (entry.sef < 5 || !def.evolvesTo) return null;
+  entry.defId = def.evolvesTo;
+  entry.sef = 0;
+  entry.readyToEvolve = false;
+  entry.isNew = true;
+  return entry.defId;
 }
 
 // --- Fusión y superfusión ---
