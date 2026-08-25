@@ -28,11 +28,34 @@ function createNewState() {
     arena: { rank: 1, bestRank: 1 },
     stats: { battlesWon: 0, battlesLost: 0 },
     settings: { infiniteEnergy: false },
+    // Las 3 líneas (de las 8 posibles) que actúan como combinaciones de
+    // combate. Por defecto las 3 filas, igual que el comportamiento previo.
+    combinations: ['fila1', 'fila2', 'fila3'],
   };
 }
 
 function rosterEntry(state, uid) { return state.roster.find(r => r.uid === uid); }
 function gearItem(state, uid) { return state.gearInventory.find(g => g.uid === uid); }
+
+// --- Combinaciones de combate (líneas de la Formación 3×3) ---
+function combinationFighterUids(state, lineId) {
+  const line = bandLineInfo(lineId);
+  return line.cells.map(([r, c]) => state.band[r][c]).filter(Boolean);
+}
+
+// Activa/desactiva una línea como combinación de combate. Se permiten entre
+// 1 y 3 activas a la vez; al añadir una 4ª se descarta la más antigua (FIFO)
+// en vez de bloquear la acción.
+function toggleCombination(state, lineId) {
+  const idx = state.combinations.indexOf(lineId);
+  if (idx !== -1) {
+    if (state.combinations.length <= 1) return;
+    state.combinations.splice(idx, 1);
+  } else {
+    if (state.combinations.length >= 3) state.combinations.shift();
+    state.combinations.push(lineId);
+  }
+}
 
 function levelGrowth(level) { return 1 + (level - 1) * 0.10; }
 function starBonus(stars) { return 1 + stars * 0.08; }
@@ -293,6 +316,7 @@ function loadGame() {
     const state = JSON.parse(raw);
     if (!state || state.version !== 2 || !state.roster) return null;
     if (!state.settings) state.settings = { infiniteEnergy: false };
+    if (!state.combinations) state.combinations = ['fila1', 'fila2', 'fila3'];
     return state;
   } catch (e) { return null; }
 }

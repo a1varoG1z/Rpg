@@ -35,8 +35,10 @@ function makePlayerUnit(state, uid, level) {
   };
 }
 
-function buildPlayerRows(state) {
-  return state.band.map(row => row.filter(Boolean).map(uid => makePlayerUnit(state, uid)));
+// Construye las 3 combinaciones activas del jugador a partir de las líneas
+// elegidas en state.combinations (fila/columna/diagonal), no siempre filas.
+function buildPlayerCombinations(state) {
+  return state.combinations.map(lineId => combinationFighterUids(state, lineId).map(uid => makePlayerUnit(state, uid)));
 }
 
 function buildEnemyBand(zoneIdx, stageIdx) {
@@ -248,25 +250,33 @@ function performTurn(log, unit, ownRow, enemyRow) {
 
 function rowAlive(row) { return row.some(u => u.alive); }
 
-// Resuelve el choque entre TU combinación elegida (3 luchadores) y la fila
-// activa del rival, turno a turno, hasta que un bando entero caiga.
-function simulateRowFight(playerRow, enemyRow) {
+// Resuelve UNA ronda del choque entre tu combinación elegida y la fila activa
+// del rival: cada luchador vivo de ambos bandos actúa exactamente una vez
+// (no se repite hasta que un bando caiga). Si tras la ronda el enemigo sigue
+// en pie, es la UI quien decide si toca elegir otra combinación o, si ya se
+// usaron las 3, volver a elegir entre ellas otra vez.
+function simulateOneRound(playerRow, enemyRow) {
   const log = [];
-  let ticks = 0;
-  while (rowAlive(playerRow) && rowAlive(enemyRow) && ticks < 150) {
-    ticks++;
-    const order = [...playerRow, ...enemyRow].filter(u => u.alive).sort((a, b) => b.agi - a.agi || Math.random() - 0.5);
-    for (const unit of order) {
-      if (!unit.alive) continue;
-      tickTimers(unit);
-      const ownRow = unit.side === 'player' ? playerRow : enemyRow;
-      const foeRow = unit.side === 'player' ? enemyRow : playerRow;
-      if (!rowAlive(ownRow) || !rowAlive(foeRow)) break;
-      performTurn(log, unit, ownRow, foeRow);
-      if (!rowAlive(playerRow) || !rowAlive(enemyRow)) break;
-    }
+  const order = [...playerRow, ...enemyRow].filter(u => u.alive).sort((a, b) => b.agi - a.agi || Math.random() - 0.5);
+  for (const unit of order) {
+    if (!unit.alive) continue;
+    tickTimers(unit);
+    const ownRow = unit.side === 'player' ? playerRow : enemyRow;
+    const foeRow = unit.side === 'player' ? enemyRow : playerRow;
+    if (!rowAlive(ownRow) || !rowAlive(foeRow)) break;
+    performTurn(log, unit, ownRow, foeRow);
+    if (!rowAlive(playerRow) || !rowAlive(enemyRow)) break;
   }
-  const result = rowAlive(enemyRow) ? (rowAlive(playerRow) ? 'empate' : 'derrota') : 'victoria';
-  log.push({ type: 'battle_end', result });
+  const result = !rowAlive(enemyRow) ? 'enemigo_derrotado' : !rowAlive(playerRow) ? 'combo_derrotada' : 'continua';
+  log.push({ type: 'round_end', result });
   return { log, result };
+}
+
+// Turnos estimados hasta que un luchador dispare su ulti, asumiendo que solo
+// gana carga atacando en sus propios turnos (ignora la carga extra por
+// recibir golpes, que depende del rival). Solo para mostrarlo en la UI.
+function estimatedTurnsToUlt(unit) {
+  if (unit.ultCharge >= ULT_CHARGE_MAX) return 0;
+  const gainPerTurn = Math.round(22 + unit.agi * 0.4);
+  return Math.max(1, Math.ceil((ULT_CHARGE_MAX - unit.ultCharge) / gainPerTurn));
 }

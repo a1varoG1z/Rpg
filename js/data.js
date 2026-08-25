@@ -160,5 +160,20 @@ const MAX_ENERGY = 60;
 const ENERGY_REGEN_SECONDS = 45; // 1 punto cada 45s
 const BAND_ROWS = 3;
 const BAND_COLS = 3;
+
+// Las 8 líneas de 3 en raya posibles sobre la Formación 3×3 (filas, columnas
+// y diagonales). El jugador elige cuáles 3 de estas 8 son sus "combinaciones"
+// activas de combate — no tienen por qué ser siempre las 3 filas.
+const BAND_LINES = [
+  { id: 'fila1', label: 'Fila 1', cells: [[0, 0], [0, 1], [0, 2]] },
+  { id: 'fila2', label: 'Fila 2', cells: [[1, 0], [1, 1], [1, 2]] },
+  { id: 'fila3', label: 'Fila 3', cells: [[2, 0], [2, 1], [2, 2]] },
+  { id: 'col1', label: 'Columna 1', cells: [[0, 0], [1, 0], [2, 0]] },
+  { id: 'col2', label: 'Columna 2', cells: [[0, 1], [1, 1], [2, 1]] },
+  { id: 'col3', label: 'Columna 3', cells: [[0, 2], [1, 2], [2, 2]] },
+  { id: 'diag1', label: 'Diagonal ↘', cells: [[0, 0], [1, 1], [2, 2]] },
+  { id: 'diag2', label: 'Diagonal ↙', cells: [[0, 2], [1, 1], [2, 0]] },
+];
+function bandLineInfo(id) { return BAND_LINES.find(l => l.id === id) || BAND_LINES[0]; }
 const XP_LEVEL_CAP = 40;
 function fighterXpToNext(level) { return Math.floor(20 * Math.pow(level, 1.5)); }

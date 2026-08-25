@@ -5,7 +5,7 @@ iteraciones. Se marca `[x]` lo terminado y `[ ]` lo pendiente. Cuando un punto
 necesita algo del usuario (imagen de referencia, sprite, decisión de diseño)
 se indica explícitamente.
 
-## Iteración actual
+## Hecho
 
 - [x] Ordenar la Colección en Banda (más reciente, nombre, familia, elemento,
       tier, más copias/SEF)
@@ -18,21 +18,25 @@ se indica explícitamente.
 - [x] Destacar en otro color las estadísticas mejoradas por equipo (arma/armadura)
 - [x] Insignia "¡Nuevo!" en luchadores recién obtenidos hasta que se ven una vez
 - [x] Animación en la invocación x10 (actualmente solo se ve en x1)
+- [x] **Combate**: elegir criaturas en cualquier dirección de la Formación 3×3
+      (fila, columna o diagonal) como combinación — panel "Combinaciones" en
+      Banda con las 8 líneas posibles, hasta 3 activas a la vez
+- [x] **Combate**: ya no es "atacar en bucle hasta que alguien gana". Se elige
+      una combinación, cada luchador vivo de ambos bandos actúa UNA vez (una
+      ronda) y ahí termina el choque; si el enemigo sigue en pie esa
+      combinación se marca gastada y toca elegir otra; cuando las combinaciones
+      vivas ya se usaron todas contra la fila activa, se reinicia el ciclo
+      ("se vuelve a elegir"); al caer la fila enemiga, las combinaciones vuelven
+      a estar disponibles para la siguiente oleada
+- [x] Indicador de ulti más claro: número de turnos estimados junto a la barra
+      (o "¡LISTA!" cuando ya se puede desatar)
 
 ## Pendiente — sistemas grandes (necesitan diseño propio, iteración aparte)
 
-- [ ] **Combate**: investigar y adaptar el combate real de D.o.T.
-  - [ ] Elegir criaturas en cualquier dirección de la formación 3×3
-        (vertical, horizontal, diagonal), no solo por filas completas
-  - [ ] Los combates no son "3 criaturas atacando en bucle hasta que alguien
-        gana": se eligen 3 combinaciones, cada criatura de la combinación
-        ataca UNA vez por ronda; si tras las 3 rondas (3 ataques por
-        criatura) el enemigo sigue en pie, se vuelve a elegir combinación.
-  - [ ] Indicador de ulti más claro: además de la barra, un número con los
-        turnos que faltan para cargarla
-  - [ ] Falta(n) imagen(es) de referencia del combate real de D.o.T. que el
-        usuario mencionó (selección de filas, movimiento de ataque) — no
-        llegaron adjuntas, pedir que las reenvíe cuando se aborde este punto
+- [ ] **Combate — pulido visual**: falta(n) imagen(es) de referencia del
+      combate real de D.o.T. que el usuario mencionó (selección de filas,
+      movimiento de ataque) — no llegaron adjuntas; la mecánica ya está
+      implementada, esto es para afinar cómo se ve/anima
 - [ ] **Mapa**: cada escenario debe recorrerse (como en D.o.T.), con varios
       combates apareciendo según se avanza, no un único combate por casilla
   - [ ] Ampliar el número de mapas/zonas (van a crecer mucho los jefes)

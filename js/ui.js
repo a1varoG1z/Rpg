@@ -159,7 +159,7 @@ UI.startStageBattle = function (state, zoneIdx, stageIdx) {
     state.currencies.energy -= STAGE_ENERGY_COST;
   }
   const { rows: enemyRows, isBoss } = buildEnemyBand(zoneIdx, stageIdx);
-  UI.openBattle(state, buildPlayerRows(state), enemyRows, {
+  UI.openBattle(state, buildPlayerCombinations(state), enemyRows, {
     title: ZONES[zoneIdx].name + ' · ' + (isBoss ? 'Jefe' : 'Etapa ' + (stageIdx + 1)),
     onEnd: (result) => {
       if (result === 'victoria') {
@@ -210,6 +210,8 @@ UI.renderBanda = function (state) {
     grid.appendChild(rowEl);
   }
 
+  UI.renderLinePicker(state);
+
   $('rosterCount').textContent = state.roster.length;
   const rGrid = $('rosterGrid');
   rGrid.innerHTML = '';
@@ -219,6 +221,30 @@ UI.renderBanda = function (state) {
     const card = creatureCard(state, entry, { inBand: bandUids.includes(entry.uid) });
     card.addEventListener('click', () => UI.openFighterModal(state, entry.uid));
     rGrid.appendChild(card);
+  });
+};
+
+// Selector de las líneas (filas/columnas/diagonales) que actúan como
+// combinaciones de combate. Cada botón muestra una mini-cuadrícula 3×3 con
+// sus 3 celdas resaltadas para que se reconozca la línea de un vistazo.
+UI.renderLinePicker = function (state) {
+  $('combinationsCount').textContent = state.combinations.length + '/3';
+  const grid = $('linePickerGrid');
+  grid.innerHTML = '';
+  BAND_LINES.forEach(line => {
+    const active = state.combinations.includes(line.id);
+    const btn = el('button', 'line-picker-btn' + (active ? ' active' : ''));
+    const mini = el('div', 'line-mini-grid');
+    for (let r = 0; r < BAND_ROWS; r++) {
+      for (let c = 0; c < BAND_COLS; c++) {
+        const isLineCell = line.cells.some(([lr, lc]) => lr === r && lc === c);
+        mini.appendChild(el('div', 'line-mini-cell' + (isLineCell ? ' on' : '')));
+      }
+    }
+    btn.appendChild(mini);
+    btn.appendChild(el('div', 'line-picker-label', line.label));
+    btn.addEventListener('click', () => { toggleCombination(state, line.id); saveGame(state); UI.renderLinePicker(state); });
+    grid.appendChild(btn);
   });
 };
 
@@ -490,7 +516,7 @@ UI.renderArena = function (state) {
 UI.startArenaBattle = function (state) {
   if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
   const enemyRows = state.arena.scouted.map(row => row.map(u => makeUnit('enemy', u.defId, u.level)));
-  UI.openBattle(state, buildPlayerRows(state), enemyRows, {
+  UI.openBattle(state, buildPlayerCombinations(state), enemyRows, {
     title: 'Arena · Rango ' + state.arena.rank,
     onEnd: (result) => {
       state.arena.scouted = null;
@@ -552,12 +578,16 @@ UI.openGearModal = function (state, gearUid) {
 };
 
 // ---------- Batalla ----------
-// El jugador elige, choque a choque, cuál de sus combinaciones (filas de la
-// Formación) envía contra la fila activa del rival — igual que en D.o.T., donde
-// puedes repartir tus 3 combinaciones para contrarrestar al enemigo sobre la
-// marcha. Cada combinación solo se usa una vez por batalla.
+// El jugador elige, choque a choque, cuál de sus 3 combinaciones envía contra
+// la fila activa del rival. A diferencia de antes, una combinación elegida no
+// pelea "hasta la muerte": cada luchador vivo (de ambos bandos) actúa UNA vez
+// y ahí termina la ronda. Si el enemigo sigue en pie, esa combinación queda
+// gastada para este ciclo y hay que elegir otra; cuando las 3 combinaciones
+// vivas ya han actuado en este ciclo sin acabar con el enemigo, se reinicia
+// el ciclo y se vuelve a elegir entre ellas. Al caer la fila enemiga, las 3
+// combinaciones quedan disponibles de nuevo para la siguiente oleada.
 UI.openBattle = function (state, playerRowsRaw, enemyRowsRaw, opts) {
-  const playerGroups = playerRowsRaw.map((row, idx) => ({ idx, row, used: false })).filter(g => g.row.length > 0);
+  const playerGroups = playerRowsRaw.map((row, idx) => ({ idx, row, usedThisCycle: false })).filter(g => g.row.length > 0);
   const enemyRows = enemyRowsRaw.filter(r => r.length > 0);
   const view = {
     state, opts, playerGroups, enemyRows, enemyIdx: 0,
@@ -572,9 +602,26 @@ UI.openBattle = function (state, playerRowsRaw, enemyRowsRaw, opts) {
   UI.promptNextClash(view);
 };
 
+function alivePlayerGroups(view) { return view.playerGroups.filter(g => rowAlive(g.row)); }
+function unusedAliveGroups(view) { return alivePlayerGroups(view).filter(g => !g.usedThisCycle); }
+
+// Decide qué combinaciones se pueden elegir ahora: si ya se usaron todas las
+// vivas en este ciclo contra la fila enemiga activa, reinicia el ciclo
+// ("se vuelve a elegir") y las devuelve todas de nuevo.
+function resolveAvailableGroups(view) {
+  const alive = alivePlayerGroups(view);
+  if (alive.length === 0) return [];
+  let usable = unusedAliveGroups(view);
+  if (usable.length === 0) {
+    alive.forEach(g => { g.usedThisCycle = false; });
+    usable = alive;
+  }
+  return usable;
+}
+
 UI.promptNextClash = function (view) {
   if (view.enemyIdx >= view.enemyRows.length) { UI.endBattle(view, 'victoria'); return; }
-  const remaining = view.playerGroups.filter(g => !g.used);
+  const remaining = resolveAvailableGroups(view);
   if (remaining.length === 0) { UI.endBattle(view, 'derrota'); return; }
   UI.renderClashPreview(view);
   if (remaining.length === 1) UI.commitGroup(view, remaining[0]);
@@ -596,7 +643,7 @@ UI.renderClashPreview = function (view) {
   $('playerActiveRow').innerHTML = '';
   const reserveEl = $('playerQueuedRows');
   reserveEl.innerHTML = '';
-  view.playerGroups.filter(g => !g.used).forEach(g => {
+  unusedAliveGroups(view).forEach(g => {
     const mini = el('div', 'queued-row-mini');
     g.row.forEach(u => mini.appendChild(creatureCanvas(u.defId, 26)));
     reserveEl.appendChild(mini);
@@ -618,7 +665,7 @@ UI.showGroupPicker = function (view, remaining) {
 
 UI.commitGroup = function (view, group) {
   $('groupPickerPanel').classList.add('hidden');
-  group.used = true;
+  group.usedThisCycle = true;
   const playerRow = group.row;
   const enemyRow = view.enemyRows[view.enemyIdx];
   view.currentPlayerRow = playerRow;
@@ -627,14 +674,14 @@ UI.commitGroup = function (view, group) {
   [...playerRow, ...enemyRow].forEach(u => { view.unitById[u.id] = u; });
 
   const clone = JSON.parse(JSON.stringify({ p: playerRow, e: enemyRow }));
-  const { log } = simulateRowFight(clone.p, clone.e);
+  const { log } = simulateOneRound(clone.p, clone.e);
   view.log = log; view.idx = 0;
 
   $('playerActiveRow').innerHTML = '';
   playerRow.forEach(u => $('playerActiveRow').appendChild(UI.battleUnitCard(u)));
   const reserveEl = $('playerQueuedRows');
   reserveEl.innerHTML = '';
-  view.playerGroups.filter(g => !g.used).forEach(g => {
+  unusedAliveGroups(view).forEach(g => {
     const mini = el('div', 'queued-row-mini');
     g.row.forEach(u => mini.appendChild(creatureCanvas(u.defId, 26)));
     reserveEl.appendChild(mini);
@@ -657,9 +704,18 @@ UI.battleUnitCard = function (u) {
   ultFill.style.width = (u.ultCharge || 0) + '%';
   ultBar.appendChild(ultFill);
   card.appendChild(ultBar);
+  card.appendChild(el('div', 'ult-turns', ultTurnsText(u)));
   card.appendChild(el('div', 'battle-unit-name', u.name));
   return card;
 };
+
+// Además de la barra, un número claro de turnos que faltan para la ulti
+// (o "¡LISTA!" si ya está cargada) — estimado en base a la ganancia propia
+// por turno, ver estimatedTurnsToUlt.
+function ultTurnsText(u) {
+  const t = estimatedTurnsToUlt(u);
+  return t === 0 ? '⚡ ¡LISTA!' : '⚡ ' + t;
+}
 
 UI.updateUnitCardHp = function (u) {
   const cardEl = document.querySelector(`.battle-unit[data-unit-id="${u.id}"]`);
@@ -674,6 +730,8 @@ UI.updateUnitCardCharge = function (u) {
   if (!cardEl) return;
   const fill = cardEl.querySelector('.ult-fill');
   if (fill) fill.style.width = (u.ultCharge || 0) + '%';
+  const turns = cardEl.querySelector('.ult-turns');
+  if (turns) turns.textContent = ultTurnsText(u);
 };
 
 UI.logLine = function (text) {
@@ -697,7 +755,12 @@ UI.stepBattle = function (view, instant) {
 };
 
 UI.onClashDone = function (view) {
-  if (!rowAlive(view.currentEnemyRow)) view.enemyIdx++;
+  if (!rowAlive(view.currentEnemyRow)) {
+    view.enemyIdx++;
+    // Nueva oleada: las 3 combinaciones (las que sigan vivas) vuelven a
+    // estar disponibles, sin arrastrar el desgaste de la oleada anterior.
+    view.playerGroups.forEach(g => { g.usedThisCycle = false; });
+  }
   UI.promptNextClash(view);
 };
 
@@ -737,7 +800,7 @@ UI.applyBattleEvent = function (view, ev) {
       break;
     case 'buff':
     case 'debuff':
-    case 'battle_end':
+    case 'round_end':
       break;
   }
 };

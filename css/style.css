@@ -131,6 +131,18 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .formation-slot.filled { border-style: solid; }
 .formation-lvl { font-size: 0.6rem; color: var(--cream-dim); }
 
+.line-picker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+.line-picker-btn {
+  background: #1f1811; border: 2px solid var(--gold-dim); border-radius: 8px; padding: 6px 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.line-picker-btn.active { border-color: var(--green); box-shadow: 0 0 8px rgba(76,175,80,0.5); }
+.line-mini-grid { display: grid; grid-template-columns: repeat(3, 8px); grid-template-rows: repeat(3, 8px); gap: 2px; }
+.line-mini-cell { width: 8px; height: 8px; border-radius: 2px; background: #3a2c17; }
+.line-mini-cell.on { background: var(--gold); }
+.line-picker-btn.active .line-mini-cell.on { background: var(--green); }
+.line-picker-label { font-size: 0.6rem; color: var(--cream-dim); }
+
 .picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 50vh; overflow-y: auto; margin-top: 8px; }
 
 /* ---------- Modales ---------- */
@@ -193,6 +205,7 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .battle-unit .hp-bar.small { height: 7px; margin-top: 2px; }
 .ult-bar { height: 5px; width: 100%; background: #1a1410; border: 1px solid #000; border-radius: 3px; overflow: hidden; margin-top: 2px; }
 .ult-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #c98fe8, #e8a23c); transition: width 0.25s ease-out; }
+.ult-turns { font-size: 0.6rem; color: #e0bb55; font-weight: bold; margin-top: 1px; }
 
 #groupPickerPanel { flex-shrink: 0; text-align: center; padding: 6px 0; }
 #groupPickerPanel.hidden { display: none; }
