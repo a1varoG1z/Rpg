@@ -132,7 +132,204 @@ const FIGHTERS = [
   { id: 'marina_infrecuente', name: 'Pirata de las Mareas', element: 'agua', class: 'picaro', rarity: 'infrecuente', family: 'marina', evolvesTo: 'marina_raro', skillId: 'furia', lore: 'Navega sin mapa, guiada solo por el instinto de las corrientes.' },
   { id: 'marina_raro', name: 'Corsaria Abisal', element: 'agua', class: 'picaro', rarity: 'raro', family: 'marina', evolvesTo: null, skillId: 'furia', lore: 'Comanda su propio barco en aguas que ningún otro capitán se atreve a cruzar.' },
 ];
-function fighterDef(id) { return FIGHTERS.find(f => f.id === id); }
+
+// --- Roster masivo (personajes/mobs/jefes pedidos por el usuario) ---
+// Mismo patrón de 3 tiers que el resto del roster (o forma única para los
+// jefes). Todavía sin arte real: usan el sprite procedural de respaldo
+// (js/sprite.js) hasta que se vaya generando arte para cada uno — ver la
+// lista de sprites pendientes en TODO.md.
+const TIER_CHAINS = {
+  1: ['comun', 'infrecuente', 'raro'],
+  2: ['infrecuente', 'raro', 'epico'],
+  3: ['raro', 'epico', 'legendario'],
+};
+// Pequeño matiz de tier añadido a la frase de lore base de cada familia
+// (joven -> adulta -> forma definitiva), para no tener que escribir 3 frases
+// completas a mano por cada una de las ~120 familias nuevas.
+const TIER_LORE_SUFFIX = {
+  1: ['', ' Todavía está aprendiendo a controlar su don.', ' Ya domina por completo su naturaleza.'],
+  2: ['', ' Ha templado su poder en decenas de combates.', ' Pocos se atreven a desafiarla en su plenitud.'],
+  3: ['', ' Su leyenda empieza a extenderse por Texel.', ' Es ya una fuerza que decide el destino de reinos enteros.'],
+};
+function addFamily(slug, tier, element, cls, skillId, names, loreCore) {
+  const rarities = TIER_CHAINS[tier];
+  const suffixes = TIER_LORE_SUFFIX[tier];
+  rarities.forEach((rarity, i) => {
+    FIGHTERS.push({
+      id: slug + '_' + rarity, name: names[i], element, class: cls, rarity, family: slug,
+      evolvesTo: i < 2 ? slug + '_' + rarities[i + 1] : null, skillId, lore: loreCore + suffixes[i],
+    });
+  });
+}
+
+// Los jefes son combates únicos (sin transformaciones) y viven en su propia
+// lista, separada de FIGHTERS, para que NO aparezcan en la invocación (gacha)
+// ni en la Arena — son antagonistas, no luchadores reclutables. fighterDef
+// los reconoce igualmente (ver más abajo) para que el resto del código
+// (sprite, batallas) los trate igual que a cualquier otro luchador el día
+// que se usen como jefes de mapa.
+const BOSSES = [];
+function addBoss(slug, element, cls, skillId, name, lore, rarity) {
+  BOSSES.push({ id: 'boss_' + slug, name, element, class: cls, rarity: rarity || 'legendario', family: 'boss_' + slug, evolvesTo: null, skillId, lore });
+}
+function bossDef(id) { return BOSSES.find(b => b.id === id); }
+
+// ### Personajes (14.1)
+addFamily('sirena', 2, 'agua', 'brujo', 'arrasar', ['Sirena de Voz Dulce', 'Sirena Encantadora', 'Reina de las Profundidades'], 'Su canto embruja a los marineros que se acercan demasiado a la costa.');
+addFamily('gorila', 1, 'tierra', 'campeon', 'golpe', ['Gorila Montaraz', 'Gorila de Espalda Plateada', 'Rey de la Jungla de Piedra'], 'Gobierna su territorio a puñetazos que parten la roca.');
+addFamily('cocodrilo', 2, 'agua', 'campeon', 'escudo', ['Guerrero Cocodrilo', 'Centurión del Pantano', 'Señor de las Aguas Turbias'], 'Su piel curtida ha detenido más golpes de los que nadie recuerda.');
+addFamily('hidradragon', 3, 'rayo', 'brujo', 'arrasar', ['Cría de Mil Fauces', 'Dragón de Tres Cabezas', 'Soberano de las Siete Cabezas'], 'Cada cabeza que pierde en combate vuelve a crecer el doble de fuerte.');
+addFamily('avefenix', 3, 'fuego', 'guru', 'curar', ['Polluelo de Cenizas', 'Ave de Fuego Eterno', 'Fénix Inmortal'], 'Cuando muere, renace de sus propias cenizas más brillante que antes.');
+addFamily('hipogrifo', 2, 'viento', 'explorador', 'debilitar', ['Potro Alado', 'Hipogrifo Salvaje', 'Señor de los Cielos Altos'], 'Mitad caballo, mitad grifo, surca el cielo más rápido que cualquier ave.');
+addFamily('cerbero', 3, 'fuego', 'campeon', 'escudo', ['Cachorro de Tres Cabezas', 'Guardián del Umbral', 'Cerbero, Custodio del Inframundo'], 'Vigila la puerta que separa el mundo de los vivos del de los muertos.');
+addFamily('centauro', 2, 'tierra', 'explorador', 'debilitar', ['Potrillo Centauro', 'Centauro Arquero', 'Jefe de la Manada Salvaje'], 'Combina la fuerza de un corcel con la puntería de un cazador nato.');
+addFamily('minotauro', 2, 'tierra', 'campeon', 'furia', ['Toro Joven del Laberinto', 'Minotauro Furioso', 'Amo del Laberinto Eterno'], 'Nadie que entra en su laberinto vuelve a encontrar la salida.');
+addFamily('kraken', 3, 'agua', 'brujo', 'arrasar', ['Cría de Kraken', 'Kraken de las Profundidades', 'Devorador de Flotas'], 'Sus tentáculos han hundido más barcos de los que nadie se atreve a contar.');
+addFamily('leviatan', 3, 'agua', 'campeon', 'escudo', ['Serpiente de Mar Joven', 'Leviatán de las Mareas', 'Leviatán, Terror del Océano'], 'Su sola presencia hace que el mar entero se agite de terror.');
+addFamily('fenrir', 3, 'viento', 'picaro', 'furia', ['Lobezno de Hierro', 'Fenrir Encadenado', 'Fenrir, el Lobo del Fin del Mundo'], 'Se dice que su rugido anunciará el fin de los tiempos.');
+addFamily('nahual', 2, 'tierra', 'brujo', 'debilitar', ['Aprendiz de Nahual', 'Nahual Cambiapieles', 'Gran Brujo Nahual'], 'Puede transformarse en la bestia que más tema su enemigo.');
+addFamily('quetzalcoatl', 3, 'viento', 'guru', 'bendicion', ['Serpiente Emplumada Joven', 'Quetzalcóatl Ascendente', 'Quetzalcóatl, Señor del Viento'], 'Serpiente y ave a la vez, trajo el conocimiento a su pueblo.');
+addFamily('cadejo', 1, 'tierra', 'picaro', 'aturdir', ['Cadejo Blanco', 'Cadejo Guardián', 'Cadejo Protector de Caminantes'], 'Aparece en los caminos de noche para proteger — o asustar — a quien los recorre.');
+addFamily('hada', 1, 'viento', 'guru', 'curar', ['Hada Menor', 'Hada del Bosque', 'Reina de las Hadas'], 'Su polvo brillante puede curar heridas o gastar una broma, según su humor.');
+addFamily('shenlong', 3, 'rayo', 'brujo', 'arrasar', ['Dragoncillo de las Nubes', 'Shenlong Danzante', 'Shenlong, Dragón de la Lluvia'], 'Su danza entre las nubes trae la lluvia a los campos de Texel.');
+addFamily('zeus', 3, 'rayo', 'campeon', 'grito', ['Joven del Olimpo', 'Heredero del Rayo', 'Zeus, Señor del Trueno'], 'Ningún cielo se atreve a nublarse sin su permiso.');
+addFamily('guerreromedieval', 1, 'tierra', 'campeon', 'golpe', ['Recluta de Armadura', 'Caballero de Armas', 'Comandante de la Guardia'], 'Entrenado desde niño para defender su reino con espada y escudo.');
+addFamily('valquiria', 2, 'rayo', 'campeon', 'grito', ['Escudera Valquiria', 'Valquiria de Combate', 'Elegidora de los Caídos'], 'Decide quién de los caídos en batalla merece cabalgar hasta el Valhalla.');
+addFamily('golem', 2, 'tierra', 'campeon', 'escudo', ['Golem de Barro', 'Golem de Piedra', 'Golem de Hierro Ancestral'], 'Animado por magia antigua, no conoce el cansancio ni el miedo.');
+addFamily('satiromusico', 2, 'viento', 'guru', 'bendicion', ['Sátiro Flautista', 'Sátiro de la Fiesta Eterna', 'Sumo Sátiro de Dioniso'], 'Su flauta pone a bailar hasta al enemigo más serio.');
+addFamily('mandragora', 1, 'tierra', 'brujo', 'debilitar', ['Brote de Mandrágora', 'Mandrágora Chillona', 'Mandrágora Ancestral'], 'Su grito al ser arrancada deja aturdido a quien lo escuche.');
+addFamily('pazuzu', 3, 'viento', 'brujo', 'debilitar', ['Espíritu Menor del Viento', 'Heraldo de Pazuzu', 'Pazuzu, Señor de los Vientos del Sur'], 'Rey de los demonios del viento, tan temido como respetado.');
+addFamily('garuda', 2, 'viento', 'explorador', 'furia', ['Polluelo de Garuda', 'Garuda Cazadora', 'Garuda, Montura de los Dioses'], 'Ave gigante capaz de cargar a un dios entero sobre su lomo.');
+addFamily('anubis', 3, 'tierra', 'brujo', 'debilitar', ['Chacal del Desierto', 'Sacerdote de Anubis', 'Anubis, Guardián de los Muertos'], 'Pesa el corazón de cada alma antes de dejarla pasar al más allá.');
+addFamily('ra', 3, 'fuego', 'guru', 'arrasar', ['Disco Solar Joven', 'Heraldo de Ra', 'Ra, Señor del Sol'], 'Su carro cruza el cielo cada día, y con él, la luz del mundo.');
+addFamily('osiris', 3, 'tierra', 'guru', 'curar', ['Aprendiz del Nilo', 'Sacerdote de Osiris', 'Osiris, Señor de la Resurrección'], 'Murió una vez y volvió, y desde entonces gobierna el más allá.');
+addFamily('hombretigre', 2, 'tierra', 'picaro', 'furia', ['Cachorro Tigre', 'Guerrero Tigre', 'Señor de las Rayas Doradas'], 'Ataca en silencio y golpea con la fuerza de un tigre de bengala.');
+addFamily('hombrelobo', 2, 'viento', 'picaro', 'furia', ['Joven Maldito', 'Hombre Lobo', 'Alfa de la Luna Llena'], 'Cada luna llena pierde el control... y gana una fuerza brutal.');
+addFamily('dracula', 3, 'rayo', 'brujo', 'debilitar', ['Vástago de la Noche', 'Noble de Sangre Oscura', 'Drácula, Señor de la Noche'], 'Ha sobrevivido siglos alimentándose de las sombras de Texel.');
+addFamily('genbu', 2, 'agua', 'campeon', 'escudo', ['Tortuga Joven de Genbu', 'Genbu, Guardián del Norte', 'Genbu, Escudo de las Profundidades'], 'Su caparazón ha resistido más golpes de los que nadie puede contar.');
+addFamily('escualo', 1, 'agua', 'picaro', 'furia', ['Aprendiz Tiburón', 'Escualo de Combate', 'Depredador de los Siete Mares'], 'Huele la sangre — y la debilidad — antes que nadie.');
+addFamily('hercules', 3, 'tierra', 'campeon', 'golpe', ['Joven de Fuerza Divina', 'Hércules en sus Trabajos', 'Hércules, el Semidiós'], 'Ha completado hazañas que ningún mortal lograría siquiera empezar.');
+addFamily('ciclope', 2, 'tierra', 'campeon', 'golpe', ['Cíclope Pastor', 'Cíclope Forjador', 'Cíclope, Ojo del Trueno'], 'Con un solo ojo ve más peligro que la mayoría con dos.');
+addFamily('driada', 1, 'tierra', 'guru', 'curar', ['Brote de Dríada', 'Dríada del Bosque', 'Dríada Madre del Bosque Ancestral'], 'Su vida está ligada al árbol que la vio nacer.');
+addFamily('ent', 2, 'tierra', 'campeon', 'escudo', ['Retoño Andante', 'Ent Guardián', 'Ent Ancestral del Bosque Viejo'], 'Piensa despacio, pero cuando decide actuar, nada lo detiene.');
+addFamily('hidraserpiente', 2, 'agua', 'brujo', 'arrasar', ['Hidra Recién Nacida', 'Hidra de Pantano', 'Hidra de las Nueve Cabezas'], 'Corta una cabeza y otras dos crecerán en su lugar.');
+addFamily('hombreoso', 1, 'tierra', 'campeon', 'golpe', ['Joven Oso', 'Guerrero Oso', 'Gran Oso de las Montañas'], 'Su abrazo es tan mortal como su zarpazo.');
+addFamily('mujercisne', 2, 'agua', 'guru', 'bendicion', ['Doncella Cisne', 'Mujer Cisne', 'Reina de los Lagos Blancos'], 'Su plumaje esconde una gracia que desarma a cualquier rival.');
+addFamily('unicornio', 2, 'viento', 'guru', 'curar', ['Potrillo con Cuerno', 'Unicornio Radiante', 'Unicornio de Luz Pura'], 'Su cuerno puede curar cualquier herida... o purificar cualquier veneno.');
+addFamily('esfinge', 3, 'tierra', 'guru', 'debilitar', ['Cachorra de Esfinge', 'Esfinge Guardiana', 'Esfinge, Guardiana de Enigmas'], 'Solo deja pasar a quien resuelve su acertijo — a los demás, se los come.');
+addFamily('grifo', 2, 'viento', 'explorador', 'furia', ['Polluelo de Grifo', 'Grifo Cazador', 'Grifo, Rey de las Alturas'], 'Mitad águila, mitad león, caza tanto en tierra como en el aire.');
+addFamily('lamasu', 2, 'tierra', 'campeon', 'escudo', ['Guardián Menor Lamasu', 'Lamasu de las Puertas', 'Lamasu, Custodio de Palacios'], 'Vigila las puertas de los palacios antiguos con cuerpo de toro y alas de águila.');
+addFamily('pegaso', 2, 'viento', 'explorador', 'furia', ['Potrillo Alado', 'Pegaso Veloz', 'Pegaso, Corcel de las Nubes'], 'Ningún jinete olvida jamás la primera vez que voló sobre sus alas.');
+addFamily('silfide', 1, 'viento', 'guru', 'bendicion', ['Brisa Menor', 'Sílfide del Viento', 'Sílfide, Espíritu del Aire Puro'], 'Tan ligera que apenas roza el suelo al caminar.');
+addFamily('wyvern', 2, 'viento', 'picaro', 'furia', ['Cría de Wyvern', 'Wyvern Cazador', 'Wyvern, Terror de los Cielos'], 'Más ágil que un dragón, y su aguijón es igual de letal.');
+addFamily('cecaelia', 2, 'agua', 'brujo', 'debilitar', ['Joven Cecaelia', 'Cecaelia de los Arrecifes', 'Cecaelia, Bruja del Coral'], 'Mitad mujer, mitad pulpo, teje hechizos tan enredados como sus tentáculos.');
+addFamily('hipocampo', 1, 'agua', 'explorador', 'debilitar', ['Hipocampo Joven', 'Hipocampo de las Corrientes', 'Hipocampo, Corcel del Mar'], 'Mitad caballo, mitad pez, tira de los carros de los dioses del mar.');
+addFamily('enano', 1, 'tierra', 'campeon', 'golpe', ['Enano Aprendiz', 'Enano Herrero', 'Enano Rey de la Montaña'], 'Forja armas capaces de atravesar la piedra más dura.');
+addFamily('duendetravieso', 1, 'viento', 'picaro', 'aturdir', ['Duende Travieso', 'Duende Embaucador', 'Duende Rey de las Bromas'], 'Le encanta más gastar una broma que ganar una pelea.');
+addFamily('guerreroleopardo', 2, 'tierra', 'picaro', 'furia', ['Joven Leopardo', 'Guerrero Leopardo', 'Señor de las Manchas Doradas'], 'Ataca desde las sombras y desaparece antes de que puedan responder.');
+addFamily('panteranegra', 2, 'tierra', 'picaro', 'aturdir', ['Cachorro de Pantera', 'Guerrero Pantera Negra', 'Rey de la Pantera Negra'], 'Se mueve en total silencio hasta que ya es demasiado tarde para su presa.');
+addFamily('armaduratecno', 3, 'rayo', 'explorador', 'golpe', ['Prototipo de Armadura', 'Piloto de Armadura de Combate', 'Titán de Acero y Rayo'], 'Su armadura convierte a un simple mortal en una máquina de guerra.');
+addFamily('genio', 3, 'fuego', 'brujo', 'arrasar', ['Genio Encerrado', 'Genio Liberado', 'Genio, Señor de los Tres Deseos'], 'Concede poder a quien lo libera... a cambio de un precio que rara vez se ve venir.');
+addFamily('amazona', 2, 'viento', 'picaro', 'furia', ['Joven Amazona', 'Guerrera Amazona', 'Reina de las Amazonas'], 'Entrenada desde niña para no depender de nadie en la batalla.');
+addFamily('bigfoot', 1, 'tierra', 'campeon', 'golpe', ['Rastro en el Bosque', 'Bigfoot Solitario', 'Bigfoot, Leyenda del Bosque'], 'Pocos lo han visto, y menos aún han vivido para contarlo con detalle.');
+addFamily('nessie', 2, 'agua', 'campeon', 'escudo', ['Cría del Lago', 'Monstruo del Lago', 'Nessie, Leyenda de las Aguas Frías'], 'Ha esquivado a cazadores y curiosos durante siglos sin ser jamás atrapada.');
+addFamily('samurai', 2, 'rayo', 'picaro', 'furia', ['Aprendiz de Samurái', 'Samurái Errante', 'Maestro Espadachín del Trueno'], 'Su espada se mueve más rápido de lo que el ojo puede seguir.');
+addFamily('hombrefuego', 1, 'fuego', 'brujo', 'debilitar', ['Chispa Viviente', 'Hombre de Fuego', 'Avatar de las Llamas'], 'Cada paso que da deja un rastro de brasas ardientes.');
+addFamily('sacerdote', 1, 'tierra', 'guru', 'curar', ['Acólito', 'Sacerdote Bendecido', 'Sumo Sacerdote de Texel'], 'Dedica su vida a curar a quienes protegen el reino.');
+addFamily('thor', 3, 'rayo', 'campeon', 'golpe', ['Joven del Martillo', 'Guerrero de Asgard', 'Thor, Dios del Trueno'], 'Solo el digno puede levantar su martillo... y desatar la tormenta.');
+addFamily('gladiador', 1, 'tierra', 'campeon', 'golpe', ['Esclavo de la Arena', 'Gladiador Veterano', 'Campeón del Coliseo'], 'Ha sobrevivido a cientos de combates ante multitudes sedientas de sangre.');
+addFamily('hombrehielo', 1, 'agua', 'brujo', 'debilitar', ['Escarcha Viviente', 'Hombre de Hielo', 'Avatar del Invierno Eterno'], 'Congela todo lo que toca, incluso el ánimo de sus rivales.');
+addFamily('odin', 3, 'rayo', 'guru', 'bendicion', ['Joven Vidente', 'Odín, el Errante', 'Odín, Padre de Todo'], 'Sacrificó un ojo por sabiduría, y con ella gobierna Asgard.');
+addFamily('sunwukong', 3, 'viento', 'picaro', 'furia', ['Mono de Piedra', 'Rey Mono', 'Sun Wukong, el Sabio Igualado al Cielo'], 'Su bastón puede crecer hasta el cielo... y su ingenio, aún más alto.');
+addFamily('leonhumanizado', 2, 'tierra', 'campeon', 'grito', ['Cachorro de León', 'Guerrero León', 'Rey de la Sabana Dorada'], 'Su rugido basta para que la manada entera se ponga en pie.');
+addFamily('yeti', 2, 'agua', 'campeon', 'escudo', ['Cría de Yeti', 'Yeti de las Cumbres', 'Yeti, Señor de las Nieves Eternas'], 'Sobrevive donde nada más puede, en las cumbres más heladas de Texel.');
+addFamily('deerwoman', 2, 'tierra', 'picaro', 'aturdir', ['Joven del Bosque', 'Deer Woman', 'Deer Woman, Espíritu Vengador'], 'Atrae a quien le falta el respeto al bosque... y no todos vuelven.');
+addFamily('gatubela', 2, 'viento', 'picaro', 'aturdir', ['Aprendiz Felina', 'Gatúbela', 'Reina de los Tejados'], 'Se mueve entre las sombras de la ciudad sin dejar ni un solo rastro.');
+addFamily('afrodita', 3, 'agua', 'guru', 'bendicion', ['Doncella Nacida del Mar', 'Afrodita en Flor', 'Afrodita, Diosa del Amor'], 'Nació de la espuma del mar y con ella trajo la belleza al mundo.');
+addFamily('basajaun', 2, 'tierra', 'campeon', 'escudo', ['Joven Basajaun', 'Basajaun del Bosque', 'Basajaun, Señor de los Bosques Vascos'], 'Protege a los rebaños del bosque de cualquier peligro, incluso de los cazadores.');
+addFamily('icaro', 1, 'viento', 'explorador', 'furia', ['Aprendiz de Alas de Cera', 'Ícaro en Vuelo', 'Ícaro, el que Desafió al Sol'], 'Voló más alto de lo que nadie creía posible... y pagó el precio por ello.');
+addFamily('orangutan', 1, 'tierra', 'campeon', 'golpe', ['Cría de Orangután', 'Orangután de la Selva', 'Sabio Orangután de la Jungla'], 'Tan fuerte como paciente, rara vez pelea sin motivo.');
+addFamily('poseidon', 3, 'agua', 'campeon', 'grito', ['Joven del Tridente', 'Guardián de las Mareas', 'Poseidón, Señor de los Mares'], 'Con un golpe de su tridente puede calmar — o desatar — cualquier tormenta.');
+addFamily('davyjones', 2, 'agua', 'brujo', 'debilitar', ['Marinero Maldito', 'Davy Jones, el Maldito', 'Davy Jones, Capitán del Abismo'], 'Su barco solo aparece cuando ya es demasiado tarde para escapar.');
+addFamily('velociraptor', 1, 'tierra', 'picaro', 'furia', ['Cría de Velocirraptor', 'Velocirraptor Cazador', 'Líder de la Manada de Raptores'], 'Caza en manada, y para cuando lo ves, ya es tarde.');
+addFamily('hombrepez', 1, 'agua', 'explorador', 'debilitar', ['Joven Hombre Pez', 'Hombre Pez de las Profundidades', 'Ancestro de las Profundidades'], 'Respira bajo el agua tan fácil como tú respiras aire.');
+addFamily('bastet', 2, 'fuego', 'guru', 'curar', ['Gatita Sagrada', 'Sacerdotisa de Bastet', 'Bastet, Diosa Felina'], 'Protectora de los hogares, y de quien tenga la suerte de ganarse su favor.');
+addFamily('orcahumanoide', 2, 'agua', 'campeon', 'golpe', ['Joven Orca', 'Guerrera Orca', 'Matriarca de las Orcas'], 'Caza en manada y nunca deja a un miembro de su familia atrás.');
+addFamily('mujerconejo', 1, 'tierra', 'picaro', 'aturdir', ['Joven Conejo', 'Mujer Conejo', 'Gran Coneja de la Luna'], 'Tan rápida que apenas la ves antes de que ya haya golpeado.');
+addFamily('tiburonmartillo', 2, 'agua', 'picaro', 'furia', ['Grumete Martillo', 'Pirata Tiburón Martillo', 'Capitán de los Siete Mares'], 'Su cabeza en forma de martillo esconde un instinto asesino infalible.');
+addFamily('espantapajaros', 1, 'tierra', 'brujo', 'debilitar', ['Espantapájaros Roto', 'Espantapájaros Animado', 'Guardián del Campo Maldito'], 'Cobró vida una noche sin luna, y desde entonces vigila el campo.');
+addFamily('escorpionhumanoide', 2, 'tierra', 'picaro', 'debilitar', ['Joven Escorpión', 'Guerrero Escorpión', 'Señor del Aguijón Mortal'], 'Su aguijón lleva un veneno que debilita hasta al rival más fuerte.');
+addFamily('dientesdesable', 2, 'tierra', 'campeon', 'furia', ['Cría Dientes de Sable', 'Guerrero Dientes de Sable', 'Señor de la Era del Hielo'], 'Sus colmillos son más antiguos que cualquier leyenda de Texel.');
+addFamily('cangrejo', 1, 'agua', 'campeon', 'escudo', ['Cangrejo Pequeño', 'Cangrejo Acorazado', 'Rey Cangrejo de las Rocas'], 'Su caparazón es tan duro que pocas armas logran atravesarlo.');
+addFamily('zapador', 1, 'tierra', 'explorador', 'debilitar', ['Zapador Novato', 'Zapador de Túneles', 'Maestro Zapador de las Profundidades'], 'Conoce cada túnel bajo Texel mejor que su propia casa.');
+addFamily('plantacarnivora', 1, 'tierra', 'brujo', 'debilitar', ['Brote Carnívoro', 'Planta Carnívora', 'Devoradora de las Profundidades del Bosque'], 'Atrae a sus presas con un aroma dulce... y no las suelta jamás.');
+addFamily('estatua', 2, 'tierra', 'campeon', 'escudo', ['Estatua Agrietada', 'Estatua Animada', 'Coloso de Piedra Viviente'], 'Permanece inmóvil durante siglos... hasta que alguien comete el error de despertarla.');
+
+// ### Enemigos / mobs normales (14.3)
+addFamily('arpia', 1, 'viento', 'picaro', 'furia', ['Arpía Joven', 'Arpía Chillona', 'Arpía Matriarca del Nido'], 'Ataca en bandada, chillando para desorientar a su presa.');
+addFamily('dullahan', 2, 'rayo', 'brujo', 'debilitar', ['Jinete sin Cabeza Menor', 'Dullahan Cabalgante', 'Dullahan, Heraldo de la Muerte'], 'Lleva su propia cabeza bajo el brazo, y donde se detiene, alguien muere.');
+addFamily('tengu', 1, 'viento', 'picaro', 'aturdir', ['Tengu Travieso', 'Tengu Guerrero', 'Gran Tengu de la Montaña'], 'Maestro del engaño y la espada a partes iguales.');
+addFamily('goblin', 1, 'tierra', 'picaro', 'golpe', ['Goblin Novato', 'Goblin Saqueador', 'Jefe de la Horda Goblin'], 'Solo, es débil. En horda, es una plaga imparable.');
+addFamily('trasgo', 1, 'viento', 'picaro', 'aturdir', ['Trasgo Menor', 'Trasgo Revoltoso', 'Trasgo Rey de las Travesuras'], 'Le divierte más molestar a los viajeros que robarles.');
+addFamily('demonio', 2, 'fuego', 'brujo', 'debilitar', ['Demonio Menor', 'Demonio de las Llamas', 'Archidemonio del Abismo'], 'Cada trato que ofrece esconde una trampa que nadie ve venir.');
+addFamily('esqueleto', 1, 'tierra', 'campeon', 'golpe', ['Esqueleto Andante', 'Esqueleto Guerrero', 'Comandante de Huesos'], 'Ni la muerte pudo con las ganas de pelear de este guerrero.');
+addFamily('draugr', 2, 'agua', 'campeon', 'escudo', ['Draugr Recién Alzado', 'Draugr Vikingo', 'Rey Draugr del Túmulo'], 'Se niega a abandonar el tesoro que custodió en vida.');
+addFamily('chupacabras', 1, 'viento', 'picaro', 'furia', ['Chupacabras Joven', 'Chupacabras Nocturno', 'Terror de los Rebaños'], 'Nadie lo ha visto de cerca... y quien lo hizo no vivió para describirlo.');
+addFamily('kitsune', 2, 'fuego', 'brujo', 'debilitar', ['Kitsune de Una Cola', 'Kitsune de Tres Colas', 'Kitsune de Nueve Colas'], 'Cuantas más colas gana, más poderosa (y más traviesa) se vuelve su magia.');
+addFamily('momia', 1, 'tierra', 'brujo', 'debilitar', ['Momia Menor', 'Momia Vendada', 'Faraón Momificado'], 'Duerme durante siglos, hasta que alguien profana su tumba.');
+addFamily('orco', 1, 'tierra', 'campeon', 'furia', ['Orco Recluta', 'Orco Guerrero', 'Jefe de Guerra Orco'], 'Vive para la batalla, y muere feliz si es peleando.');
+addFamily('dementor', 2, 'viento', 'brujo', 'debilitar', ['Sombra Menor', 'Dementor Errante', 'Dementor, Ladrón de Almas'], 'Su sola presencia arranca hasta el último recuerdo feliz.');
+addFamily('arana', 1, 'tierra', 'picaro', 'aturdir', ['Araña Pequeña', 'Araña Venenosa', 'Reina Araña del Nido'], 'Teje su telaraña en silencio, y espera con paciencia infinita.');
+addFamily('jabali', 1, 'tierra', 'campeon', 'furia', ['Jabatillo', 'Jabalí Salvaje', 'Gran Jabalí del Bosque Oscuro'], 'Embiste sin dudar a cualquiera que se cruce en su camino.');
+addFamily('gargola', 2, 'tierra', 'campeon', 'escudo', ['Gárgola Dormida', 'Gárgola Vigilante', 'Gárgola Ancestral de Piedra'], 'De día es solo piedra... de noche, otra cosa muy distinta.');
+addFamily('gigante', 2, 'tierra', 'campeon', 'golpe', ['Joven Gigante', 'Gigante de las Colinas', 'Gigante de las Montañas Rotas'], 'Cada paso suyo hace temblar el suelo a su alrededor.');
+addFamily('ogro', 1, 'tierra', 'campeon', 'furia', ['Ogro Pequeño', 'Ogro Garrotero', 'Gran Ogro del Pantano'], 'No es el más listo, pero su garrote no necesita estrategia.');
+addFamily('satirosalvaje', 1, 'viento', 'picaro', 'furia', ['Sátiro Salvaje', 'Sátiro del Bosque Profundo', 'Señor de los Sátiros Salvajes'], 'Vive libre en el bosque, lejos de cualquier regla o fiesta civilizada.');
+addFamily('troll', 2, 'tierra', 'campeon', 'golpe', ['Troll de Puente Menor', 'Troll de las Cavernas', 'Gran Troll Regenerador'], 'Sus heridas se cierran casi tan rápido como se las hacen.');
+addFamily('estirge', 1, 'viento', 'picaro', 'debilitar', ['Estirge Menor', 'Estirge Sedienta', 'Enjambre de Estirges'], 'Drena la vida de su presa gota a gota, sin prisa.');
+addFamily('ondina', 2, 'agua', 'guru', 'debilitar', ['Ondina Menor', 'Ondina de las Corrientes', 'Gran Ondina del Río Eterno'], 'Su canto arrastra a los incautos hasta el fondo del río.');
+addFamily('zombi', 1, 'tierra', 'campeon', 'furia', ['Zombi Recién Alzado', 'Zombi Putrefacto', 'Zombi Alfa de la Horda'], 'No siente dolor, no conoce el miedo, y no se detiene jamás.');
+addFamily('banshee', 2, 'viento', 'brujo', 'debilitar', ['Banshee Susurrante', 'Banshee Lamentosa', 'Gran Banshee, Heraldo de la Muerte'], 'Su lamento anuncia una muerte antes de que ocurra.');
+addFamily('lamia', 2, 'tierra', 'brujo', 'debilitar', ['Lamia Joven', 'Lamia Serpentina', 'Reina Lamia del Oasis Maldito'], 'Su mitad de serpiente esconde una mordedura tan letal como su encanto.');
+addFamily('hombrearena', 1, 'tierra', 'brujo', 'aturdir', ['Remolino de Arena', 'Hombre de Arena', 'Señor de las Dunas Eternas'], 'Se deshace y se reforma a voluntad, imposible de atrapar.');
+addFamily('babosa', 1, 'agua', 'campeon', 'debilitar', ['Babosa Pequeña', 'Babosa Gigante', 'Reina Babosa del Pantano'], 'Lenta pero imparable, su rastro disuelve casi cualquier cosa.');
+addFamily('sapo', 1, 'agua', 'guru', 'debilitar', ['Renacuajo', 'Sapo Venenoso', 'Gran Sapo del Pantano Sagrado'], 'Su piel segrega un veneno capaz de nublar los sentidos del rival.');
+addFamily('serpiente', 1, 'tierra', 'picaro', 'debilitar', ['Serpiente Joven', 'Serpiente Venenosa', 'Gran Serpiente del Desierto'], 'Ataca en silencio, y su veneno hace el resto del trabajo.');
+addFamily('setahumanoide', 1, 'tierra', 'brujo', 'debilitar', ['Seta Pequeña', 'Seta Humanoide', 'Gran Seta Ancestral del Bosque'], 'Sus esporas dejan aturdido a cualquiera que se acerque demasiado.');
+addFamily('frankenstein', 2, 'rayo', 'campeon', 'furia', ['Criatura Recién Cosida', 'Criatura de Frankenstein', 'Monstruo Perfeccionado'], 'Cosida a partir de partes de otros, cobró vida gracias a un rayo.');
+addFamily('hombreseisbrazos', 2, 'rayo', 'picaro', 'furia', ['Aprendiz de Seis Brazos', 'Guerrero de Seis Brazos', 'Maestro de las Seis Espadas'], 'Con seis brazos, nunca le falta un arma más que blandir.');
+addFamily('insectogigante', 1, 'tierra', 'picaro', 'aturdir', ['Insecto Pequeño', 'Insecto Gigante', 'Enjambre Alfa'], 'Solo es un insecto... hasta que ves cuántos son.');
+
+// ### Jefes / bosses (14.2) — combate único, sin evolución, fuera del pool de invocación.
+addBoss('tifon', 'rayo', 'brujo', 'arrasar', 'Tifón, Padre de los Monstruos', 'El monstruo más temible de todos, capaz de desafiar a los propios dioses.');
+addBoss('quimera', 'fuego', 'campeon', 'arrasar', 'Quimera, la Bestia de Tres Cabezas', 'León, cabra y serpiente en un solo cuerpo, y fuego en cada aliento.');
+addBoss('garn', 'tierra', 'campeon', 'golpe', 'Garn, el Devorador de Piedra', 'Se alimenta de roca y escupe fragmentos capaces de atravesar una armadura.', 'epico');
+addBoss('nian', 'fuego', 'campeon', 'furia', 'Nian, la Bestia del Año Nuevo', 'Solo el ruido y el color rojo lo mantienen alejado de los pueblos.', 'epico');
+addBoss('tiamat', 'agua', 'brujo', 'arrasar', 'Tiamat, Madre del Caos', 'De su furia nacieron los primeros monstruos del mundo.');
+addBoss('surtr', 'fuego', 'campeon', 'golpe', 'Surtr, Señor de las Llamas de Muspelheim', 'Su espada ardiente se dice que incendiará los nueve mundos al final de los tiempos.');
+addBoss('behemoth', 'tierra', 'campeon', 'golpe', 'Behemoth, la Bestia Primigenia', 'Tan grande y antiguo que su sola existencia desafía toda lógica.');
+addBoss('medusa', 'tierra', 'brujo', 'debilitar', 'Medusa, la Gorgona de Mirada Pétrea', 'Una sola mirada a sus ojos convierte a cualquiera en piedra.', 'epico');
+addBoss('apofis', 'tierra', 'brujo', 'arrasar', 'Apofis, la Serpiente del Caos', 'Cada noche intenta devorar al sol, y cada noche es derrotado — por poco.');
+addBoss('ammit', 'tierra', 'campeon', 'furia', 'Ammit, Devoradora de Corazones', 'Devora el corazón de quien no es digno de pasar al más allá.', 'epico');
+addBoss('cthulhu', 'agua', 'brujo', 'arrasar', 'Cthulhu, el que Duerme en las Profundidades', 'Su despertar traería la locura a cualquiera que lo presencie.');
+addBoss('balrog', 'fuego', 'brujo', 'arrasar', 'Balrog, Demonio de Sombra y Fuego', 'Envuelto en llamas y sombra, ningún pasillo es lo bastante estrecho para detenerlo.');
+addBoss('leondenemea', 'tierra', 'campeon', 'golpe', 'León de Nemea, Piel Impenetrable', 'Ningún arma forjada por mortales ha logrado atravesar su piel.', 'epico');
+addBoss('pajaroroc', 'viento', 'explorador', 'furia', 'Roc, el Ave que Oscurece el Cielo', 'Sus alas al abrirse tapan el sol entero sobre el desierto.', 'epico');
+addBoss('torodecreta', 'tierra', 'campeon', 'furia', 'Toro de Creta, Furia Desatada', 'Arrasó campos enteros antes de que nadie lograra domarlo.', 'epico');
+addBoss('basilisco', 'tierra', 'brujo', 'debilitar', 'Basilisco, Rey de las Serpientes', 'Su mirada mata, y su veneno no perdona ni a la piedra.', 'epico');
+addBoss('ettin', 'tierra', 'campeon', 'golpe', 'Ettin, el Gigante de Dos Cabezas', 'Dos cabezas significan el doble de mal genio... y el doble de fuerza.', 'epico');
+addBoss('gorgonas', 'tierra', 'brujo', 'debilitar', 'Las Gorgonas, Hermanas de Piedra', 'Donde una gorgona falla, sus hermanas terminan el trabajo.', 'epico');
+addBoss('rakshasa', 'fuego', 'brujo', 'debilitar', 'Rakshasa, el Cambiante Maldito', 'Puede tomar cualquier forma para acercarse a su presa sin ser detectado.');
+addBoss('manticora', 'fuego', 'picaro', 'furia', 'Mantícora, la Devoradora de Hombres', 'Su cola de escorpión dispara espinas tan letales como su mordida.', 'epico');
+addBoss('liche', 'rayo', 'brujo', 'debilitar', 'Liche, Señor de los No-Muertos', 'Selló su alma en un objeto oculto para no morir jamás de verdad.');
+addBoss('magooscuro', 'rayo', 'brujo', 'debilitar', 'El Mago Oscuro sin Nombre', 'Su nombre se ha borrado del recuerdo — pero su sombra sigue creciendo.');
+addBoss('loki', 'rayo', 'brujo', 'debilitar', 'Loki, el Dios del Engaño', 'Nunca se sabe si su ayuda es un regalo o el inicio de una trampa.');
+addBoss('joker', 'viento', 'picaro', 'aturdir', 'El Bufón de la Locura', 'Nadie entiende su chiste hasta que ya es demasiado tarde para reírse.', 'epico');
+addBoss('acromantula', 'tierra', 'picaro', 'aturdir', 'Acromántula, Madre de la Colonia', 'Donde hay una, hay cientos más esperando entre las sombras.', 'epico');
+addBoss('wendigo', 'viento', 'brujo', 'furia', 'Wendigo, Hambre sin Fin', 'Cuanto más devora, más hambriento se vuelve — nunca se sacia.', 'epico');
+addBoss('mantisreligiosa', 'viento', 'picaro', 'furia', 'Mantis, la Segadora Silenciosa', 'Espera inmóvil durante horas... y ataca en una fracción de segundo.', 'epico');
+
+function fighterDef(id) { return FIGHTERS.find(f => f.id === id) || BOSSES.find(f => f.id === id); }
 
 const ZONES = [
   { id: 'bosque', name: 'Linde del Bosque', emoji: '🌲', color: '#2f4f2f', pool: ['topo_comun', 'heraldo_comun', 'topo_infrecuente'] },
