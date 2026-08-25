@@ -9,9 +9,9 @@ function newUid(prefix) { return prefix + (uidCounter++) + '_' + Date.now().toSt
 
 function createNewState() {
   const roster = [
-    { uid: newUid('f'), defId: 'ascua_comun', level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null },
-    { uid: newUid('f'), defId: 'triton_comun', level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null },
     { uid: newUid('f'), defId: 'topo_comun', level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null },
+    { uid: newUid('f'), defId: 'heraldo_comun', level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null },
+    { uid: newUid('f'), defId: 'triton_infrecuente', level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null },
   ];
   const band = [
     [roster[0].uid, roster[1].uid, roster[2].uid],
@@ -55,7 +55,7 @@ function fighterStats(state, entry) {
 }
 
 function gearStatValue(gear) {
-  const base = { comun: 4, raro: 13, legendario: 30 }[gear.rarity];
+  const base = { comun: 4, infrecuente: 7, raro: 12, epico: 20, legendario: 32 }[gear.rarity];
   return Math.round(base * (1 + gear.level * 0.15));
 }
 

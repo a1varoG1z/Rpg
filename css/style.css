@@ -72,8 +72,11 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .star-row { color: var(--gold); font-size: 0.7rem; margin-top: 3px; }
 .in-band-tag { font-size: 0.6rem; color: var(--green); margin-top: 3px; }
 
+.rarity-infrecuente { box-shadow: 0 0 8px var(--rg, transparent); }
 .rarity-raro { box-shadow: 0 0 14px var(--rg, transparent); }
 .rarity-raro .creature-canvas-wrap { animation: floatSprite 2.6s ease-in-out infinite; }
+.rarity-epico { box-shadow: 0 0 18px var(--rg, transparent); }
+.rarity-epico .creature-canvas-wrap { animation: floatSprite 2.4s ease-in-out infinite; }
 .rarity-legendario { box-shadow: 0 0 22px var(--rg, transparent); animation: legendaryPulse 2s ease-in-out infinite; }
 .rarity-legendario .creature-canvas-wrap { animation: floatSprite 2.2s ease-in-out infinite; }
 @keyframes floatSprite { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -136,7 +139,9 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .reveal-box { text-align: center; }
 .reveal-flash { padding: 10px 0; border-radius: 10px; animation: revealPop 0.5s ease-out; }
 @keyframes revealPop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+.reveal-flash.rarity-infrecuente { box-shadow: 0 0 20px var(--rg, #4caf6b); }
 .reveal-flash.rarity-raro { box-shadow: 0 0 30px var(--rg, #3f9fe0); }
+.reveal-flash.rarity-epico { box-shadow: 0 0 35px var(--rg, #a463e0); }
 .reveal-flash.rarity-legendario { box-shadow: 0 0 40px #e8a23c; animation: revealPop 0.5s ease-out, legendaryPulse 1.4s ease-in-out infinite 0.5s; }
 .reveal-canvas-wrap { display: flex; justify-content: center; margin-bottom: 6px; }
 .reveal-outcome { margin-top: 6px; font-size: 0.85rem; color: var(--gold); }
