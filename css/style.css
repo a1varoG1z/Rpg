@@ -57,7 +57,7 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .nav-btn.active { color: var(--gold); }
 
 /* ---------- Tarjeta de criatura ---------- */
-.creature-canvas { image-rendering: pixelated; width: 72px; height: 81px; display: block; margin: 0 auto; }
+.creature-canvas { image-rendering: pixelated; width: 72px; height: 81px; object-fit: contain; display: block; margin: 0 auto; }
 .creature-card {
   position: relative; background: #1f1811; border: 2px solid var(--rc, #888); border-radius: 10px; padding: 8px 6px 10px;
   box-shadow: 0 0 10px var(--rg, transparent); text-align: center;
@@ -72,10 +72,8 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .star-row { color: var(--gold); font-size: 0.7rem; margin-top: 3px; }
 .in-band-tag { font-size: 0.6rem; color: var(--green); margin-top: 3px; }
 
-.rarity-infrecuente { animation: none; }
-.rarity-raro { box-shadow: 0 0 12px var(--rg, transparent); }
-.rarity-epico { box-shadow: 0 0 16px var(--rg, transparent); }
-.rarity-epico .creature-canvas-wrap { animation: floatSprite 2.6s ease-in-out infinite; }
+.rarity-raro { box-shadow: 0 0 14px var(--rg, transparent); }
+.rarity-raro .creature-canvas-wrap { animation: floatSprite 2.6s ease-in-out infinite; }
 .rarity-legendario { box-shadow: 0 0 22px var(--rg, transparent); animation: legendaryPulse 2s ease-in-out infinite; }
 .rarity-legendario .creature-canvas-wrap { animation: floatSprite 2.2s ease-in-out infinite; }
 @keyframes floatSprite { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -138,7 +136,7 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .reveal-box { text-align: center; }
 .reveal-flash { padding: 10px 0; border-radius: 10px; animation: revealPop 0.5s ease-out; }
 @keyframes revealPop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
-.reveal-flash.rarity-epico { box-shadow: 0 0 30px var(--rg, #a463e0); }
+.reveal-flash.rarity-raro { box-shadow: 0 0 30px var(--rg, #3f9fe0); }
 .reveal-flash.rarity-legendario { box-shadow: 0 0 40px #e8a23c; animation: revealPop 0.5s ease-out, legendaryPulse 1.4s ease-in-out infinite 0.5s; }
 .reveal-canvas-wrap { display: flex; justify-content: center; margin-bottom: 6px; }
 .reveal-outcome { margin-top: 6px; font-size: 0.85rem; color: var(--gold); }

@@ -7,7 +7,19 @@ function $(id) { return document.getElementById(id); }
 function el(tag, className, html) { const e = document.createElement(tag); if (className) e.className = className; if (html !== undefined) e.innerHTML = html; return e; }
 
 // ---------- Tarjetas de criatura reutilizables ----------
+// Si el luchador tiene arte real asignado (data.js -> image), se usa esa
+// imagen; si no, se genera un sprite pixel-art por código como respaldo.
 function creatureCanvas(defId, sizePx) {
+  const def = fighterDef(defId);
+  if (def && def.image) {
+    const img = document.createElement('img');
+    img.className = 'creature-canvas';
+    img.src = 'assets/creatures/' + def.image;
+    img.alt = def.name;
+    img.loading = 'lazy';
+    if (sizePx) { img.style.width = sizePx + 'px'; img.style.height = 'auto'; }
+    return img;
+  }
   const canvas = document.createElement('canvas');
   canvas.className = 'creature-canvas';
   if (sizePx) { canvas.style.width = sizePx + 'px'; canvas.style.height = (sizePx * SPR_H / SPR_W) + 'px'; }

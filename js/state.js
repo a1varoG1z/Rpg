@@ -55,7 +55,7 @@ function fighterStats(state, entry) {
 }
 
 function gearStatValue(gear) {
-  const base = { comun: 4, infrecuente: 7, raro: 12, epico: 19, legendario: 29 }[gear.rarity];
+  const base = { comun: 4, raro: 13, legendario: 30 }[gear.rarity];
   return Math.round(base * (1 + gear.level * 0.15));
 }
 

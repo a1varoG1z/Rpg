@@ -17,14 +17,14 @@ El progreso se guarda automáticamente en el dispositivo (`localStorage`).
 - **Elementos y clases**: 5 elementos (Fuego/Viento/Tierra/Rayo/Agua, con ventajas tipo piedra-papel-tijera) y 5 clases (Campeón, Pícaro, Gurú, Brujo, Explorador) con roles de combate distintos (tanque, daño físico, daño mágico, híbrido, soporte).
 - **Combate con ULTI cargable**: cada luchador ataca automáticamente según su agilidad; golpear o recibir daño llena su barra de ULTI, y al completarse desata su habilidad especial en vez de un golpe normal. La batalla se reproduce animada, con opción de saltar al resultado de cada choque.
 - **Invocación (gacha)**: 3 tipos de cristal (Pixite, Voxite, Doxite) con tasas de rareza distintas, obtenidos jugando o comprados con Gemas (moneda ganable en el juego, sin dinero real).
-- **Fusión (SEF) y evolución**: invocar duplicados de un luchador aumenta su fusión (0/5); al llegar a 5/5 evoluciona a su forma superior. La Superfusión sacrifica un luchador totalmente fusionado para dar una ⭐ permanente a otro.
+- **Fusión (SEF) y evolución en 3 fases**: cada familia de criatura tiene hasta 3 fases de transformación — **Común → Raro → Legendario** — que son la misma criatura evolucionando, no bichos distintos. Invocar duplicados de la forma que ya tienes aumenta su fusión (0/5); al llegar a 5/5 evoluciona a la siguiente fase. Algunas familias solo llegan hasta Raro (no todas alcanzan forma legendaria). La Superfusión sacrifica un luchador totalmente fusionado para dar una ⭐ permanente a otro.
 - **Mapa por etapas**: 6 zonas con 8 etapas cada una (la 8ª es el jefe de zona); cada intento cuesta Energía, que se regenera con el tiempo.
 - **Equipo**: arma y armadura por luchador, mejorables con Texel.
 - **Arena**: liga simulada contra bandas controladas por IA de dificultad creciente (no hay otros jugadores reales: es una app de un solo jugador).
 
-## Sprites pixel-art originales
+## Sprites
 
-`js/sprite.js` genera cada criatura por código: una silueta de bestia/criatura distinta según su clase (acorazada, alada, flotante...), coloreada según su elemento, con sombreado en dos tonos, contorno, brillo especular y sombra de suelo. Es un sistema propio, sin assets externos ni arte con copyright.
+Cada luchador puede tener arte propio (PNG en `assets/creatures/`, generado por el usuario) o, si no lo tiene, se dibuja por código con `js/sprite.js`: una silueta de bestia/criatura distinta según su clase (acorazada, alada, flotante...), coloreada según su elemento, con sombreado en dos tonos, contorno, brillo especular y sombra de suelo. Ningún arte ni nombre del juego original se reutiliza.
 
 ## Desarrollo
 

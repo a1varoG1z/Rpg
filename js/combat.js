@@ -82,9 +82,8 @@ function stageRewards(zoneIdx, stageIdx, isBoss) {
 
 function gearDropRarity(globalIdx) {
   const roll = Math.random() + globalIdx * 0.01;
-  if (roll > 0.97) return 'epico';
-  if (roll > 0.85) return 'raro';
-  if (roll > 0.55) return 'infrecuente';
+  if (roll > 0.97) return 'legendario';
+  if (roll > 0.55) return 'raro';
   return 'comun';
 }
 
@@ -97,8 +96,8 @@ function buildArenaBand(rank) {
     const count = r === 0 ? 3 : (r === 1 ? (rank > 5 ? 3 : 2) : (rank > 12 ? 3 : (rank > 6 ? 2 : 0)));
     for (let i = 0; i < count; i++) {
       const pool = Math.random() < highRarityChance
-        ? FIGHTERS.filter(f => f.rarity === 'epico' || f.rarity === 'legendario')
-        : FIGHTERS.filter(f => f.rarity === 'comun' || f.rarity === 'infrecuente' || f.rarity === 'raro');
+        ? FIGHTERS.filter(f => f.rarity === 'legendario')
+        : FIGHTERS.filter(f => f.rarity === 'comun' || f.rarity === 'raro');
       const def = pool[Math.floor(Math.random() * pool.length)];
       row.push(makeUnit('enemy', def.id, level));
     }
