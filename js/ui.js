@@ -110,6 +110,7 @@ UI.renderScreen = function (name, state) {
 UI.renderMapa = function (state) {
   mapaZoneIdx = null;
   $('stageList').classList.add('hidden');
+  $('stageRunView').classList.add('hidden');
   $('zoneList').classList.remove('hidden');
   const list = $('zoneList');
   list.innerHTML = '';
@@ -128,6 +129,7 @@ UI.renderMapa = function (state) {
 UI.openZoneStages = function (state, zoneIdx) {
   mapaZoneIdx = zoneIdx;
   $('zoneList').classList.add('hidden');
+  $('stageRunView').classList.add('hidden');
   const wrap = $('stageList');
   wrap.classList.remove('hidden');
   wrap.innerHTML = '';
@@ -149,39 +151,97 @@ UI.openZoneStages = function (state, zoneIdx) {
     grid.appendChild(btn);
   }
   wrap.appendChild(grid);
-  wrap.appendChild(el('p', 'settings-info', 'Cada etapa cuesta ' + STAGE_ENERGY_COST + ' ⚡. La etapa 8 es el jefe de zona.'));
+  wrap.appendChild(el('p', 'settings-info', 'Cada etapa cuesta ' + STAGE_ENERGY_COST + ' ⚡ y se recorre nodo a nodo, con varios encuentros antes de la recompensa. La etapa 8 es el jefe de zona.'));
 };
 
+// Entrar en una etapa ya no abre directamente una batalla: se paga la
+// energía una vez y se abre el recorrido (ver renderStageRun), con un nodo
+// de combate por cada oleada que antes se libraba dentro de una única
+// batalla. Solo al superar el último nodo se entrega la recompensa de la
+// etapa; perder cualquier nodo termina el recorrido sin recompensa.
 UI.startStageBattle = function (state, zoneIdx, stageIdx) {
   if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
   if (!state.settings.infiniteEnergy) {
     if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
     state.currencies.energy -= STAGE_ENERGY_COST;
+    saveGame(state);
+    UI.renderTopbar(state);
   }
-  const { rows: enemyRows, isBoss } = buildEnemyBand(zoneIdx, stageIdx);
-  UI.openBattle(state, buildPlayerCombinations(state), enemyRows, {
-    title: ZONES[zoneIdx].name + ' · ' + (isBoss ? 'Jefe' : 'Etapa ' + (stageIdx + 1)),
+  const { rows, isBoss } = buildEnemyBand(zoneIdx, stageIdx);
+  const encounters = rows.filter(r => r.length > 0);
+  window.__stageRun = { zoneIdx, stageIdx, isBoss, encounters, nodeIdx: 0, failed: false };
+  UI.renderStageRun(state);
+};
+
+UI.renderStageRun = function (state) {
+  $('zoneList').classList.add('hidden');
+  $('stageList').classList.add('hidden');
+  const wrap = $('stageRunView');
+  wrap.classList.remove('hidden');
+  wrap.innerHTML = '';
+  const run = window.__stageRun;
+  const zone = ZONES[run.zoneIdx];
+
+  const back = el('button', 'mini-btn', '« Retirarse');
+  back.addEventListener('click', () => { window.__stageRun = null; UI.openZoneStages(state, run.zoneIdx); });
+  wrap.appendChild(back);
+  wrap.appendChild(el('h3', null, zone.emoji + ' ' + zone.name + ' · ' + (run.isBoss ? 'Jefe de zona' : 'Etapa ' + (run.stageIdx + 1))));
+
+  const path = el('div', 'stage-run-path');
+  run.encounters.forEach((enemyRow, i) => {
+    const isFinalCombat = run.isBoss && i === run.encounters.length - 1;
+    const node = el('div', 'stage-run-node' + (i < run.nodeIdx ? ' cleared' : i === run.nodeIdx ? ' current' : ' locked'));
+    node.textContent = i < run.nodeIdx ? '✓' : (isFinalCombat ? '👑' : '⚔️');
+    path.appendChild(node);
+    path.appendChild(el('div', 'stage-run-connector' + (i < run.nodeIdx ? ' cleared' : '')));
+  });
+  const chestNode = el('div', 'stage-run-node chest' + (run.nodeIdx >= run.encounters.length ? ' cleared' : ' locked'));
+  chestNode.textContent = '🎁';
+  path.appendChild(chestNode);
+  wrap.appendChild(path);
+
+  if (run.nodeIdx < run.encounters.length) {
+    const preview = el('div', 'stage-run-preview');
+    run.encounters[run.nodeIdx].forEach(u => preview.appendChild(creatureCanvas(u.defId, 56)));
+    wrap.appendChild(preview);
+    const fightBtn = el('button', 'primary-btn', 'Luchar (encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length + ')');
+    fightBtn.addEventListener('click', () => UI.fightStageRunNode(state));
+    wrap.appendChild(fightBtn);
+  }
+};
+
+UI.fightStageRunNode = function (state) {
+  const run = window.__stageRun;
+  const enemyRow = run.encounters[run.nodeIdx];
+  UI.openBattle(state, buildPlayerCombinations(state), [enemyRow], {
+    title: ZONES[run.zoneIdx].name + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length,
     onEnd: (result) => {
-      if (result === 'victoria') {
-        const rewards = stageRewards(zoneIdx, stageIdx, isBoss);
-        state.currencies.texel += rewards.texel;
-        if (rewards.drops.pixite) state.currencies.pixite += rewards.drops.pixite;
-        if (rewards.drops.voxite) state.currencies.voxite += rewards.drops.voxite;
-        if (rewards.drops.doxite) state.currencies.doxite += rewards.drops.doxite;
-        if (rewards.drops.gear) addGear(state, rewards.drops.gear);
-        const leveled = [];
-        state.band.flat().filter(Boolean).forEach(uid => {
-          const entry = rosterEntry(state, uid);
-          if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
-        });
-        const unlockedZone = recordStageClear(state, zoneIdx, stageIdx);
-        state.stats.battlesWon++;
+      if (result !== 'victoria') {
+        run.failed = true;
+        state.stats.battlesLost++;
         saveGame(state);
-        return { rewards, leveled, unlockedZone };
+        return null;
       }
-      state.stats.battlesLost++;
+      run.nodeIdx++;
+      state.stats.battlesWon++;
+      if (run.nodeIdx < run.encounters.length) {
+        saveGame(state);
+        return { intermediate: true };
+      }
+      const rewards = stageRewards(run.zoneIdx, run.stageIdx, run.isBoss);
+      state.currencies.texel += rewards.texel;
+      if (rewards.drops.pixite) state.currencies.pixite += rewards.drops.pixite;
+      if (rewards.drops.voxite) state.currencies.voxite += rewards.drops.voxite;
+      if (rewards.drops.doxite) state.currencies.doxite += rewards.drops.doxite;
+      if (rewards.drops.gear) addGear(state, rewards.drops.gear);
+      const leveled = [];
+      state.band.flat().filter(Boolean).forEach(uid => {
+        const entry = rosterEntry(state, uid);
+        if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
+      });
+      const unlockedZone = recordStageClear(state, run.zoneIdx, run.stageIdx);
       saveGame(state);
-      return null;
+      return { rewards, leveled, unlockedZone };
     },
   });
 };
@@ -816,7 +876,9 @@ UI.spawnBattleFloat = function (unitId, text, crit) {
 UI.endBattle = function (view, result) {
   const outcome = view.opts.onEnd(result);
   const body = $('battleResultBody');
-  if (result === 'victoria') {
+  if (outcome && outcome.intermediate) {
+    body.innerHTML = `<h3>✅ Encuentro superado</h3><p class="settings-info">Continúa por el resto de la etapa.</p>`;
+  } else if (result === 'victoria') {
     let html = `<h3>🏆 ¡Victoria!</h3>`;
     if (outcome && outcome.rewards) {
       html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>`;

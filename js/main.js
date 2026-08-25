@@ -67,7 +67,16 @@
     $('battleOverlay').classList.add('hidden');
     window.__battleView = null;
     UI.renderTopbar(state);
-    UI.renderScreen(activeScreen, state);
+    const run = window.__stageRun;
+    if (run && !run.failed && run.nodeIdx < run.encounters.length) {
+      // Encuentro intermedio superado: de vuelta al recorrido, no a la pantalla normal.
+      UI.renderStageRun(state);
+    } else if (run) {
+      window.__stageRun = null;
+      UI.openZoneStages(state, run.zoneIdx);
+    } else {
+      UI.renderScreen(activeScreen, state);
+    }
   });
 
   const energyGained = isNewGame ? 0 : computeOfflineEnergy(state);

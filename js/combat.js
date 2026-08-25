@@ -41,6 +41,9 @@ function buildPlayerCombinations(state) {
   return state.combinations.map(lineId => combinationFighterUids(state, lineId).map(uid => makePlayerUnit(state, uid)));
 }
 
+// Cada fila devuelta aquí se planta como un nodo/encuentro separado del
+// recorrido de la etapa (ver UI.renderStageRun) — nunca menos de 2, para que
+// se note que la etapa se recorre y no es un único combate.
 function buildEnemyBand(zoneIdx, stageIdx) {
   const zone = ZONES[zoneIdx];
   const isBoss = stageIdx === STAGES_PER_ZONE - 1;
@@ -53,7 +56,7 @@ function buildEnemyBand(zoneIdx, stageIdx) {
     rows[2] = [makeUnit('enemy', zone.pool[2], level + 3, 1.7)];
   } else {
     const unitCount = 1 + Math.min(2, Math.floor(stageIdx / 3));
-    const rowCount = stageIdx < 3 ? 1 : 2;
+    const rowCount = stageIdx < 3 ? 2 : 3;
     for (let r = 0; r < rowCount; r++) {
       const row = [];
       for (let i = 0; i < unitCount; i++) {

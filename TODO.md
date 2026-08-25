@@ -30,6 +30,12 @@ se indica explícitamente.
       a estar disponibles para la siguiente oleada
 - [x] Indicador de ulti más claro: número de turnos estimados junto a la barra
       (o "¡LISTA!" cuando ya se puede desatar)
+- [x] **Mapa**: cada etapa ya no es un único combate — se abre un "recorrido"
+      con un nodo (⚔️) por cada oleada de enemigos y un nodo final de
+      recompensa (🎁); se lucha nodo a nodo, con una pantalla de progreso
+      entre combates, y solo se cobra la recompensa de la etapa al superar
+      el último nodo. Cada etapa tiene siempre 2-3 nodos de combate como
+      mínimo (antes algunas etapas tempranas eran un solo combate)
 
 ## Pendiente — sistemas grandes (necesitan diseño propio, iteración aparte)
 
@@ -37,11 +43,12 @@ se indica explícitamente.
       combate real de D.o.T. que el usuario mencionó (selección de filas,
       movimiento de ataque) — no llegaron adjuntas; la mecánica ya está
       implementada, esto es para afinar cómo se ve/anima
-- [ ] **Mapa**: cada escenario debe recorrerse (como en D.o.T.), con varios
-      combates apareciendo según se avanza, no un único combate por casilla
-  - [ ] Ampliar el número de mapas/zonas (van a crecer mucho los jefes)
-  - [ ] Falta(n) imagen(es) de referencia del recorrido de escenario y
-        encuentro con enemigo — no llegaron adjuntas
+- [ ] **Mapa — pulido visual**: falta(n) imagen(es) de referencia del
+      recorrido de escenario y encuentro con enemigo — no llegaron adjuntas;
+      el recorrido nodo a nodo ya funciona, esto es para el arte del camino
+      (ahora mismo son círculos con emoji, sin sprites de escenario)
+  - [ ] Ampliar el número de mapas/zonas (van a crecer mucho los jefes) —
+        depende del roster masivo (14.1-14.3), que aún no está creado
   - [ ] Sprites de escenario/paisaje pendientes (ver lista de sprites no-personaje)
 - [ ] **Tienda**: comprar objetos (equipo) y objetos curativos/revividores,
       necesarios porque un escenario puede tener varios combates seguidos
