@@ -27,6 +27,7 @@ function createNewState() {
     roster, gearInventory: [], band, progress,
     arena: { rank: 1, bestRank: 1 },
     stats: { battlesWon: 0, battlesLost: 0 },
+    settings: { infiniteEnergy: false },
   };
 }
 
@@ -260,6 +261,7 @@ function loadGame() {
     if (!raw) return null;
     const state = JSON.parse(raw);
     if (!state || state.version !== 2 || !state.roster) return null;
+    if (!state.settings) state.settings = { infiniteEnergy: false };
     return state;
   } catch (e) { return null; }
 }

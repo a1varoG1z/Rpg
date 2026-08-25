@@ -9,13 +9,39 @@
     btn.addEventListener('click', () => UI.switchScreen(btn.dataset.screen));
   });
 
-  $('settingsBtn').addEventListener('click', () => $('settingsModal').classList.remove('hidden'));
+  $('settingsBtn').addEventListener('click', () => {
+    $('infiniteEnergyToggle').checked = state.settings.infiniteEnergy;
+    $('settingsModal').classList.remove('hidden');
+  });
   $('settingsModalClose').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
   $('resetBtn').addEventListener('click', () => {
     if (confirm('¿Seguro que quieres borrar tu progreso y empezar de nuevo?')) {
       resetGame();
       location.reload();
     }
+  });
+
+  $('infiniteEnergyToggle').addEventListener('change', (e) => {
+    state.settings.infiniteEnergy = e.target.checked;
+    saveGame(state);
+    UI.renderTopbar(state);
+    UI.showToast(state.settings.infiniteEnergy ? '⚡ Energía infinita activada' : '⚡ Energía infinita desactivada');
+  });
+  $('cheatGemasBtn').addEventListener('click', () => {
+    state.currencies.gemas += 1000;
+    saveGame(state);
+    UI.renderTopbar(state);
+    UI.renderScreen(activeScreen, state);
+    UI.showToast('💎 +1000 Gemas');
+  });
+  $('cheatCrystalsBtn').addEventListener('click', () => {
+    state.currencies.pixite += 20;
+    state.currencies.voxite += 20;
+    state.currencies.doxite += 20;
+    saveGame(state);
+    UI.renderTopbar(state);
+    UI.renderScreen(activeScreen, state);
+    UI.showToast('🎁 +20 de cada cristal');
   });
 
   $('fighterModalClose').addEventListener('click', () => $('fighterModal').classList.add('hidden'));

@@ -54,8 +54,8 @@ function creatureCard(state, entry, opts) {
 UI.renderTopbar = function (state) {
   $('texelVal').textContent = Math.floor(state.currencies.texel).toLocaleString('es-ES');
   $('gemasVal').textContent = Math.floor(state.currencies.gemas).toLocaleString('es-ES');
-  $('energiaVal').textContent = Math.floor(state.currencies.energy);
-  $('energiaMax').textContent = MAX_ENERGY;
+  $('energiaVal').textContent = state.settings.infiniteEnergy ? '∞' : Math.floor(state.currencies.energy);
+  $('energiaMax').textContent = state.settings.infiniteEnergy ? '∞' : MAX_ENERGY;
 };
 
 UI.switchScreen = function (name) {
@@ -122,8 +122,10 @@ UI.openZoneStages = function (state, zoneIdx) {
 
 UI.startStageBattle = function (state, zoneIdx, stageIdx) {
   if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
-  if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
-  state.currencies.energy -= STAGE_ENERGY_COST;
+  if (!state.settings.infiniteEnergy) {
+    if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+    state.currencies.energy -= STAGE_ENERGY_COST;
+  }
   const { rows: enemyRows, isBoss } = buildEnemyBand(zoneIdx, stageIdx);
   UI.openBattle(state, buildPlayerRows(state), enemyRows, {
     title: ZONES[zoneIdx].name + ' · ' + (isBoss ? 'Jefe' : 'Etapa ' + (stageIdx + 1)),
