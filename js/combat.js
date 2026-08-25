@@ -35,36 +35,60 @@ function makePlayerUnit(state, uid, level) {
   };
 }
 
-// Construye las 3 combinaciones activas del jugador a partir de las líneas
-// elegidas en state.combinations (fila/columna/diagonal), no siempre filas.
+// Construye TODAS las combinaciones posibles del jugador: las 8 líneas
+// (filas, columnas, diagonales) de la Formación 3×3 actual. Ya no hay
+// preselección — en combate se elige, choque a choque, cualquiera de las
+// líneas vivas (ver UI.showGroupPicker), no solo un subconjunto fijado antes.
+// Un mismo luchador puede pertenecer a varias líneas a la vez (la celda
+// central, por ejemplo, está en su fila, su columna y las 2 diagonales), así
+// que se construye UN único objeto de combate por uid y se comparte entre
+// todas las líneas que lo contienen — si se elige la fila y más tarde la
+// columna que comparte esa celda, el daño/carga de ulti ya acumulados no se
+// pierden ni se duplican.
 function buildPlayerCombinations(state) {
-  return state.combinations.map(lineId => combinationFighterUids(state, lineId).map(uid => makePlayerUnit(state, uid)));
+  const unitByUid = {};
+  state.band.flat().forEach(uid => { if (uid && !unitByUid[uid]) unitByUid[uid] = makePlayerUnit(state, uid); });
+  return BAND_LINES.map(line => combinationFighterUids(state, line.id).map(uid => unitByUid[uid]));
+}
+
+// Un "jefe de zona" (nombre 3 del pool) es un único combate — sin oleadas
+// previas de relleno — contra un único rival. Como pelea en solitario contra
+// hasta 3 atacantes por ronda (desventaja numérica y de turnos: con su misma
+// agilidad de base actuaría solo 1 vez por cada 3 del jugador), NO recibe
+// ningún extra de ataque/agilidad/defensa por encima de lo normal para su
+// nivel y rareza — solo más HP, para que el combate dure varias rondas en
+// vez de acabar de un golpe. Si se le subiera también el ataque o la
+// defensa (como se hacía antes) un solo Épico podía llegar a ganarle a una
+// banda entera de Legendarios, que es justo lo que no tiene que pasar.
+function makeBossUnit(defId, level) {
+  const u = makeUnit('enemy', defId, level);
+  u.maxHp = Math.round(u.maxHp * 2.4);
+  u.hp = u.maxHp;
+  return u;
 }
 
 // Cada fila devuelta aquí se planta como un nodo/encuentro separado del
-// recorrido de la etapa (ver UI.renderStageRun) — nunca menos de 2, para que
-// se note que la etapa se recorre y no es un único combate.
+// recorrido de la etapa (ver UI.renderStageRun). Las etapas normales nunca
+// bajan de 2 oleadas y siempre presentan 3 rivales por oleada (aunque alguno
+// sea de relleno más débil); el jefe de zona es la única pelea contra un
+// único rival, sin oleadas previas.
 function buildEnemyBand(zoneIdx, stageIdx) {
   const zone = ZONES[zoneIdx];
   const isBoss = stageIdx === STAGES_PER_ZONE - 1;
   const globalIdx = zoneIdx * STAGES_PER_ZONE + stageIdx;
   const level = Math.max(1, 1 + globalIdx);
-  const rows = [[], [], []];
   if (isBoss) {
-    rows[0] = [makeUnit('enemy', zone.pool[0], level)];
-    rows[1] = [makeUnit('enemy', zone.pool[1], level), makeUnit('enemy', zone.pool[0], level)];
-    rows[2] = [makeUnit('enemy', zone.pool[2], level + 3, 1.7)];
-  } else {
-    const unitCount = 1 + Math.min(2, Math.floor(stageIdx / 3));
-    const rowCount = stageIdx < 3 ? 2 : 3;
-    for (let r = 0; r < rowCount; r++) {
-      const row = [];
-      for (let i = 0; i < unitCount; i++) {
-        const pick = zone.pool[Math.floor(Math.random() * Math.min(2, zone.pool.length))];
-        row.push(makeUnit('enemy', pick, level));
-      }
-      rows[r] = row;
+    return { rows: [[makeBossUnit(zone.pool[2], level)]], isBoss, level };
+  }
+  const rowCount = stageIdx < 3 ? 2 : 3;
+  const rows = [];
+  for (let r = 0; r < rowCount; r++) {
+    const row = [];
+    for (let i = 0; i < 3; i++) {
+      const pick = zone.pool[Math.floor(Math.random() * Math.min(2, zone.pool.length))];
+      row.push(makeUnit('enemy', pick, level));
     }
+    rows.push(row);
   }
   return { rows, isBoss, level };
 }

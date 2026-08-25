@@ -28,9 +28,6 @@ function createNewState() {
     arena: { rank: 1, bestRank: 1 },
     stats: { battlesWon: 0, battlesLost: 0 },
     settings: { infiniteEnergy: false },
-    // Las 3 líneas (de las 8 posibles) que actúan como combinaciones de
-    // combate. Por defecto las 3 filas, igual que el comportamiento previo.
-    combinations: ['fila1', 'fila2', 'fila3'],
     // Objetos consumibles comprados en la Tienda (pociones, plumas fénix).
     items: { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 },
   };
@@ -39,24 +36,14 @@ function createNewState() {
 function rosterEntry(state, uid) { return state.roster.find(r => r.uid === uid); }
 function gearItem(state, uid) { return state.gearInventory.find(g => g.uid === uid); }
 
-// --- Combinaciones de combate (líneas de la Formación 3×3) ---
+// --- Líneas de combate (Formación 3×3) ---
+// Devuelve los uid de los luchadores colocados en una línea (fila, columna o
+// diagonal) de la Formación. Ya no hay "combinaciones" preelegidas: en
+// combate se puede elegir cualquiera de las 8 líneas posibles cada choque
+// (ver buildPlayerCombinations en combat.js).
 function combinationFighterUids(state, lineId) {
   const line = bandLineInfo(lineId);
   return line.cells.map(([r, c]) => state.band[r][c]).filter(Boolean);
-}
-
-// Activa/desactiva una línea como combinación de combate. Se permiten entre
-// 1 y 3 activas a la vez; al añadir una 4ª se descarta la más antigua (FIFO)
-// en vez de bloquear la acción.
-function toggleCombination(state, lineId) {
-  const idx = state.combinations.indexOf(lineId);
-  if (idx !== -1) {
-    if (state.combinations.length <= 1) return;
-    state.combinations.splice(idx, 1);
-  } else {
-    if (state.combinations.length >= 3) state.combinations.shift();
-    state.combinations.push(lineId);
-  }
 }
 
 function levelGrowth(level) { return 1 + (level - 1) * 0.10; }
@@ -209,34 +196,48 @@ function summonOne(state, crystalType) {
   return applySummonResult(state, def.id);
 }
 
+// Cada copia invocada se guarda por separado en el roster (uid propio, SEF 0):
+// ya no se fusiona sola al invocar un duplicado. El jugador decide más tarde,
+// desde la ficha del luchador, cuáles de esas copias usar como material de
+// fusión (ver fuseMaterials). Si el luchador ya está en su forma máxima (sin
+// evolvesTo), un duplicado no sirve de nada y se convierte en Texel al momento,
+// igual que si el roster está lleno.
 function applySummonResult(state, defId) {
   const def = fighterDef(defId);
-  let entry = state.roster.find(r => r.defId === defId);
-  if (!entry) {
-    if (state.roster.length >= MAX_ROSTER) {
-      state.currencies.texel += 50;
-      return { defId, outcome: 'inventario_lleno' };
-    }
-    entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null, isNew: true, readyToEvolve: false };
-    state.roster.push(entry);
-    return { defId, outcome: 'nuevo', uid: entry.uid };
+  const hadAny = state.roster.some(r => r.defId === defId);
+  if (hadAny && !def.evolvesTo) {
+    state.currencies.texel += Math.round(40 * rarityInfo(def.rarity).mult);
+    return { defId, outcome: 'duplicado_max' };
   }
-  if (entry.sef >= 5) {
-    if (!def.evolvesTo) {
-      state.currencies.texel += 40 * rarityInfo(def.rarity).mult;
-      return { defId, outcome: 'duplicado_max', uid: entry.uid };
-    }
-    // La fusión (SEF 5/5) ya no evoluciona sola: se queda lista y el
-    // jugador la dispara a mano desde la ficha del luchador (evolveFighter).
-    entry.readyToEvolve = true;
-    return { defId, outcome: 'listo_evolucionar', uid: entry.uid };
+  if (state.roster.length >= MAX_ROSTER) {
+    state.currencies.texel += 50;
+    return { defId, outcome: 'inventario_lleno' };
   }
-  entry.sef = Math.min(5, entry.sef + 1);
-  if (entry.sef >= 5 && def.evolvesTo) {
-    entry.readyToEvolve = true;
-    return { defId, outcome: 'listo_evolucionar', uid: entry.uid };
-  }
-  return { defId, outcome: 'duplicado', uid: entry.uid, sef: entry.sef };
+  const entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null, isNew: !hadAny, readyToEvolve: false };
+  state.roster.push(entry);
+  return { defId, outcome: hadAny ? 'duplicado' : 'nuevo', uid: entry.uid };
+}
+
+// Fusión manual: consume copias sueltas del roster (mismas defId que el
+// objetivo) para llenar su barra de SEF, hasta 5/5. Cada copia usada como
+// material se elimina del roster (y de la Formación, si estaba colocada).
+// Devuelve cuántas copias se han consumido de verdad.
+function fuseMaterials(state, targetUid, materialUids) {
+  const target = rosterEntry(state, targetUid);
+  const def = target && fighterDef(target.defId);
+  if (!target || !def || !def.evolvesTo) return 0;
+  let used = 0;
+  materialUids.forEach(matUid => {
+    if (target.sef >= 5) return;
+    if (matUid === targetUid) return;
+    const mat = rosterEntry(state, matUid);
+    if (!mat || mat.defId !== target.defId) return;
+    removeFromRoster(state, matUid);
+    target.sef = Math.min(5, target.sef + 1);
+    used++;
+  });
+  if (target.sef >= 5) target.readyToEvolve = true;
+  return used;
 }
 
 // Dispara manualmente la evolución de un luchador con SEF 5/5. Devuelve el
@@ -336,7 +337,6 @@ function loadGame() {
     const state = JSON.parse(raw);
     if (!state || state.version !== 2 || !state.roster) return null;
     if (!state.settings) state.settings = { infiniteEnergy: false };
-    if (!state.combinations) state.combinations = ['fila1', 'fila2', 'fila3'];
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     return state;
   } catch (e) { return null; }

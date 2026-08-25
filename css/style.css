@@ -90,12 +90,7 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .rarity-legendario .creature-canvas-wrap { animation: floatSprite 2.2s ease-in-out infinite; }
 @keyframes floatSprite { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 @keyframes legendaryPulse { 0%, 100% { box-shadow: 0 0 14px var(--rg, transparent); } 50% { box-shadow: 0 0 30px var(--rg, transparent); } }
-.evolve-flash { animation: evolveFlash 0.7s ease-in-out; }
-@keyframes evolveFlash {
-  0% { filter: brightness(1) drop-shadow(0 0 0 transparent); transform: scale(1); }
-  40% { filter: brightness(2.2) drop-shadow(0 0 18px #fff5c0); transform: scale(1.2); }
-  100% { filter: brightness(1) drop-shadow(0 0 0 transparent); transform: scale(1); }
-}
+.creature-card.selected { outline: 3px solid var(--green); outline-offset: 1px; box-shadow: 0 0 12px rgba(76,175,80,0.7); }
 
 .creature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 12px 16px; }
 
@@ -151,18 +146,6 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .formation-slot.filled { border-style: solid; }
 .formation-lvl { font-size: 0.6rem; color: var(--cream-dim); }
 
-.line-picker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
-.line-picker-btn {
-  background: #1f1811; border: 2px solid var(--gold-dim); border-radius: 8px; padding: 6px 4px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-}
-.line-picker-btn.active { border-color: var(--green); box-shadow: 0 0 8px rgba(76,175,80,0.5); }
-.line-mini-grid { display: grid; grid-template-columns: repeat(3, 8px); grid-template-rows: repeat(3, 8px); gap: 2px; }
-.line-mini-cell { width: 8px; height: 8px; border-radius: 2px; background: #3a2c17; }
-.line-mini-cell.on { background: var(--gold); }
-.line-picker-btn.active .line-mini-cell.on { background: var(--green); }
-.line-picker-label { font-size: 0.6rem; color: var(--cream-dim); }
-
 .picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 50vh; overflow-y: auto; margin-top: 8px; }
 
 /* ---------- Tienda ---------- */
@@ -211,6 +194,14 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .reveal-flash.rarity-legendario { box-shadow: 0 0 40px #e8a23c; animation: revealPop 0.5s ease-out, legendaryPulse 1.4s ease-in-out infinite 0.5s; }
 .reveal-canvas-wrap { display: flex; justify-content: center; margin-bottom: 6px; }
 .reveal-outcome { margin-top: 6px; font-size: 0.85rem; color: var(--gold); }
+.reveal-progress { font-family: 'Press Start 2P', monospace; font-size: 0.65rem; color: var(--gold-dim); margin-bottom: 8px; }
+.reveal-skip-btn { margin-top: 14px; }
+.evolve-reveal-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.evolve-arrow { font-size: 1.4rem; color: var(--gold); animation: evolveArrowPulse 1s ease-in-out infinite; }
+@keyframes evolveArrowPulse { 0%, 100% { transform: translateX(0); opacity: 0.7; } 50% { transform: translateX(6px); opacity: 1; } }
+.evolve-old { opacity: 0.55; filter: grayscale(0.4); }
+.evolve-new .creature-canvas { animation: evolveNewPop 0.6s ease-out; }
+@keyframes evolveNewPop { 0% { transform: scale(0.4); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
 
 /* ---------- Inventario / equipo ---------- */
 .item-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 12px; }

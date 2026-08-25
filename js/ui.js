@@ -152,7 +152,7 @@ UI.openZoneStages = function (state, zoneIdx) {
     grid.appendChild(btn);
   }
   wrap.appendChild(grid);
-  wrap.appendChild(el('p', 'settings-info', 'Cada etapa cuesta ' + STAGE_ENERGY_COST + ' ⚡ y se recorre nodo a nodo, con varios encuentros antes de la recompensa. La etapa 8 es el jefe de zona.'));
+  wrap.appendChild(el('p', 'settings-info', 'Cada etapa cuesta ' + STAGE_ENERGY_COST + ' ⚡ y se recorre nodo a nodo, con varios encuentros antes de la recompensa. La etapa 8 es el jefe de zona: un único combate, solo contra él.'));
 };
 
 // Entrar en una etapa ya no abre directamente una batalla: se paga la
@@ -170,10 +170,11 @@ UI.startStageBattle = function (state, zoneIdx, stageIdx) {
   }
   const { rows, isBoss } = buildEnemyBand(zoneIdx, stageIdx);
   const encounters = rows.filter(r => r.length > 0);
-  // hpMap/faintedSet llevan la cuenta de la vida de cada luchador ENTRE nodos
-  // del recorrido: a diferencia de antes, ya no se cura sola al pasar de
-  // encuentro — de ahí que la Tienda venda pociones y plumas fénix.
-  window.__stageRun = { zoneIdx, stageIdx, isBoss, encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set() };
+  // hpMap/faintedSet/chargeMap llevan la cuenta de la vida, los desmayos y la
+  // carga de ulti de cada luchador durante TODA la etapa (entre nodos del
+  // recorrido) — ya no se cura ni se reinicia la ulti sola al pasar de
+  // encuentro, de ahí que la Tienda venda pociones y plumas fénix.
+  window.__stageRun = { zoneIdx, stageIdx, isBoss, encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {} };
   UI.renderStageRun(state);
 };
 
@@ -296,12 +297,14 @@ UI.fightStageRunNode = function (state) {
   const run = window.__stageRun;
   const enemyRow = run.encounters[run.nodeIdx];
   const playerCombos = buildPlayerCombinations(state);
-  // Aplica el HP/estado con el que ha llegado cada luchador de nodos
-  // anteriores de este recorrido — ya no se cura solo al pasar de encuentro.
+  // Aplica el HP/estado/carga de ulti con el que ha llegado cada luchador de
+  // nodos anteriores de este recorrido — ya no se cura ni se reinicia la
+  // ulti sola al pasar de encuentro.
   playerCombos.forEach(row => row.forEach(u => {
     if (!u.sourceUid) return;
     if (run.faintedSet.has(u.sourceUid)) { u.hp = 0; u.alive = false; }
     else if (run.hpMap[u.sourceUid] !== undefined) { u.hp = Math.min(u.maxHp, run.hpMap[u.sourceUid]); }
+    if (run.chargeMap[u.sourceUid] !== undefined) u.ultCharge = run.chargeMap[u.sourceUid];
   }));
   UI.openBattle(state, playerCombos, [enemyRow], {
     title: ZONES[run.zoneIdx].name + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length,
@@ -310,6 +313,7 @@ UI.fightStageRunNode = function (state) {
         view.playerGroups.forEach(g => g.row.forEach(u => {
           if (!u.sourceUid) return;
           run.hpMap[u.sourceUid] = u.hp;
+          run.chargeMap[u.sourceUid] = u.ultCharge;
           if (u.alive) run.faintedSet.delete(u.sourceUid); else run.faintedSet.add(u.sourceUid);
         }));
       }
@@ -367,8 +371,6 @@ UI.renderBanda = function (state) {
     grid.appendChild(rowEl);
   }
 
-  UI.renderLinePicker(state);
-
   $('rosterCount').textContent = state.roster.length;
   const rGrid = $('rosterGrid');
   rGrid.innerHTML = '';
@@ -381,52 +383,62 @@ UI.renderBanda = function (state) {
   });
 };
 
-// Selector de las líneas (filas/columnas/diagonales) que actúan como
-// combinaciones de combate. Cada botón muestra una mini-cuadrícula 3×3 con
-// sus 3 celdas resaltadas para que se reconozca la línea de un vistazo.
-UI.renderLinePicker = function (state) {
-  $('combinationsCount').textContent = state.combinations.length + '/3';
-  const grid = $('linePickerGrid');
-  grid.innerHTML = '';
-  BAND_LINES.forEach(line => {
-    const active = state.combinations.includes(line.id);
-    const btn = el('button', 'line-picker-btn' + (active ? ' active' : ''));
-    const mini = el('div', 'line-mini-grid');
-    for (let r = 0; r < BAND_ROWS; r++) {
-      for (let c = 0; c < BAND_COLS; c++) {
-        const isLineCell = line.cells.some(([lr, lc]) => lr === r && lc === c);
-        mini.appendChild(el('div', 'line-mini-cell' + (isLineCell ? ' on' : '')));
-      }
-    }
-    btn.appendChild(mini);
-    btn.appendChild(el('div', 'line-picker-label', line.label));
-    btn.addEventListener('click', () => { toggleCombination(state, line.id); saveGame(state); UI.renderLinePicker(state); });
-    grid.appendChild(btn);
+// ---------- Selector reutilizable de luchadores (con orden) ----------
+// Usado por el picker de Formación (slot vacío) y por el panel de
+// "sustituir" dentro de la ficha de un luchador ya colocado.
+UI.pickerSortMode = 'reciente';
+const SORT_OPTIONS = [
+  ['reciente', 'Más reciente'], ['nombre', 'Nombre'], ['familia', 'Familia'],
+  ['elemento', 'Elemento'], ['tier', 'Tier'], ['copias', 'Más copias'],
+];
+function buildSortSelect(currentMode, onChange) {
+  const row = el('div', 'roster-sort-row');
+  row.appendChild(el('label', null, 'Ordenar por'));
+  const select = document.createElement('select');
+  SORT_OPTIONS.forEach(([v, label]) => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = label;
+    if (v === currentMode) opt.selected = true;
+    select.appendChild(opt);
   });
-};
+  select.addEventListener('change', (e) => onChange(e.target.value));
+  row.appendChild(select);
+  return row;
+}
+function renderPickerCandidates(container, state, candidates, mode, onPick) {
+  container.innerHTML = '';
+  if (candidates.length === 0) { container.appendChild(el('div', 'empty-hint', 'No hay luchadores disponibles.')); return; }
+  const grid = el('div', 'picker-grid');
+  sortRosterEntries(candidates, mode).forEach(entry => {
+    const card = creatureCard(state, entry, {});
+    card.addEventListener('click', () => onPick(entry));
+    grid.appendChild(card);
+  });
+  container.appendChild(grid);
+}
 
 UI.openFormationPicker = function (state, row, col) {
   const uid = state.band[row][col];
+  if (uid) { UI.openFighterModal(state, uid, { row, col }); return; }
   const body = $('pickerModalBody');
   body.innerHTML = '<h3>Elegir luchador</h3>';
-  if (uid) {
-    const removeBtn = el('button', 'danger-btn', 'Quitar de la formación');
-    removeBtn.addEventListener('click', () => { setBandSlot(state, row, col, null); saveGame(state); $('pickerModal').classList.add('hidden'); UI.renderBanda(state); });
-    body.appendChild(removeBtn);
-  }
-  const list = el('div', 'picker-grid');
-  const placed = state.band.flat();
-  state.roster.forEach(entry => {
-    if (placed.includes(entry.uid) && entry.uid !== uid) return;
-    const card = creatureCard(state, entry, {});
-    card.addEventListener('click', () => { setBandSlot(state, row, col, entry.uid); saveGame(state); $('pickerModal').classList.add('hidden'); UI.renderBanda(state); });
-    list.appendChild(card);
-  });
-  body.appendChild(list);
+  const listWrap = el('div');
+  let mode = UI.pickerSortMode;
+  const pick = (entry) => { setBandSlot(state, row, col, entry.uid); saveGame(state); $('pickerModal').classList.add('hidden'); UI.renderBanda(state); };
+  const refresh = () => {
+    const placed = state.band.flat();
+    renderPickerCandidates(listWrap, state, state.roster.filter(e => !placed.includes(e.uid)), mode, pick);
+  };
+  body.appendChild(buildSortSelect(mode, (v) => { mode = v; UI.pickerSortMode = v; refresh(); }));
+  body.appendChild(listWrap);
+  refresh();
   $('pickerModal').classList.remove('hidden');
 };
 
-UI.openFighterModal = function (state, uid) {
+// formationCtx (opcional): { row, col } cuando se abre la ficha desde un
+// hueco ya ocupado de la Formación — añade un panel para quitarlo o
+// sustituirlo sin salir de la ficha normal del luchador.
+UI.openFighterModal = function (state, uid, formationCtx) {
   const entry = rosterEntry(state, uid);
   if (!entry) return;
   if (entry.isNew) { entry.isNew = false; saveGame(state); }
@@ -460,30 +472,82 @@ UI.openFighterModal = function (state, uid) {
   skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p><p class="settings-info">Se carga peleando: golpea o recibe daño para llenar la barra morada y desatarla.</p>`;
   body.appendChild(skillPanel);
 
+  if (def.lore) {
+    const lorePanel = el('div', 'panel');
+    lorePanel.innerHTML = `<h3>📜 Historia</h3><p class="settings-info">${def.lore}</p>`;
+    body.appendChild(lorePanel);
+  }
+
   const sefPanel = el('div', 'panel');
-  const evoText = !def.evolvesTo ? 'Forma máxima: los duplicados se convierten en Texel.'
+  const evoText = !def.evolvesTo ? 'Forma máxima: los duplicados se convierten en Texel automáticamente.'
     : entry.readyToEvolve ? '¡Fusión completa! Ya puedes evolucionarlo a <b>' + fighterDef(def.evolvesTo).name + '</b>.'
-    : 'Al llegar a 5/5 podrás evolucionarlo a <b>' + fighterDef(def.evolvesTo).name + '</b>. Consíguelo invocando duplicados.';
+    : 'Usa copias sueltas de este mismo luchador como material de fusión (abajo) para llegar a 5/5 y evolucionarlo a <b>' + fighterDef(def.evolvesTo).name + '</b>.';
   sefPanel.innerHTML = `<h3>Fusión (SEF) <span class="badge">${entry.sef}/5</span></h3>
     <div class="sef-bar big"><div class="sef-fill" style="width:${entry.sef / 5 * 100}%"></div></div>
     <p class="settings-info">${evoText}</p>`;
   if (entry.stars > 0) sefPanel.innerHTML += `<div class="stat-row"><span>Superfusión</span><span>${'★'.repeat(entry.stars)}${'☆'.repeat(3 - entry.stars)}</span></div>`;
   body.appendChild(sefPanel);
+
   if (entry.readyToEvolve && def.evolvesTo) {
     const evoBtn = el('button', 'primary-btn evolve-btn', '✨ Evolucionar a ' + fighterDef(def.evolvesTo).name);
     evoBtn.addEventListener('click', () => {
-      evoBtn.disabled = true;
-      evoBtn.textContent = '✨ Evolucionando...';
-      portrait.classList.add('evolve-flash');
-      setTimeout(() => {
-        const newDefId = evolveFighter(state, uid);
+      const oldDefId = entry.defId;
+      const newDefId = evolveFighter(state, uid);
+      saveGame(state);
+      UI.renderTopbar(state);
+      if (activeScreen === 'banda') UI.renderBanda(state);
+      if (newDefId) {
+        UI.pendingEvolveUid = uid;
+        $('fighterModal').classList.add('hidden');
+        UI.showEvolveReveal(oldDefId, newDefId);
+      }
+    });
+    body.appendChild(evoBtn);
+  } else if (def.evolvesTo && entry.sef < 5) {
+    // Material de fusión: copias sueltas del mismo defId, elegidas a mano
+    // (ya no se fusionan solas al invocar un duplicado).
+    const siblings = state.roster.filter(r => r.uid !== uid && r.defId === entry.defId);
+    const fusePanel = el('div', 'panel');
+    fusePanel.innerHTML = `<h3>🧬 Material de fusión</h3><p class="settings-info">Toca las copias de ${def.name} que quieras usar como material. Cada una suma 1 a la barra SEF.</p>`;
+    const grid = el('div', 'picker-grid');
+    const selected = new Set();
+    const remaining = 5 - entry.sef;
+    let fuseBtn;
+    if (siblings.length === 0) {
+      grid.appendChild(el('div', 'empty-hint', 'Aún no tienes más copias de ' + def.name + '. Consíguelas invocando.'));
+    } else {
+      siblings.forEach(sib => {
+        const card = creatureCard(state, sib, {});
+        card.addEventListener('click', () => {
+          if (selected.has(sib.uid)) {
+            selected.delete(sib.uid);
+            card.classList.remove('selected');
+          } else {
+            if (selected.size >= remaining) return;
+            selected.add(sib.uid);
+            card.classList.add('selected');
+          }
+          fuseBtn.disabled = selected.size === 0;
+          fuseBtn.textContent = 'Fusionar (' + selected.size + '/' + remaining + ')';
+        });
+        grid.appendChild(card);
+      });
+    }
+    fusePanel.appendChild(grid);
+    fuseBtn = el('button', 'primary-btn', 'Fusionar');
+    fuseBtn.disabled = true;
+    fuseBtn.addEventListener('click', () => {
+      const used = fuseMaterials(state, uid, [...selected]);
+      if (used > 0) {
         saveGame(state);
         UI.renderTopbar(state);
         if (activeScreen === 'banda') UI.renderBanda(state);
-        if (newDefId) UI.openFighterModal(state, uid);
-      }, 700);
+        UI.showToast('🧬 Fusionadas ' + used + ' copia' + (used > 1 ? 's' : ''));
+        UI.openFighterModal(state, uid, formationCtx);
+      }
     });
-    body.appendChild(evoBtn);
+    fusePanel.appendChild(fuseBtn);
+    body.appendChild(fusePanel);
   }
   if (entry.stars < 3) {
     const superBtn = el('button', 'primary-btn', 'Superfusionar (sacrificar otro luchador)');
@@ -508,6 +572,34 @@ UI.openFighterModal = function (state, uid) {
   });
   gearPanel.appendChild(gearRow);
   body.appendChild(gearPanel);
+
+  if (formationCtx) {
+    const fPanel = el('div', 'panel');
+    fPanel.innerHTML = '<h3>🐾 Formación</h3>';
+    const removeBtn = el('button', 'danger-btn', 'Quitar de la formación');
+    removeBtn.addEventListener('click', () => {
+      setBandSlot(state, formationCtx.row, formationCtx.col, null);
+      saveGame(state);
+      $('fighterModal').classList.add('hidden');
+      UI.renderBanda(state);
+    });
+    fPanel.appendChild(removeBtn);
+    fPanel.appendChild(el('p', 'settings-info', 'Sustituir por:'));
+    const subWrap = el('div');
+    let subMode = UI.pickerSortMode;
+    const placed = state.band.flat();
+    const candidates = () => state.roster.filter(e => e.uid !== uid && !placed.includes(e.uid));
+    const subPick = (cand) => {
+      setBandSlot(state, formationCtx.row, formationCtx.col, cand.uid);
+      saveGame(state);
+      $('fighterModal').classList.add('hidden');
+      UI.renderBanda(state);
+    };
+    fPanel.appendChild(buildSortSelect(subMode, (v) => { subMode = v; UI.pickerSortMode = v; renderPickerCandidates(subWrap, state, candidates(), subMode, subPick); }));
+    fPanel.appendChild(subWrap);
+    renderPickerCandidates(subWrap, state, candidates(), subMode, subPick);
+    body.appendChild(fPanel);
+  }
 
   $('fighterModal').classList.remove('hidden');
 };
@@ -603,39 +695,91 @@ UI.doSummon = function (state, type, count) {
   else UI.showMultiReveal(results);
 };
 
+function revealOutcomeText(result) {
+  return {
+    nuevo: '¡Nuevo luchador!',
+    duplicado: 'Duplicado · se guarda como copia suelta para fusionar',
+    duplicado_max: 'Ya en forma máxima · convertido en Texel',
+    inventario_lleno: 'Colección llena · convertido en Texel',
+  }[result.outcome];
+}
+
 UI.showSingleReveal = function (result) {
   const def = fighterDef(result.defId);
   const rarity = rarityInfo(def.rarity);
   const body = $('summonRevealBody');
   body.className = 'reveal-flash rarity-' + def.rarity;
-  const outcomeText = { nuevo: '¡Nuevo luchador!', duplicado: 'Duplicado · SEF ' + result.sef + '/5', listo_evolucionar: '✨ ¡Listo para evolucionar!', duplicado_max: 'Convertido en Texel', inventario_lleno: 'Colección llena · Convertido en Texel' }[result.outcome];
-  body.innerHTML = `<div class="reveal-canvas-wrap"></div><div class="item-modal-name" style="color:${rarity.color}">${def.name}</div><div class="item-modal-rarity">${rarity.label}</div><div class="reveal-outcome">${outcomeText}</div>`;
+  body.innerHTML = `<div class="reveal-canvas-wrap"></div><div class="item-modal-name" style="color:${rarity.color}">${def.name}</div><div class="item-modal-rarity">${rarity.label}</div><div class="reveal-outcome">${revealOutcomeText(result)}</div>`;
   body.querySelector('.reveal-canvas-wrap').appendChild(creatureCanvas(result.defId, 120));
   $('summonRevealClose').classList.remove('hidden');
   $('summonRevealModal').classList.remove('hidden');
 };
 
+// Revelado x10: en vez del antiguo "pop" simultáneo de una rejilla (que se
+// notaba tosco y no daba tiempo a fijarse en cada resultado), se muestra un
+// carrusel: una criatura a la vez, a pantalla completa, con avance automático
+// o al tocar, y un botón para saltar directo al resumen final en rejilla.
 UI.showMultiReveal = function (results) {
   const body = $('summonRevealBody');
-  body.className = '';
-  body.innerHTML = '<h3>Resultados</h3>';
-  const grid = el('div', 'item-grid');
-  body.appendChild(grid);
   $('summonRevealClose').classList.add('hidden');
   $('summonRevealModal').classList.remove('hidden');
-  // Revelado escalonado: cada cristal se abre uno detrás de otro en vez de
-  // aparecer todo de golpe, para que se note la invocación de los 10.
-  results.forEach((r, i) => {
+  let i = 0;
+  let timer = null;
+
+  function renderSummary() {
+    body.className = '';
+    body.innerHTML = '<h3>Resultados</h3>';
+    const grid = el('div', 'item-grid');
+    results.forEach(r => {
+      const def = fighterDef(r.defId);
+      const rarity = rarityInfo(def.rarity);
+      const cell = el('div', 'item-cell reveal-cell-pop');
+      cell.style.borderColor = rarity.color;
+      cell.style.boxShadow = '0 0 14px ' + rarity.glow;
+      cell.appendChild(creatureCanvas(r.defId, 56));
+      grid.appendChild(cell);
+    });
+    body.appendChild(grid);
+    $('summonRevealClose').classList.remove('hidden');
+  }
+
+  function advance() { renderCard(); }
+
+  function renderCard() {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (i >= results.length) { renderSummary(); return; }
+    const r = results[i];
     const def = fighterDef(r.defId);
     const rarity = rarityInfo(def.rarity);
-    const cell = el('div', 'item-cell reveal-cell-pop');
-    cell.style.borderColor = rarity.color;
-    cell.style.boxShadow = '0 0 14px ' + rarity.glow;
-    cell.style.animationDelay = (i * 0.1) + 's';
-    cell.appendChild(creatureCanvas(r.defId, 56));
-    grid.appendChild(cell);
-  });
-  setTimeout(() => $('summonRevealClose').classList.remove('hidden'), results.length * 100 + 450);
+    body.className = 'reveal-flash rarity-' + def.rarity;
+    body.innerHTML = `<div class="reveal-progress">${i + 1} / ${results.length}</div>
+      <div class="reveal-canvas-wrap"></div>
+      <div class="item-modal-name" style="color:${rarity.color}">${def.name}</div>
+      <div class="item-modal-rarity">${rarity.label}</div>
+      <div class="reveal-outcome">${revealOutcomeText(r)}</div>
+      <button class="mini-btn reveal-skip-btn" id="revealSkipBtn">Saltar »</button>`;
+    body.querySelector('.reveal-canvas-wrap').appendChild(creatureCanvas(r.defId, 120));
+    $('revealSkipBtn').addEventListener('click', (e) => { e.stopPropagation(); i = results.length; renderCard(); });
+    body.addEventListener('click', advance, { once: true });
+    i++;
+    timer = setTimeout(advance, 900);
+  }
+  renderCard();
+};
+
+// Animación de evolución manual: se muestra a pantalla completa, igual que
+// al abrir una invocación, en vez del pequeño destello sobre la ficha.
+UI.showEvolveReveal = function (oldDefId, newDefId) {
+  const newDef = fighterDef(newDefId);
+  const rarity = rarityInfo(newDef.rarity);
+  const body = $('summonRevealBody');
+  body.className = 'reveal-flash rarity-' + newDef.rarity;
+  body.innerHTML = `<div class="evolve-reveal-row"><div class="reveal-canvas-wrap evolve-old"></div><div class="evolve-arrow">➜</div><div class="reveal-canvas-wrap evolve-new"></div></div>
+    <div class="item-modal-name" style="color:${rarity.color}">${newDef.name}</div><div class="item-modal-rarity">${rarity.label}</div><div class="reveal-outcome">✨ ¡Evolución completa!</div>`;
+  body.querySelector('.evolve-old').appendChild(creatureCanvas(oldDefId, 74));
+  body.querySelector('.evolve-new').appendChild(creatureCanvas(newDefId, 100));
+  $('summonRevealClose').classList.remove('hidden');
+  $('summonRevealModal').classList.remove('hidden');
 };
 
 // ---------- Arena ----------

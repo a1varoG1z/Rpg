@@ -56,7 +56,14 @@
   $('gearModal').addEventListener('click', (e) => { if (e.target.id === 'gearModal') $('gearModal').classList.add('hidden'); });
   $('pickerModalClose').addEventListener('click', () => $('pickerModal').classList.add('hidden'));
   $('pickerModal').addEventListener('click', (e) => { if (e.target.id === 'pickerModal') $('pickerModal').classList.add('hidden'); });
-  $('summonRevealClose').addEventListener('click', () => $('summonRevealModal').classList.add('hidden'));
+  $('summonRevealClose').addEventListener('click', () => {
+    $('summonRevealModal').classList.add('hidden');
+    if (UI.pendingEvolveUid) {
+      const evolvedUid = UI.pendingEvolveUid;
+      UI.pendingEvolveUid = null;
+      if (rosterEntry(state, evolvedUid)) UI.openFighterModal(state, evolvedUid);
+    }
+  });
   $('offlineClose').addEventListener('click', () => $('offlineModal').classList.add('hidden'));
 
   $('battleSkipBtn').addEventListener('click', () => {
