@@ -147,6 +147,48 @@ se indica explícitamente.
       de jefe de una zona nueva se juegan bien por la UI real, y una banda
       legendaria a nivel apropiado gana 100/100 combates simulados contra
       Loki (el jefe de la última zona, nivel 264)
+- [x] **Lote de 7 correcciones/ampliaciones pedidas de golpe**:
+  - [x] Bug visual: al invocar x10, la pantalla-resumen final se quedaba con
+        la rejilla vacía (las imágenes no se veían aunque el sorteo era
+        correcto). Causa real: el `@keyframes revealPop` nunca fijaba
+        `opacity` en su 100%, así que `animation-fill-mode: forwards`
+        bloqueaba para siempre el `opacity: 0` estático declarado junto a la
+        animación. Corregido añadiendo `opacity: 1` al 100% del keyframe;
+        verificado con `getComputedStyle` antes/después y con captura visual
+  - [x] Combate — ver estadísticas: las cartas de luchador de la banda en
+        combate ahora son pulsables y abren una ficha modal con
+        HP/ataque/defensa/agilidad/sabiduría y la ulti (nombre, descripción,
+        barra de carga y turnos restantes), reutilizando el modal de picker
+        ya existente (subido su z-index por encima del overlay de combate
+        para que se vea bien al abrirse en mitad de una pelea)
+  - [x] Equipo — de 2 a 6 huecos: arma, armadura, casco, guantes, botas y
+        amuleto, cada uno con una estadística principal y una secundaria más
+        floja propias (antes solo existían arma/armadura). Refactor de
+        `entry.gearArma/gearArmadura` (campos planos) a `entry.gear{}`
+        (objeto genérico por slot), con migración automática y retrocompatible
+        de partidas guardadas antiguas. Las recompensas y la tienda ahora
+        sueltan pieza de un slot aleatorio entre los 6, no solo arma/armadura
+  - [x] Jefes de mapa balanceados por zona (confirmado el problema y
+        corregido): se comprobó que casi todos los jefes tenían rareza fija
+        Épica o Legendaria (por un `rarity || 'legendario'` por defecto en
+        `addBoss` que casi nadie sobreescribía), sin relación con lo
+        avanzada que estuviera su zona — un jefe Legendario/Épico contra un
+        equipo recién empezado (rareza Común/Infrecuente) perdía por goleada
+        pase lo que pase. Simulación con banda completa de 9 luchadores y
+        ciclado real de combos (como se juega de verdad) confirmó el
+        problema: 0 victorias de 60 en 4 de las 5 zonas probadas antes de la
+        corrección. Se reasignó la rareza de los 33 jefes para que coincida
+        con la de los enemigos normales de su propia zona (progresión
+        Común→Infrecuente→Raro→Épico, igual que ya subía el relleno). Tras
+        el cambio, una banda completa a nivel y rareza apropiados para cada
+        una de las 33 zonas gana 20/20 combates contra su propio jefe, en
+        7-23 rondas de media (varios ciclos de refuerzos, no un solo golpe)
+  - [x] Enemigos y jefes de mapa son ahora contenido dedicado, no jugable:
+        nueva lista `MOBS` (99 entradas, mismo sistema de 3 tiers que los
+        personajes jugables) para el relleno de las 33 zonas, separada de
+        `FIGHTERS` (jugables/invocables). Auditado con script: 0 zonas
+        referencian ya ninguna criatura jugable, ni de relleno ni de jefe
+  - [x] Anotado en este TODO (este mismo punto)
 
 ## Pendiente — sistemas grandes (necesitan diseño propio, iteración aparte)
 

@@ -206,6 +206,25 @@ function addFamily(slug, tier, element, cls, skillId, names, loreCore) {
   });
 }
 
+// Los mobs "normales" del mapa (14.3) NO son luchadores jugables: nunca
+// salen en la invocación, ni en la Arena, ni se pueden colocar en la
+// Formación — son personajes creados específicamente para ser rivales de
+// los encuentros normales del recorrido (pool[0]/pool[1] de cada zona), por
+// eso viven en su propia lista MOBS en vez de en FIGHTERS. Mismo patrón de
+// 3 tiers y misma forma de ficha que el resto (fighterDef los reconoce
+// igual, ver más abajo).
+const MOBS = [];
+function addMobFamily(slug, tier, element, cls, skillId, names, loreCore) {
+  const rarities = TIER_CHAINS[tier];
+  const suffixes = TIER_LORE_SUFFIX[tier];
+  rarities.forEach((rarity, i) => {
+    MOBS.push({
+      id: slug + '_' + rarity, name: names[i], element, class: cls, rarity, family: slug,
+      evolvesTo: i < 2 ? slug + '_' + rarities[i + 1] : null, skillId, lore: loreCore + suffixes[i],
+    });
+  });
+}
+
 // Los jefes son combates únicos (sin transformaciones) y viven en su propia
 // lista, separada de FIGHTERS, para que NO aparezcan en la invocación (gacha)
 // ni en la Arena — son antagonistas, no luchadores reclutables. fighterDef
@@ -310,68 +329,80 @@ addFamily('plantacarnivora', 1, 'tierra', 'brujo', 'debilitar', ['Brote Carnívo
 addFamily('estatua', 2, 'tierra', 'campeon', 'escudo', ['Estatua Agrietada', 'Estatua Animada', 'Coloso de Piedra Viviente'], 'Permanece inmóvil durante siglos... hasta que alguien comete el error de despertarla.');
 
 // ### Enemigos / mobs normales (14.3)
-addFamily('arpia', 1, 'viento', 'picaro', 'furia', ['Arpía Joven', 'Arpía Chillona', 'Arpía Matriarca del Nido'], 'Ataca en bandada, chillando para desorientar a su presa.');
-addFamily('dullahan', 2, 'rayo', 'brujo', 'debilitar', ['Jinete sin Cabeza Menor', 'Dullahan Cabalgante', 'Dullahan, Heraldo de la Muerte'], 'Lleva su propia cabeza bajo el brazo, y donde se detiene, alguien muere.');
-addFamily('tengu', 1, 'viento', 'picaro', 'aturdir', ['Tengu Travieso', 'Tengu Guerrero', 'Gran Tengu de la Montaña'], 'Maestro del engaño y la espada a partes iguales.');
-addFamily('goblin', 1, 'tierra', 'picaro', 'golpe', ['Goblin Novato', 'Goblin Saqueador', 'Jefe de la Horda Goblin'], 'Solo, es débil. En horda, es una plaga imparable.');
-addFamily('trasgo', 1, 'viento', 'picaro', 'aturdir', ['Trasgo Menor', 'Trasgo Revoltoso', 'Trasgo Rey de las Travesuras'], 'Le divierte más molestar a los viajeros que robarles.');
-addFamily('demonio', 2, 'fuego', 'brujo', 'debilitar', ['Demonio Menor', 'Demonio de las Llamas', 'Archidemonio del Abismo'], 'Cada trato que ofrece esconde una trampa que nadie ve venir.');
-addFamily('esqueleto', 1, 'tierra', 'campeon', 'golpe', ['Esqueleto Andante', 'Esqueleto Guerrero', 'Comandante de Huesos'], 'Ni la muerte pudo con las ganas de pelear de este guerrero.');
-addFamily('draugr', 2, 'agua', 'campeon', 'escudo', ['Draugr Recién Alzado', 'Draugr Vikingo', 'Rey Draugr del Túmulo'], 'Se niega a abandonar el tesoro que custodió en vida.');
-addFamily('chupacabras', 1, 'viento', 'picaro', 'furia', ['Chupacabras Joven', 'Chupacabras Nocturno', 'Terror de los Rebaños'], 'Nadie lo ha visto de cerca... y quien lo hizo no vivió para describirlo.');
-addFamily('kitsune', 2, 'fuego', 'brujo', 'debilitar', ['Kitsune de Una Cola', 'Kitsune de Tres Colas', 'Kitsune de Nueve Colas'], 'Cuantas más colas gana, más poderosa (y más traviesa) se vuelve su magia.');
-addFamily('momia', 1, 'tierra', 'brujo', 'debilitar', ['Momia Menor', 'Momia Vendada', 'Faraón Momificado'], 'Duerme durante siglos, hasta que alguien profana su tumba.');
-addFamily('orco', 1, 'tierra', 'campeon', 'furia', ['Orco Recluta', 'Orco Guerrero', 'Jefe de Guerra Orco'], 'Vive para la batalla, y muere feliz si es peleando.');
-addFamily('dementor', 2, 'viento', 'brujo', 'debilitar', ['Sombra Menor', 'Dementor Errante', 'Dementor, Ladrón de Almas'], 'Su sola presencia arranca hasta el último recuerdo feliz.');
-addFamily('arana', 1, 'tierra', 'picaro', 'aturdir', ['Araña Pequeña', 'Araña Venenosa', 'Reina Araña del Nido'], 'Teje su telaraña en silencio, y espera con paciencia infinita.');
-addFamily('jabali', 1, 'tierra', 'campeon', 'furia', ['Jabatillo', 'Jabalí Salvaje', 'Gran Jabalí del Bosque Oscuro'], 'Embiste sin dudar a cualquiera que se cruce en su camino.');
-addFamily('gargola', 2, 'tierra', 'campeon', 'escudo', ['Gárgola Dormida', 'Gárgola Vigilante', 'Gárgola Ancestral de Piedra'], 'De día es solo piedra... de noche, otra cosa muy distinta.');
-addFamily('gigante', 2, 'tierra', 'campeon', 'golpe', ['Joven Gigante', 'Gigante de las Colinas', 'Gigante de las Montañas Rotas'], 'Cada paso suyo hace temblar el suelo a su alrededor.');
-addFamily('ogro', 1, 'tierra', 'campeon', 'furia', ['Ogro Pequeño', 'Ogro Garrotero', 'Gran Ogro del Pantano'], 'No es el más listo, pero su garrote no necesita estrategia.');
-addFamily('satirosalvaje', 1, 'viento', 'picaro', 'furia', ['Sátiro Salvaje', 'Sátiro del Bosque Profundo', 'Señor de los Sátiros Salvajes'], 'Vive libre en el bosque, lejos de cualquier regla o fiesta civilizada.');
-addFamily('troll', 2, 'tierra', 'campeon', 'golpe', ['Troll de Puente Menor', 'Troll de las Cavernas', 'Gran Troll Regenerador'], 'Sus heridas se cierran casi tan rápido como se las hacen.');
-addFamily('estirge', 1, 'viento', 'picaro', 'debilitar', ['Estirge Menor', 'Estirge Sedienta', 'Enjambre de Estirges'], 'Drena la vida de su presa gota a gota, sin prisa.');
-addFamily('ondina', 2, 'agua', 'guru', 'debilitar', ['Ondina Menor', 'Ondina de las Corrientes', 'Gran Ondina del Río Eterno'], 'Su canto arrastra a los incautos hasta el fondo del río.');
-addFamily('zombi', 1, 'tierra', 'campeon', 'furia', ['Zombi Recién Alzado', 'Zombi Putrefacto', 'Zombi Alfa de la Horda'], 'No siente dolor, no conoce el miedo, y no se detiene jamás.');
-addFamily('banshee', 2, 'viento', 'brujo', 'debilitar', ['Banshee Susurrante', 'Banshee Lamentosa', 'Gran Banshee, Heraldo de la Muerte'], 'Su lamento anuncia una muerte antes de que ocurra.');
-addFamily('lamia', 2, 'tierra', 'brujo', 'debilitar', ['Lamia Joven', 'Lamia Serpentina', 'Reina Lamia del Oasis Maldito'], 'Su mitad de serpiente esconde una mordedura tan letal como su encanto.');
-addFamily('hombrearena', 1, 'tierra', 'brujo', 'aturdir', ['Remolino de Arena', 'Hombre de Arena', 'Señor de las Dunas Eternas'], 'Se deshace y se reforma a voluntad, imposible de atrapar.');
-addFamily('babosa', 1, 'agua', 'campeon', 'debilitar', ['Babosa Pequeña', 'Babosa Gigante', 'Reina Babosa del Pantano'], 'Lenta pero imparable, su rastro disuelve casi cualquier cosa.');
-addFamily('sapo', 1, 'agua', 'guru', 'debilitar', ['Renacuajo', 'Sapo Venenoso', 'Gran Sapo del Pantano Sagrado'], 'Su piel segrega un veneno capaz de nublar los sentidos del rival.');
-addFamily('serpiente', 1, 'tierra', 'picaro', 'debilitar', ['Serpiente Joven', 'Serpiente Venenosa', 'Gran Serpiente del Desierto'], 'Ataca en silencio, y su veneno hace el resto del trabajo.');
-addFamily('setahumanoide', 1, 'tierra', 'brujo', 'debilitar', ['Seta Pequeña', 'Seta Humanoide', 'Gran Seta Ancestral del Bosque'], 'Sus esporas dejan aturdido a cualquiera que se acerque demasiado.');
-addFamily('frankenstein', 2, 'rayo', 'campeon', 'furia', ['Criatura Recién Cosida', 'Criatura de Frankenstein', 'Monstruo Perfeccionado'], 'Cosida a partir de partes de otros, cobró vida gracias a un rayo.');
-addFamily('hombreseisbrazos', 2, 'rayo', 'picaro', 'furia', ['Aprendiz de Seis Brazos', 'Guerrero de Seis Brazos', 'Maestro de las Seis Espadas'], 'Con seis brazos, nunca le falta un arma más que blandir.');
-addFamily('insectogigante', 1, 'tierra', 'picaro', 'aturdir', ['Insecto Pequeño', 'Insecto Gigante', 'Enjambre Alfa'], 'Solo es un insecto... hasta que ves cuántos son.');
+addMobFamily('arpia', 1, 'viento', 'picaro', 'furia', ['Arpía Joven', 'Arpía Chillona', 'Arpía Matriarca del Nido'], 'Ataca en bandada, chillando para desorientar a su presa.');
+addMobFamily('dullahan', 2, 'rayo', 'brujo', 'debilitar', ['Jinete sin Cabeza Menor', 'Dullahan Cabalgante', 'Dullahan, Heraldo de la Muerte'], 'Lleva su propia cabeza bajo el brazo, y donde se detiene, alguien muere.');
+addMobFamily('tengu', 1, 'viento', 'picaro', 'aturdir', ['Tengu Travieso', 'Tengu Guerrero', 'Gran Tengu de la Montaña'], 'Maestro del engaño y la espada a partes iguales.');
+addMobFamily('goblin', 1, 'tierra', 'picaro', 'golpe', ['Goblin Novato', 'Goblin Saqueador', 'Jefe de la Horda Goblin'], 'Solo, es débil. En horda, es una plaga imparable.');
+addMobFamily('trasgo', 1, 'viento', 'picaro', 'aturdir', ['Trasgo Menor', 'Trasgo Revoltoso', 'Trasgo Rey de las Travesuras'], 'Le divierte más molestar a los viajeros que robarles.');
+addMobFamily('demonio', 2, 'fuego', 'brujo', 'debilitar', ['Demonio Menor', 'Demonio de las Llamas', 'Archidemonio del Abismo'], 'Cada trato que ofrece esconde una trampa que nadie ve venir.');
+addMobFamily('esqueleto', 1, 'tierra', 'campeon', 'golpe', ['Esqueleto Andante', 'Esqueleto Guerrero', 'Comandante de Huesos'], 'Ni la muerte pudo con las ganas de pelear de este guerrero.');
+addMobFamily('draugr', 2, 'agua', 'campeon', 'escudo', ['Draugr Recién Alzado', 'Draugr Vikingo', 'Rey Draugr del Túmulo'], 'Se niega a abandonar el tesoro que custodió en vida.');
+addMobFamily('chupacabras', 1, 'viento', 'picaro', 'furia', ['Chupacabras Joven', 'Chupacabras Nocturno', 'Terror de los Rebaños'], 'Nadie lo ha visto de cerca... y quien lo hizo no vivió para describirlo.');
+addMobFamily('kitsune', 2, 'fuego', 'brujo', 'debilitar', ['Kitsune de Una Cola', 'Kitsune de Tres Colas', 'Kitsune de Nueve Colas'], 'Cuantas más colas gana, más poderosa (y más traviesa) se vuelve su magia.');
+addMobFamily('momia', 1, 'tierra', 'brujo', 'debilitar', ['Momia Menor', 'Momia Vendada', 'Faraón Momificado'], 'Duerme durante siglos, hasta que alguien profana su tumba.');
+addMobFamily('orco', 1, 'tierra', 'campeon', 'furia', ['Orco Recluta', 'Orco Guerrero', 'Jefe de Guerra Orco'], 'Vive para la batalla, y muere feliz si es peleando.');
+addMobFamily('dementor', 2, 'viento', 'brujo', 'debilitar', ['Sombra Menor', 'Dementor Errante', 'Dementor, Ladrón de Almas'], 'Su sola presencia arranca hasta el último recuerdo feliz.');
+addMobFamily('arana', 1, 'tierra', 'picaro', 'aturdir', ['Araña Pequeña', 'Araña Venenosa', 'Reina Araña del Nido'], 'Teje su telaraña en silencio, y espera con paciencia infinita.');
+addMobFamily('jabali', 1, 'tierra', 'campeon', 'furia', ['Jabatillo', 'Jabalí Salvaje', 'Gran Jabalí del Bosque Oscuro'], 'Embiste sin dudar a cualquiera que se cruce en su camino.');
+addMobFamily('gargola', 2, 'tierra', 'campeon', 'escudo', ['Gárgola Dormida', 'Gárgola Vigilante', 'Gárgola Ancestral de Piedra'], 'De día es solo piedra... de noche, otra cosa muy distinta.');
+addMobFamily('gigante', 2, 'tierra', 'campeon', 'golpe', ['Joven Gigante', 'Gigante de las Colinas', 'Gigante de las Montañas Rotas'], 'Cada paso suyo hace temblar el suelo a su alrededor.');
+addMobFamily('ogro', 1, 'tierra', 'campeon', 'furia', ['Ogro Pequeño', 'Ogro Garrotero', 'Gran Ogro del Pantano'], 'No es el más listo, pero su garrote no necesita estrategia.');
+addMobFamily('satirosalvaje', 1, 'viento', 'picaro', 'furia', ['Sátiro Salvaje', 'Sátiro del Bosque Profundo', 'Señor de los Sátiros Salvajes'], 'Vive libre en el bosque, lejos de cualquier regla o fiesta civilizada.');
+addMobFamily('troll', 2, 'tierra', 'campeon', 'golpe', ['Troll de Puente Menor', 'Troll de las Cavernas', 'Gran Troll Regenerador'], 'Sus heridas se cierran casi tan rápido como se las hacen.');
+addMobFamily('estirge', 1, 'viento', 'picaro', 'debilitar', ['Estirge Menor', 'Estirge Sedienta', 'Enjambre de Estirges'], 'Drena la vida de su presa gota a gota, sin prisa.');
+addMobFamily('ondina', 2, 'agua', 'guru', 'debilitar', ['Ondina Menor', 'Ondina de las Corrientes', 'Gran Ondina del Río Eterno'], 'Su canto arrastra a los incautos hasta el fondo del río.');
+addMobFamily('zombi', 1, 'tierra', 'campeon', 'furia', ['Zombi Recién Alzado', 'Zombi Putrefacto', 'Zombi Alfa de la Horda'], 'No siente dolor, no conoce el miedo, y no se detiene jamás.');
+addMobFamily('banshee', 2, 'viento', 'brujo', 'debilitar', ['Banshee Susurrante', 'Banshee Lamentosa', 'Gran Banshee, Heraldo de la Muerte'], 'Su lamento anuncia una muerte antes de que ocurra.');
+addMobFamily('lamia', 2, 'tierra', 'brujo', 'debilitar', ['Lamia Joven', 'Lamia Serpentina', 'Reina Lamia del Oasis Maldito'], 'Su mitad de serpiente esconde una mordedura tan letal como su encanto.');
+addMobFamily('hombrearena', 1, 'tierra', 'brujo', 'aturdir', ['Remolino de Arena', 'Hombre de Arena', 'Señor de las Dunas Eternas'], 'Se deshace y se reforma a voluntad, imposible de atrapar.');
+addMobFamily('babosa', 1, 'agua', 'campeon', 'debilitar', ['Babosa Pequeña', 'Babosa Gigante', 'Reina Babosa del Pantano'], 'Lenta pero imparable, su rastro disuelve casi cualquier cosa.');
+addMobFamily('sapo', 1, 'agua', 'guru', 'debilitar', ['Renacuajo', 'Sapo Venenoso', 'Gran Sapo del Pantano Sagrado'], 'Su piel segrega un veneno capaz de nublar los sentidos del rival.');
+addMobFamily('serpiente', 1, 'tierra', 'picaro', 'debilitar', ['Serpiente Joven', 'Serpiente Venenosa', 'Gran Serpiente del Desierto'], 'Ataca en silencio, y su veneno hace el resto del trabajo.');
+addMobFamily('setahumanoide', 1, 'tierra', 'brujo', 'debilitar', ['Seta Pequeña', 'Seta Humanoide', 'Gran Seta Ancestral del Bosque'], 'Sus esporas dejan aturdido a cualquiera que se acerque demasiado.');
+addMobFamily('frankenstein', 2, 'rayo', 'campeon', 'furia', ['Criatura Recién Cosida', 'Criatura de Frankenstein', 'Monstruo Perfeccionado'], 'Cosida a partir de partes de otros, cobró vida gracias a un rayo.');
+addMobFamily('hombreseisbrazos', 2, 'rayo', 'picaro', 'furia', ['Aprendiz de Seis Brazos', 'Guerrero de Seis Brazos', 'Maestro de las Seis Espadas'], 'Con seis brazos, nunca le falta un arma más que blandir.');
+addMobFamily('insectogigante', 1, 'tierra', 'picaro', 'aturdir', ['Insecto Pequeño', 'Insecto Gigante', 'Enjambre Alfa'], 'Solo es un insecto... hasta que ves cuántos son.');
 
 // ### Jefes / bosses (14.2) — combate único, sin evolución, fuera del pool de invocación.
-addBoss('tifon', 'rayo', 'brujo', 'arrasar', 'Tifón, Padre de los Monstruos', 'El monstruo más temible de todos, capaz de desafiar a los propios dioses.');
-addBoss('quimera', 'fuego', 'campeon', 'arrasar', 'Quimera, la Bestia de Tres Cabezas', 'León, cabra y serpiente en un solo cuerpo, y fuego en cada aliento.');
-addBoss('garn', 'tierra', 'campeon', 'golpe', 'Garn, el Devorador de Piedra', 'Se alimenta de roca y escupe fragmentos capaces de atravesar una armadura.', 'epico');
-addBoss('nian', 'fuego', 'campeon', 'furia', 'Nian, la Bestia del Año Nuevo', 'Solo el ruido y el color rojo lo mantienen alejado de los pueblos.', 'epico');
-addBoss('tiamat', 'agua', 'brujo', 'arrasar', 'Tiamat, Madre del Caos', 'De su furia nacieron los primeros monstruos del mundo.');
-addBoss('surtr', 'fuego', 'campeon', 'golpe', 'Surtr, Señor de las Llamas de Muspelheim', 'Su espada ardiente se dice que incendiará los nueve mundos al final de los tiempos.');
-addBoss('behemoth', 'tierra', 'campeon', 'golpe', 'Behemoth, la Bestia Primigenia', 'Tan grande y antiguo que su sola existencia desafía toda lógica.');
-addBoss('medusa', 'tierra', 'brujo', 'debilitar', 'Medusa, la Gorgona de Mirada Pétrea', 'Una sola mirada a sus ojos convierte a cualquiera en piedra.', 'epico');
-addBoss('apofis', 'tierra', 'brujo', 'arrasar', 'Apofis, la Serpiente del Caos', 'Cada noche intenta devorar al sol, y cada noche es derrotado — por poco.');
-addBoss('ammit', 'tierra', 'campeon', 'furia', 'Ammit, Devoradora de Corazones', 'Devora el corazón de quien no es digno de pasar al más allá.', 'epico');
-addBoss('cthulhu', 'agua', 'brujo', 'arrasar', 'Cthulhu, el que Duerme en las Profundidades', 'Su despertar traería la locura a cualquiera que lo presencie.');
-addBoss('balrog', 'fuego', 'brujo', 'arrasar', 'Balrog, Demonio de Sombra y Fuego', 'Envuelto en llamas y sombra, ningún pasillo es lo bastante estrecho para detenerlo.');
-addBoss('leondenemea', 'tierra', 'campeon', 'golpe', 'León de Nemea, Piel Impenetrable', 'Ningún arma forjada por mortales ha logrado atravesar su piel.', 'epico');
-addBoss('pajaroroc', 'viento', 'explorador', 'furia', 'Roc, el Ave que Oscurece el Cielo', 'Sus alas al abrirse tapan el sol entero sobre el desierto.', 'epico');
-addBoss('torodecreta', 'tierra', 'campeon', 'furia', 'Toro de Creta, Furia Desatada', 'Arrasó campos enteros antes de que nadie lograra domarlo.', 'epico');
+addBoss('tifon', 'rayo', 'brujo', 'arrasar', 'Tifón, Padre de los Monstruos', 'El monstruo más temible de todos, capaz de desafiar a los propios dioses.', 'epico');
+addBoss('quimera', 'fuego', 'campeon', 'arrasar', 'Quimera, la Bestia de Tres Cabezas', 'León, cabra y serpiente en un solo cuerpo, y fuego en cada aliento.', 'epico');
+addBoss('garn', 'tierra', 'campeon', 'golpe', 'Garn, el Devorador de Piedra', 'Se alimenta de roca y escupe fragmentos capaces de atravesar una armadura.', 'raro');
+addBoss('nian', 'fuego', 'campeon', 'furia', 'Nian, la Bestia del Año Nuevo', 'Solo el ruido y el color rojo lo mantienen alejado de los pueblos.', 'raro');
+addBoss('tiamat', 'agua', 'brujo', 'arrasar', 'Tiamat, Madre del Caos', 'De su furia nacieron los primeros monstruos del mundo.', 'epico');
+addBoss('surtr', 'fuego', 'campeon', 'golpe', 'Surtr, Señor de las Llamas de Muspelheim', 'Su espada ardiente se dice que incendiará los nueve mundos al final de los tiempos.', 'epico');
+addBoss('behemoth', 'tierra', 'campeon', 'golpe', 'Behemoth, la Bestia Primigenia', 'Tan grande y antiguo que su sola existencia desafía toda lógica.', 'epico');
+addBoss('medusa', 'tierra', 'brujo', 'debilitar', 'Medusa, la Gorgona de Mirada Pétrea', 'Una sola mirada a sus ojos convierte a cualquiera en piedra.', 'raro');
+addBoss('apofis', 'tierra', 'brujo', 'arrasar', 'Apofis, la Serpiente del Caos', 'Cada noche intenta devorar al sol, y cada noche es derrotado — por poco.', 'epico');
+addBoss('ammit', 'tierra', 'campeon', 'furia', 'Ammit, Devoradora de Corazones', 'Devora el corazón de quien no es digno de pasar al más allá.', 'raro');
+addBoss('cthulhu', 'agua', 'brujo', 'arrasar', 'Cthulhu, el que Duerme en las Profundidades', 'Su despertar traería la locura a cualquiera que lo presencie.', 'epico');
+addBoss('balrog', 'fuego', 'brujo', 'arrasar', 'Balrog, Demonio de Sombra y Fuego', 'Envuelto en llamas y sombra, ningún pasillo es lo bastante estrecho para detenerlo.', 'epico');
+addBoss('leondenemea', 'tierra', 'campeon', 'golpe', 'León de Nemea, Piel Impenetrable', 'Ningún arma forjada por mortales ha logrado atravesar su piel.', 'raro');
+addBoss('pajaroroc', 'viento', 'explorador', 'furia', 'Roc, el Ave que Oscurece el Cielo', 'Sus alas al abrirse tapan el sol entero sobre el desierto.', 'raro');
+addBoss('torodecreta', 'tierra', 'campeon', 'furia', 'Toro de Creta, Furia Desatada', 'Arrasó campos enteros antes de que nadie lograra domarlo.', 'raro');
 addBoss('basilisco', 'tierra', 'brujo', 'debilitar', 'Basilisco, Rey de las Serpientes', 'Su mirada mata, y su veneno no perdona ni a la piedra.', 'epico');
 addBoss('ettin', 'tierra', 'campeon', 'golpe', 'Ettin, el Gigante de Dos Cabezas', 'Dos cabezas significan el doble de mal genio... y el doble de fuerza.', 'epico');
 addBoss('gorgonas', 'tierra', 'brujo', 'debilitar', 'Las Gorgonas, Hermanas de Piedra', 'Donde una gorgona falla, sus hermanas terminan el trabajo.', 'epico');
-addBoss('rakshasa', 'fuego', 'brujo', 'debilitar', 'Rakshasa, el Cambiante Maldito', 'Puede tomar cualquier forma para acercarse a su presa sin ser detectado.');
+addBoss('rakshasa', 'fuego', 'brujo', 'debilitar', 'Rakshasa, el Cambiante Maldito', 'Puede tomar cualquier forma para acercarse a su presa sin ser detectado.', 'epico');
 addBoss('manticora', 'fuego', 'picaro', 'furia', 'Mantícora, la Devoradora de Hombres', 'Su cola de escorpión dispara espinas tan letales como su mordida.', 'epico');
-addBoss('liche', 'rayo', 'brujo', 'debilitar', 'Liche, Señor de los No-Muertos', 'Selló su alma en un objeto oculto para no morir jamás de verdad.');
-addBoss('magooscuro', 'rayo', 'brujo', 'debilitar', 'El Mago Oscuro sin Nombre', 'Su nombre se ha borrado del recuerdo — pero su sombra sigue creciendo.');
-addBoss('loki', 'rayo', 'brujo', 'debilitar', 'Loki, el Dios del Engaño', 'Nunca se sabe si su ayuda es un regalo o el inicio de una trampa.');
+addBoss('liche', 'rayo', 'brujo', 'debilitar', 'Liche, Señor de los No-Muertos', 'Selló su alma en un objeto oculto para no morir jamás de verdad.', 'epico');
+addBoss('magooscuro', 'rayo', 'brujo', 'debilitar', 'El Mago Oscuro sin Nombre', 'Su nombre se ha borrado del recuerdo — pero su sombra sigue creciendo.', 'epico');
+addBoss('loki', 'rayo', 'brujo', 'debilitar', 'Loki, el Dios del Engaño', 'Nunca se sabe si su ayuda es un regalo o el inicio de una trampa.', 'epico');
 addBoss('joker', 'viento', 'picaro', 'aturdir', 'El Bufón de la Locura', 'Nadie entiende su chiste hasta que ya es demasiado tarde para reírse.', 'epico');
 addBoss('acromantula', 'tierra', 'picaro', 'aturdir', 'Acromántula, Madre de la Colonia', 'Donde hay una, hay cientos más esperando entre las sombras.', 'epico');
 addBoss('wendigo', 'viento', 'brujo', 'furia', 'Wendigo, Hambre sin Fin', 'Cuanto más devora, más hambriento se vuelve — nunca se sacia.', 'epico');
 addBoss('mantisreligiosa', 'viento', 'picaro', 'furia', 'Mantis, la Segadora Silenciosa', 'Espera inmóvil durante horas... y ataca en una fracción de segundo.', 'epico');
+
+// Jefes de las 6 zonas ORIGINALES: al principio usaban luchadores jugables
+// (topo_infrecuente, nigro_raro, lagarto_epico, etc.) como jefe de zona, lo
+// que violaba la regla de "ni jefes ni enemigos de mapa pueden ser
+// criaturas jugables". Estos 6 los sustituyen, uno por zona, con la misma
+// rareza aproximada que tenían antes.
+addBoss('guardianbosque', 'tierra', 'campeon', 'escudo', 'Guardián del Bosque Ancestral', 'Un espíritu milenario que protege cada árbol de la Linde del Bosque.', 'comun');
+addBoss('brujapantano', 'agua', 'brujo', 'debilitar', 'Bruja del Pantano Eterno', 'Conoce cada raíz y cada sombra del Pantano Oscuro, y las usa contra los intrusos.', 'infrecuente');
+addBoss('colosocristal', 'tierra', 'campeon', 'golpe', 'Coloso de Cristal', 'Sus puños de cuarzo han sepultado a más de un intruso en las Cuevas de Cristal.', 'raro');
+addBoss('titanhielo', 'agua', 'campeon', 'escudo', 'Titán de Hielo Eterno', 'Ni la escalada más dura prepara a nadie para enfrentarse a él en la cima de los Picos Helados.', 'raro');
+addBoss('reyruinas', 'tierra', 'brujo', 'debilitar', 'Rey Espectral de las Ruinas', 'Gobierna las Ruinas Abisales desde un trono que se desmorona junto con su reino.', 'raro');
+addBoss('dragonguarida', 'fuego', 'campeon', 'escudo', 'Dracorex, Señor de la Guarida', 'El dragón más temido de Texel, dueño absoluto de su Guarida.', 'epico');
 
 // Homúnculos: no luchan nunca (no entran en FIGHTERS ni en la Formación).
 // Sirven solo como material de experiencia — se fusionan con cualquier
@@ -391,7 +422,7 @@ function homunculoTierForRarity(rarity) {
   return 1;
 }
 
-function fighterDef(id) { return FIGHTERS.find(f => f.id === id) || BOSSES.find(f => f.id === id) || HOMUNCULOS.find(f => f.id === id); }
+function fighterDef(id) { return FIGHTERS.find(f => f.id === id) || BOSSES.find(f => f.id === id) || MOBS.find(f => f.id === id) || HOMUNCULOS.find(f => f.id === id); }
 
 // Solo los Legendarios llevan habilidad de líder (ver LEADER_SKILLS), como
 // pedía el usuario ("sobre todo legendarias"). Repartida a mano por clase y
@@ -429,12 +460,12 @@ setLeaderSkill('afrodita_legendario', 'hp_boost');
 setLeaderSkill('poseidon_legendario', 'def_boost');
 
 const ZONES = [
-  { id: 'bosque', name: 'Linde del Bosque', emoji: '🌲', color: '#2f4f2f', pool: ['topo_comun', 'heraldo_comun', 'topo_infrecuente'] },
-  { id: 'pantano', name: 'Pantano Oscuro', emoji: '🐊', color: '#3a4a2f', pool: ['triton_infrecuente', 'heraldo_infrecuente', 'nigro_raro'] },
-  { id: 'cuevas', name: 'Cuevas de Cristal', emoji: '💎', color: '#2f3a4a', pool: ['lagarto_raro', 'vidente_infrecuente', 'lagarto_epico'] },
-  { id: 'picos', name: 'Picos Helados', emoji: '❄️', color: '#2f4650', pool: ['triton_raro', 'chispa_raro', 'duende_epico'] },
-  { id: 'ruinas', name: 'Ruinas Abisales', emoji: '💀', color: '#3a2f45', pool: ['heraldo_raro', 'vidente_raro', 'chispa_epico'] },
-  { id: 'guarida', name: 'Guarida del Dragón', emoji: '🐉', color: '#4a2f2f', pool: ['vidente_epico', 'triton_epico', 'ascua_legendario'] },
+  { id: 'bosque', name: 'Linde del Bosque', emoji: '🌲', color: '#2f4f2f', pool: ['goblin_comun', 'arana_comun', 'boss_guardianbosque'] },
+  { id: 'pantano', name: 'Pantano Oscuro', emoji: '🐊', color: '#3a4a2f', pool: ['sapo_infrecuente', 'babosa_infrecuente', 'boss_brujapantano'] },
+  { id: 'cuevas', name: 'Cuevas de Cristal', emoji: '💎', color: '#2f3a4a', pool: ['gargola_infrecuente', 'insectogigante_raro', 'boss_colosocristal'] },
+  { id: 'picos', name: 'Picos Helados', emoji: '❄️', color: '#2f4650', pool: ['zombi_raro', 'draugr_infrecuente', 'boss_titanhielo'] },
+  { id: 'ruinas', name: 'Ruinas Abisales', emoji: '💀', color: '#3a2f45', pool: ['momia_raro', 'banshee_raro', 'boss_reyruinas'] },
+  { id: 'guarida', name: 'Guarida del Dragón', emoji: '🐉', color: '#4a2f2f', pool: ['troll_epico', 'demonio_epico', 'boss_dragonguarida'] },
 
   // --- Zonas nuevas: usan el roster masivo (14.1/14.3) como relleno y los
   // 27 jefes (14.2, antes creados pero sin usar en ningún mapa) como jefe de
@@ -442,33 +473,33 @@ const ZONES = [
   // siempre el jefe único de la etapa 8. La rareza del relleno sube por
   // tramos según se avanza (Raro -> Épico -> Épico/Legendario) para
   // acompañar el escalado por nivel, igual que hacían las 6 zonas originales.
-  { id: 'cantera', name: 'Cantera Devorada', emoji: '🪨', color: '#4a3f2f', pool: ['zapador_raro', 'gargola_raro', 'boss_garn'] },
-  { id: 'aldea_nian', name: 'Aldea del Año Nuevo', emoji: '🧨', color: '#4a2f2f', pool: ['hombrefuego_raro', 'demonio_raro', 'boss_nian'] },
-  { id: 'jardin_piedra', name: 'Jardín de Piedra', emoji: '🗿', color: '#3a3a2f', pool: ['serpiente_raro', 'escorpionhumanoide_raro', 'boss_medusa'] },
-  { id: 'salon_juicio', name: 'Salón del Juicio', emoji: '⚖️', color: '#3a2f24', pool: ['momia_raro', 'anubis_raro', 'boss_ammit'] },
-  { id: 'sabana', name: 'Sabana Ardiente', emoji: '🦁', color: '#4a3f1f', pool: ['hombretigre_raro', 'leonhumanizado_raro', 'boss_leondenemea'] },
-  { id: 'desfiladero_roc', name: 'Desfiladero del Roc', emoji: '🏔️', color: '#3f4a4a', pool: ['garuda_raro', 'grifo_raro', 'boss_pajaroroc'] },
-  { id: 'laberinto_creta', name: 'Laberinto de Creta', emoji: '🐂', color: '#4a3a2f', pool: ['minotauro_raro', 'centauro_raro', 'boss_torodecreta'] },
-  { id: 'cripta_serpentina', name: 'Cripta Serpentina', emoji: '🐍', color: '#2f3a2f', pool: ['hidraserpiente_epico', 'lamia_epico', 'boss_basilisco'] },
+  { id: 'cantera', name: 'Cantera Devorada', emoji: '🪨', color: '#4a3f2f', pool: ['esqueleto_raro', 'jabali_raro', 'boss_garn'] },
+  { id: 'aldea_nian', name: 'Aldea del Año Nuevo', emoji: '🧨', color: '#4a2f2f', pool: ['chupacabras_raro', 'orco_raro', 'boss_nian'] },
+  { id: 'jardin_piedra', name: 'Jardín de Piedra', emoji: '🗿', color: '#3a3a2f', pool: ['serpiente_raro', 'setahumanoide_raro', 'boss_medusa'] },
+  { id: 'salon_juicio', name: 'Salón del Juicio', emoji: '⚖️', color: '#3a2f24', pool: ['hombrearena_raro', 'estirge_raro', 'boss_ammit'] },
+  { id: 'sabana', name: 'Sabana Ardiente', emoji: '🦁', color: '#4a3f1f', pool: ['satirosalvaje_raro', 'ogro_raro', 'boss_leondenemea'] },
+  { id: 'desfiladero_roc', name: 'Desfiladero del Roc', emoji: '🏔️', color: '#3f4a4a', pool: ['arpia_raro', 'tengu_raro', 'boss_pajaroroc'] },
+  { id: 'laberinto_creta', name: 'Laberinto de Creta', emoji: '🐂', color: '#4a3a2f', pool: ['trasgo_raro', 'goblin_raro', 'boss_torodecreta'] },
+  { id: 'cripta_serpentina', name: 'Cripta Serpentina', emoji: '🐍', color: '#2f3a2f', pool: ['kitsune_epico', 'ondina_epico', 'boss_basilisco'] },
   { id: 'paso_gigantes', name: 'Paso de los Gigantes', emoji: '⛰️', color: '#3f3f4a', pool: ['gigante_epico', 'troll_epico', 'boss_ettin'] },
-  { id: 'templo_hermanas', name: 'Templo de las Hermanas', emoji: '🐍', color: '#3a2f3f', pool: ['escorpionhumanoide_epico', 'dientesdesable_epico', 'boss_gorgonas'] },
-  { id: 'desierto_espinas', name: 'Desierto de Espinas', emoji: '🦂', color: '#4a3a1f', pool: ['hombretigre_epico', 'wyvern_epico', 'boss_manticora'] },
-  { id: 'circo_maldito', name: 'Circo Maldito', emoji: '🃏', color: '#3a1f3a', pool: ['gatubela_epico', 'panteranegra_epico', 'boss_joker'] },
-  { id: 'nido_colosal', name: 'Nido Colosal', emoji: '🕷️', color: '#2f2a24', pool: ['dementor_epico', 'banshee_epico', 'boss_acromantula'] },
-  { id: 'tundra_helada', name: 'Tundra Helada', emoji: '🥶', color: '#2f4550', pool: ['yeti_epico', 'hombrelobo_epico', 'boss_wendigo'] },
-  { id: 'jungla_silenciosa', name: 'Jungla Silenciosa', emoji: '🌿', color: '#2f4a2f', pool: ['cecaelia_epico', 'unicornio_epico', 'boss_mantisreligiosa'] },
-  { id: 'abismo_ojos', name: 'Abismo de los Cien Ojos', emoji: '👁️', color: '#1f2a3a', pool: ['kraken_epico', 'leviatan_epico', 'boss_tifon'] },
-  { id: 'cima_quimerica', name: 'Cima Quimérica', emoji: '🔥', color: '#4a2a1f', pool: ['cerbero_epico', 'avefenix_epico', 'boss_quimera'] },
-  { id: 'caos_primordial', name: 'Caos Primordial', emoji: '🌊', color: '#1f3a4a', pool: ['hidradragon_epico', 'shenlong_epico', 'boss_tiamat'] },
-  { id: 'forja_fin', name: 'Forja del Fin del Mundo', emoji: '⚒️', color: '#4a2414', pool: ['fenrir_epico', 'dracula_epico', 'boss_surtr'] },
-  { id: 'llanura_titan', name: 'Llanura del Titán', emoji: '🦣', color: '#3a3424', pool: ['hercules_epico', 'thor_epico', 'boss_behemoth'] },
-  { id: 'templo_eclipse', name: 'Templo del Sol Eclipsado', emoji: '🌑', color: '#241f3a', pool: ['ra_epico', 'osiris_epico', 'boss_apofis'] },
-  { id: 'fosa_rlyeh', name: "Fosa de R'lyeh", emoji: '🐙', color: '#1f2a2a', pool: ['kraken_legendario', 'leviatan_legendario', 'boss_cthulhu'] },
-  { id: 'minas_sinfondo', name: 'Minas Sin Fondo', emoji: '⛏️', color: '#3a1414', pool: ['dracula_legendario', 'piroman_legendario', 'boss_balrog'] },
-  { id: 'palacio_espejos', name: 'Palacio de Espejos', emoji: '🪞', color: '#3a2a4a', pool: ['genio_legendario', 'esfinge_legendario', 'boss_rakshasa'] },
-  { id: 'necropolis', name: 'Necrópolis Eterna', emoji: '💀', color: '#242424', pool: ['nigro_legendario', 'anubis_legendario', 'boss_liche'] },
-  { id: 'torre_prohibida', name: 'Torre Prohibida', emoji: '🏰', color: '#2a1f3a', pool: ['chispa_legendario', 'odin_legendario', 'boss_magooscuro'] },
-  { id: 'salon_enganos', name: 'Salón de los Engaños', emoji: '🎭', color: '#3a2424', pool: ['brisa_legendario', 'sunwukong_legendario', 'boss_loki'] },
+  { id: 'templo_hermanas', name: 'Templo de las Hermanas', emoji: '🐍', color: '#3a2f3f', pool: ['dullahan_epico', 'dementor_epico', 'boss_gorgonas'] },
+  { id: 'desierto_espinas', name: 'Desierto de Espinas', emoji: '🦂', color: '#4a3a1f', pool: ['hombreseisbrazos_epico', 'frankenstein_epico', 'boss_manticora'] },
+  { id: 'circo_maldito', name: 'Circo Maldito', emoji: '🃏', color: '#3a1f3a', pool: ['banshee_epico', 'lamia_epico', 'boss_joker'] },
+  { id: 'nido_colosal', name: 'Nido Colosal', emoji: '🕷️', color: '#2f2a24', pool: ['gargola_epico', 'demonio_epico', 'boss_acromantula'] },
+  { id: 'tundra_helada', name: 'Tundra Helada', emoji: '🥶', color: '#2f4550', pool: ['draugr_epico', 'ondina_epico', 'boss_wendigo'] },
+  { id: 'jungla_silenciosa', name: 'Jungla Silenciosa', emoji: '🌿', color: '#2f4a2f', pool: ['lamia_epico', 'frankenstein_epico', 'boss_mantisreligiosa'] },
+  { id: 'abismo_ojos', name: 'Abismo de los Cien Ojos', emoji: '👁️', color: '#1f2a3a', pool: ['troll_epico', 'gigante_epico', 'boss_tifon'] },
+  { id: 'cima_quimerica', name: 'Cima Quimérica', emoji: '🔥', color: '#4a2a1f', pool: ['dullahan_epico', 'hombreseisbrazos_epico', 'boss_quimera'] },
+  { id: 'caos_primordial', name: 'Caos Primordial', emoji: '🌊', color: '#1f3a4a', pool: ['kitsune_epico', 'banshee_epico', 'boss_tiamat'] },
+  { id: 'forja_fin', name: 'Forja del Fin del Mundo', emoji: '⚒️', color: '#4a2414', pool: ['demonio_epico', 'gargola_epico', 'boss_surtr'] },
+  { id: 'llanura_titan', name: 'Llanura del Titán', emoji: '🦣', color: '#3a3424', pool: ['gigante_epico', 'troll_epico', 'boss_behemoth'] },
+  { id: 'templo_eclipse', name: 'Templo del Sol Eclipsado', emoji: '🌑', color: '#241f3a', pool: ['dementor_epico', 'ondina_epico', 'boss_apofis'] },
+  { id: 'fosa_rlyeh', name: "Fosa de R'lyeh", emoji: '🐙', color: '#1f2a2a', pool: ['lamia_epico', 'kitsune_epico', 'boss_cthulhu'] },
+  { id: 'minas_sinfondo', name: 'Minas Sin Fondo', emoji: '⛏️', color: '#3a1414', pool: ['demonio_epico', 'frankenstein_epico', 'boss_balrog'] },
+  { id: 'palacio_espejos', name: 'Palacio de Espejos', emoji: '🪞', color: '#3a2a4a', pool: ['dullahan_epico', 'hombreseisbrazos_epico', 'boss_rakshasa'] },
+  { id: 'necropolis', name: 'Necrópolis Eterna', emoji: '💀', color: '#242424', pool: ['draugr_epico', 'banshee_epico', 'boss_liche'] },
+  { id: 'torre_prohibida', name: 'Torre Prohibida', emoji: '🏰', color: '#2a1f3a', pool: ['gargola_epico', 'dementor_epico', 'boss_magooscuro'] },
+  { id: 'salon_enganos', name: 'Salón de los Engaños', emoji: '🎭', color: '#3a2424', pool: ['troll_epico', 'gigante_epico', 'boss_loki'] },
 ];
 const STAGES_PER_ZONE = 8;
 const STAGE_ENERGY_COST = 6;
@@ -484,10 +515,21 @@ const CRYSTALS = {
 // también da homúnculos de mejor tier de media.
 const HOMUNCULO_SUMMON_CHANCE = 0.12;
 
+// 6 tipos de equipo, cada uno con una estadística principal y una
+// secundaria (más floja) — mucha más variedad que solo arma/armadura.
+// gearStatValue(gear) da el valor "base" de la pieza según rareza+nivel;
+// primaryMult/secondaryMult lo reparten entre las dos stats que toca esa
+// pieza (ver fighterStats en state.js).
 const GEAR_SLOTS = {
-  arma: { label: 'Arma', icon: '🗡️', names: { comun: 'Daga Roma', infrecuente: 'Espada Templada', raro: 'Hoja Rúnica', epico: 'Filo Encantado', legendario: 'Colmillo Ancestral' }, stat: 'atk' },
-  armadura: { label: 'Armadura', icon: '🥋', names: { comun: 'Cota Sencilla', infrecuente: 'Cota Reforzada', raro: 'Placas Rúnicas', epico: 'Coraza Encantada', legendario: 'Coraza Ancestral' }, stat: 'def' },
+  arma: { label: 'Arma', icon: '🗡️', names: { comun: 'Daga Roma', infrecuente: 'Espada Templada', raro: 'Hoja Rúnica', epico: 'Filo Encantado', legendario: 'Colmillo Ancestral' }, primary: 'atk', primaryMult: 1, secondary: 'wis', secondaryMult: 0.4 },
+  armadura: { label: 'Armadura', icon: '🥋', names: { comun: 'Cota Sencilla', infrecuente: 'Cota Reforzada', raro: 'Placas Rúnicas', epico: 'Coraza Encantada', legendario: 'Coraza Ancestral' }, primary: 'def', primaryMult: 1, secondary: 'hp', secondaryMult: 2.4 },
+  casco: { label: 'Casco', icon: '⛑️', names: { comun: 'Yelmo Sencillo', infrecuente: 'Yelmo Reforzado', raro: 'Casco Rúnico', epico: 'Corona Encantada', legendario: 'Corona Ancestral' }, primary: 'def', primaryMult: 0.6, secondary: 'wis', secondaryMult: 0.6 },
+  guantes: { label: 'Guantes', icon: '🧤', names: { comun: 'Guantes de Cuero', infrecuente: 'Guantes Reforzados', raro: 'Guanteletes Rúnicos', epico: 'Guanteletes Encantados', legendario: 'Guanteletes Ancestrales' }, primary: 'atk', primaryMult: 0.6, secondary: 'agi', secondaryMult: 0.5 },
+  botas: { label: 'Botas', icon: '👢', names: { comun: 'Botas Sencillas', infrecuente: 'Botas de Marcha', raro: 'Botas Rúnicas', epico: 'Botas Encantadas', legendario: 'Botas Ancestrales' }, primary: 'agi', primaryMult: 1, secondary: 'hp', secondaryMult: 1.2 },
+  amuleto: { label: 'Amuleto', icon: '📿', names: { comun: 'Amuleto Sencillo', infrecuente: 'Amuleto Tallado', raro: 'Amuleto Rúnico', epico: 'Amuleto Encantado', legendario: 'Talismán Ancestral' }, primary: 'wis', primaryMult: 1, secondary: 'atk', secondaryMult: 0.3 },
 };
+const GEAR_SLOT_IDS = Object.keys(GEAR_SLOTS);
+function randomGearSlot() { return GEAR_SLOT_IDS[Math.floor(Math.random() * GEAR_SLOT_IDS.length)]; }
 
 // --- Tienda: equipo nuevo (nivel 0) por Texel, y objetos consumibles ---
 const GEAR_SHOP_PRICES = { comun: 60, infrecuente: 150, raro: 350, epico: 800, legendario: 2000 };

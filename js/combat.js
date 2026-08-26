@@ -109,10 +109,10 @@ function stageRewards(zoneIdx, stageIdx, isBoss) {
   if (isBoss) {
     drops.voxite = 1;
     if (Math.random() < 0.3) drops.doxite = 1;
-    if (Math.random() < 0.7) drops.gear = generateGear(Math.random() < 0.5 ? 'arma' : 'armadura', gearDropRarity(globalIdx));
+    if (Math.random() < 0.7) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx));
   } else {
     if (Math.random() < 0.35) drops.pixite = 1;
-    if (Math.random() < 0.3) drops.gear = generateGear(Math.random() < 0.5 ? 'arma' : 'armadura', gearDropRarity(globalIdx));
+    if (Math.random() < 0.3) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx));
   }
   return { texel, fighterXp, drops };
 }

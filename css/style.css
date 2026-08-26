@@ -166,7 +166,7 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .shop-buy-btn:disabled { opacity: 0.35; }
 
 /* ---------- Modales ---------- */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.72); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.72); display: flex; align-items: center; justify-content: center; z-index: 90; padding: 16px; }
 .modal.hidden { display: none; }
 .modal-box { background: var(--panel); border: 2px solid var(--gold-dim); border-radius: 12px; padding: 16px; width: 100%; max-width: 380px; max-height: 88vh; overflow-y: auto; position: relative; box-shadow: 0 8px 24px var(--shadow); }
 .modal-close { position: absolute; top: 8px; right: 10px; background: none; border: none; color: var(--cream); font-size: 1.2rem; z-index: 2; }
@@ -188,13 +188,13 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .doll-icon { font-size: 1.5rem; }
 .doll-label { font-size: 0.58rem; color: var(--cream-dim); margin-top: 2px; }
 .doll-plus { position: absolute; bottom: 3px; right: 6px; font-size: 0.66rem; color: var(--gold); font-weight: bold; }
-.gear-slots-row { display: flex; gap: 10px; justify-content: center; }
+.gear-slots-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
 /* ---------- Invocación ---------- */
 .summon-panel h3 { display: flex; justify-content: space-between; align-items: center; }
 .reveal-box { text-align: center; }
 .reveal-flash { padding: 10px 0; border-radius: 10px; animation: revealPop 0.5s ease-out; }
-@keyframes revealPop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes revealPop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 .reveal-flash.rarity-infrecuente { box-shadow: 0 0 20px var(--rg, #4caf6b); }
 .reveal-flash.rarity-raro { box-shadow: 0 0 30px var(--rg, #3f9fe0); }
 .reveal-flash.rarity-epico { box-shadow: 0 0 35px var(--rg, #a463e0); }

@@ -600,8 +600,8 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   const gearPanel = el('div', 'panel');
   gearPanel.innerHTML = '<h3>Equipo</h3>';
   const gearRow = el('div', 'gear-slots-row');
-  ['arma', 'armadura'].forEach(slotKey => {
-    const gearUid = slotKey === 'arma' ? entry.gearArma : entry.gearArmadura;
+  GEAR_SLOT_IDS.forEach(slotKey => {
+    const gearUid = entry.gear[slotKey];
     const box = el('div', 'doll-slot' + (gearUid ? '' : ' empty'));
     if (gearUid) {
       const g = gearItem(state, gearUid);
@@ -672,7 +672,7 @@ UI.openGearPickerForFighter = function (state, fighterUid, slotKey) {
   const entry = rosterEntry(state, fighterUid);
   const body = $('pickerModalBody');
   body.innerHTML = `<h3>Equipar ${GEAR_SLOTS[slotKey].label}</h3>`;
-  const currentUid = slotKey === 'arma' ? entry.gearArma : entry.gearArmadura;
+  const currentUid = entry.gear[slotKey];
   if (currentUid) {
     const removeBtn = el('button', 'danger-btn', 'Quitar equipo');
     removeBtn.addEventListener('click', () => { unequipGear(state, fighterUid, slotKey); saveGame(state); $('pickerModal').classList.add('hidden'); UI.openFighterModal(state, fighterUid); });
@@ -901,7 +901,7 @@ UI.renderEquipo = function (state) {
 UI.renderTienda = function (state) {
   const gearWrap = $('shopGearPanels');
   gearWrap.innerHTML = '';
-  ['arma', 'armadura'].forEach(slot => {
+  GEAR_SLOT_IDS.forEach(slot => {
     const slotInfo = GEAR_SLOTS[slot];
     const panel = el('div', 'shop-row');
     panel.appendChild(el('div', 'shop-row-icon', slotInfo.icon));
@@ -954,15 +954,21 @@ UI.renderTienda = function (state) {
   });
 };
 
+const STAT_LABELS = { hp: '❤️ Vida', atk: '⚔️ Ataque', def: '🛡️ Defensa', agi: '💨 Agilidad', wis: '🧠 Sabiduría' };
 UI.openGearModal = function (state, gearUid) {
   const g = gearItem(state, gearUid);
   const rarity = rarityInfo(g.rarity);
   const owner = equippedGearOwner(state, gearUid);
+  const slot = GEAR_SLOTS[g.slot];
+  const val = gearStatValue(g);
   const body = $('gearModalBody');
   body.innerHTML = `
-    <div class="item-modal-header" style="color:${rarity.color}"><span class="item-modal-icon">${GEAR_SLOTS[g.slot].icon}</span>
-      <div><div class="item-modal-name">${GEAR_SLOTS[g.slot].names[g.rarity]} +${g.level}</div><div class="item-modal-rarity">${rarity.label} · ${GEAR_SLOTS[g.slot].label}</div></div></div>
-    <div class="panel"><div class="stat-row"><span>${g.slot === 'arma' ? '⚔️ Ataque' : '🛡️ Defensa'}</span><span>+${gearStatValue(g)}</span></div></div>
+    <div class="item-modal-header" style="color:${rarity.color}"><span class="item-modal-icon">${slot.icon}</span>
+      <div><div class="item-modal-name">${slot.names[g.rarity]} +${g.level}</div><div class="item-modal-rarity">${rarity.label} · ${slot.label}</div></div></div>
+    <div class="panel">
+      <div class="stat-row"><span>${STAT_LABELS[slot.primary]}</span><span>+${Math.round(val * slot.primaryMult)}</span></div>
+      ${slot.secondary ? `<div class="stat-row"><span>${STAT_LABELS[slot.secondary]}</span><span>+${Math.round(val * slot.secondaryMult)}</span></div>` : ''}
+    </div>
     ${owner ? `<p class="settings-info">Equipado en ${fighterDef(rosterEntry(state, owner.uid).defId).name}.</p>` : ''}
   `;
   const actions = el('div', 'modal-actions');
@@ -1094,6 +1100,7 @@ UI.commitGroup = function (view, group) {
 UI.battleUnitCard = function (u) {
   const card = el('div', 'battle-unit rarity-' + u.rarity + (u.alive ? '' : ' fainted'));
   card.dataset.unitId = u.id;
+  card.addEventListener('click', () => UI.showBattleUnitStats(u));
   card.appendChild(creatureCanvas(u.defId, 52));
   const hpBar = el('div', 'hp-bar small');
   const fill = el('div', 'hp-fill');
@@ -1117,6 +1124,41 @@ function ultTurnsText(u) {
   const t = estimatedTurnsToUlt(u);
   return t === 0 ? '⚡ ¡LISTA!' : '⚡ ' + t;
 }
+
+// Ficha de estadísticas de un luchador EN COMBATE (tanto propio como
+// rival) — se abre al tocar su tarjeta durante la batalla. Reutiliza el
+// modal genérico de picker; el CSS del modal va por encima del overlay de
+// batalla para que se vea aunque la batalla esté en pantalla completa.
+UI.showBattleUnitStats = function (u) {
+  const rarity = rarityInfo(u.rarity);
+  const skill = SKILL_TYPES[u.skillId];
+  const body = $('pickerModalBody');
+  body.innerHTML = '';
+  const head = el('div', 'fighter-modal-head');
+  head.appendChild(creatureCanvas(u.defId, 80));
+  const info = el('div');
+  info.innerHTML = `<div class="item-modal-name" style="color:${rarity.color}">${u.name}</div>
+    <div class="item-modal-rarity">${rarity.label} · ${ELEMENT_INFO[u.element].label} ${ELEMENT_INFO[u.element].icon} · ${CLASS_INFO[u.class].label} ${CLASS_INFO[u.class].icon}</div>
+    <div class="item-modal-rarity">Nv. ${u.level}${u.alive ? '' : ' · 💀 caído'}</div>`;
+  head.appendChild(info);
+  body.appendChild(head);
+
+  const statsPanel = el('div', 'panel');
+  statsPanel.innerHTML = `<div class="stat-row"><span>❤️ Vida</span><span>${Math.max(0, u.hp)}/${u.maxHp}</span></div>
+    <div class="stat-row"><span>⚔️ Ataque</span><span>${u.atk}</span></div>
+    <div class="stat-row"><span>🛡️ Defensa</span><span>${u.def}</span></div>
+    <div class="stat-row"><span>💨 Agilidad</span><span>${u.agi}</span></div>
+    <div class="stat-row"><span>🧠 Sabiduría</span><span>${u.wis}</span></div>`;
+  body.appendChild(statsPanel);
+
+  const skillPanel = el('div', 'panel');
+  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p>
+    <div class="ult-bar"><div class="ult-fill" style="width:${u.ultCharge || 0}%"></div></div>
+    <p class="settings-info">${ultTurnsText(u)}</p>`;
+  body.appendChild(skillPanel);
+
+  $('pickerModal').classList.remove('hidden');
+};
 
 UI.updateUnitCardHp = function (u) {
   const cardEl = document.querySelector(`.battle-unit[data-unit-id="${u.id}"]`);

@@ -7,11 +7,18 @@ const MAX_GEAR = 60;
 let uidCounter = 1;
 function newUid(prefix) { return prefix + (uidCounter++) + '_' + Date.now().toString(36); }
 
+// Un hueco vacío por cada tipo de equipo existente (ver GEAR_SLOTS).
+function emptyGearSet() {
+  const gear = {};
+  GEAR_SLOT_IDS.forEach(slot => { gear[slot] = null; });
+  return gear;
+}
+
 function createNewState() {
   const roster = [
-    { uid: newUid('f'), defId: 'topo_comun', level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null },
-    { uid: newUid('f'), defId: 'heraldo_comun', level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null },
-    { uid: newUid('f'), defId: 'triton_infrecuente', level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null },
+    { uid: newUid('f'), defId: 'topo_comun', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet() },
+    { uid: newUid('f'), defId: 'heraldo_comun', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet() },
+    { uid: newUid('f'), defId: 'triton_infrecuente', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet() },
   ];
   const band = [
     [roster[0].uid, roster[1].uid, roster[2].uid],
@@ -52,6 +59,23 @@ function combinationFighterUids(state, lineId) {
 function levelGrowth(level) { return 1 + (level - 1) * 0.10; }
 function starBonus(stars) { return 1 + stars * 0.08; }
 
+// Suma de todo lo que aporta el equipo puesto (6 huecos, ver GEAR_SLOTS) a
+// cada estadística — cada pieza reparte su valor entre una stat principal y
+// una secundaria más floja.
+function gearBonusForEntry(state, entry) {
+  const bonus = { hp: 0, atk: 0, def: 0, agi: 0, wis: 0 };
+  GEAR_SLOT_IDS.forEach(slotKey => {
+    const gearUid = entry.gear[slotKey];
+    const g = gearUid && gearItem(state, gearUid);
+    if (!g) return;
+    const slot = GEAR_SLOTS[slotKey];
+    const val = gearStatValue(g);
+    bonus[slot.primary] += Math.round(val * slot.primaryMult);
+    if (slot.secondary) bonus[slot.secondary] += Math.round(val * slot.secondaryMult);
+  });
+  return bonus;
+}
+
 function fighterStats(state, entry) {
   const def = fighterDef(entry.defId);
   const w = CLASS_INFO[def.class].weights;
@@ -63,22 +87,16 @@ function fighterStats(state, entry) {
     agi: Math.round(w.agi * mult * statVarianceMult(def.family, 'agi')),
     wis: Math.round(w.wis * mult * statVarianceMult(def.family, 'wis')),
   };
-  const arma = entry.gearArma && gearItem(state, entry.gearArma);
-  const armadura = entry.gearArmadura && gearItem(state, entry.gearArmadura);
-  if (arma) { stats.atk += gearStatValue(arma); stats.wis += Math.round(gearStatValue(arma) * 0.4); }
-  if (armadura) { stats.def += gearStatValue(armadura); stats.hp += Math.round(gearStatValue(armadura) * 2.4); }
+  const bonus = gearBonusForEntry(state, entry);
+  Object.keys(bonus).forEach(k => { stats[k] += bonus[k]; });
   return stats;
 }
 
 // Igual que fighterStats, pero separa qué parte de cada estadística viene
-// del equipo (arma/armadura) para poder destacarla en otro color en la UI.
+// del equipo (6 huecos) para poder destacarla en otro color en la UI.
 function fighterStatsBreakdown(state, entry) {
   const total = fighterStats(state, entry);
-  const arma = entry.gearArma && gearItem(state, entry.gearArma);
-  const armadura = entry.gearArmadura && gearItem(state, entry.gearArmadura);
-  const bonus = { hp: 0, atk: 0, def: 0, agi: 0, wis: 0 };
-  if (arma) { bonus.atk += gearStatValue(arma); bonus.wis += Math.round(gearStatValue(arma) * 0.4); }
-  if (armadura) { bonus.def += gearStatValue(armadura); bonus.hp += Math.round(gearStatValue(armadura) * 2.4); }
+  const bonus = gearBonusForEntry(state, entry);
   return { total, bonus };
 }
 
@@ -142,26 +160,23 @@ function buyConsumable(state, itemId) {
 // El equipo (state.gearInventory) contiene TODAS las piezas que posee el jugador,
 // estén o no equipadas; los luchadores solo guardan una referencia (uid) a la pieza.
 function equippedGearOwner(state, gearUid) {
-  return state.roster.find(r => r.gearArma === gearUid || r.gearArmadura === gearUid);
+  return state.roster.find(r => GEAR_SLOT_IDS.some(slot => r.gear[slot] === gearUid));
 }
 
 function equipGear(state, fighterUid, gearUid) {
   const entry = rosterEntry(state, fighterUid);
   const gear = gearItem(state, gearUid);
-  if (!entry || !gear) return false;
+  if (!entry || !gear || !GEAR_SLOTS[gear.slot]) return false;
   const owner = equippedGearOwner(state, gearUid);
-  if (owner) { if (owner.gearArma === gearUid) owner.gearArma = null; if (owner.gearArmadura === gearUid) owner.gearArmadura = null; }
-  const slotKey = gear.slot === 'arma' ? 'gearArma' : 'gearArmadura';
-  entry[slotKey] = gearUid;
+  if (owner) { GEAR_SLOT_IDS.forEach(slot => { if (owner.gear[slot] === gearUid) owner.gear[slot] = null; }); }
+  entry.gear[gear.slot] = gearUid;
   return true;
 }
 
 function unequipGear(state, fighterUid, slot) {
   const entry = rosterEntry(state, fighterUid);
-  if (!entry) return false;
-  const slotKey = slot === 'arma' ? 'gearArma' : 'gearArmadura';
-  if (!entry[slotKey]) return false;
-  entry[slotKey] = null;
+  if (!entry || !entry.gear[slot]) return false;
+  entry.gear[slot] = null;
   return true;
 }
 
@@ -239,7 +254,7 @@ function applySummonResult(state, defId) {
     state.currencies.texel += 50;
     return { defId, outcome: 'inventario_lleno' };
   }
-  const entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gearArma: null, gearArmadura: null, isNew: !hadAny, readyToEvolve: false };
+  const entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), isNew: !hadAny, readyToEvolve: false };
   state.roster.push(entry);
   return { defId, outcome: hadAny ? 'duplicado' : 'nuevo', uid: entry.uid };
 }
@@ -379,6 +394,21 @@ function loadGame() {
     if (!state.settings) state.settings = { infiniteEnergy: false };
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     if (!state.homunculos) state.homunculos = { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 };
+    // Migración de equipo: antes cada luchador guardaba el arma/armadura en
+    // dos campos sueltos (gearArma/gearArmadura); ahora todo vive en un
+    // único entry.gear{} con un hueco por cada tipo de equipo (6 ahora,
+    // pueden ser más en el futuro) — se preservan las piezas ya equipadas.
+    state.roster.forEach(entry => {
+      if (!entry.gear) {
+        entry.gear = emptyGearSet();
+        entry.gear.arma = entry.gearArma || null;
+        entry.gear.armadura = entry.gearArmadura || null;
+        delete entry.gearArma;
+        delete entry.gearArmadura;
+      } else {
+        GEAR_SLOT_IDS.forEach(slot => { if (!(slot in entry.gear)) entry.gear[slot] = null; });
+      }
+    });
     return state;
   } catch (e) { return null; }
 }
