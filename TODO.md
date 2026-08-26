@@ -282,6 +282,9 @@ ancho aprox.); se marca aquí lo que se salga bastante de ese rango.
 - **gorila_infrecuente.png** (~434 KB) y **gorila_raro.png** (~493 KB):
   mismo motivo. `gorila_comun.png` (~229 KB) sí entra en el rango de
   referencia.
+- **cocodrilo_raro.png** (~332 KB) y **cocodrilo_epico.png** (~601 KB):
+  mismo motivo. `cocodrilo_infrecuente.png` (~203 KB) sí entra en el rango
+  de referencia.
 
 ## Sprites de personajes/mobs/jefes pendientes (roster masivo)
 
@@ -327,11 +330,14 @@ se recorta y se asigna en `js/data.js`. Iterando en orden hasta cubrir las
 - [x] **gorila** (Tierra/Campeón): Gorila Montaraz (`gorila_comun.png`) →
       Gorila de Espalda Plateada (`gorila_infrecuente.png`) → Rey de la
       Jungla de Piedra (`gorila_raro.png`)
+- [x] **cocodrilo** (Agua/Campeón): Guerrero Cocodrilo
+      (`cocodrilo_infrecuente.png`) → Centurión del Pantano
+      (`cocodrilo_raro.png`) → Señor de las Aguas Turbias
+      (`cocodrilo_epico.png`)
 
 ### Personajes (14.1) — 89 familias × 3 formas
-- **sirena**: Sirena de Voz Dulce (`sirena_infrecuente.png`) → Sirena Encantadora (`sirena_raro.png`) → Reina de las Profundidades (`sirena_epico.png`)
-- **gorila**: Gorila Montaraz (`gorila_comun.png`) → Gorila de Espalda Plateada (`gorila_infrecuente.png`) → Rey de la Jungla de Piedra (`gorila_raro.png`)
-- **cocodrilo**: Guerrero Cocodrilo (`cocodrilo_infrecuente.png`) → Centurión del Pantano (`cocodrilo_raro.png`) → Señor de las Aguas Turbias (`cocodrilo_epico.png`)
+(las familias ya hechas se quitan de aquí — ver la lista con checkboxes más
+arriba, "Progreso de sprites nuevos", para el registro completo)
 - **hidradragon**: Cría de Mil Fauces (`hidradragon_raro.png`) → Dragón de Tres Cabezas (`hidradragon_epico.png`) → Soberano de las Siete Cabezas (`hidradragon_legendario.png`)
 - **avefenix**: Polluelo de Cenizas (`avefenix_raro.png`) → Ave de Fuego Eterno (`avefenix_epico.png`) → Fénix Inmortal (`avefenix_legendario.png`)
 - **hipogrifo**: Potro Alado (`hipogrifo_infrecuente.png`) → Hipogrifo Salvaje (`hipogrifo_raro.png`) → Señor de los Cielos Altos (`hipogrifo_epico.png`)
