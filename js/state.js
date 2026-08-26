@@ -1,7 +1,7 @@
 // Estado del jugador: roster de luchadores, banda, monedas, energía, invocación,
 // fusión/evolución, equipo y persistencia.
 const SAVE_KEY = 'dot_texel_save_v2';
-const MAX_ROSTER = 60;
+const MAX_ROSTER = 600;
 const MAX_GEAR = 60;
 
 let uidCounter = 1;
