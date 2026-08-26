@@ -247,7 +247,7 @@ addFamily('hidradragon', 3, 'rayo', 'brujo', 'arrasar', ['Cría de Mil Fauces', 
 addFamily('avefenix', 3, 'fuego', 'guru', 'curar', ['Polluelo de Cenizas', 'Ave de Fuego Eterno', 'Fénix Inmortal'], 'Cuando muere, renace de sus propias cenizas más brillante que antes.');
 addFamily('hipogrifo', 2, 'viento', 'explorador', 'debilitar', ['Potro Alado', 'Hipogrifo Salvaje', 'Señor de los Cielos Altos'], 'Mitad caballo, mitad grifo, surca el cielo más rápido que cualquier ave.');
 addFamily('cerbero', 3, 'fuego', 'campeon', 'escudo', ['Cachorro de Tres Cabezas', 'Guardián del Umbral', 'Cerbero, Custodio del Inframundo'], 'Vigila la puerta que separa el mundo de los vivos del de los muertos.');
-addFamily('centauro', 2, 'tierra', 'explorador', 'debilitar', ['Potrillo Centauro', 'Centauro Arquero', 'Jefe de la Manada Salvaje'], 'Combina la fuerza de un corcel con la puntería de un cazador nato.');
+addFamily('centauro', 2, 'tierra', 'explorador', 'debilitar', ['Potrillo Centauro', 'Centauro Arquero', 'Jefe de la Manada Salvaje'], 'Combina la fuerza de un corcel con la puntería de un cazador nato.', true);
 addFamily('minotauro', 2, 'tierra', 'campeon', 'furia', ['Toro Joven del Laberinto', 'Minotauro Furioso', 'Amo del Laberinto Eterno'], 'Nadie que entra en su laberinto vuelve a encontrar la salida.');
 addFamily('kraken', 3, 'agua', 'brujo', 'arrasar', ['Cría de Kraken', 'Kraken de las Profundidades', 'Devorador de Flotas'], 'Sus tentáculos han hundido más barcos de los que nadie se atreve a contar.');
 addFamily('leviatan', 3, 'agua', 'campeon', 'escudo', ['Serpiente de Mar Joven', 'Leviatán de las Mareas', 'Leviatán, Terror del Océano'], 'Su sola presencia hace que el mar entero se agite de terror.');
