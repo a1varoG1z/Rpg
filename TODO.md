@@ -251,6 +251,9 @@ ancho aprox.); se marca aquí lo que se salga bastante de ese rango.
 - **marina_infrecuente.png** (~325 KB) y **marina_raro.png** (~382 KB): igual
   patrón. `marina_comun.png` (~191 KB) sí entra dentro del rango de
   referencia, no hace falta marcarla.
+- **gea_raro.png** (~413 KB) y **gea_epico.png** (~474 KB): igual patrón,
+  esta última es la más pesada de todas las añadidas hasta ahora.
+  `gea_infrecuente.png` (~253 KB) algo por encima pero moderado.
 
 ## Sprites de personajes/mobs/jefes pendientes (roster masivo)
 
@@ -263,7 +266,8 @@ comillas de cada entrada de abajo (mismo patrón que el resto del roster,
 `slug_rareza.png`).
 
 Ya pendientes de arte real (del roster humanizado ya existente, no del
-roster masivo): Gea.
+roster masivo): ninguna — las 4 (Marina, Gea, Brisa, Electro) tienen ya arte
+real.
 
 ## Progreso de sprites nuevos (técnica mejorada, en curso)
 
@@ -283,6 +287,9 @@ se recorta y se asigna en `js/data.js`. Iterando en orden hasta cubrir las
 - [x] **marina** (Agua/Pícaro): Grumete Marina (`marina_comun.png`) →
       Pirata de las Mareas (`marina_infrecuente.png`) → Corsaria Abisal
       (`marina_raro.png`)
+- [x] **gea** (Tierra/Gurú): Aprendiza de Gea (`gea_infrecuente.png`) →
+      Chamana de Raíces (`gea_raro.png`) → Druida Ancestral
+      (`gea_epico.png`)
 
 ### Personajes (14.1) — 89 familias × 3 formas
 - **sirena**: Sirena de Voz Dulce (`sirena_infrecuente.png`) → Sirena Encantadora (`sirena_raro.png`) → Reina de las Profundidades (`sirena_epico.png`)

@@ -154,9 +154,9 @@ const FIGHTERS = [
   { id: 'marejada_raro', name: 'Caballero de las Mareas', element: 'agua', class: 'campeon', rarity: 'raro', family: 'marejada', evolvesTo: 'marejada_epico', skillId: 'grito', image: 'marejada_raro.png', lore: 'Defiende la costa con una armadura que nunca se oxida.' },
   { id: 'marejada_epico', name: 'Guardián del Abismo', element: 'agua', class: 'campeon', rarity: 'epico', family: 'marejada', evolvesTo: null, skillId: 'grito', image: 'marejada_epico.png', lore: 'Custodia las puertas que separan el mundo conocido del abismo.' },
 
-  { id: 'gea_infrecuente', name: 'Aprendiza de Gea', element: 'tierra', class: 'guru', rarity: 'infrecuente', family: 'gea', evolvesTo: 'gea_raro', skillId: 'curar', lore: 'Aprende a escuchar el latido de la tierra bajo sus pies.' },
-  { id: 'gea_raro', name: 'Chamana de Raíces', element: 'tierra', class: 'guru', rarity: 'raro', family: 'gea', evolvesTo: 'gea_epico', skillId: 'curar', lore: 'Teje raíces vivas para curar heridas que la magia común no alcanza.' },
-  { id: 'gea_epico', name: 'Druida Ancestral', element: 'tierra', class: 'guru', rarity: 'epico', family: 'gea', evolvesTo: null, skillId: 'curar', lore: 'Habla directamente con los bosques más antiguos de Texel.' },
+  { id: 'gea_infrecuente', name: 'Aprendiza de Gea', element: 'tierra', class: 'guru', rarity: 'infrecuente', family: 'gea', evolvesTo: 'gea_raro', skillId: 'curar', image: 'gea_infrecuente.png', lore: 'Aprende a escuchar el latido de la tierra bajo sus pies.' },
+  { id: 'gea_raro', name: 'Chamana de Raíces', element: 'tierra', class: 'guru', rarity: 'raro', family: 'gea', evolvesTo: 'gea_epico', skillId: 'curar', image: 'gea_raro.png', lore: 'Teje raíces vivas para curar heridas que la magia común no alcanza.' },
+  { id: 'gea_epico', name: 'Druida Ancestral', element: 'tierra', class: 'guru', rarity: 'epico', family: 'gea', evolvesTo: null, skillId: 'curar', image: 'gea_epico.png', lore: 'Habla directamente con los bosques más antiguos de Texel.' },
 
   // --- Tier 1: llegan a Raro ---
   { id: 'topo_comun', name: 'Topo Acorazado', element: 'tierra', class: 'campeon', rarity: 'comun', family: 'topo', evolvesTo: 'topo_infrecuente', skillId: 'golpe', image: 'topo_comun.png', lore: 'Cava túneles bajo el campo de batalla y embiste desde donde menos se lo espera.' },
