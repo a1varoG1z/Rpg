@@ -231,7 +231,7 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .queued-row-mini { display: flex; gap: 4px; justify-content: center; }
 .queued-row-mini .creature-canvas { width: 26px; height: 29px; }
 
-.battle-unit { position: relative; width: 78px; text-align: center; transition: opacity 0.3s; }
+.battle-unit { position: relative; width: 100px; text-align: center; transition: opacity 0.3s; }
 .battle-unit.fainted { opacity: 0.25; filter: grayscale(1); }
 .battle-unit .hp-bar.small { height: 7px; margin-top: 2px; }
 .ult-bar { height: 5px; width: 100%; background: #1a1410; border: 1px solid #000; border-radius: 3px; overflow: hidden; margin-top: 2px; }

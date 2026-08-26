@@ -1101,7 +1101,7 @@ UI.battleUnitCard = function (u) {
   const card = el('div', 'battle-unit rarity-' + u.rarity + (u.alive ? '' : ' fainted'));
   card.dataset.unitId = u.id;
   card.addEventListener('click', () => UI.showBattleUnitStats(u));
-  card.appendChild(creatureCanvas(u.defId, 52));
+  card.appendChild(creatureCanvas(u.defId, 76));
   const hpBar = el('div', 'hp-bar small');
   const fill = el('div', 'hp-fill');
   fill.style.width = Math.max(0, u.hp / u.maxHp * 100) + '%';
