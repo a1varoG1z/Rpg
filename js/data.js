@@ -168,9 +168,9 @@ const FIGHTERS = [
   { id: 'heraldo_raro', name: 'Heraldo del Trueno', element: 'rayo', class: 'brujo', rarity: 'raro', family: 'heraldo', evolvesTo: null, skillId: 'aturdir', image: 'heraldo_raro.png', lore: 'Su voz misma retumba como una tormenta cercana.' },
 
   // --- Tier 1 humanizados ---
-  { id: 'electro_comun', name: 'Corredor Eléctrico', element: 'rayo', class: 'explorador', rarity: 'comun', family: 'electro', evolvesTo: 'electro_infrecuente', skillId: 'debilitar', lore: 'Corre con descargas en los pies que dejan chispas a su paso.' },
-  { id: 'electro_infrecuente', name: 'Cazador de Tormentas', element: 'rayo', class: 'explorador', rarity: 'infrecuente', family: 'electro', evolvesTo: 'electro_raro', skillId: 'debilitar', lore: 'Persigue tormentas para absorber su energía antes de que se disipen.' },
-  { id: 'electro_raro', name: 'Rastreador del Trueno', element: 'rayo', class: 'explorador', rarity: 'raro', family: 'electro', evolvesTo: null, skillId: 'debilitar', lore: 'Sigue el rastro de cualquier tormenta hasta su mismo origen.' },
+  { id: 'electro_comun', name: 'Corredor Eléctrico', element: 'rayo', class: 'explorador', rarity: 'comun', family: 'electro', evolvesTo: 'electro_infrecuente', skillId: 'debilitar', image: 'electro_comun.png', lore: 'Corre con descargas en los pies que dejan chispas a su paso.' },
+  { id: 'electro_infrecuente', name: 'Cazador de Tormentas', element: 'rayo', class: 'explorador', rarity: 'infrecuente', family: 'electro', evolvesTo: 'electro_raro', skillId: 'debilitar', image: 'electro_infrecuente.png', lore: 'Persigue tormentas para absorber su energía antes de que se disipen.' },
+  { id: 'electro_raro', name: 'Rastreador del Trueno', element: 'rayo', class: 'explorador', rarity: 'raro', family: 'electro', evolvesTo: null, skillId: 'debilitar', image: 'electro_raro.png', lore: 'Sigue el rastro de cualquier tormenta hasta su mismo origen.' },
 
   { id: 'marina_comun', name: 'Grumete Marina', element: 'agua', class: 'picaro', rarity: 'comun', family: 'marina', evolvesTo: 'marina_infrecuente', skillId: 'furia', lore: 'Su primer viaje en barco terminó en un naufragio... y en un don para el mar.' },
   { id: 'marina_infrecuente', name: 'Pirata de las Mareas', element: 'agua', class: 'picaro', rarity: 'infrecuente', family: 'marina', evolvesTo: 'marina_raro', skillId: 'furia', lore: 'Navega sin mapa, guiada solo por el instinto de las corrientes.' },

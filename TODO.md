@@ -244,6 +244,10 @@ ancho aprox.); se marca aquí lo que se salga bastante de ese rango.
   de paleta reducida de antes). No bloquea nada ahora, pero son candidatas a
   recomprimir/reducir si el peso total de assets se convierte en un
   problema.
+- **electro_infrecuente.png** (~349 KB) y **electro_raro.png** (~400 KB):
+  mismo motivo que brisa (degradado suave, muchos colores únicos).
+  `electro_comun.png` (~270 KB) también por encima del rango de referencia
+  pero más moderado.
 
 ## Sprites de personajes/mobs/jefes pendientes (roster masivo)
 
@@ -256,7 +260,7 @@ comillas de cada entrada de abajo (mismo patrón que el resto del roster,
 `slug_rareza.png`).
 
 Ya pendientes de arte real (del roster humanizado ya existente, no del
-roster masivo): Marina, Gea, Electro.
+roster masivo): Marina, Gea.
 
 ## Progreso de sprites nuevos (técnica mejorada, en curso)
 
@@ -269,6 +273,10 @@ se recorta y se asigna en `js/data.js`. Iterando en orden hasta cubrir las
 - [x] **brisa** (Viento/Explorador): Exploradora de las Corrientes
       (`brisa_raro.png`) → Arquera de las Nubes (`brisa_epico.png`) →
       Soberana del Vendaval (`brisa_legendario.png`)
+- [x] **electro** (Rayo/Explorador): Corredor Eléctrico
+      (`electro_comun.png`) → Cazador de Tormentas
+      (`electro_infrecuente.png`) → Rastreador del Trueno
+      (`electro_raro.png`)
 
 ### Personajes (14.1) — 89 familias × 3 formas
 - **sirena**: Sirena de Voz Dulce (`sirena_infrecuente.png`) → Sirena Encantadora (`sirena_raro.png`) → Reina de las Profundidades (`sirena_epico.png`)
