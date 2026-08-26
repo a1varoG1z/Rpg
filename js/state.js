@@ -30,6 +30,9 @@ function createNewState() {
     settings: { infiniteEnergy: false },
     // Objetos consumibles comprados en la Tienda (pociones, plumas fénix).
     items: { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 },
+    // Homúnculos conseguidos por invocación: solo cuentan (no tienen uid
+    // propio ni entran en el roster/Formación, no luchan nunca).
+    homunculos: { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 },
   };
 }
 
@@ -191,9 +194,32 @@ function summonOne(state, crystalType) {
   if (state.currencies[crystalType] <= 0) return null;
   state.currencies[crystalType]--;
   const rarity = rollCrystalRarity(crystalType);
+  // Cada invocación puede "tocar" un Homúnculo en vez de un luchador — su
+  // tier sale de la misma tirada de rareza, así que un cristal que da más
+  // rarezas altas también da homúnculos de mejor tier de media.
+  if (Math.random() < HOMUNCULO_SUMMON_CHANCE) {
+    return applyHomunculoResult(state, homunculoTierForRarity(rarity));
+  }
   const pool = FIGHTERS.filter(f => f.rarity === rarity);
   const def = pool[Math.floor(Math.random() * pool.length)];
   return applySummonResult(state, def.id);
+}
+
+function applyHomunculoResult(state, tier) {
+  const id = 'homunculo_t' + tier;
+  state.homunculos[id] = (state.homunculos[id] || 0) + 1;
+  return { defId: id, outcome: 'homunculo' };
+}
+
+// Fusiona un Homúnculo con un luchador jugable para darle experiencia
+// directamente (no lucha nunca, solo sirve para esto). Devuelve si subió de
+// nivel, o null si no había homúnculos de ese tipo o el luchador no existe.
+function useHomunculo(state, targetUid, homunculoId) {
+  const entry = rosterEntry(state, targetUid);
+  const hom = homunculoDef(homunculoId);
+  if (!entry || !hom || (state.homunculos[homunculoId] || 0) <= 0) return null;
+  state.homunculos[homunculoId]--;
+  return fighterAddXp(entry, hom.xpValue);
 }
 
 // Cada copia invocada se guarda por separado en el roster (uid propio, SEF 0):
@@ -352,6 +378,7 @@ function loadGame() {
     if (!state || state.version !== 2 || !state.roster) return null;
     if (!state.settings) state.settings = { infiniteEnergy: false };
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
+    if (!state.homunculos) state.homunculos = { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 };
     return state;
   } catch (e) { return null; }
 }

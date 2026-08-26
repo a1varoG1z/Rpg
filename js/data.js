@@ -341,7 +341,25 @@ addBoss('acromantula', 'tierra', 'picaro', 'aturdir', 'Acromántula, Madre de la
 addBoss('wendigo', 'viento', 'brujo', 'furia', 'Wendigo, Hambre sin Fin', 'Cuanto más devora, más hambriento se vuelve — nunca se sacia.', 'epico');
 addBoss('mantisreligiosa', 'viento', 'picaro', 'furia', 'Mantis, la Segadora Silenciosa', 'Espera inmóvil durante horas... y ataca en una fracción de segundo.', 'epico');
 
-function fighterDef(id) { return FIGHTERS.find(f => f.id === id) || BOSSES.find(f => f.id === id); }
+// Homúnculos: no luchan nunca (no entran en FIGHTERS ni en la Formación).
+// Sirven solo como material de experiencia — se fusionan con cualquier
+// luchador jugable desde su ficha para subirle de nivel directamente. A
+// mejor tier, más experiencia otorgan. element/class/rarity son solo de
+// cara al sprite procedural y al color de la revelación de invocación, no
+// afectan a ninguna stat de combate (nunca llegan a construir una unidad).
+const HOMUNCULOS = [
+  { id: 'homunculo_t1', name: 'Homúnculo Menor', tier: 1, element: 'tierra', class: 'explorador', rarity: 'comun', xpValue: 80, lore: 'Un intento imperfecto de crear vida — inútil en combate, pero rebosante de energía vital que puede transmitir a otro luchador.' },
+  { id: 'homunculo_t2', name: 'Homúnculo Mediano', tier: 2, element: 'rayo', class: 'brujo', rarity: 'raro', xpValue: 260, lore: 'Una creación alquímica más estable que la anterior, cargada con aún más experiencia para ceder.' },
+  { id: 'homunculo_t3', name: 'Homúnculo Mayor', tier: 3, element: 'fuego', class: 'guru', rarity: 'legendario', xpValue: 700, lore: 'La cúspide del arte alquímico: no sirve para pelear, pero fusionarlo con un luchador equivale a decenas de batallas de experiencia.' },
+];
+function homunculoDef(id) { return HOMUNCULOS.find(h => h.id === id); }
+function homunculoTierForRarity(rarity) {
+  if (rarity === 'legendario') return 3;
+  if (rarity === 'raro' || rarity === 'epico') return 2;
+  return 1;
+}
+
+function fighterDef(id) { return FIGHTERS.find(f => f.id === id) || BOSSES.find(f => f.id === id) || HOMUNCULOS.find(f => f.id === id); }
 
 // Solo los Legendarios llevan habilidad de líder (ver LEADER_SKILLS), como
 // pedía el usuario ("sobre todo legendarias"). Repartida a mano por clase y
@@ -394,6 +412,11 @@ const CRYSTALS = {
   voxite: { label: 'Cristal Voxite', color: '#c9c9d9', icon: '⚪', rates: { comun: 0.10, infrecuente: 0.30, raro: 0.40, epico: 0.17, legendario: 0.03 } },
   doxite: { label: 'Cristal Doxite', color: '#e8c23c', icon: '🟡', rates: { comun: 0, infrecuente: 0.05, raro: 0.30, epico: 0.45, legendario: 0.20 } },
 };
+// Probabilidad de que una invocación "toque" un Homúnculo en vez de un
+// luchador — el tier del homúnculo sale de la misma tirada de rareza que ya
+// se hace para elegir luchador, así que un cristal que da más rarezas altas
+// también da homúnculos de mejor tier de media.
+const HOMUNCULO_SUMMON_CHANCE = 0.12;
 
 const GEAR_SLOTS = {
   arma: { label: 'Arma', icon: '🗡️', names: { comun: 'Daga Roma', infrecuente: 'Espada Templada', raro: 'Hoja Rúnica', epico: 'Filo Encantado', legendario: 'Colmillo Ancestral' }, stat: 'atk' },

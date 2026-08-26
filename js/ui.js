@@ -469,6 +469,29 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   head.appendChild(info);
   body.appendChild(head);
 
+  if (entry.level < XP_LEVEL_CAP) {
+    const homPanel = el('div', 'panel');
+    homPanel.innerHTML = '<h3>🧪 Homúnculos</h3><p class="settings-info">Fusiónalos con este luchador para darle experiencia directamente — nunca luchan, solo sirven para esto.</p>';
+    const homRow = el('div', 'homunculo-row');
+    HOMUNCULOS.forEach(hom => {
+      const count = state.homunculos[hom.id] || 0;
+      const btn = el('button', 'mini-btn homunculo-btn', `🧪 ${hom.name} (${count})`);
+      btn.disabled = count <= 0;
+      btn.addEventListener('click', () => {
+        const leveled = useHomunculo(state, uid, hom.id);
+        if (leveled === null) return;
+        saveGame(state);
+        UI.renderTopbar(state);
+        if (activeScreen === 'banda') UI.renderBanda(state);
+        UI.showToast('🧪 +' + hom.xpValue + ' XP para ' + def.name + (leveled ? ' — ¡subió de nivel!' : ''));
+        UI.openFighterModal(state, uid, formationCtx);
+      });
+      homRow.appendChild(btn);
+    });
+    homPanel.appendChild(homRow);
+    body.appendChild(homPanel);
+  }
+
   const statRow = (icon, label, key) => {
     const boost = gearBonus[key] ? ` <span class="stat-boost">+${gearBonus[key]}</span>` : '';
     return `<div class="stat-row"><span>${icon} ${label}</span><span>${stats[key] - (gearBonus[key] || 0)}${boost}</span></div>`;
@@ -718,6 +741,7 @@ function revealOutcomeText(result) {
     duplicado: 'Duplicado · se guarda como copia suelta para fusionar',
     duplicado_max: 'Ya en forma máxima · convertido en Texel',
     inventario_lleno: 'Colección llena · convertido en Texel',
+    homunculo: '🧪 ¡Homúnculo! Fusiónalo con un luchador desde su ficha para darle experiencia.',
   }[result.outcome];
 }
 

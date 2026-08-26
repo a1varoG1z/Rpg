@@ -101,6 +101,15 @@ se indica explícitamente.
       banda, no solo al que lidera. La Banda muestra una corona en el hueco
       central y una barra con el líder activo (o un aviso si no hay
       ninguno); la ficha del luchador muestra su habilidad de líder si la tiene
+- [x] **Homúnculos**: nueva "criatura" que nunca lucha (no entra en el
+      roster ni en la Formación) y solo sirve para fusionarse con cualquier
+      luchador jugable y darle experiencia directamente. 3 tiers (Menor/
+      Mediano/Mayor, +80/+260/+700 XP) — pueden "tocar" al invocar con
+      cualquier cristal (~12% de las invocaciones, con el tier decidido por
+      la misma tirada de rareza que ya se hacía, así que un cristal con más
+      rarezas altas también da homúnculos de mejor tier de media). Se
+      fusionan desde la ficha del luchador, con botones que muestran cuántos
+      tienes de cada tier
 
 ## Pendiente — sistemas grandes (necesitan diseño propio, iteración aparte)
 
@@ -121,9 +130,6 @@ se indica explícitamente.
         en cada zona nueva y wirear los 27 jefes nuevos como jefes de zona
         (ahora mismo están creados pero ninguna zona los usa todavía)
   - [ ] Sprites de escenario/paisaje pendientes (ver lista de sprites no-personaje)
-- [ ] **Homúnculos**: nueva "criatura" que sirve para fusionarse con
-      cualquier luchador jugable y subirle de nivel (no lucha). Tiers 1/2/3,
-      a mejor tier más experiencia otorgada.
 - [ ] **Estadísticas individualizadas por personaje** (no todas las de una
       clase son iguales) + sistema de tipos/tribus que genera debilidades y
       fortalezas (p.ej. Champ superior en ataque/defensa pero débil contra
