@@ -133,6 +133,20 @@ se indica explícitamente.
     clase/elemento. Se revalidó que una banda legendaria sigue ganando
     200/200 combates simulados contra un jefe de zona intermedio con este
     sistema activo (el rebalanceo del punto anterior sigue funcionando)
+- [x] **Ampliar mapas/zonas**: 27 zonas nuevas (de 6 a 33 en total), cada una
+      con 2 personajes/mobs del roster masivo (14.1/14.3) de relleno y uno de
+      los 27 jefes (14.2, creados en la iteración anterior pero sin usar
+      todavía en ningún mapa) como jefe único de su etapa 8. La rareza del
+      relleno sube por tramos según la zona está más avanzada (Raro → Épico
+      → Épico/Legendario) para acompañar el escalado por nivel, igual que ya
+      hacían las 6 zonas originales — no hizo falta tocar el motor de
+      combate ni el de mapa, los jefes nuevos encajan directamente como
+      `pool[2]` de una zona (fighterDef ya los reconocía desde que se
+      crearon). Probado de extremo a extremo: las 33 zonas se listan y
+      desbloquean en cadena correctamente, un recorrido normal y una pelea
+      de jefe de una zona nueva se juegan bien por la UI real, y una banda
+      legendaria a nivel apropiado gana 100/100 combates simulados contra
+      Loki (el jefe de la última zona, nivel 264)
 
 ## Pendiente — sistemas grandes (necesitan diseño propio, iteración aparte)
 
@@ -147,11 +161,6 @@ se indica explícitamente.
       `encuentro-enemigo.jpg`. El recorrido nodo a nodo ya funciona, esto es
       para el arte del camino (ahora mismo son círculos con emoji, sin
       sprites de escenario)
-  - [ ] Ampliar el número de mapas/zonas (van a crecer mucho los jefes) —
-        el roster masivo (14.1-14.3) ya está creado, así que esto ya se
-        puede abordar cuando toque: hay que decidir qué personajes/mobs van
-        en cada zona nueva y wirear los 27 jefes nuevos como jefes de zona
-        (ahora mismo están creados pero ninguna zona los usa todavía)
   - [ ] Sprites de escenario/paisaje pendientes (ver lista de sprites no-personaje)
 - [ ] Más tipos de ulti variados más allá de los que ya existen (daño,
       daño en fila, curación propia, curación en fila, buff propio, buff en

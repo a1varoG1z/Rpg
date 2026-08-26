@@ -435,6 +435,40 @@ const ZONES = [
   { id: 'picos', name: 'Picos Helados', emoji: '❄️', color: '#2f4650', pool: ['triton_raro', 'chispa_raro', 'duende_epico'] },
   { id: 'ruinas', name: 'Ruinas Abisales', emoji: '💀', color: '#3a2f45', pool: ['heraldo_raro', 'vidente_raro', 'chispa_epico'] },
   { id: 'guarida', name: 'Guarida del Dragón', emoji: '🐉', color: '#4a2f2f', pool: ['vidente_epico', 'triton_epico', 'ascua_legendario'] },
+
+  // --- Zonas nuevas: usan el roster masivo (14.1/14.3) como relleno y los
+  // 27 jefes (14.2, antes creados pero sin usar en ningún mapa) como jefe de
+  // zona. pool[0]/pool[1] son el relleno de cada oleada normal, pool[2] es
+  // siempre el jefe único de la etapa 8. La rareza del relleno sube por
+  // tramos según se avanza (Raro -> Épico -> Épico/Legendario) para
+  // acompañar el escalado por nivel, igual que hacían las 6 zonas originales.
+  { id: 'cantera', name: 'Cantera Devorada', emoji: '🪨', color: '#4a3f2f', pool: ['zapador_raro', 'gargola_raro', 'boss_garn'] },
+  { id: 'aldea_nian', name: 'Aldea del Año Nuevo', emoji: '🧨', color: '#4a2f2f', pool: ['hombrefuego_raro', 'demonio_raro', 'boss_nian'] },
+  { id: 'jardin_piedra', name: 'Jardín de Piedra', emoji: '🗿', color: '#3a3a2f', pool: ['serpiente_raro', 'escorpionhumanoide_raro', 'boss_medusa'] },
+  { id: 'salon_juicio', name: 'Salón del Juicio', emoji: '⚖️', color: '#3a2f24', pool: ['momia_raro', 'anubis_raro', 'boss_ammit'] },
+  { id: 'sabana', name: 'Sabana Ardiente', emoji: '🦁', color: '#4a3f1f', pool: ['hombretigre_raro', 'leonhumanizado_raro', 'boss_leondenemea'] },
+  { id: 'desfiladero_roc', name: 'Desfiladero del Roc', emoji: '🏔️', color: '#3f4a4a', pool: ['garuda_raro', 'grifo_raro', 'boss_pajaroroc'] },
+  { id: 'laberinto_creta', name: 'Laberinto de Creta', emoji: '🐂', color: '#4a3a2f', pool: ['minotauro_raro', 'centauro_raro', 'boss_torodecreta'] },
+  { id: 'cripta_serpentina', name: 'Cripta Serpentina', emoji: '🐍', color: '#2f3a2f', pool: ['hidraserpiente_epico', 'lamia_epico', 'boss_basilisco'] },
+  { id: 'paso_gigantes', name: 'Paso de los Gigantes', emoji: '⛰️', color: '#3f3f4a', pool: ['gigante_epico', 'troll_epico', 'boss_ettin'] },
+  { id: 'templo_hermanas', name: 'Templo de las Hermanas', emoji: '🐍', color: '#3a2f3f', pool: ['escorpionhumanoide_epico', 'dientesdesable_epico', 'boss_gorgonas'] },
+  { id: 'desierto_espinas', name: 'Desierto de Espinas', emoji: '🦂', color: '#4a3a1f', pool: ['hombretigre_epico', 'wyvern_epico', 'boss_manticora'] },
+  { id: 'circo_maldito', name: 'Circo Maldito', emoji: '🃏', color: '#3a1f3a', pool: ['gatubela_epico', 'panteranegra_epico', 'boss_joker'] },
+  { id: 'nido_colosal', name: 'Nido Colosal', emoji: '🕷️', color: '#2f2a24', pool: ['dementor_epico', 'banshee_epico', 'boss_acromantula'] },
+  { id: 'tundra_helada', name: 'Tundra Helada', emoji: '🥶', color: '#2f4550', pool: ['yeti_epico', 'hombrelobo_epico', 'boss_wendigo'] },
+  { id: 'jungla_silenciosa', name: 'Jungla Silenciosa', emoji: '🌿', color: '#2f4a2f', pool: ['cecaelia_epico', 'unicornio_epico', 'boss_mantisreligiosa'] },
+  { id: 'abismo_ojos', name: 'Abismo de los Cien Ojos', emoji: '👁️', color: '#1f2a3a', pool: ['kraken_epico', 'leviatan_epico', 'boss_tifon'] },
+  { id: 'cima_quimerica', name: 'Cima Quimérica', emoji: '🔥', color: '#4a2a1f', pool: ['cerbero_epico', 'avefenix_epico', 'boss_quimera'] },
+  { id: 'caos_primordial', name: 'Caos Primordial', emoji: '🌊', color: '#1f3a4a', pool: ['hidradragon_epico', 'shenlong_epico', 'boss_tiamat'] },
+  { id: 'forja_fin', name: 'Forja del Fin del Mundo', emoji: '⚒️', color: '#4a2414', pool: ['fenrir_epico', 'dracula_epico', 'boss_surtr'] },
+  { id: 'llanura_titan', name: 'Llanura del Titán', emoji: '🦣', color: '#3a3424', pool: ['hercules_epico', 'thor_epico', 'boss_behemoth'] },
+  { id: 'templo_eclipse', name: 'Templo del Sol Eclipsado', emoji: '🌑', color: '#241f3a', pool: ['ra_epico', 'osiris_epico', 'boss_apofis'] },
+  { id: 'fosa_rlyeh', name: "Fosa de R'lyeh", emoji: '🐙', color: '#1f2a2a', pool: ['kraken_legendario', 'leviatan_legendario', 'boss_cthulhu'] },
+  { id: 'minas_sinfondo', name: 'Minas Sin Fondo', emoji: '⛏️', color: '#3a1414', pool: ['dracula_legendario', 'piroman_legendario', 'boss_balrog'] },
+  { id: 'palacio_espejos', name: 'Palacio de Espejos', emoji: '🪞', color: '#3a2a4a', pool: ['genio_legendario', 'esfinge_legendario', 'boss_rakshasa'] },
+  { id: 'necropolis', name: 'Necrópolis Eterna', emoji: '💀', color: '#242424', pool: ['nigro_legendario', 'anubis_legendario', 'boss_liche'] },
+  { id: 'torre_prohibida', name: 'Torre Prohibida', emoji: '🏰', color: '#2a1f3a', pool: ['chispa_legendario', 'odin_legendario', 'boss_magooscuro'] },
+  { id: 'salon_enganos', name: 'Salón de los Engaños', emoji: '🎭', color: '#3a2424', pool: ['brisa_legendario', 'sunwukong_legendario', 'boss_loki'] },
 ];
 const STAGES_PER_ZONE = 8;
 const STAGE_ENERGY_COST = 6;
