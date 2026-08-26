@@ -285,6 +285,9 @@ ancho aprox.); se marca aquí lo que se salga bastante de ese rango.
 - **cocodrilo_raro.png** (~332 KB) y **cocodrilo_epico.png** (~601 KB):
   mismo motivo. `cocodrilo_infrecuente.png` (~203 KB) sí entra en el rango
   de referencia.
+- **hidradragon_legendario.png** (~470 KB): mismo motivo. `hidradragon_raro.png`
+  (~97 KB) y `hidradragon_epico.png` (~251 KB) entran en el rango de
+  referencia o muy cerca.
 
 ## Sprites de personajes/mobs/jefes pendientes (roster masivo)
 
@@ -334,11 +337,19 @@ se recorta y se asigna en `js/data.js`. Iterando en orden hasta cubrir las
       (`cocodrilo_infrecuente.png`) → Centurión del Pantano
       (`cocodrilo_raro.png`) → Señor de las Aguas Turbias
       (`cocodrilo_epico.png`)
+- [x] **hidradragon** (Rayo/Brujo): Cría de Mil Fauces
+      (`hidradragon_raro.png`) → Dragón de Tres Cabezas
+      (`hidradragon_epico.png`) → Soberano de las Siete Cabezas
+      (`hidradragon_legendario.png`). El recorte del móvil dejó restos de
+      checkerboard semitransparente dentro del contorno (huecos entre las
+      alas y los orbes mágicos) en las 3 formas — se limpiaron con un filtro
+      dirigido (píxel casi gris + alfa medio/bajo → transparente) en vez del
+      recorte directo por caja alfa que basta para el resto de imágenes
+      pre-recortadas
 
 ### Personajes (14.1) — 89 familias × 3 formas
 (las familias ya hechas se quitan de aquí — ver la lista con checkboxes más
 arriba, "Progreso de sprites nuevos", para el registro completo)
-- **hidradragon**: Cría de Mil Fauces (`hidradragon_raro.png`) → Dragón de Tres Cabezas (`hidradragon_epico.png`) → Soberano de las Siete Cabezas (`hidradragon_legendario.png`)
 - **avefenix**: Polluelo de Cenizas (`avefenix_raro.png`) → Ave de Fuego Eterno (`avefenix_epico.png`) → Fénix Inmortal (`avefenix_legendario.png`)
 - **hipogrifo**: Potro Alado (`hipogrifo_infrecuente.png`) → Hipogrifo Salvaje (`hipogrifo_raro.png`) → Señor de los Cielos Altos (`hipogrifo_epico.png`)
 - **cerbero**: Cachorro de Tres Cabezas (`cerbero_raro.png`) → Guardián del Umbral (`cerbero_epico.png`) → Cerbero, Custodio del Inframundo (`cerbero_legendario.png`)
