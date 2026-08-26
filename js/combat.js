@@ -27,6 +27,11 @@ function makePlayerUnit(state, uid, level) {
   const entry = rosterEntry(state, uid);
   const def = fighterDef(entry.defId);
   const stats = fighterStats(state, entry);
+  // Habilidad de líder de banda: si hay un luchador con leaderSkillId en el
+  // centro de la Formación, TODA la banda recibe su bonificación en combate
+  // (no solo quien la tiene) — no afecta a las stats mostradas en la ficha.
+  const leader = activeLeaderSkill(state);
+  if (leader) stats[leader.stat] = Math.round(stats[leader.stat] * (1 + leader.pct));
   return {
     id: 'u' + (unitSeq++), side: 'player', defId: entry.defId, sourceUid: uid,
     name: def.name, element: def.element, class: def.class, rarity: def.rarity,

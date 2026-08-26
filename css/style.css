@@ -145,6 +145,10 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .formation-slot:not(.empty) { border-style: solid; }
 .formation-slot.filled { border-style: solid; }
 .formation-lvl { font-size: 0.6rem; color: var(--cream-dim); }
+.formation-slot.center { border-color: var(--gold); }
+.leader-crown { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-size: 0.9rem; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
+.leader-status-bar { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: #1f1811; border: 1px solid var(--gold-dim); font-size: 0.78rem; color: var(--cream-dim); text-align: center; line-height: 1.5; }
+.leader-status-bar.active { border-color: var(--gold); color: var(--cream); box-shadow: 0 0 10px rgba(212,175,55,0.35); }
 
 .picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 50vh; overflow-y: auto; margin-top: 8px; }
 

@@ -355,12 +355,15 @@ UI.renderBanda = function (state) {
     const rowEl = el('div', 'formation-row');
     for (let c = 0; c < BAND_COLS; c++) {
       const uid = state.band[r][c];
-      const slot = el('div', 'formation-slot' + (uid ? '' : ' empty'));
+      const isCenter = r === 1 && c === 1;
+      const slot = el('div', 'formation-slot' + (uid ? '' : ' empty') + (isCenter ? ' center' : ''));
       if (uid) {
         const entry = rosterEntry(state, uid);
         if (entry) {
           slot.appendChild(creatureCanvas(entry.defId, 46));
           slot.appendChild(el('div', 'formation-lvl', 'Nv.' + entry.level));
+          const def = fighterDef(entry.defId);
+          if (isCenter && def.leaderSkillId) slot.appendChild(el('div', 'leader-crown', '👑'));
         }
       } else {
         slot.textContent = '+';
@@ -370,6 +373,13 @@ UI.renderBanda = function (state) {
     }
     grid.appendChild(rowEl);
   }
+
+  const leader = activeLeaderSkill(state);
+  const leaderBar = $('leaderStatusBar');
+  leaderBar.innerHTML = leader
+    ? `👑 <b>${leader.leaderName}</b> lidera: ${leader.name} — ${leader.desc}`
+    : '👑 Sin líder activo. Coloca un luchador Legendario con habilidad de líder en el centro de la Formación para bonificar a toda la banda.';
+  leaderBar.classList.toggle('active', !!leader);
 
   $('rosterCount').textContent = state.roster.length;
   const rGrid = $('rosterGrid');
@@ -476,6 +486,13 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     const lorePanel = el('div', 'panel');
     lorePanel.innerHTML = `<h3>📜 Historia</h3><p class="settings-info">${def.lore}</p>`;
     body.appendChild(lorePanel);
+  }
+
+  if (def.leaderSkillId) {
+    const leaderInfo = LEADER_SKILLS[def.leaderSkillId];
+    const leaderPanel = el('div', 'panel');
+    leaderPanel.innerHTML = `<h3>👑 ${leaderInfo.name} (Líder)</h3><p class="settings-info">${leaderInfo.desc}</p><p class="settings-info">Solo se activa mientras este luchador ocupa la celda central de la Formación.</p>`;
+    body.appendChild(leaderPanel);
   }
 
   const sefPanel = el('div', 'panel');

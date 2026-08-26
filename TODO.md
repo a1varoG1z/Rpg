@@ -93,6 +93,14 @@ se indica explícitamente.
       de historia, con sprite procedural de respaldo hasta que haya arte
       real — ver la lista de nombres de archivo exactos que hacen falta más
       abajo ("Sprites de personajes/mobs/jefes pendientes")
+- [x] **Habilidad de líder de banda**: los 30 luchadores Legendarios llevan
+      una habilidad pasiva de líder (repartida por clase/tema: +15% ataque,
+      defensa, vida, agilidad o sabiduría a TODA la banda) que solo está
+      activa mientras ese luchador ocupe la celda central [1][1] de la
+      Formación — verificado que el bonus se aplica a otros luchadores de la
+      banda, no solo al que lidera. La Banda muestra una corona en el hueco
+      central y una barra con el líder activo (o un aviso si no hay
+      ninguno); la ficha del luchador muestra su habilidad de líder si la tiene
 
 ## Pendiente — sistemas grandes (necesitan diseño propio, iteración aparte)
 
@@ -113,9 +121,6 @@ se indica explícitamente.
         en cada zona nueva y wirear los 27 jefes nuevos como jefes de zona
         (ahora mismo están creados pero ninguna zona los usa todavía)
   - [ ] Sprites de escenario/paisaje pendientes (ver lista de sprites no-personaje)
-- [ ] **Habilidad de líder de banda**: una criatura (sobre todo legendarias)
-      puede tener una habilidad pasiva que bonifica a todo el equipo cuando
-      esa criatura ocupa el centro de la formación
 - [ ] **Homúnculos**: nueva "criatura" que sirve para fusionarse con
       cualquier luchador jugable y subirle de nivel (no lucha). Tiers 1/2/3,
       a mejor tier más experiencia otorgada.

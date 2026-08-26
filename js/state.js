@@ -286,6 +286,20 @@ function bandFighterCount(state) {
   return state.band.flat().filter(Boolean).length;
 }
 
+// Habilidad de líder de banda: solo está activa si el luchador que la tiene
+// ocupa la celda central [1][1] de la Formación. Devuelve el LEADER_SKILLS
+// correspondiente (o null si no hay líder activo), para aplicarlo a TODA
+// la banda al construir las unidades de combate (ver makePlayerUnit).
+function activeLeaderSkill(state) {
+  const centerUid = state.band[1][1];
+  if (!centerUid) return null;
+  const entry = rosterEntry(state, centerUid);
+  if (!entry) return null;
+  const def = fighterDef(entry.defId);
+  if (!def || !def.leaderSkillId) return null;
+  return Object.assign({ leaderName: def.name }, LEADER_SKILLS[def.leaderSkillId]);
+}
+
 // --- Progreso de zonas ---
 function highestClearedStage(state, zoneId) {
   const v = state.progress.zoneStage[zoneId];

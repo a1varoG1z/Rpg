@@ -48,6 +48,18 @@ const SKILL_TYPES = {
   aturdir: { name: 'Onda de Trueno', kind: 'stun', turns: 1, chance: 0.65, target: 'single', desc: 'Puede aturdir a un enemigo.' },
 };
 
+// Habilidad de líder de banda: una bonificación pasiva para TODA la banda
+// (no solo quien la tiene), que solo está activa mientras ese luchador
+// ocupe la celda central [1][1] de la Formación 3×3. Solo la tienen los
+// luchadores Legendarios (ver setLeaderSkill más abajo, junto al roster).
+const LEADER_SKILLS = {
+  atk_boost: { name: 'Grito de Mando', stat: 'atk', pct: 0.15, desc: 'Aumenta el ataque de toda la banda un 15% mientras lidera desde el centro.' },
+  def_boost: { name: 'Escudo de Mando', stat: 'def', pct: 0.15, desc: 'Aumenta la defensa de toda la banda un 15% mientras lidera desde el centro.' },
+  hp_boost: { name: 'Vitalidad de Mando', stat: 'hp', pct: 0.15, desc: 'Aumenta la vida máxima de toda la banda un 15% mientras lidera desde el centro.' },
+  agi_boost: { name: 'Velocidad de Mando', stat: 'agi', pct: 0.15, desc: 'Aumenta la agilidad de toda la banda un 15% mientras lidera desde el centro.' },
+  wis_boost: { name: 'Sabiduría de Mando', stat: 'wis', pct: 0.15, desc: 'Aumenta la sabiduría de toda la banda un 15% mientras lidera desde el centro.' },
+};
+
 // family: agrupa toda la línea de transformación de un luchador.
 // evolvesTo: id de la siguiente forma (o null si es la última que alcanza).
 // image: fichero opcional en assets/creatures/ con arte real; si no está,
@@ -330,6 +342,41 @@ addBoss('wendigo', 'viento', 'brujo', 'furia', 'Wendigo, Hambre sin Fin', 'Cuant
 addBoss('mantisreligiosa', 'viento', 'picaro', 'furia', 'Mantis, la Segadora Silenciosa', 'Espera inmóvil durante horas... y ataca en una fracción de segundo.', 'epico');
 
 function fighterDef(id) { return FIGHTERS.find(f => f.id === id) || BOSSES.find(f => f.id === id); }
+
+// Solo los Legendarios llevan habilidad de líder (ver LEADER_SKILLS), como
+// pedía el usuario ("sobre todo legendarias"). Repartida a mano por clase y
+// tema de cada uno, no todo el mismo tipo de bonus.
+function setLeaderSkill(defId, skillId) { const d = fighterDef(defId); if (d) d.leaderSkillId = skillId; }
+setLeaderSkill('ascua_legendario', 'def_boost');
+setLeaderSkill('nigro_legendario', 'wis_boost');
+setLeaderSkill('lagarto_legendario', 'def_boost');
+setLeaderSkill('duende_legendario', 'agi_boost');
+setLeaderSkill('chispa_legendario', 'wis_boost');
+setLeaderSkill('piroman_legendario', 'atk_boost');
+setLeaderSkill('brisa_legendario', 'agi_boost');
+setLeaderSkill('hidradragon_legendario', 'hp_boost');
+setLeaderSkill('avefenix_legendario', 'hp_boost');
+setLeaderSkill('cerbero_legendario', 'hp_boost');
+setLeaderSkill('kraken_legendario', 'def_boost');
+setLeaderSkill('leviatan_legendario', 'def_boost');
+setLeaderSkill('fenrir_legendario', 'atk_boost');
+setLeaderSkill('quetzalcoatl_legendario', 'agi_boost');
+setLeaderSkill('shenlong_legendario', 'wis_boost');
+setLeaderSkill('zeus_legendario', 'atk_boost');
+setLeaderSkill('pazuzu_legendario', 'agi_boost');
+setLeaderSkill('anubis_legendario', 'wis_boost');
+setLeaderSkill('ra_legendario', 'atk_boost');
+setLeaderSkill('osiris_legendario', 'hp_boost');
+setLeaderSkill('dracula_legendario', 'atk_boost');
+setLeaderSkill('hercules_legendario', 'hp_boost');
+setLeaderSkill('esfinge_legendario', 'wis_boost');
+setLeaderSkill('armaduratecno_legendario', 'atk_boost');
+setLeaderSkill('genio_legendario', 'wis_boost');
+setLeaderSkill('thor_legendario', 'atk_boost');
+setLeaderSkill('odin_legendario', 'wis_boost');
+setLeaderSkill('sunwukong_legendario', 'agi_boost');
+setLeaderSkill('afrodita_legendario', 'hp_boost');
+setLeaderSkill('poseidon_legendario', 'def_boost');
 
 const ZONES = [
   { id: 'bosque', name: 'Linde del Bosque', emoji: '🌲', color: '#2f4f2f', pool: ['topo_comun', 'heraldo_comun', 'topo_infrecuente'] },
