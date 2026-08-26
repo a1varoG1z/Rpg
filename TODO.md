@@ -279,6 +279,9 @@ ancho aprox.); se marca aquí lo que se salga bastante de ese rango.
   más pesada de todas): mismo motivo, ilustración con muchos detalles y
   degradado suave. `sirena_infrecuente.png` (~145 KB) sí entra en el rango
   de referencia.
+- **gorila_infrecuente.png** (~434 KB) y **gorila_raro.png** (~493 KB):
+  mismo motivo. `gorila_comun.png` (~229 KB) sí entra en el rango de
+  referencia.
 
 ## Sprites de personajes/mobs/jefes pendientes (roster masivo)
 
@@ -321,6 +324,9 @@ se recorta y se asigna en `js/data.js`. Iterando en orden hasta cubrir las
       roster masivo (creada con `addFamily`, no a mano) — se le añadió un
       parámetro `hasImages` a `addFamily` para no tener que repetir a mano
       `image: 'slug_rareza.png'` en las próximas
+- [x] **gorila** (Tierra/Campeón): Gorila Montaraz (`gorila_comun.png`) →
+      Gorila de Espalda Plateada (`gorila_infrecuente.png`) → Rey de la
+      Jungla de Piedra (`gorila_raro.png`)
 
 ### Personajes (14.1) — 89 familias × 3 formas
 - **sirena**: Sirena de Voz Dulce (`sirena_infrecuente.png`) → Sirena Encantadora (`sirena_raro.png`) → Reina de las Profundidades (`sirena_epico.png`)
