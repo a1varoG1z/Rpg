@@ -244,7 +244,7 @@ addFamily('sirena', 2, 'agua', 'brujo', 'arrasar', ['Sirena de Voz Dulce', 'Sire
 addFamily('gorila', 1, 'tierra', 'campeon', 'golpe', ['Gorila Montaraz', 'Gorila de Espalda Plateada', 'Rey de la Jungla de Piedra'], 'Gobierna su territorio a puñetazos que parten la roca.', true);
 addFamily('cocodrilo', 2, 'agua', 'campeon', 'escudo', ['Guerrero Cocodrilo', 'Centurión del Pantano', 'Señor de las Aguas Turbias'], 'Su piel curtida ha detenido más golpes de los que nadie recuerda.', true);
 addFamily('hidradragon', 3, 'rayo', 'brujo', 'arrasar', ['Cría de Mil Fauces', 'Dragón de Tres Cabezas', 'Soberano de las Siete Cabezas'], 'Cada cabeza que pierde en combate vuelve a crecer el doble de fuerte.', true);
-addFamily('avefenix', 3, 'fuego', 'guru', 'curar', ['Polluelo de Cenizas', 'Ave de Fuego Eterno', 'Fénix Inmortal'], 'Cuando muere, renace de sus propias cenizas más brillante que antes.');
+addFamily('avefenix', 3, 'fuego', 'guru', 'curar', ['Polluelo de Cenizas', 'Ave de Fuego Eterno', 'Fénix Inmortal'], 'Cuando muere, renace de sus propias cenizas más brillante que antes.', true);
 addFamily('hipogrifo', 2, 'viento', 'explorador', 'debilitar', ['Potro Alado', 'Hipogrifo Salvaje', 'Señor de los Cielos Altos'], 'Mitad caballo, mitad grifo, surca el cielo más rápido que cualquier ave.');
 addFamily('cerbero', 3, 'fuego', 'campeon', 'escudo', ['Cachorro de Tres Cabezas', 'Guardián del Umbral', 'Cerbero, Custodio del Inframundo'], 'Vigila la puerta que separa el mundo de los vivos del de los muertos.');
 addFamily('centauro', 2, 'tierra', 'explorador', 'debilitar', ['Potrillo Centauro', 'Centauro Arquero', 'Jefe de la Manada Salvaje'], 'Combina la fuerza de un corcel con la puntería de un cazador nato.', true);
