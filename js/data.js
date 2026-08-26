@@ -195,14 +195,16 @@ const TIER_LORE_SUFFIX = {
   2: ['', ' Ha templado su poder en decenas de combates.', ' Pocos se atreven a desafiarla en su plenitud.'],
   3: ['', ' Su leyenda empieza a extenderse por Texel.', ' Es ya una fuerza que decide el destino de reinos enteros.'],
 };
-function addFamily(slug, tier, element, cls, skillId, names, loreCore) {
+function addFamily(slug, tier, element, cls, skillId, names, loreCore, hasImages) {
   const rarities = TIER_CHAINS[tier];
   const suffixes = TIER_LORE_SUFFIX[tier];
   rarities.forEach((rarity, i) => {
-    FIGHTERS.push({
+    const entry = {
       id: slug + '_' + rarity, name: names[i], element, class: cls, rarity, family: slug,
       evolvesTo: i < 2 ? slug + '_' + rarities[i + 1] : null, skillId, lore: loreCore + suffixes[i],
-    });
+    };
+    if (hasImages) entry.image = slug + '_' + rarity + '.png';
+    FIGHTERS.push(entry);
   });
 }
 
@@ -238,7 +240,7 @@ function addBoss(slug, element, cls, skillId, name, lore, rarity) {
 function bossDef(id) { return BOSSES.find(b => b.id === id); }
 
 // ### Personajes (14.1)
-addFamily('sirena', 2, 'agua', 'brujo', 'arrasar', ['Sirena de Voz Dulce', 'Sirena Encantadora', 'Reina de las Profundidades'], 'Su canto embruja a los marineros que se acercan demasiado a la costa.');
+addFamily('sirena', 2, 'agua', 'brujo', 'arrasar', ['Sirena de Voz Dulce', 'Sirena Encantadora', 'Reina de las Profundidades'], 'Su canto embruja a los marineros que se acercan demasiado a la costa.', true);
 addFamily('gorila', 1, 'tierra', 'campeon', 'golpe', ['Gorila Montaraz', 'Gorila de Espalda Plateada', 'Rey de la Jungla de Piedra'], 'Gobierna su territorio a puñetazos que parten la roca.');
 addFamily('cocodrilo', 2, 'agua', 'campeon', 'escudo', ['Guerrero Cocodrilo', 'Centurión del Pantano', 'Señor de las Aguas Turbias'], 'Su piel curtida ha detenido más golpes de los que nadie recuerda.');
 addFamily('hidradragon', 3, 'rayo', 'brujo', 'arrasar', ['Cría de Mil Fauces', 'Dragón de Tres Cabezas', 'Soberano de las Siete Cabezas'], 'Cada cabeza que pierde en combate vuelve a crecer el doble de fuerte.');

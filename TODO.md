@@ -230,6 +230,27 @@ PNG. 10 familias completas (3 formas cada una) + 1 familia parcial:
 - **topo**: `topo_comun.png`, `topo_infrecuente.png`, `topo_raro.png`
 - **heraldo**: `heraldo_comun.png`, `heraldo_infrecuente.png`, `heraldo_raro.png`
 
+## Sprites que necesitaron quitar el fondo a mano (antes del recorte por móvil)
+
+A partir de **sirena** el usuario manda las imágenes ya recortadas desde el
+móvil (PNG con canal alfa real) — mucho más simple y fiable que lo de
+antes: solo hace falta segmentar por columnas y listo, sin ningún riesgo
+de comerse trocitos del personaje o dejar restos de fondo. Estas 4 familias
+anteriores sí necesitaron que yo quitara el fondo manualmente (checkerboard
+o fondo plano, con flood-fill/paleta de color, con más o menos iteraciones
+según el caso):
+
+- **brisa**: fondo tipo checkerboard con textura/ruido — el más complicado,
+  necesitó dos pasadas (flood-fill en cadena + paleta ajustada) por una
+  zona que quedaba encerrada por los efectos de viento
+- **electro**: primer envío con checkerboard fino (mismo tono casi que la
+  ropa del personaje, muy difícil de separar bien) — el usuario reenvió una
+  versión con fondo plano que sí se pudo recortar limpio
+- **marina**: fondo blanco plano, sencillo, solo hubo que descartar un
+  trocito de la columna vecina que se colaba en el borde
+- **gea**: checkerboard muy sutil (apenas 14 de contraste entre sus dos
+  tonos), necesitó dos pasadas igual que brisa
+
 ## Imágenes marcadas para optimizar en el futuro (peso/dimensiones excesivos)
 
 Se rellena según se vayan añadiendo sprites nuevos, si alguna imagen enviada
@@ -254,6 +275,10 @@ ancho aprox.); se marca aquí lo que se salga bastante de ese rango.
 - **gea_raro.png** (~413 KB) y **gea_epico.png** (~474 KB): igual patrón,
   esta última es la más pesada de todas las añadidas hasta ahora.
   `gea_infrecuente.png` (~253 KB) algo por encima pero moderado.
+- **sirena_raro.png** (~366 KB) y **sirena_epico.png** (~604 KB, ahora la
+  más pesada de todas): mismo motivo, ilustración con muchos detalles y
+  degradado suave. `sirena_infrecuente.png` (~145 KB) sí entra en el rango
+  de referencia.
 
 ## Sprites de personajes/mobs/jefes pendientes (roster masivo)
 
@@ -290,6 +315,12 @@ se recorta y se asigna en `js/data.js`. Iterando en orden hasta cubrir las
 - [x] **gea** (Tierra/Gurú): Aprendiza de Gea (`gea_infrecuente.png`) →
       Chamana de Raíces (`gea_raro.png`) → Druida Ancestral
       (`gea_epico.png`)
+- [x] **sirena** (Agua/Brujo): Sirena de Voz Dulce
+      (`sirena_infrecuente.png`) → Sirena Encantadora (`sirena_raro.png`) →
+      Reina de las Profundidades (`sirena_epico.png`). Primera familia del
+      roster masivo (creada con `addFamily`, no a mano) — se le añadió un
+      parámetro `hasImages` a `addFamily` para no tener que repetir a mano
+      `image: 'slug_rareza.png'` en las próximas
 
 ### Personajes (14.1) — 89 familias × 3 formas
 - **sirena**: Sirena de Voz Dulce (`sirena_infrecuente.png`) → Sirena Encantadora (`sirena_raro.png`) → Reina de las Profundidades (`sirena_epico.png`)
