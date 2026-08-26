@@ -209,6 +209,33 @@ se indica explícitamente.
       fila, debuff, aturdir) — p.ej. algo tipo "dispersar/curar estados",
       "daño en el tiempo", "revivir en combate"
 
+## Criaturas jugables con PNG ya asignado (candidatas a sustituir)
+
+El usuario ha mejorado su técnica para generar los sprites, así que estas
+son candidatas a que se les cambie el arte en el futuro aunque ya tengan
+PNG. 10 familias completas (3 formas cada una) + 1 familia parcial:
+
+- **ascua** ⚠️ parcial: solo la forma Legendario tiene PNG
+  (`ascua_legendario.png`, Drakón Adulto de Fuego). Las formas Raro
+  (Cachorro de Ascua) y Épico (Fénix Centinela) siguen con sprite
+  procedural — pendientes de arte igual que cualquier familia sin imagen.
+- **nigro**: `nigro_raro.png`, `nigro_epico.png`, `nigro_legendario.png`
+- **lagarto**: `lagarto_raro.png`, `lagarto_epico.png`, `lagarto_legendario.png`
+- **duende**: `duende_raro.png`, `duende_epico.png`, `duende_legendario.png`
+- **chispa**: `chispa_raro.png`, `chispa_epico.png`, `chispa_legendario.png`
+- **piroman**: `piroman_raro.png`, `piroman_epico.png`, `piroman_legendario.png`
+- **triton**: `triton_infrecuente.png`, `triton_raro.png`, `triton_epico.png`
+- **vidente**: `vidente_infrecuente.png`, `vidente_raro.png`, `vidente_epico.png`
+- **marejada**: `marejada_infrecuente.png`, `marejada_raro.png`, `marejada_epico.png`
+- **topo**: `topo_comun.png`, `topo_infrecuente.png`, `topo_raro.png`
+- **heraldo**: `heraldo_comun.png`, `heraldo_infrecuente.png`, `heraldo_raro.png`
+
+## Imágenes marcadas para optimizar en el futuro (peso/dimensiones excesivos)
+
+Vacía por ahora — se rellena según se vayan añadiendo sprites nuevos, si
+alguna imagen enviada es extremadamente grande (peso o dimensiones) para
+que se pueda sustituir más adelante por una versión más optimizada.
+
 ## Sprites de personajes/mobs/jefes pendientes (roster masivo)
 
 Los 89 personajes, 33 mobs y 27 jefes del roster masivo (14.1/14.2/14.3) ya
