@@ -9,6 +9,8 @@
     btn.addEventListener('click', () => UI.switchScreen(btn.dataset.screen));
   });
 
+  document.body.classList.toggle('hide-medallion', !state.settings.showMedallion);
+
   UI.rosterSortMode = 'reciente';
   $('rosterSortSelect').addEventListener('change', (e) => {
     UI.rosterSortMode = e.target.value;
@@ -17,6 +19,7 @@
 
   $('settingsBtn').addEventListener('click', () => {
     $('infiniteEnergyToggle').checked = state.settings.infiniteEnergy;
+    $('showMedallionToggle').checked = state.settings.showMedallion;
     $('settingsModal').classList.remove('hidden');
   });
   $('settingsModalClose').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
@@ -32,6 +35,12 @@
     saveGame(state);
     UI.renderTopbar(state);
     UI.showToast(state.settings.infiniteEnergy ? '⚡ Energía infinita activada' : '⚡ Energía infinita desactivada');
+  });
+  $('showMedallionToggle').addEventListener('change', (e) => {
+    state.settings.showMedallion = e.target.checked;
+    saveGame(state);
+    document.body.classList.toggle('hide-medallion', !state.settings.showMedallion);
+    UI.showToast(state.settings.showMedallion ? '⚪ Medallón activado' : '⚪ Medallón desactivado');
   });
   $('cheatGemasBtn').addEventListener('click', () => {
     state.currencies.gemas += 1000;

@@ -34,7 +34,7 @@ function createNewState() {
     roster, gearInventory: [], band, progress,
     arena: { rank: 1, bestRank: 1 },
     stats: { battlesWon: 0, battlesLost: 0 },
-    settings: { infiniteEnergy: false },
+    settings: { infiniteEnergy: false, showMedallion: true },
     // Objetos consumibles comprados en la Tienda (pociones, plumas fénix).
     items: { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 },
     // Homúnculos conseguidos por invocación: solo cuentan (no tienen uid
@@ -391,7 +391,8 @@ function loadGame() {
     if (!raw) return null;
     const state = JSON.parse(raw);
     if (!state || state.version !== 2 || !state.roster) return null;
-    if (!state.settings) state.settings = { infiniteEnergy: false };
+    if (!state.settings) state.settings = { infiniteEnergy: false, showMedallion: true };
+    if (state.settings.showMedallion === undefined) state.settings.showMedallion = true;
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     if (!state.homunculos) state.homunculos = { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 };
     // Migración de equipo: antes cada luchador guardaba el arma/armadura en

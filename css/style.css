@@ -70,8 +70,9 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .creature-canvas-wrap::before {
   content: ''; position: absolute; z-index: 0; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: 76px; height: 76px; border-radius: 50%;
-  background: radial-gradient(circle, var(--cream) 0%, #dccca3 75%, transparent 100%);
+  background: #f6f1e4;
 }
+body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .creature-elclass { position: absolute; top: 4px; left: 6px; font-size: 0.7rem; }
 .creature-tier-icon { position: absolute; top: 4px; right: 6px; font-size: 0.7rem; }
 .new-badge {
