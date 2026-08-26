@@ -232,9 +232,18 @@ PNG. 10 familias completas (3 formas cada una) + 1 familia parcial:
 
 ## Imágenes marcadas para optimizar en el futuro (peso/dimensiones excesivos)
 
-Vacía por ahora — se rellena según se vayan añadiendo sprites nuevos, si
-alguna imagen enviada es extremadamente grande (peso o dimensiones) para
-que se pueda sustituir más adelante por una versión más optimizada.
+Se rellena según se vayan añadiendo sprites nuevos, si alguna imagen enviada
+es extremadamente grande (peso o dimensiones) para que se pueda sustituir
+más adelante por una versión más optimizada. Referencia: el resto del
+roster con arte real pesa entre 8 KB y 242 KB por imagen (150-450 px de
+ancho aprox.); se marca aquí lo que se salga bastante de ese rango.
+
+- **brisa_epico.png** (431×530, ~416 KB) y **brisa_legendario.png**
+  (459×557, ~487 KB): bastante más pesadas que el resto del roster (~90.000
+  colores únicos por el degradado suave del arte nuevo, frente al pixel art
+  de paleta reducida de antes). No bloquea nada ahora, pero son candidatas a
+  recomprimir/reducir si el peso total de assets se convierte en un
+  problema.
 
 ## Sprites de personajes/mobs/jefes pendientes (roster masivo)
 
@@ -247,7 +256,19 @@ comillas de cada entrada de abajo (mismo patrón que el resto del roster,
 `slug_rareza.png`).
 
 Ya pendientes de arte real (del roster humanizado ya existente, no del
-roster masivo): Marina, Gea, Brisa, Electro.
+roster masivo): Marina, Gea, Electro.
+
+## Progreso de sprites nuevos (técnica mejorada, en curso)
+
+Sustituyendo el sprite procedural por PNG real, familia a familia, con la
+nueva técnica del usuario (que también podría acabar reemplazando a los 10+1
+de la lista de arriba). El usuario manda una imagen con las 3 evoluciones,
+se recorta y se asigna en `js/data.js`. Iterando en orden hasta cubrir las
+104 familias jugables.
+
+- [x] **brisa** (Viento/Explorador): Exploradora de las Corrientes
+      (`brisa_raro.png`) → Arquera de las Nubes (`brisa_epico.png`) →
+      Soberana del Vendaval (`brisa_legendario.png`)
 
 ### Personajes (14.1) — 89 familias × 3 formas
 - **sirena**: Sirena de Voz Dulce (`sirena_infrecuente.png`) → Sirena Encantadora (`sirena_raro.png`) → Reina de las Profundidades (`sirena_epico.png`)

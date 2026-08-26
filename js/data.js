@@ -136,9 +136,9 @@ const FIGHTERS = [
   { id: 'piroman_epico', name: 'Piromante Maldito', element: 'fuego', class: 'brujo', rarity: 'epico', family: 'piroman', evolvesTo: 'piroman_legendario', skillId: 'debilitar', image: 'piroman_epico.png', lore: 'Una maldición antigua fusionó su alma con las llamas que ahora controla.' },
   { id: 'piroman_legendario', name: 'Señor de las Cenizas Eternas', element: 'fuego', class: 'brujo', rarity: 'legendario', family: 'piroman', evolvesTo: null, skillId: 'debilitar', image: 'piroman_legendario.png', lore: 'De cada cosa que destruye nace un fuego que jamás se apaga.' },
 
-  { id: 'brisa_raro', name: 'Exploradora de las Corrientes', element: 'viento', class: 'explorador', rarity: 'raro', family: 'brisa', evolvesTo: 'brisa_epico', skillId: 'debilitar', lore: 'Cartografía rutas que solo el viento conoce.' },
-  { id: 'brisa_epico', name: 'Arquera de las Nubes', element: 'viento', class: 'explorador', rarity: 'epico', family: 'brisa', evolvesTo: 'brisa_legendario', skillId: 'debilitar', lore: 'Dispara flechas que cabalgan las corrientes de aire hasta dar en el blanco.' },
-  { id: 'brisa_legendario', name: 'Soberana del Vendaval', element: 'viento', class: 'explorador', rarity: 'legendario', family: 'brisa', evolvesTo: null, skillId: 'debilitar', lore: 'Ningún viento de Texel sopla sin su permiso.' },
+  { id: 'brisa_raro', name: 'Exploradora de las Corrientes', element: 'viento', class: 'explorador', rarity: 'raro', family: 'brisa', evolvesTo: 'brisa_epico', skillId: 'debilitar', image: 'brisa_raro.png', lore: 'Cartografía rutas que solo el viento conoce.' },
+  { id: 'brisa_epico', name: 'Arquera de las Nubes', element: 'viento', class: 'explorador', rarity: 'epico', family: 'brisa', evolvesTo: 'brisa_legendario', skillId: 'debilitar', image: 'brisa_epico.png', lore: 'Dispara flechas que cabalgan las corrientes de aire hasta dar en el blanco.' },
+  { id: 'brisa_legendario', name: 'Soberana del Vendaval', element: 'viento', class: 'explorador', rarity: 'legendario', family: 'brisa', evolvesTo: null, skillId: 'debilitar', image: 'brisa_legendario.png', lore: 'Ningún viento de Texel sopla sin su permiso.' },
 
   // --- Tier 2: llegan a Épico ---
   { id: 'triton_infrecuente', name: 'Renacuajo Ágil', element: 'agua', class: 'explorador', rarity: 'infrecuente', family: 'triton', evolvesTo: 'triton_raro', skillId: 'debilitar', image: 'triton_infrecuente.png', lore: 'Recién salido del huevo, ya nada más rápido que cualquier pez del arrecife.' },
