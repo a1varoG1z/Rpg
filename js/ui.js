@@ -360,7 +360,9 @@ UI.renderBanda = function (state) {
       if (uid) {
         const entry = rosterEntry(state, uid);
         if (entry) {
-          slot.appendChild(creatureCanvas(entry.defId, 46));
+          const wrap = el('div', 'creature-canvas-wrap');
+          wrap.appendChild(creatureCanvas(entry.defId, 46));
+          slot.appendChild(wrap);
           slot.appendChild(el('div', 'formation-lvl', 'Nv.' + entry.level));
           const def = fighterDef(entry.defId);
           if (isCenter && def.leaderSkillId) slot.appendChild(el('div', 'leader-crown', '👑'));
@@ -846,7 +848,13 @@ UI.renderArena = function (state) {
   state.arena.scouted.forEach((row, i) => {
     if (row.length === 0) return;
     const rowEl = el('div', 'formation-row');
-    row.forEach(u => { const slot = el('div', 'formation-slot filled'); slot.appendChild(creatureCanvas(u.defId, 40)); rowEl.appendChild(slot); });
+    row.forEach(u => {
+      const slot = el('div', 'formation-slot filled');
+      const wrap = el('div', 'creature-canvas-wrap');
+      wrap.appendChild(creatureCanvas(u.defId, 40));
+      slot.appendChild(wrap);
+      rowEl.appendChild(slot);
+    });
     enemyPanel.appendChild(rowEl);
   });
   const fightBtn = el('button', 'primary-btn', 'Combatir');
