@@ -172,9 +172,9 @@ const FIGHTERS = [
   { id: 'electro_infrecuente', name: 'Cazador de Tormentas', element: 'rayo', class: 'explorador', rarity: 'infrecuente', family: 'electro', evolvesTo: 'electro_raro', skillId: 'debilitar', image: 'electro_infrecuente.png', lore: 'Persigue tormentas para absorber su energía antes de que se disipen.' },
   { id: 'electro_raro', name: 'Rastreador del Trueno', element: 'rayo', class: 'explorador', rarity: 'raro', family: 'electro', evolvesTo: null, skillId: 'debilitar', image: 'electro_raro.png', lore: 'Sigue el rastro de cualquier tormenta hasta su mismo origen.' },
 
-  { id: 'marina_comun', name: 'Grumete Marina', element: 'agua', class: 'picaro', rarity: 'comun', family: 'marina', evolvesTo: 'marina_infrecuente', skillId: 'furia', lore: 'Su primer viaje en barco terminó en un naufragio... y en un don para el mar.' },
-  { id: 'marina_infrecuente', name: 'Pirata de las Mareas', element: 'agua', class: 'picaro', rarity: 'infrecuente', family: 'marina', evolvesTo: 'marina_raro', skillId: 'furia', lore: 'Navega sin mapa, guiada solo por el instinto de las corrientes.' },
-  { id: 'marina_raro', name: 'Corsaria Abisal', element: 'agua', class: 'picaro', rarity: 'raro', family: 'marina', evolvesTo: null, skillId: 'furia', lore: 'Comanda su propio barco en aguas que ningún otro capitán se atreve a cruzar.' },
+  { id: 'marina_comun', name: 'Grumete Marina', element: 'agua', class: 'picaro', rarity: 'comun', family: 'marina', evolvesTo: 'marina_infrecuente', skillId: 'furia', image: 'marina_comun.png', lore: 'Su primer viaje en barco terminó en un naufragio... y en un don para el mar.' },
+  { id: 'marina_infrecuente', name: 'Pirata de las Mareas', element: 'agua', class: 'picaro', rarity: 'infrecuente', family: 'marina', evolvesTo: 'marina_raro', skillId: 'furia', image: 'marina_infrecuente.png', lore: 'Navega sin mapa, guiada solo por el instinto de las corrientes.' },
+  { id: 'marina_raro', name: 'Corsaria Abisal', element: 'agua', class: 'picaro', rarity: 'raro', family: 'marina', evolvesTo: null, skillId: 'furia', image: 'marina_raro.png', lore: 'Comanda su propio barco en aguas que ningún otro capitán se atreve a cruzar.' },
 ];
 
 // --- Roster masivo (personajes/mobs/jefes pedidos por el usuario) ---

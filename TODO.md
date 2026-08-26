@@ -248,6 +248,9 @@ ancho aprox.); se marca aquí lo que se salga bastante de ese rango.
   mismo motivo que brisa (degradado suave, muchos colores únicos).
   `electro_comun.png` (~270 KB) también por encima del rango de referencia
   pero más moderado.
+- **marina_infrecuente.png** (~325 KB) y **marina_raro.png** (~382 KB): igual
+  patrón. `marina_comun.png` (~191 KB) sí entra dentro del rango de
+  referencia, no hace falta marcarla.
 
 ## Sprites de personajes/mobs/jefes pendientes (roster masivo)
 
@@ -260,7 +263,7 @@ comillas de cada entrada de abajo (mismo patrón que el resto del roster,
 `slug_rareza.png`).
 
 Ya pendientes de arte real (del roster humanizado ya existente, no del
-roster masivo): Marina, Gea.
+roster masivo): Gea.
 
 ## Progreso de sprites nuevos (técnica mejorada, en curso)
 
@@ -277,6 +280,9 @@ se recorta y se asigna en `js/data.js`. Iterando en orden hasta cubrir las
       (`electro_comun.png`) → Cazador de Tormentas
       (`electro_infrecuente.png`) → Rastreador del Trueno
       (`electro_raro.png`)
+- [x] **marina** (Agua/Pícaro): Grumete Marina (`marina_comun.png`) →
+      Pirata de las Mareas (`marina_infrecuente.png`) → Corsaria Abisal
+      (`marina_raro.png`)
 
 ### Personajes (14.1) — 89 familias × 3 formas
 - **sirena**: Sirena de Voz Dulce (`sirena_infrecuente.png`) → Sirena Encantadora (`sirena_raro.png`) → Reina de las Profundidades (`sirena_epico.png`)
