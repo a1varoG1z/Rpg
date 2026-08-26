@@ -111,8 +111,8 @@ const LEADER_SKILLS = {
 // y marina son luchadores humanizados (3 masculinos, 3 femeninos).
 const FIGHTERS = [
   // --- Tier 3: llegan a Legendario ---
-  { id: 'ascua_raro', name: 'Cachorro de Ascua', element: 'fuego', class: 'campeon', rarity: 'raro', family: 'ascua', evolvesTo: 'ascua_epico', skillId: 'escudo', lore: 'Un cachorro de dragón que aún no controla del todo su propio fuego interior.' },
-  { id: 'ascua_epico', name: 'Fénix Centinela', element: 'fuego', class: 'campeon', rarity: 'epico', family: 'ascua', evolvesTo: 'ascua_legendario', skillId: 'escudo', lore: 'Renace de sus propias cenizas cada vez que cae en combate, más fuerte que antes.' },
+  { id: 'ascua_raro', name: 'Cachorro de Ascua', element: 'fuego', class: 'campeon', rarity: 'raro', family: 'ascua', evolvesTo: 'ascua_epico', skillId: 'escudo', image:'ascua_raro', lore: 'Un cachorro de dragón que aún no controla del todo su propio fuego interior.' },
+  { id: 'ascua_epico', name: 'Fénix Centinela', element: 'fuego', class: 'campeon', rarity: 'epico', family: 'ascua', evolvesTo: 'ascua_legendario', skillId: 'escudo', image:'ascua_epico.png', lore: 'Renace de sus propias cenizas cada vez que cae en combate, más fuerte que antes.' },
   { id: 'ascua_legendario', name: 'Drakón Adulto de Fuego', element: 'fuego', class: 'campeon', rarity: 'legendario', family: 'ascua', evolvesTo: null, skillId: 'escudo', image: 'ascua_legendario.png', lore: 'Un dragón adulto cuyo rugido enciende los cielos de Texel.' },
 
   { id: 'nigro_raro', name: 'Cría de las Mareas', element: 'agua', class: 'brujo', rarity: 'raro', family: 'nigro', evolvesTo: 'nigro_epico', skillId: 'arrasar', image: 'nigro_raro.png', lore: 'Nació entre los restos de un naufragio y aprendió a hablar con las corrientes.' },
