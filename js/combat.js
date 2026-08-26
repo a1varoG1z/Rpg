@@ -7,8 +7,11 @@ function buildUnitStats(defId, level, extraMult) {
   const w = CLASS_INFO[def.class].weights;
   const mult = rarityInfo(def.rarity).mult * levelGrowth(level) * (extraMult || 1);
   return {
-    maxHp: Math.round(w.hp * mult), atk: Math.round(w.atk * mult), def: Math.round(w.def * mult),
-    agi: Math.round(w.agi * mult), wis: Math.round(w.wis * mult),
+    maxHp: Math.round(w.hp * mult * statVarianceMult(def.family, 'hp')),
+    atk: Math.round(w.atk * mult * statVarianceMult(def.family, 'atk')),
+    def: Math.round(w.def * mult * statVarianceMult(def.family, 'def')),
+    agi: Math.round(w.agi * mult * statVarianceMult(def.family, 'agi')),
+    wis: Math.round(w.wis * mult * statVarianceMult(def.family, 'wis')),
   };
 }
 
@@ -174,6 +177,15 @@ function applyDamage(log, attacker, target, rawAmount, isCrit, label) {
   }
 }
 
+// Vulnerabilidad de tipo/tribu (ver TYPE_VULNERABILITY en data.js): daño
+// extra según si el ataque es "mágico" (useWis) o "físico", y la clase del
+// que lo recibe. Independiente del multiplicador de elemento.
+function typeVulnerabilityMult(targetClass, useWis) {
+  const vuln = TYPE_VULNERABILITY[targetClass];
+  if (!vuln) return 1;
+  return 1 + (useWis ? (vuln.magic || 0) : (vuln.physical || 0));
+}
+
 function computeDamage(attacker, target, mult, useWis) {
   const power = useWis ? attacker.wis : attacker.atk;
   const atkBuff = attacker.buffs.find(b => b.stat === 'atk');
@@ -183,10 +195,11 @@ function computeDamage(attacker, target, mult, useWis) {
   let defVal = target.def * (1 + (defBuff ? defBuff.pct : 0)) * (1 - (defDebuff ? defDebuff.pct : 0));
   const base = Math.max(1, power2 - defVal * 0.5);
   const elMult = elementDamageMult(attacker.element, target.element);
+  const vulnMult = typeVulnerabilityMult(target.class, useWis);
   const variance = 0.9 + Math.random() * 0.2;
   const critChance = Math.min(40, 5 + attacker.agi * 0.15);
   const isCrit = Math.random() * 100 < critChance;
-  const dmg = base * elMult * mult * variance * (isCrit ? 1.5 : 1);
+  const dmg = base * elMult * vulnMult * mult * variance * (isCrit ? 1.5 : 1);
   return { amount: Math.max(1, Math.round(dmg)), isCrit };
 }
 

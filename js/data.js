@@ -36,6 +36,38 @@ const CLASS_INFO = {
   explorador: { label: 'Explorador', icon: '🏹', role: 'Soporte', weights: { hp: 100, atk: 16, def: 14, agi: 18, wis: 12 } },
 };
 
+// Sistema de tipos/tribus (referencia: reference/dot-original/tribu-tipo-ayuda.jpg
+// — Champ/Guru/Rogue/Scout/Warlock). Cada clase ya tenía un perfil de stats
+// distinto (arriba); esto añade la parte de vulnerabilidades que faltaba:
+// un daño extra al recibir el tipo de ataque al que esa clase es débil.
+// "Mágico" = ataques que usan Sabiduría en vez de Ataque (por ahora, las
+// ultis de fila como Arrasar); todo lo demás (golpes básicos y ultis de un
+// solo objetivo) cuenta como "físico". Ver applyTypeVulnerability en combat.js.
+const TYPE_VULNERABILITY = {
+  campeon: { magic: 0.25, desc: 'Vulnerable a ataques mágicos (+25% de daño mágico recibido).' },
+  guru: { physical: 0.25, desc: 'Vulnerable a ataques físicos (+25% de daño físico recibido).' },
+  picaro: { physical: 0.12, magic: 0.12, desc: 'Vulnerable a cualquier ataque (+12% de daño recibido, físico o mágico).' },
+  explorador: { desc: 'Equilibrado: sin vulnerabilidad especial.' },
+  brujo: { physical: 0.10, magic: 0.10, desc: 'Cruce entre Campeón y Gurú: algo vulnerable a ambos tipos de daño (+10% cada uno).' },
+};
+
+// Individualiza un poco las stats de cada familia dentro de su clase (antes
+// todas las familias de una misma clase tenían exactamente el mismo perfil,
+// solo con rareza/nivel distintos). La variación es determinista (siempre
+// la misma para una familia+stat dados, ni aleatoria en cada partida ni
+// necesita datos a mano por cada una de las +130 familias) y moderada
+// (±12%), para no desequilibrar el juego.
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return h;
+}
+function statVarianceMult(family, statKey) {
+  const seed = hashStr(family + ':' + statKey);
+  const frac = (((seed % 2000) + 2000) % 2000) / 2000; // 0..1 determinista
+  return 0.88 + frac * 0.24; // 0.88 .. 1.12
+}
+
 const SKILL_TYPES = {
   golpe: { name: 'Golpe Certero', kind: 'damage', mult: 2.0, target: 'single', desc: 'Un golpe demoledor a un enemigo.' },
   furia: { name: 'Furia Salvaje', kind: 'damage', mult: 1.5, target: 'single', selfBuff: { stat: 'atk', pct: 0.15, turns: 2 }, desc: 'Golpea con fuerza y se enardece.' },

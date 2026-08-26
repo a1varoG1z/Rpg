@@ -110,6 +110,29 @@ se indica explícitamente.
       rarezas altas también da homúnculos de mejor tier de media). Se
       fusionan desde la ficha del luchador, con botones que muestran cuántos
       tienes de cada tier
+- [x] **Tipos/tribus y estadísticas individualizadas**, usando por fin la
+      imagen de referencia (`reference/dot-original/tribu-tipo-ayuda.jpg`,
+      Champ/Guru/Rogue/Scout/Warlock). El sistema de 5 elementos con ventajas
+      en círculo (Fuego→Viento→Tierra→Rayo→Agua→Fuego) YA era el mismo
+      concepto que los "signos" de la imagen, así que no hacía falta tocarlo.
+      Lo nuevo:
+  - Cada una de las 5 clases (Campeón≈Champ, Gurú≈Guru, Pícaro≈Rogue,
+    Explorador≈Scout, Brujo≈Warlock) tiene ahora una vulnerabilidad de tipo:
+    Campeón +25% daño mágico recibido, Gurú +25% daño físico recibido,
+    Pícaro +12% a cualquier ataque, Explorador sin vulnerabilidad (equilibrado),
+    Brujo +10% a ambos (cruce entre Campeón y Gurú). "Mágico" = ataques que
+    usan Sabiduría (por ahora, las ultis de fila tipo Arrasar); el resto
+    cuenta como físico. Verificado con daño sintético que cada vulnerabilidad
+    da exactamente el multiplicador esperado (×1.25, ×1.12, ×1.10, etc.)
+  - Ya NO todas las familias de una misma clase tienen las mismas stats:
+    cada familia tiene una variación determinista de hasta ±12% por
+    estadística (siempre la misma para esa familia, no cambia entre
+    partidas ni hace falta rellenarla a mano para cada una de las +130
+    familias). Se aplica igual a jugador, enemigos y jefes
+  - La ficha del luchador muestra su vulnerabilidad de tipo junto a
+    clase/elemento. Se revalidó que una banda legendaria sigue ganando
+    200/200 combates simulados contra un jefe de zona intermedio con este
+    sistema activo (el rebalanceo del punto anterior sigue funcionando)
 
 ## Pendiente — sistemas grandes (necesitan diseño propio, iteración aparte)
 
@@ -130,21 +153,10 @@ se indica explícitamente.
         en cada zona nueva y wirear los 27 jefes nuevos como jefes de zona
         (ahora mismo están creados pero ninguna zona los usa todavía)
   - [ ] Sprites de escenario/paisaje pendientes (ver lista de sprites no-personaje)
-- [ ] **Estadísticas individualizadas por personaje** (no todas las de una
-      clase son iguales) + sistema de tipos/tribus que genera debilidades y
-      fortalezas (p.ej. Champ superior en ataque/defensa pero débil contra
-      magia) — la imagen de tipos y tribus YA llegó y está guardada en
-      `reference/dot-original/tribu-tipo-ayuda.jpg` (5 signos elementales en
-      círculo: Fuego/Agua/Rayo/Aire/Tierra, cada uno fuerte contra el
-      siguiente en sentido horario y débil contra el anterior — el sistema de
-      elementos actual ya sigue esa misma idea; y 5 tipos con perfiles de
-      stats distintos: Champ, Guru, Rogue, Scout, Warlock) — pendiente de
-      diseñar cómo mapear esto a las 5 clases actuales (Campeón/Pícaro/
-      Gurú/Brujo/Explorador) y de implementar
-  - [ ] Más tipos de ulti variados (curación, etc., no solo daño/debuff/buff
-        ya existentes)
-  - [ ] Adaptar TODOS los personajes ya creados al nuevo sistema de stats y
-        tipos/tribus una vez esté definido
+- [ ] Más tipos de ulti variados más allá de los que ya existen (daño,
+      daño en fila, curación propia, curación en fila, buff propio, buff en
+      fila, debuff, aturdir) — p.ej. algo tipo "dispersar/curar estados",
+      "daño en el tiempo", "revivir en combate"
 
 ## Sprites de personajes/mobs/jefes pendientes (roster masivo)
 

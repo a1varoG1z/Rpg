@@ -57,11 +57,11 @@ function fighterStats(state, entry) {
   const w = CLASS_INFO[def.class].weights;
   const mult = rarityInfo(def.rarity).mult * levelGrowth(entry.level) * starBonus(entry.stars);
   const stats = {
-    hp: Math.round(w.hp * mult),
-    atk: Math.round(w.atk * mult),
-    def: Math.round(w.def * mult),
-    agi: Math.round(w.agi * mult),
-    wis: Math.round(w.wis * mult),
+    hp: Math.round(w.hp * mult * statVarianceMult(def.family, 'hp')),
+    atk: Math.round(w.atk * mult * statVarianceMult(def.family, 'atk')),
+    def: Math.round(w.def * mult * statVarianceMult(def.family, 'def')),
+    agi: Math.round(w.agi * mult * statVarianceMult(def.family, 'agi')),
+    wis: Math.round(w.wis * mult * statVarianceMult(def.family, 'wis')),
   };
   const arma = entry.gearArma && gearItem(state, entry.gearArma);
   const armadura = entry.gearArmadura && gearItem(state, entry.gearArmadura);

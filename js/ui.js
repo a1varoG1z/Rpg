@@ -462,8 +462,10 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   const portrait = creatureCanvas(entry.defId, 90);
   head.appendChild(portrait);
   const info = el('div');
+  const vuln = TYPE_VULNERABILITY[def.class];
   info.innerHTML = `<div class="item-modal-name" style="color:${rarity.color}">${def.name}</div>
     <div class="item-modal-rarity">${rarity.label} · ${ELEMENT_INFO[def.element].label} ${ELEMENT_INFO[def.element].icon} · ${CLASS_INFO[def.class].label} ${CLASS_INFO[def.class].icon}</div>
+    ${vuln ? `<div class="type-vuln-note">${vuln.desc}</div>` : ''}
     <div class="xp-bar" style="margin-top:6px"><div class="xp-fill" style="width:${entry.level >= XP_LEVEL_CAP ? 100 : (entry.xp / fighterXpToNext(entry.level) * 100)}%"></div></div>
     <div class="xp-text">Nv. ${entry.level}${entry.level >= XP_LEVEL_CAP ? ' (máx.)' : ' · ' + entry.xp + '/' + fighterXpToNext(entry.level)}</div>`;
   head.appendChild(info);
