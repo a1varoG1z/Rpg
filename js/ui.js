@@ -711,7 +711,7 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     const box = el('div', 'doll-slot' + (gearUid ? '' : ' empty'));
     if (gearUid) {
       const g = gearItem(state, gearUid);
-      box.innerHTML = `<div class="doll-icon">${GEAR_SLOTS[slotKey].icon}</div><div class="doll-plus">+${g.level}</div>`;
+      box.innerHTML = `<div class="doll-icon">${gearTypeInfo(g).icon}</div><div class="doll-plus">+${g.level}</div>`;
     } else {
       box.innerHTML = `<div class="doll-icon">${GEAR_SLOTS[slotKey].icon}</div><div class="doll-label">${GEAR_SLOTS[slotKey].label}</div>`;
     }
@@ -807,7 +807,7 @@ UI.openGearPickerForFighter = function (state, fighterUid, slotKey) {
     const rarity = rarityInfo(g.rarity);
     const cell = el('div', 'item-cell');
     cell.style.borderColor = rarity.color;
-    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div><div class="item-icon">${GEAR_SLOTS[g.slot].icon}</div><div class="item-plus">+${g.level}</div>`;
+    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div><div class="item-icon">${gearTypeInfo(g).icon}</div><div class="item-plus">+${g.level}</div>`;
     cell.addEventListener('click', () => { equipGear(state, fighterUid, g.uid); saveGame(state); $('pickerModal').classList.add('hidden'); UI.openFighterModal(state, fighterUid); });
     list.appendChild(cell);
   });
@@ -1017,7 +1017,7 @@ UI.renderEquipo = function (state) {
     const owner = equippedGearOwner(state, g.uid);
     const cell = el('div', 'item-cell');
     cell.style.borderColor = rarity.color;
-    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div><div class="item-icon">${GEAR_SLOTS[g.slot].icon}</div><div class="item-plus">+${g.level}</div>${owner ? '<div class="equipped-dot"></div>' : ''}`;
+    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div><div class="item-icon">${gearTypeInfo(g).icon}</div><div class="item-plus">+${g.level}</div>${owner ? '<div class="equipped-dot"></div>' : ''}`;
     cell.addEventListener('click', () => UI.openGearModal(state, g.uid));
     grid.appendChild(cell);
   });
@@ -1041,11 +1041,13 @@ UI.renderTienda = function (state) {
       btn.innerHTML = `${rarity.icon}<br>🪙${price}`;
       btn.disabled = state.currencies.texel < price || state.gearInventory.length >= MAX_GEAR;
       btn.addEventListener('click', () => {
-        if (buyShopGear(state, slot, rarity.id)) {
+        const gear = buyShopGear(state, slot, rarity.id);
+        if (gear) {
           saveGame(state);
           UI.renderTopbar(state);
           UI.renderTienda(state);
-          UI.showToast(`${slotInfo.icon} ${GEAR_SLOTS[slot].names[rarity.id]} comprado`);
+          const t = gearTypeInfo(gear);
+          UI.showToast(`${t.icon} ${t.names[rarity.id]} comprado`);
         }
       });
       buyRow.appendChild(btn);
@@ -1086,14 +1088,15 @@ UI.openGearModal = function (state, gearUid) {
   const rarity = rarityInfo(g.rarity);
   const owner = equippedGearOwner(state, gearUid);
   const slot = GEAR_SLOTS[g.slot];
+  const t = gearTypeInfo(g);
   const val = gearStatValue(g);
   const body = $('gearModalBody');
   body.innerHTML = `
-    <div class="item-modal-header" style="color:${rarity.color}"><span class="item-modal-icon">${slot.icon}</span>
-      <div><div class="item-modal-name">${slot.names[g.rarity]} +${g.level}</div><div class="item-modal-rarity">${rarity.label} · ${slot.label}</div></div></div>
+    <div class="item-modal-header" style="color:${rarity.color}"><span class="item-modal-icon">${t.icon}</span>
+      <div><div class="item-modal-name">${t.names[g.rarity]} +${g.level}</div><div class="item-modal-rarity">${rarity.label} · ${slot.label} (${t.label})</div></div></div>
     <div class="panel">
-      <div class="stat-row"><span>${STAT_LABELS[slot.primary]}</span><span>+${Math.round(val * slot.primaryMult)}</span></div>
-      ${slot.secondary ? `<div class="stat-row"><span>${STAT_LABELS[slot.secondary]}</span><span>+${Math.round(val * slot.secondaryMult)}</span></div>` : ''}
+      <div class="stat-row"><span>${STAT_LABELS[t.primary]}</span><span>+${Math.round(val * t.primaryMult)}</span></div>
+      ${t.secondary ? `<div class="stat-row"><span>${STAT_LABELS[t.secondary]}</span><span>+${Math.round(val * t.secondaryMult)}</span></div>` : ''}
     </div>
     ${owner ? `<p class="settings-info">Equipado en ${fighterDef(rosterEntry(state, owner.uid).defId).name}.</p>` : ''}
   `;
@@ -1409,7 +1412,7 @@ UI.endBattle = function (view, result) {
       html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>`;
       if (outcome.rewards.fighterXp) html += `<div class="stat-row"><span>⭐ XP por luchador</span><span>+${outcome.rewards.fighterXp}</span></div>`;
       if (outcome.gemas) html += `<div class="stat-row"><span>💎 Gemas</span><span>+${outcome.gemas}</span></div>`;
-      if (outcome.rewards.drops && outcome.rewards.drops.gear) html += `<div class="stat-row"><span>🎁 Objeto</span><span>${GEAR_SLOTS[outcome.rewards.drops.gear.slot].names[outcome.rewards.drops.gear.rarity]}</span></div>`;
+      if (outcome.rewards.drops && outcome.rewards.drops.gear) html += `<div class="stat-row"><span>🎁 Objeto</span><span>${gearTypeInfo(outcome.rewards.drops.gear).names[outcome.rewards.drops.gear.rarity]}</span></div>`;
     }
     if (outcome && outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
     if (outcome && outcome.unlockedZone) html += `<p class="settings-info">🗺️ ¡Nueva zona desbloqueada: ${outcome.unlockedZone.name}!</p>`;

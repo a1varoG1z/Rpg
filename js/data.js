@@ -528,21 +528,94 @@ const CRYSTALS = {
 // también da homúnculos de mejor tier de media.
 const HOMUNCULO_SUMMON_CHANCE = 0.12;
 
-// 6 tipos de equipo, cada uno con una estadística principal y una
-// secundaria (más floja) — mucha más variedad que solo arma/armadura.
+// 6 huecos de equipo, y dentro de cada hueco varios TIPOS distintos (p.ej.
+// espada/hacha/lanza en el hueco de Arma) — no todo escala igual por rareza,
+// cada tipo tiene su propio reparto de estadística principal/secundaria y su
+// propia progresión de nombres, para que elegir equipo sea una decisión de
+// qué build quieres, no solo de qué rareza te ha tocado.
 // gearStatValue(gear) da el valor "base" de la pieza según rareza+nivel;
-// primaryMult/secondaryMult lo reparten entre las dos stats que toca esa
-// pieza (ver fighterStats en state.js).
+// primaryMult/secondaryMult (del TIPO, no del hueco) lo reparten entre las
+// dos stats que toca esa pieza (ver fighterStats en state.js).
 const GEAR_SLOTS = {
-  arma: { label: 'Arma', icon: '🗡️', names: { comun: 'Daga Roma', infrecuente: 'Espada Templada', raro: 'Hoja Rúnica', epico: 'Filo Encantado', legendario: 'Colmillo Ancestral' }, primary: 'atk', primaryMult: 1, secondary: 'wis', secondaryMult: 0.4 },
-  armadura: { label: 'Armadura', icon: '🥋', names: { comun: 'Cota Sencilla', infrecuente: 'Cota Reforzada', raro: 'Placas Rúnicas', epico: 'Coraza Encantada', legendario: 'Coraza Ancestral' }, primary: 'def', primaryMult: 1, secondary: 'hp', secondaryMult: 2.4 },
-  casco: { label: 'Casco', icon: '⛑️', names: { comun: 'Yelmo Sencillo', infrecuente: 'Yelmo Reforzado', raro: 'Casco Rúnico', epico: 'Corona Encantada', legendario: 'Corona Ancestral' }, primary: 'def', primaryMult: 0.6, secondary: 'wis', secondaryMult: 0.6 },
-  guantes: { label: 'Guantes', icon: '🧤', names: { comun: 'Guantes de Cuero', infrecuente: 'Guantes Reforzados', raro: 'Guanteletes Rúnicos', epico: 'Guanteletes Encantados', legendario: 'Guanteletes Ancestrales' }, primary: 'atk', primaryMult: 0.6, secondary: 'agi', secondaryMult: 0.5 },
-  botas: { label: 'Botas', icon: '👢', names: { comun: 'Botas Sencillas', infrecuente: 'Botas de Marcha', raro: 'Botas Rúnicas', epico: 'Botas Encantadas', legendario: 'Botas Ancestrales' }, primary: 'agi', primaryMult: 1, secondary: 'hp', secondaryMult: 1.2 },
-  amuleto: { label: 'Amuleto', icon: '📿', names: { comun: 'Amuleto Sencillo', infrecuente: 'Amuleto Tallado', raro: 'Amuleto Rúnico', epico: 'Amuleto Encantado', legendario: 'Talismán Ancestral' }, primary: 'wis', primaryMult: 1, secondary: 'atk', secondaryMult: 0.3 },
+  arma: {
+    label: 'Arma', icon: '🗡️',
+    types: {
+      espada: { label: 'Espada', icon: '🗡️', primary: 'atk', primaryMult: 1, secondary: 'wis', secondaryMult: 0.4,
+        names: { comun: 'Daga Roma', infrecuente: 'Espada Templada', raro: 'Hoja Rúnica', epico: 'Filo Encantado', legendario: 'Colmillo Ancestral' } },
+      hacha: { label: 'Hacha', icon: '🪓', primary: 'atk', primaryMult: 1.2, secondary: 'hp', secondaryMult: 1.0,
+        names: { comun: 'Hacha Desgastada', infrecuente: 'Hacha de Guerra', raro: 'Hacha Rúnica', epico: 'Hacha Encantada', legendario: 'Hacha del Titán' } },
+      lanza: { label: 'Lanza', icon: '🔱', primary: 'atk', primaryMult: 0.85, secondary: 'agi', secondaryMult: 0.7,
+        names: { comun: 'Lanza de Madera', infrecuente: 'Lanza Templada', raro: 'Lanza Rúnica', epico: 'Lanza Encantada', legendario: 'Lanza del Cazador' } },
+    },
+  },
+  armadura: {
+    label: 'Armadura', icon: '🥋',
+    types: {
+      cota: { label: 'Cota', icon: '🥋', primary: 'def', primaryMult: 1, secondary: 'hp', secondaryMult: 2.4,
+        names: { comun: 'Cota Sencilla', infrecuente: 'Cota Reforzada', raro: 'Placas Rúnicas', epico: 'Coraza Encantada', legendario: 'Coraza Ancestral' } },
+      placas: { label: 'Placas Pesadas', icon: '🛡️', primary: 'def', primaryMult: 1.3, secondary: 'atk', secondaryMult: 0.3,
+        names: { comun: 'Placas de Hierro', infrecuente: 'Placas Reforzadas', raro: 'Placas de Guerra', epico: 'Placas Encantadas', legendario: 'Placas del Coloso' } },
+      tunica: { label: 'Túnica', icon: '🧥', primary: 'def', primaryMult: 0.7, secondary: 'wis', secondaryMult: 0.9,
+        names: { comun: 'Túnica Sencilla', infrecuente: 'Túnica Tejida', raro: 'Túnica Rúnica', epico: 'Túnica Encantada', legendario: 'Túnica Ancestral' } },
+    },
+  },
+  casco: {
+    label: 'Casco', icon: '⛑️',
+    types: {
+      yelmo: { label: 'Yelmo', icon: '⛑️', primary: 'def', primaryMult: 0.6, secondary: 'wis', secondaryMult: 0.6,
+        names: { comun: 'Yelmo Sencillo', infrecuente: 'Yelmo Reforzado', raro: 'Casco Rúnico', epico: 'Corona Encantada', legendario: 'Corona Ancestral' } },
+      capucha: { label: 'Capucha', icon: '🥷', primary: 'def', primaryMult: 0.4, secondary: 'agi', secondaryMult: 0.7,
+        names: { comun: 'Capucha Sencilla', infrecuente: 'Capucha Reforzada', raro: 'Capucha Rúnica', epico: 'Capucha Encantada', legendario: 'Capucha de las Sombras' } },
+      diadema: { label: 'Diadema', icon: '👑', primary: 'wis', primaryMult: 0.7, secondary: 'def', secondaryMult: 0.4,
+        names: { comun: 'Diadema Sencilla', infrecuente: 'Diadema Tallada', raro: 'Diadema Rúnica', epico: 'Diadema Encantada', legendario: 'Diadema Ancestral' } },
+    },
+  },
+  guantes: {
+    label: 'Guantes', icon: '🧤',
+    types: {
+      guantes: { label: 'Guantes', icon: '🧤', primary: 'atk', primaryMult: 0.6, secondary: 'agi', secondaryMult: 0.5,
+        names: { comun: 'Guantes de Cuero', infrecuente: 'Guantes Reforzados', raro: 'Guanteletes Rúnicos', epico: 'Guanteletes Encantados', legendario: 'Guanteletes Ancestrales' } },
+      garras: { label: 'Garras', icon: '🐾', primary: 'atk', primaryMult: 0.5, secondary: 'agi', secondaryMult: 0.8,
+        names: { comun: 'Garras Rotas', infrecuente: 'Garras Afiladas', raro: 'Garras Rúnicas', epico: 'Garras Encantadas', legendario: 'Garras del Depredador' } },
+      manoplas: { label: 'Manoplas', icon: '👊', primary: 'atk', primaryMult: 0.8, secondary: 'hp', secondaryMult: 0.6,
+        names: { comun: 'Manoplas de Hierro', infrecuente: 'Manoplas Reforzadas', raro: 'Manoplas Rúnicas', epico: 'Manoplas Encantadas', legendario: 'Manoplas del Titán' } },
+    },
+  },
+  botas: {
+    label: 'Botas', icon: '👢',
+    types: {
+      botas: { label: 'Botas', icon: '👢', primary: 'agi', primaryMult: 1, secondary: 'hp', secondaryMult: 1.2,
+        names: { comun: 'Botas Sencillas', infrecuente: 'Botas de Marcha', raro: 'Botas Rúnicas', epico: 'Botas Encantadas', legendario: 'Botas Ancestrales' } },
+      sandalias: { label: 'Sandalias Aladas', icon: '🪽', primary: 'agi', primaryMult: 1.3, secondary: 'wis', secondaryMult: 0.4,
+        names: { comun: 'Sandalias Sencillas', infrecuente: 'Sandalias Ligeras', raro: 'Sandalias Rúnicas', epico: 'Sandalias Encantadas', legendario: 'Sandalias Aladas Ancestrales' } },
+      grebas: { label: 'Grebas', icon: '🦿', primary: 'agi', primaryMult: 0.7, secondary: 'def', secondaryMult: 0.6,
+        names: { comun: 'Grebas Sencillas', infrecuente: 'Grebas Reforzadas', raro: 'Grebas Rúnicas', epico: 'Grebas Encantadas', legendario: 'Grebas Ancestrales' } },
+    },
+  },
+  amuleto: {
+    label: 'Amuleto', icon: '📿',
+    types: {
+      amuleto: { label: 'Amuleto', icon: '📿', primary: 'wis', primaryMult: 1, secondary: 'atk', secondaryMult: 0.3,
+        names: { comun: 'Amuleto Sencillo', infrecuente: 'Amuleto Tallado', raro: 'Amuleto Rúnico', epico: 'Amuleto Encantado', legendario: 'Talismán Ancestral' } },
+      anillo: { label: 'Anillo', icon: '💍', primary: 'wis', primaryMult: 0.6, secondary: 'agi', secondaryMult: 0.6,
+        names: { comun: 'Anillo Sencillo', infrecuente: 'Anillo Tallado', raro: 'Anillo Rúnico', epico: 'Anillo Encantado', legendario: 'Anillo Ancestral' } },
+      reliquia: { label: 'Reliquia', icon: '🏺', primary: 'wis', primaryMult: 0.7, secondary: 'hp', secondaryMult: 1.0,
+        names: { comun: 'Reliquia Sencilla', infrecuente: 'Reliquia Tallada', raro: 'Reliquia Rúnica', epico: 'Reliquia Encantada', legendario: 'Reliquia Ancestral' } },
+    },
+  },
 };
 const GEAR_SLOT_IDS = Object.keys(GEAR_SLOTS);
 function randomGearSlot() { return GEAR_SLOT_IDS[Math.floor(Math.random() * GEAR_SLOT_IDS.length)]; }
+function gearTypeIds(slot) { return Object.keys(GEAR_SLOTS[slot].types); }
+function randomGearType(slot) { const ids = gearTypeIds(slot); return ids[Math.floor(Math.random() * ids.length)]; }
+// El primer tipo declarado en cada hueco reutiliza el mismo reparto de stats
+// y nombres que tenía el hueco antes de existir los tipos, así que una pieza
+// guardada de antes de esta actualización (sin campo `type`) cae aquí y no
+// cambia de golpe sus estadísticas.
+function gearTypeInfo(gear) {
+  const slot = GEAR_SLOTS[gear.slot];
+  return slot.types[gear.type] || slot.types[gearTypeIds(gear.slot)[0]];
+}
 
 // --- Tienda: equipo nuevo (nivel 0) por Texel, y objetos consumibles ---
 const GEAR_SHOP_PRICES = { comun: 60, infrecuente: 150, raro: 350, epico: 800, legendario: 2000 };

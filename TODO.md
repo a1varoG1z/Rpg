@@ -249,12 +249,33 @@ se indica explícitamente.
 Puntos de la última tanda que son diseño/contenido grande y no se han
 abordado todavía (o solo se ha dado una respuesta directa sin implementar):
 
-- [ ] **Más variedad de equipo por slot**: ahora mismo cada uno de los 6
-      huecos (arma/armadura/casco/guantes/botas/amuleto) tiene un único
-      "tipo" genérico que solo escala por rareza — el usuario pide tipos
-      distintos dentro de cada slot (p.ej. espada/hacha/lanza como armas
-      distintas, no solo "arma épica"), cada uno con su propio perfil de
-      stats/flavor, no solo su nivel de rareza
+- [x] **Más variedad de equipo por slot**: cada uno de los 6 huecos
+      (arma/armadura/casco/guantes/botas/amuleto) ahora tiene 3 TIPOS
+      distintos en vez de uno genérico, cada uno con su propio reparto de
+      estadística principal/secundaria (no solo escala por rareza) y su
+      propia progresión de 5 nombres:
+      - Arma: Espada (atk/wis, equilibrada), Hacha (atk/hp, golpe pesado),
+        Lanza (atk/agi, más ágil pero pega menos fuerte)
+      - Armadura: Cota (def/hp, la de siempre), Placas Pesadas (def/atk,
+        tanque puro), Túnica (def/wis, armadura de mago)
+      - Casco: Yelmo (def/wis, la de siempre), Capucha (def/agi, pícaro),
+        Diadema (wis/def, prioriza sabiduría)
+      - Guantes: Guantes (atk/agi, los de siempre), Garras (atk/agi más
+        agresivas), Manoplas (atk/hp, golpe pesado)
+      - Botas: Botas (agi/hp, las de siempre), Sandalias Aladas (agi/wis,
+        muy rápidas), Grebas (agi/def, más lentas pero resistentes)
+      - Amuleto: Amuleto (wis/atk, el de siempre), Anillo (wis/agi),
+        Reliquia (wis/hp)
+      El primer tipo de cada hueco reutiliza exactamente el reparto de
+      stats/nombres que tenía el hueco antes de esta actualización, así que
+      el equipo ya poseído (sin campo `type`) no cambia sus números — cae
+      en ese tipo por `gearTypeInfo()`, sin necesidad de migración de
+      guardado. La tienda y las recompensas de combate ahora dan un tipo al
+      azar dentro del slot/rareza elegidos; la ficha de objeto, el selector
+      de equipar y el inventario muestran el nombre/icono/stats del tipo
+      concreto. Verificado con un script headless: compra en la Tienda,
+      inventario, ficha de objeto y selector de equipar muestran tipos
+      distintos (espada/lanza) correctamente, sin errores de consola
 - [x] **Más tipos de ulti**: 4 tipos nuevos añadidos a los 8 que ya había
       (daño, daño en fila, curar, curar en fila, buff propio, buff en fila,
       debuff, aturdir):

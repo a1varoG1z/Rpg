@@ -72,10 +72,10 @@ function gearBonusForEntry(state, entry) {
     const gearUid = entry.gear[slotKey];
     const g = gearUid && gearItem(state, gearUid);
     if (!g) return;
-    const slot = GEAR_SLOTS[slotKey];
+    const t = gearTypeInfo(g);
     const val = gearStatValue(g);
-    bonus[slot.primary] += Math.round(val * slot.primaryMult);
-    if (slot.secondary) bonus[slot.secondary] += Math.round(val * slot.secondaryMult);
+    bonus[t.primary] += Math.round(val * t.primaryMult);
+    if (t.secondary) bonus[t.secondary] += Math.round(val * t.secondaryMult);
   });
   return bonus;
 }
@@ -133,8 +133,8 @@ function sellGear(state, gearUid) {
   return true;
 }
 
-function generateGear(slot, rarity) {
-  return { uid: newUid('g'), slot, rarity, level: 0 };
+function generateGear(slot, rarity, type) {
+  return { uid: newUid('g'), slot, type: type || randomGearType(slot), rarity, level: 0 };
 }
 
 function addGear(state, gear) {
@@ -144,13 +144,16 @@ function addGear(state, gear) {
 }
 
 // --- Tienda ---
+// Devuelve la pieza creada (para que la UI pueda mostrar su tipo/nombre
+// concretos en el toast) o null si no se pudo comprar.
 function buyShopGear(state, slot, rarity) {
   const price = GEAR_SHOP_PRICES[rarity];
-  if (state.currencies.texel < price) return false;
-  if (state.gearInventory.length >= MAX_GEAR) return false;
+  if (state.currencies.texel < price) return null;
+  if (state.gearInventory.length >= MAX_GEAR) return null;
   state.currencies.texel -= price;
-  addGear(state, generateGear(slot, rarity));
-  return true;
+  const gear = generateGear(slot, rarity);
+  addGear(state, gear);
+  return gear;
 }
 
 function buyConsumable(state, itemId) {
