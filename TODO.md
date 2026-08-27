@@ -304,14 +304,18 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
 
 ## Criaturas jugables con PNG ya asignado (candidatas a sustituir)
 
-El usuario ha mejorado su técnica para generar los sprites, así que estas
-son candidatas a que se les cambie el arte en el futuro aunque ya tengan
-PNG. 10 familias completas (3 formas cada una) + 1 familia parcial:
+Lista histórica de las primeras familias con arte real, de antes de que el
+usuario empezara a recortar él mismo desde el móvil. **Actualización
+27/08**: el usuario ha empezado a subir/renombrar imágenes directamente en
+GitHub (commits `Add files via upload` + `Rename IMG_...png to
+slug_rareza.png`) para MUCHAS de estas familias y también para casi todas
+las de la sección "Progreso de sprites nuevos" de más abajo — ya no hace
+falta pedírselas por el chat, las está gestionando él directamente en el
+repo. `ascua` ya no es parcial: ahora las 3 formas tienen PNG.
 
-- **ascua** ⚠️ parcial: solo la forma Legendario tiene PNG
-  (`ascua_legendario.png`, Drakón Adulto de Fuego). Las formas Raro
-  (Cachorro de Ascua) y Épico (Fénix Centinela) siguen con sprite
-  procedural — pendientes de arte igual que cualquier familia sin imagen.
+- **ascua**: `ascua_raro.png`, `ascua_epico.png`, `ascua_legendario.png`
+  (completada por el usuario directamente en GitHub — antes solo tenía la
+  forma Legendario)
 - **nigro**: `nigro_raro.png`, `nigro_epico.png`, `nigro_legendario.png`
 - **lagarto**: `lagarto_raro.png`, `lagarto_epico.png`, `lagarto_legendario.png`
 - **duende**: `duende_raro.png`, `duende_epico.png`, `duende_legendario.png`
@@ -455,14 +459,24 @@ se recorta y se asigna en `js/data.js`. Iterando en orden hasta cubrir las
       resto muy fino de borde magenta apenas perceptible en Épico y
       Legendario, aceptado por tiempo invertido; si se nota mucho en el
       juego real, recortar de nuevo con fondo plano (como electro/gea) en
-      vez de con transparencia real sería más simple para el usuario
+      vez de con transparencia real sería más simple para el usuario.
+      **Actualización 27/08**: el usuario ha vuelto a subir su propio
+      recorte de las 3 formas directamente en GitHub, más limpio que el
+      mío (sin resto de borde magenta) — su versión es la que está en uso
+      ahora mismo
+- [x] **hipogrifo** (Viento/Explorador): Potro Alado → Hipogrifo Salvaje →
+      Señor de los Cielos Altos — subido directamente en GitHub por el
+      usuario (`hipogrifo_infrecuente/raro/epico.png`)
+- [x] **cerbero** (Fuego/Campeón): Cachorro de Tres Cabezas → Guardián del
+      Umbral → Cerbero, Custodio del Inframundo — subido directamente en
+      GitHub por el usuario (`cerbero_raro/epico/legendario.png`)
+- [x] **centauro** (Tierra/Explorador): Potrillo Centauro → Centauro
+      Arquero → Jefe de la Manada Salvaje — subido directamente en GitHub
+      por el usuario (`centauro_infrecuente/raro/epico.png`)
 
 ### Personajes (14.1) — 89 familias × 3 formas
 (las familias ya hechas se quitan de aquí — ver la lista con checkboxes más
 arriba, "Progreso de sprites nuevos", para el registro completo)
-- **hipogrifo**: Potro Alado (`hipogrifo_infrecuente.png`) → Hipogrifo Salvaje (`hipogrifo_raro.png`) → Señor de los Cielos Altos (`hipogrifo_epico.png`)
-- **cerbero**: Cachorro de Tres Cabezas (`cerbero_raro.png`) → Guardián del Umbral (`cerbero_epico.png`) → Cerbero, Custodio del Inframundo (`cerbero_legendario.png`)
-- **centauro**: Potrillo Centauro (`centauro_infrecuente.png`) → Centauro Arquero (`centauro_raro.png`) → Jefe de la Manada Salvaje (`centauro_epico.png`)
 - **minotauro**: Toro Joven del Laberinto (`minotauro_infrecuente.png`) → Minotauro Furioso (`minotauro_raro.png`) → Amo del Laberinto Eterno (`minotauro_epico.png`)
 - **kraken**: Cría de Kraken (`kraken_raro.png`) → Kraken de las Profundidades (`kraken_epico.png`) → Devorador de Flotas (`kraken_legendario.png`)
 - **leviatan**: Serpiente de Mar Joven (`leviatan_raro.png`) → Leviatán de las Mareas (`leviatan_epico.png`) → Leviatán, Terror del Océano (`leviatan_legendario.png`)

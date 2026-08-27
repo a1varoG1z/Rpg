@@ -111,8 +111,8 @@ const LEADER_SKILLS = {
 // y marina son luchadores humanizados (3 masculinos, 3 femeninos).
 const FIGHTERS = [
   // --- Tier 3: llegan a Legendario ---
-  { id: 'ascua_raro', name: 'Cachorro de Ascua', element: 'fuego', class: 'campeon', rarity: 'raro', family: 'ascua', evolvesTo: 'ascua_epico', skillId: 'escudo', lore: 'Un cachorro de dragón que aún no controla del todo su propio fuego interior.' },
-  { id: 'ascua_epico', name: 'Fénix Centinela', element: 'fuego', class: 'campeon', rarity: 'epico', family: 'ascua', evolvesTo: 'ascua_legendario', skillId: 'escudo', lore: 'Renace de sus propias cenizas cada vez que cae en combate, más fuerte que antes.' },
+  { id: 'ascua_raro', name: 'Cachorro de Ascua', element: 'fuego', class: 'campeon', rarity: 'raro', family: 'ascua', evolvesTo: 'ascua_epico', skillId: 'escudo', image: 'ascua_raro.png', lore: 'Un cachorro de dragón que aún no controla del todo su propio fuego interior.' },
+  { id: 'ascua_epico', name: 'Fénix Centinela', element: 'fuego', class: 'campeon', rarity: 'epico', family: 'ascua', evolvesTo: 'ascua_legendario', skillId: 'escudo', image:'ascua_epico.png', lore: 'Renace de sus propias cenizas cada vez que cae en combate, más fuerte que antes.' },
   { id: 'ascua_legendario', name: 'Drakón Adulto de Fuego', element: 'fuego', class: 'campeon', rarity: 'legendario', family: 'ascua', evolvesTo: null, skillId: 'escudo', image: 'ascua_legendario.png', lore: 'Un dragón adulto cuyo rugido enciende los cielos de Texel.' },
 
   { id: 'nigro_raro', name: 'Cría de las Mareas', element: 'agua', class: 'brujo', rarity: 'raro', family: 'nigro', evolvesTo: 'nigro_epico', skillId: 'arrasar', image: 'nigro_raro.png', lore: 'Nació entre los restos de un naufragio y aprendió a hablar con las corrientes.' },
@@ -245,9 +245,9 @@ addFamily('gorila', 1, 'tierra', 'campeon', 'golpe', ['Gorila Montaraz', 'Gorila
 addFamily('cocodrilo', 2, 'agua', 'campeon', 'escudo', ['Guerrero Cocodrilo', 'Centurión del Pantano', 'Señor de las Aguas Turbias'], 'Su piel curtida ha detenido más golpes de los que nadie recuerda.', true);
 addFamily('hidradragon', 3, 'rayo', 'brujo', 'arrasar', ['Cría de Mil Fauces', 'Dragón de Tres Cabezas', 'Soberano de las Siete Cabezas'], 'Cada cabeza que pierde en combate vuelve a crecer el doble de fuerte.', true);
 addFamily('avefenix', 3, 'fuego', 'guru', 'curar', ['Polluelo de Cenizas', 'Ave de Fuego Eterno', 'Fénix Inmortal'], 'Cuando muere, renace de sus propias cenizas más brillante que antes.', true);
-addFamily('hipogrifo', 2, 'viento', 'explorador', 'debilitar', ['Potro Alado', 'Hipogrifo Salvaje', 'Señor de los Cielos Altos'], 'Mitad caballo, mitad grifo, surca el cielo más rápido que cualquier ave.');
-addFamily('cerbero', 3, 'fuego', 'campeon', 'escudo', ['Cachorro de Tres Cabezas', 'Guardián del Umbral', 'Cerbero, Custodio del Inframundo'], 'Vigila la puerta que separa el mundo de los vivos del de los muertos.');
-addFamily('centauro', 2, 'tierra', 'explorador', 'debilitar', ['Potrillo Centauro', 'Centauro Arquero', 'Jefe de la Manada Salvaje'], 'Combina la fuerza de un corcel con la puntería de un cazador nato.');
+addFamily('hipogrifo', 2, 'viento', 'explorador', 'debilitar', ['Potro Alado', 'Hipogrifo Salvaje', 'Señor de los Cielos Altos'], 'Mitad caballo, mitad grifo, surca el cielo más rápido que cualquier ave.', true);
+addFamily('cerbero', 3, 'fuego', 'campeon', 'escudo', ['Cachorro de Tres Cabezas', 'Guardián del Umbral', 'Cerbero, Custodio del Inframundo'], 'Vigila la puerta que separa el mundo de los vivos del de los muertos.', true);
+addFamily('centauro', 2, 'tierra', 'explorador', 'debilitar', ['Potrillo Centauro', 'Centauro Arquero', 'Jefe de la Manada Salvaje'], 'Combina la fuerza de un corcel con la puntería de un cazador nato.', true);
 addFamily('minotauro', 2, 'tierra', 'campeon', 'furia', ['Toro Joven del Laberinto', 'Minotauro Furioso', 'Amo del Laberinto Eterno'], 'Nadie que entra en su laberinto vuelve a encontrar la salida.');
 addFamily('kraken', 3, 'agua', 'brujo', 'arrasar', ['Cría de Kraken', 'Kraken de las Profundidades', 'Devorador de Flotas'], 'Sus tentáculos han hundido más barcos de los que nadie se atreve a contar.');
 addFamily('leviatan', 3, 'agua', 'campeon', 'escudo', ['Serpiente de Mar Joven', 'Leviatán de las Mareas', 'Leviatán, Terror del Océano'], 'Su sola presencia hace que el mar entero se agite de terror.');
