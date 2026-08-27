@@ -22,7 +22,7 @@ function makeUnit(side, defId, level, extraMult, sourceUid) {
     id: 'u' + (unitSeq++), side, defId, sourceUid: sourceUid || null,
     name: def.name, element: def.element, class: def.class, rarity: def.rarity,
     level, maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
-    skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], stunTurns: 0, alive: true,
+    skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], dots: [], stunTurns: 0, alive: true,
   };
 }
 
@@ -39,7 +39,7 @@ function makePlayerUnit(state, uid, level) {
     id: 'u' + (unitSeq++), side: 'player', defId: entry.defId, sourceUid: uid,
     name: def.name, element: def.element, class: def.class, rarity: def.rarity,
     level: entry.level, maxHp: stats.hp, hp: stats.hp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
-    skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], stunTurns: 0, alive: true,
+    skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], dots: [], stunTurns: 0, alive: true,
   };
 }
 
@@ -203,9 +203,20 @@ function computeDamage(attacker, target, mult, useWis) {
   return { amount: Math.max(1, Math.round(dmg)), isCrit };
 }
 
-function tickTimers(unit) {
+function tickTimers(unit, log) {
   unit.buffs = unit.buffs.filter(b => --b.turnsLeft > 0);
   unit.debuffs = unit.debuffs.filter(b => --b.turnsLeft > 0);
+  if (unit.dots && unit.dots.length) {
+    unit.dots.forEach(d => {
+      if (!unit.alive) return;
+      const before = unit.hp;
+      unit.hp = Math.max(0, unit.hp - d.amount);
+      log.push({ type: 'dot', unitId: unit.id, amount: d.amount, label: d.label });
+      if (before > 0 && unit.hp <= 0) { unit.alive = false; log.push({ type: 'faint', unitId: unit.id, side: unit.side }); }
+      d.turnsLeft--;
+    });
+    unit.dots = unit.dots.filter(d => d.turnsLeft > 0);
+  }
 }
 
 function performTurn(log, unit, ownRow, enemyRow) {
@@ -290,6 +301,57 @@ function performTurn(log, unit, ownRow, enemyRow) {
       log.push({ type: 'stunattempt', unitId: unit.id, targetId: target.id, success });
       break;
     }
+    case 'dot': {
+      // Daño instantáneo más flojo que golpear, pero deja un veneno/quemadura
+      // que sigue mordiendo varios turnos — bueno contra objetivos que curan
+      // o se escudan, porque el DoT ignora defensa y buffs por completo.
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const { amount, isCrit } = computeDamage(unit, target, skill.mult, false);
+      applyDamage(log, unit, target, amount, isCrit, skill.name);
+      if (target.alive) {
+        const tick = Math.max(1, Math.round(target.maxHp * skill.dotPct));
+        target.dots.push({ amount: tick, turnsLeft: skill.dotTurns, label: skill.name });
+      }
+      break;
+    }
+    case 'drain': {
+      // Golpea y se cura una parte del daño hecho — el único ulti que sube
+      // la vida propia sin depender de estar ileso, bueno para aguantar.
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const { amount, isCrit } = computeDamage(unit, target, skill.mult, false);
+      applyDamage(log, unit, target, amount, isCrit, skill.name);
+      const healAmount = Math.round(amount * skill.drainPct);
+      unit.hp = Math.min(unit.maxHp, unit.hp + healAmount);
+      log.push({ type: 'heal', unitId: unit.id, targetId: unit.id, amount: healAmount });
+      break;
+    }
+    case 'cleanse': {
+      // Quita todos los debuffs y el aturdimiento de toda su fila — el único
+      // ulti pensado como respuesta directa a debilitar/aturdir/veneno
+      // rivales en vez de hacer daño o curar vida.
+      ownRow.filter(u => u.alive).forEach(ally => {
+        const hadSomething = ally.debuffs.length > 0 || ally.stunTurns > 0 || ally.dots.length > 0;
+        ally.debuffs = [];
+        ally.dots = [];
+        ally.stunTurns = 0;
+        if (hadSomething) log.push({ type: 'cleanse', unitId: ally.id });
+      });
+      break;
+    }
+    case 'revive': {
+      // Revive a un aliado caído de su propia fila con parte de su vida
+      // máxima — si no hay ninguno caído, el ulti no hace nada este turno
+      // (igual que debilitar/aturdir cuando ya no queda rival vivo).
+      const fallen = ownRow.find(u => !u.alive);
+      if (!fallen) break;
+      fallen.alive = true;
+      fallen.hp = Math.round(fallen.maxHp * skill.pct);
+      fallen.buffs = []; fallen.debuffs = []; fallen.dots = []; fallen.stunTurns = 0;
+      log.push({ type: 'revive', unitId: unit.id, targetId: fallen.id, amount: fallen.hp });
+      break;
+    }
   }
 }
 
@@ -305,7 +367,7 @@ function simulateOneRound(playerRow, enemyRow) {
   const order = [...playerRow, ...enemyRow].filter(u => u.alive).sort((a, b) => b.agi - a.agi || Math.random() - 0.5);
   for (const unit of order) {
     if (!unit.alive) continue;
-    tickTimers(unit);
+    tickTimers(unit, log);
     const ownRow = unit.side === 'player' ? playerRow : enemyRow;
     const foeRow = unit.side === 'player' ? enemyRow : playerRow;
     if (!rowAlive(ownRow) || !rowAlive(foeRow)) break;

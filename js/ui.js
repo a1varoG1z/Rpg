@@ -1291,7 +1291,7 @@ UI.updateUnitCardHp = function (u) {
   if (!cardEl) return;
   const fill = cardEl.querySelector('.hp-fill');
   if (fill) fill.style.width = Math.max(0, u.hp / u.maxHp * 100) + '%';
-  if (!u.alive) cardEl.classList.add('fainted');
+  cardEl.classList.toggle('fainted', !u.alive);
 };
 
 UI.updateUnitCardCharge = function (u) {
@@ -1366,6 +1366,22 @@ UI.applyBattleEvent = function (view, ev) {
       break;
     case 'stunned':
       UI.logLine(`😵 ${u.name} está aturdido y no puede actuar.`);
+      break;
+    case 'dot':
+      u.hp = Math.max(0, u.hp - ev.amount);
+      UI.updateUnitCardHp(u);
+      UI.spawnBattleFloat(u.id, '-' + ev.amount, false);
+      UI.logLine(`🧪 ${u.name} sufre ${ev.amount} de daño por ${ev.label}.`);
+      break;
+    case 'cleanse':
+      UI.logLine(`✨ ${u.name} se purifica de todos sus efectos negativos.`);
+      break;
+    case 'revive':
+      target.alive = true;
+      target.hp = ev.amount;
+      UI.updateUnitCardHp(target);
+      UI.spawnBattleFloat(target.id, '+' + ev.amount, false);
+      UI.logLine(`🌟 ${u.name} revive a ${target.name}!`);
       break;
     case 'buff':
     case 'debuff':

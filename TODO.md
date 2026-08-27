@@ -255,9 +255,25 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       distintos dentro de cada slot (p.ej. espada/hacha/lanza como armas
       distintas, no solo "arma épica"), cada uno con su propio perfil de
       stats/flavor, no solo su nivel de rareza
-- [ ] **Más tipos de ulti**: ampliar más allá de los 8 que hay ahora (daño,
-      daño en fila, curar, curar en fila, buff propio, buff en fila, debuff,
-      aturdir) — el usuario lo pide explícitamente, sin especificar cuáles
+- [x] **Más tipos de ulti**: 4 tipos nuevos añadidos a los 8 que ya había
+      (daño, daño en fila, curar, curar en fila, buff propio, buff en fila,
+      debuff, aturdir):
+      - `dot` (veneno/quemadura): golpe flojo + daño por turno 3 turnos que
+        ignora defensa. Nueva skill `veneno` ("Mordisco Venenoso") →
+        `escorpionhumanoide` (encaja con su lore, ya mencionaba veneno)
+      - `drain` (vampírico): golpe fuerte que cura al atacante el 50% del
+        daño hecho. Nueva skill `drenar` ("Golpe Vampírico") → `dracula`
+      - `cleanse` (purificar): limpia debuffs/veneno/aturdimiento de toda su
+        fila propia. Nueva skill `purificar` ("Aura Purificadora") →
+        `unicornio` (su lore ya mencionaba purificar venenos)
+      - `revive` (revivir): resucita a un aliado caído de su fila al 40% de
+        su HP máximo. Nueva skill `revivir` ("Milagro de Vida") → `osiris`
+        (su lore ya lo llamaba "Señor de la Resurrección")
+      Implementado en `combat.js` (`tickTimers` procesa `unit.dots`, 4 casos
+      nuevos en `performTurn`), `SKILL_TYPES` en `data.js`, y 3 casos nuevos
+      en `UI.applyBattleEvent` (`dot`/`cleanse`/`revive`). Validado con
+      pruebas headless aisladas de cada tipo + batalla real en vivo con las
+      4 familias reasignadas + suite de regresión completa
 - [x] **Pokédex**: nuevo botón "📖 Pokédex" junto al título de la Colección
       (pantalla Banda), abre un modal con las 315 formas jugables
       (`FIGHTERS`) agrupadas por familia y ordenadas por tier, usando
@@ -309,10 +325,11 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       para el arte del camino (ahora mismo son círculos con emoji, sin
       sprites de escenario)
   - [ ] Sprites de escenario/paisaje pendientes (ver lista de sprites no-personaje)
-- [ ] Más tipos de ulti variados más allá de los que ya existen (daño,
-      daño en fila, curación propia, curación en fila, buff propio, buff en
-      fila, debuff, aturdir) — p.ej. algo tipo "dispersar/curar estados",
-      "daño en el tiempo", "revivir en combate"
+- [x] Más tipos de ulti variados más allá de los que ya existen — hecho:
+      "daño en el tiempo" (veneno/dot), "revivir en combate" (revive) y
+      "dispersar/curar estados" (cleanse) ya están, más un vampírico
+      (drain) que no estaba en esta lista original. Ver detalle en la
+      sección de la ronda de 14 preguntas más arriba
 
 ## Criaturas jugables con PNG ya asignado (candidatas a sustituir)
 

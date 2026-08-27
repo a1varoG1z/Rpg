@@ -78,6 +78,10 @@ const SKILL_TYPES = {
   grito: { name: 'Grito de Guerra', kind: 'buffRow', stat: 'atk', pct: 0.2, turns: 3, desc: 'Aumenta el ataque de su fila.' },
   debilitar: { name: 'Marca Débil', kind: 'debuff', stat: 'def', pct: 0.25, turns: 3, target: 'single', desc: 'Reduce la defensa de un enemigo.' },
   aturdir: { name: 'Onda de Trueno', kind: 'stun', turns: 1, chance: 0.65, target: 'single', desc: 'Puede aturdir a un enemigo.' },
+  veneno: { name: 'Mordisco Venenoso', kind: 'dot', mult: 1.1, dotPct: 0.07, dotTurns: 3, target: 'single', desc: 'Golpea a un enemigo y lo envenena: sigue perdiendo vida 3 turnos, ignorando su defensa.' },
+  drenar: { name: 'Golpe Vampírico', kind: 'drain', mult: 1.4, drainPct: 0.5, target: 'single', desc: 'Golpea a un enemigo y recupera la mitad del daño hecho como vida propia.' },
+  purificar: { name: 'Aura Purificadora', kind: 'cleanse', target: 'row-ally', desc: 'Elimina los debuffs, el veneno y el aturdimiento de toda su fila.' },
+  revivir: { name: 'Milagro de Vida', kind: 'revive', pct: 0.4, target: 'row-ally', desc: 'Revive a un aliado caído de su fila con parte de su vida máxima.' },
 };
 
 // Habilidad de líder de banda: una bonificación pasiva para TODA la banda
@@ -267,10 +271,10 @@ addFamily('pazuzu', 3, 'viento', 'brujo', 'debilitar', ['Espíritu Menor del Vie
 addFamily('garuda', 2, 'viento', 'explorador', 'furia', ['Polluelo de Garuda', 'Garuda Cazadora', 'Garuda, Montura de los Dioses'], 'Ave gigante capaz de cargar a un dios entero sobre su lomo.');
 addFamily('anubis', 3, 'tierra', 'brujo', 'debilitar', ['Chacal del Desierto', 'Sacerdote de Anubis', 'Anubis, Guardián de los Muertos'], 'Pesa el corazón de cada alma antes de dejarla pasar al más allá.');
 addFamily('ra', 3, 'fuego', 'guru', 'arrasar', ['Disco Solar Joven', 'Heraldo de Ra', 'Ra, Señor del Sol'], 'Su carro cruza el cielo cada día, y con él, la luz del mundo.');
-addFamily('osiris', 3, 'tierra', 'guru', 'curar', ['Aprendiz del Nilo', 'Sacerdote de Osiris', 'Osiris, Señor de la Resurrección'], 'Murió una vez y volvió, y desde entonces gobierna el más allá.');
+addFamily('osiris', 3, 'tierra', 'guru', 'revivir', ['Aprendiz del Nilo', 'Sacerdote de Osiris', 'Osiris, Señor de la Resurrección'], 'Murió una vez y volvió, y desde entonces gobierna el más allá.');
 addFamily('hombretigre', 2, 'tierra', 'picaro', 'furia', ['Cachorro Tigre', 'Guerrero Tigre', 'Señor de las Rayas Doradas'], 'Ataca en silencio y golpea con la fuerza de un tigre de bengala.');
 addFamily('hombrelobo', 2, 'viento', 'picaro', 'furia', ['Joven Maldito', 'Hombre Lobo', 'Alfa de la Luna Llena'], 'Cada luna llena pierde el control... y gana una fuerza brutal.');
-addFamily('dracula', 3, 'rayo', 'brujo', 'debilitar', ['Vástago de la Noche', 'Noble de Sangre Oscura', 'Drácula, Señor de la Noche'], 'Ha sobrevivido siglos alimentándose de las sombras de Texel.');
+addFamily('dracula', 3, 'rayo', 'brujo', 'drenar', ['Vástago de la Noche', 'Noble de Sangre Oscura', 'Drácula, Señor de la Noche'], 'Ha sobrevivido siglos alimentándose de las sombras de Texel.');
 addFamily('genbu', 2, 'agua', 'campeon', 'escudo', ['Tortuga Joven de Genbu', 'Genbu, Guardián del Norte', 'Genbu, Escudo de las Profundidades'], 'Su caparazón ha resistido más golpes de los que nadie puede contar.');
 addFamily('escualo', 1, 'agua', 'picaro', 'furia', ['Aprendiz Tiburón', 'Escualo de Combate', 'Depredador de los Siete Mares'], 'Huele la sangre — y la debilidad — antes que nadie.');
 addFamily('hercules', 3, 'tierra', 'campeon', 'golpe', ['Joven de Fuerza Divina', 'Hércules en sus Trabajos', 'Hércules, el Semidiós'], 'Ha completado hazañas que ningún mortal lograría siquiera empezar.');
@@ -280,7 +284,7 @@ addFamily('ent', 2, 'tierra', 'campeon', 'escudo', ['Retoño Andante', 'Ent Guar
 addFamily('hidraserpiente', 2, 'agua', 'brujo', 'arrasar', ['Hidra Recién Nacida', 'Hidra de Pantano', 'Hidra de las Nueve Cabezas'], 'Corta una cabeza y otras dos crecerán en su lugar.');
 addFamily('hombreoso', 1, 'tierra', 'campeon', 'golpe', ['Joven Oso', 'Guerrero Oso', 'Gran Oso de las Montañas'], 'Su abrazo es tan mortal como su zarpazo.');
 addFamily('mujercisne', 2, 'agua', 'guru', 'bendicion', ['Doncella Cisne', 'Mujer Cisne', 'Reina de los Lagos Blancos'], 'Su plumaje esconde una gracia que desarma a cualquier rival.');
-addFamily('unicornio', 2, 'viento', 'guru', 'curar', ['Potrillo con Cuerno', 'Unicornio Radiante', 'Unicornio de Luz Pura'], 'Su cuerno puede curar cualquier herida... o purificar cualquier veneno.');
+addFamily('unicornio', 2, 'viento', 'guru', 'purificar', ['Potrillo con Cuerno', 'Unicornio Radiante', 'Unicornio de Luz Pura'], 'Su cuerno puede curar cualquier herida... o purificar cualquier veneno.');
 addFamily('esfinge', 3, 'tierra', 'guru', 'debilitar', ['Cachorra de Esfinge', 'Esfinge Guardiana', 'Esfinge, Guardiana de Enigmas'], 'Solo deja pasar a quien resuelve su acertijo — a los demás, se los come.');
 addFamily('grifo', 2, 'viento', 'explorador', 'furia', ['Polluelo de Grifo', 'Grifo Cazador', 'Grifo, Rey de las Alturas'], 'Mitad águila, mitad león, caza tanto en tierra como en el aire.');
 addFamily('lamasu', 2, 'tierra', 'campeon', 'escudo', ['Guardián Menor Lamasu', 'Lamasu de las Puertas', 'Lamasu, Custodio de Palacios'], 'Vigila las puertas de los palacios antiguos con cuerpo de toro y alas de águila.');
@@ -323,7 +327,7 @@ addFamily('orcahumanoide', 2, 'agua', 'campeon', 'golpe', ['Joven Orca', 'Guerre
 addFamily('mujerconejo', 1, 'tierra', 'picaro', 'aturdir', ['Joven Conejo', 'Mujer Conejo', 'Gran Coneja de la Luna'], 'Tan rápida que apenas la ves antes de que ya haya golpeado.');
 addFamily('tiburonmartillo', 2, 'agua', 'picaro', 'furia', ['Grumete Martillo', 'Pirata Tiburón Martillo', 'Capitán de los Siete Mares'], 'Su cabeza en forma de martillo esconde un instinto asesino infalible.');
 addFamily('espantapajaros', 1, 'tierra', 'brujo', 'debilitar', ['Espantapájaros Roto', 'Espantapájaros Animado', 'Guardián del Campo Maldito'], 'Cobró vida una noche sin luna, y desde entonces vigila el campo.');
-addFamily('escorpionhumanoide', 2, 'tierra', 'picaro', 'debilitar', ['Joven Escorpión', 'Guerrero Escorpión', 'Señor del Aguijón Mortal'], 'Su aguijón lleva un veneno que debilita hasta al rival más fuerte.');
+addFamily('escorpionhumanoide', 2, 'tierra', 'picaro', 'veneno', ['Joven Escorpión', 'Guerrero Escorpión', 'Señor del Aguijón Mortal'], 'Su aguijón lleva un veneno que debilita hasta al rival más fuerte.');
 addFamily('dientesdesable', 2, 'tierra', 'campeon', 'furia', ['Cría Dientes de Sable', 'Guerrero Dientes de Sable', 'Señor de la Era del Hielo'], 'Sus colmillos son más antiguos que cualquier leyenda de Texel.');
 addFamily('cangrejo', 1, 'agua', 'campeon', 'escudo', ['Cangrejo Pequeño', 'Cangrejo Acorazado', 'Rey Cangrejo de las Rocas'], 'Su caparazón es tan duro que pocas armas logran atravesarlo.');
 addFamily('zapador', 1, 'tierra', 'explorador', 'debilitar', ['Zapador Novato', 'Zapador de Túneles', 'Maestro Zapador de las Profundidades'], 'Conoce cada túnel bajo Texel mejor que su propia casa.');
