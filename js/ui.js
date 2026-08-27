@@ -94,6 +94,52 @@ function creatureCard(state, entry, opts) {
   return card;
 }
 
+// Ficha de Pokédex: a diferencia de creatureCard (una copia concreta del
+// roster, con nivel/SEF/estrellas), aquí solo importa si esa forma se ha
+// conseguido ALGUNA VEZ (state.discoveredDefIds) — no si se tiene ahora
+// mismo una copia suelta. Las formas nunca conseguidas se muestran
+// bloqueadas, sin nombre ni arte, para no hacer spoiler de qué son.
+function pokedexCard(def, discovered) {
+  if (!discovered) {
+    const card = el('div', 'creature-card pokedex-locked');
+    card.appendChild(el('div', 'pokedex-lock-icon', '❔'));
+    card.appendChild(el('div', 'creature-name', '???'));
+    return card;
+  }
+  const rarity = rarityInfo(def.rarity);
+  const card = el('div', 'creature-card rarity-' + def.rarity);
+  card.style.setProperty('--rc', rarity.color);
+  card.style.setProperty('--rg', rarity.glow);
+  const wrap = el('div', 'creature-canvas-wrap');
+  wrap.appendChild(creatureCanvas(def.id));
+  card.appendChild(wrap);
+  const badge = el('div', 'creature-elclass');
+  badge.textContent = ELEMENT_INFO[def.element].icon + CLASS_INFO[def.class].icon;
+  card.appendChild(badge);
+  card.appendChild(el('div', 'creature-tier-icon', rarity.icon));
+  card.appendChild(el('div', 'creature-name', def.name));
+  return card;
+}
+
+// ---------- Pokédex ----------
+// Registro de todas las formas jugables (FIGHTERS) alguna vez conseguidas,
+// agrupadas por familia y ordenadas por tier — igual que "ordenar por
+// familia" en la Colección, pero cubriendo TODO el roster invocable, no
+// solo lo que tienes ahora mismo en el inventario.
+UI.openPokedex = function (state) {
+  const body = $('pokedexModalBody');
+  body.innerHTML = '';
+  const discovered = new Set(state.discoveredDefIds || []);
+  const sorted = [...FIGHTERS].sort((a, b) => a.family.localeCompare(b.family) || rarityIndex(a.rarity) - rarityIndex(b.rarity));
+  const discoveredCount = sorted.filter(def => discovered.has(def.id)).length;
+  body.appendChild(el('h3', null, `📖 Pokédex ${discoveredCount}/${sorted.length}`));
+  body.appendChild(el('p', 'settings-info', 'Todas las criaturas jugables que existen en Texel. Se desbloquean para siempre la primera vez que las invocas.'));
+  const grid = el('div', 'creature-grid pokedex-grid');
+  sorted.forEach(def => grid.appendChild(pokedexCard(def, discovered.has(def.id))));
+  body.appendChild(grid);
+  $('pokedexModal').classList.remove('hidden');
+};
+
 // ---------- Topbar ----------
 UI.renderTopbar = function (state) {
   $('texelVal').textContent = Math.floor(state.currencies.texel).toLocaleString('es-ES');
@@ -630,6 +676,22 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   });
   gearPanel.appendChild(gearRow);
   body.appendChild(gearPanel);
+
+  const sellValue = fighterSellValue(entry);
+  const sellPanel = el('div', 'panel');
+  sellPanel.innerHTML = `<h3>🪙 Vender</h3><p class="settings-info">Cambia a este luchador por Texel a cambio. Es definitivo — no se puede deshacer.</p>`;
+  const sellBtn = el('button', 'danger-btn', `Vender por ${sellValue} 🪙`);
+  sellBtn.addEventListener('click', () => {
+    if (!confirm(`¿Vender a ${def.name} por ${sellValue} Texel? No se puede deshacer.`)) return;
+    sellFighter(state, uid);
+    saveGame(state);
+    UI.renderTopbar(state);
+    $('fighterModal').classList.add('hidden');
+    UI.renderScreen(activeScreen, state);
+    UI.showToast(`🪙 Vendido por ${sellValue} Texel`);
+  });
+  sellPanel.appendChild(sellBtn);
+  body.appendChild(sellPanel);
 
   if (formationCtx) {
     const fPanel = el('div', 'panel');

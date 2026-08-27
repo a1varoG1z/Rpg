@@ -258,13 +258,20 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
 - [ ] **Más tipos de ulti**: ampliar más allá de los 8 que hay ahora (daño,
       daño en fila, curar, curar en fila, buff propio, buff en fila, debuff,
       aturdir) — el usuario lo pide explícitamente, sin especificar cuáles
-- [ ] **Pokédex**: sección nueva con el registro de todos los luchadores
-      jugables — cuáles se han conseguido alguna vez (ver
-      `state.discoveredDefIds`, ya trackeado) y cuáles faltan todavía. No
-      creada aún, solo el dato base que la sustentará
-- [ ] **Venta manual de duplicados por Texel**: no existe todavía ningún
-      botón de "vender" en la ficha del luchador — ahora mismo un duplicado
-      solo sirve para fusión/superfusión o quedarse en la Colección sin más
+- [x] **Pokédex**: nuevo botón "📖 Pokédex" junto al título de la Colección
+      (pantalla Banda), abre un modal con las 315 formas jugables
+      (`FIGHTERS`) agrupadas por familia y ordenadas por tier, usando
+      `state.discoveredDefIds`. Las no conseguidas nunca se muestran
+      bloqueadas (icono ❔, "???", sin arte ni nombre, para no hacer
+      spoiler) — las conseguidas muestran su ficha normal con arte/nombre/
+      elemento/clase. Cabecera con contador "X/315 descubiertos"
+- [x] **Venta manual de duplicados por Texel**: nuevo panel "🪙 Vender" en la
+      ficha de cualquier luchador del roster, con confirmación (la venta es
+      definitiva). Precio: `40 × multiplicador de rareza × (1 + 0.15 por
+      estrella de Superfusión ya invertida)` — mismo valor base que antes
+      se destruía solo, pero ahora es una decisión del jugador y reconoce
+      las estrellas ya invertidas. `sellFighter`/`fighterSellValue` en
+      `state.js`
 - [ ] Revisar si hace falta ampliar el número de **elementos** (ahora 5:
       Fuego/Viento/Tierra/Rayo/Agua) — el usuario preguntó, respuesta dada
       en el chat (probablemente no hace falta, el círculo de 5 con ventajas

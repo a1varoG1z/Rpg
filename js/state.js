@@ -300,6 +300,24 @@ function evolveFighter(state, uid) {
   return entry.defId;
 }
 
+// --- Venta manual de luchadores ---
+// Cuánto Texel da vender un luchador del roster — sube con la rareza y con
+// las estrellas de Superfusión que ya tenga invertidas (representan copias
+// ya consumidas, así que el valor de venta las reconoce en vez de tirarlas).
+function fighterSellValue(entry) {
+  const def = fighterDef(entry.defId);
+  return Math.round(40 * rarityInfo(def.rarity).mult * (1 + entry.stars * 0.15));
+}
+
+function sellFighter(state, uid) {
+  const entry = rosterEntry(state, uid);
+  if (!entry) return 0;
+  const value = fighterSellValue(entry);
+  removeFromRoster(state, uid);
+  state.currencies.texel += value;
+  return value;
+}
+
 // --- Fusión y superfusión ---
 function superFuse(state, targetUid, sacrificeUid) {
   if (targetUid === sacrificeUid) return false;
