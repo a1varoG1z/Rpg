@@ -219,7 +219,7 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 
 /* ---------- Inventario / equipo ---------- */
 .item-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 12px; }
-.item-cell { aspect-ratio: 1; border: 2px solid #888; border-radius: 10px; background: #1f1811; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; position: relative; }
+.item-cell { aspect-ratio: 1; border: 2px solid #888; border-radius: 10px; background: #1f1811; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; position: relative; overflow: hidden; }
 .reveal-cell-pop { opacity: 0; animation: revealPop 0.4s ease-out forwards; }
 .item-icon { font-size: 1.6rem; }
 .item-plus { position: absolute; bottom: 2px; right: 5px; font-size: 0.62rem; color: var(--gold); font-weight: bold; }

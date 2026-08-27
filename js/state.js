@@ -1,7 +1,6 @@
 // Estado del jugador: roster de luchadores, banda, monedas, energía, invocación,
 // fusión/evolución, equipo y persistencia.
 const SAVE_KEY = 'dot_texel_save_v2';
-const MAX_ROSTER = 60;
 const MAX_GEAR = 60;
 
 let uidCounter = 1;
@@ -40,6 +39,11 @@ function createNewState() {
     // Homúnculos conseguidos por invocación: solo cuentan (no tienen uid
     // propio ni entran en el roster/Formación, no luchan nunca).
     homunculos: { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 },
+    // Registro permanente de todo defId obtenido alguna vez (para el
+    // distintivo "¡Nuevo!" y la futura Pokédex) — a diferencia de mirar el
+    // roster actual, esto no "olvida" un luchador si se vendiera/evolucionara
+    // y ya no quedara ninguna copia suelta con ese defId exacto.
+    discoveredDefIds: [roster[0].defId, roster[1].defId, roster[2].defId],
   };
 }
 
@@ -245,28 +249,29 @@ function useHomunculo(state, targetUid, homunculoId) {
 // igual que si el roster está lleno.
 function applySummonResult(state, defId) {
   const def = fighterDef(defId);
-  const hadAny = state.roster.some(r => r.defId === defId);
-  if (hadAny && !def.evolvesTo) {
-    state.currencies.texel += Math.round(40 * rarityInfo(def.rarity).mult);
-    return { defId, outcome: 'duplicado_max' };
-  }
-  if (state.roster.length >= MAX_ROSTER) {
-    state.currencies.texel += 50;
-    return { defId, outcome: 'inventario_lleno' };
-  }
-  const entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), isNew: !hadAny, readyToEvolve: false };
+  if (!state.discoveredDefIds) state.discoveredDefIds = [];
+  const everDiscovered = state.discoveredDefIds.includes(defId);
+  if (!everDiscovered) state.discoveredDefIds.push(defId);
+  // Los duplicados (incluidos los de forma máxima, que ya no pueden
+  // evolucionar) se quedan en la Colección como copias sueltas: sirven de
+  // material para Superfusión (ver fuseMaterials/superFuse) o se pueden
+  // vender manualmente por Texel — nunca se convierten solos.
+  const entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), isNew: !everDiscovered, readyToEvolve: false };
   state.roster.push(entry);
-  return { defId, outcome: hadAny ? 'duplicado' : 'nuevo', uid: entry.uid };
+  return { defId, outcome: everDiscovered ? 'duplicado' : 'nuevo', uid: entry.uid };
 }
 
 // Fusión manual: consume copias sueltas del roster (mismas defId que el
 // objetivo) para llenar su barra de SEF, hasta 5/5. Cada copia usada como
 // material se elimina del roster (y de la Formación, si estaba colocada).
-// Devuelve cuántas copias se han consumido de verdad.
+// Un luchador en forma máxima (sin evolvesTo) también puede llenar su SEF —
+// no evoluciona a nada, pero llegar a 5/5 es justo lo que lo habilita como
+// sacrificio válido para Superfusión (ver superFuse). Devuelve cuántas
+// copias se han consumido de verdad.
 function fuseMaterials(state, targetUid, materialUids) {
   const target = rosterEntry(state, targetUid);
   const def = target && fighterDef(target.defId);
-  if (!target || !def || !def.evolvesTo) return 0;
+  if (!target || !def) return 0;
   let used = 0;
   materialUids.forEach(matUid => {
     if (target.sef >= 5) return;
@@ -277,7 +282,7 @@ function fuseMaterials(state, targetUid, materialUids) {
     target.sef = Math.min(5, target.sef + 1);
     used++;
   });
-  if (target.sef >= 5) target.readyToEvolve = true;
+  if (target.sef >= 5 && def.evolvesTo) target.readyToEvolve = true;
   return used;
 }
 
@@ -395,6 +400,11 @@ function loadGame() {
     if (state.settings.showMedallion === undefined) state.settings.showMedallion = true;
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     if (!state.homunculos) state.homunculos = { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 };
+    // Partidas guardadas antes de que existiera este registro: se
+    // reconstruye a partir de lo que haya ahora mismo en el roster (no es
+    // perfecto — no recuerda luchadores vendidos/evolucionados antes de
+    // esta versión — pero es lo mejor que se puede inferir retroactivamente).
+    if (!state.discoveredDefIds) state.discoveredDefIds = [...new Set(state.roster.map(r => r.defId))];
     // Migración de equipo: antes cada luchador guardaba el arma/armadura en
     // dos campos sueltos (gearArma/gearArmadura); ahora todo vive en un
     // único entry.gear{} con un hueco por cada tipo de equipo (6 ahora,

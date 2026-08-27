@@ -189,6 +189,99 @@ se indica explícitamente.
         `FIGHTERS` (jugables/invocables). Auditado con script: 0 zonas
         referencian ya ninguna criatura jugable, ni de relleno ni de jefe
   - [x] Anotado en este TODO (este mismo punto)
+- [x] **Bug: tope de 60 en la Colección** — reportado por el usuario ("canjeo
+      cajas y no me suma personajes"). Confirmado: `MAX_ROSTER = 60` bloqueaba
+      invocaciones nuevas por completo una vez lleno (se convertían en 50
+      Texel en silencio, con un aviso fácil de no ver en el resumen).
+      Eliminado el tope — con 312+ FIGHTERS invocables no tenía sentido
+      seguir capado a 60. Probado con 80 invocaciones extra seguidas: se
+      añaden todas, 0 conversiones forzadas
+- [x] **Bug: duplicados en forma máxima se autoconvertían en Texel** — el
+      mensaje "Forma máxima: los duplicados se convierten en Texel
+      automáticamente" era real y estaba mal: esos duplicados son
+      precisamente el material de la Superfusión. Ahora se quedan en la
+      Colección como copias sueltas, igual que cualquier otro duplicado
+- [x] **Bug: la Superfusión era inalcanzable** — `fuseMaterials` exigía que
+      el objetivo tuviera `evolvesTo` para aceptar material, así que un
+      luchador en forma máxima nunca podía subir su SEF a 5/5 (requisito
+      para poder sacrificarlo en `superFuse`). Corregido: un luchador sin
+      evolución ya puede rellenar su SEF con copias sueltas (no evoluciona a
+      nada, pero llegar a 5/5 lo deja listo como sacrificio). Probado de
+      extremo a extremo: rellenar SEF de un duplicado en forma máxima →
+      sacrificarlo → el objetivo gana su ⭐. La ficha del luchador explica
+      ahora esto en vez de anunciar que se destruye solo
+- [x] **Cómo funciona la Superfusión** (respondiendo a la pregunta del
+      usuario): un luchador con SEF 5/5 (relleno con copias sueltas propias,
+      tenga o no evolución pendiente) se puede sacrificar desde la ficha de
+      OTRO luchador que esté en forma máxima, dándole una ⭐ permanente
+      (hasta 3). Es el único uso de un duplicado ya maximado, aparte de
+      guardarlo sin más — todavía no hay forma de venderlo manualmente por
+      Texel (ver pendiente más abajo)
+- [x] **Bug: el distintivo "¡Nuevo!" se basaba en si tenías una copia AHORA
+      MISMO**, no en si lo habías conseguido alguna vez — si vendías o
+      evolucionabas todas las copias de un luchador, la siguiente que
+      cayera volvía a marcarse "¡Nuevo!". Añadido `state.discoveredDefIds`,
+      un registro permanente de todo lo obtenido alguna vez (con migración
+      para partidas guardadas antiguas, reconstruido a partir del roster
+      actual). Sienta además la base para la futura Pokédex (ver pendiente)
+- [x] **Bug: los PNG rotos se quedaban invisibles para siempre** — `creatureCanvas`
+      no tenía manejo de `error` en el `<img>`, así que un fallo de red al
+      cargar el sprite dejaba el hueco vacío (opacity:0) sin más. Ahora, si
+      falla la carga, se sustituye automáticamente por el sprite procedural
+      de siempre en vez de quedarse en blanco
+- [x] **Bug: en el resumen de invocación x10, las criaturas a veces tapaban
+      el botón "Continuar"** — `.item-cell` no recortaba su contenido, así
+      que una imagen PNG real con proporciones más altas que las del sprite
+      procedural (habitual ahora que se están añadiendo sprites reales) se
+      salía del cuadro cuadrado y se superponía a lo de abajo. Añadido
+      `overflow: hidden` a `.item-cell`
+- [x] **Colección — orden por familia**: dentro de cada familia ahora
+      ordena por tier ascendente (Común/Raro/Infrecuente primero, según el
+      tramo de la familia) en vez de por nivel
+- [x] **Nueva criatura jugable: tortuguahumanoide** (Tortuga Guerrera
+      Novata → Veterana → Maestra del Caparazón Eterno, Agua/Campeón, tier 1)
+- [x] **Boss Medusa**: ya existía desde la ampliación de mapas de esta
+      sesión (`boss_medusa`, jefe de la zona Jardín de Piedra) — confirmado
+      al usuario, no hacía falta crearlo de nuevo
+
+## Pendiente — de la ronda de 14 preguntas/peticiones del usuario (26/08)
+
+Puntos de la última tanda que son diseño/contenido grande y no se han
+abordado todavía (o solo se ha dado una respuesta directa sin implementar):
+
+- [ ] **Más variedad de equipo por slot**: ahora mismo cada uno de los 6
+      huecos (arma/armadura/casco/guantes/botas/amuleto) tiene un único
+      "tipo" genérico que solo escala por rareza — el usuario pide tipos
+      distintos dentro de cada slot (p.ej. espada/hacha/lanza como armas
+      distintas, no solo "arma épica"), cada uno con su propio perfil de
+      stats/flavor, no solo su nivel de rareza
+- [ ] **Más tipos de ulti**: ampliar más allá de los 8 que hay ahora (daño,
+      daño en fila, curar, curar en fila, buff propio, buff en fila, debuff,
+      aturdir) — el usuario lo pide explícitamente, sin especificar cuáles
+- [ ] **Pokédex**: sección nueva con el registro de todos los luchadores
+      jugables — cuáles se han conseguido alguna vez (ver
+      `state.discoveredDefIds`, ya trackeado) y cuáles faltan todavía. No
+      creada aún, solo el dato base que la sustentará
+- [ ] **Venta manual de duplicados por Texel**: no existe todavía ningún
+      botón de "vender" en la ficha del luchador — ahora mismo un duplicado
+      solo sirve para fusión/superfusión o quedarse en la Colección sin más
+- [ ] Revisar si hace falta ampliar el número de **elementos** (ahora 5:
+      Fuego/Viento/Tierra/Rayo/Agua) — el usuario preguntó, respuesta dada
+      en el chat (probablemente no hace falta, el círculo de 5 con ventajas
+      ya es el sistema real de D.o.T.) pero sin más acción
+- [ ] Más ideas de **personajes nuevos** — el usuario pidió sugerencias,
+      dadas en el chat, no todas creadas todavía
+- [ ] Auditoría de **balance** (stats/progresión/jugabilidad) más allá del
+      balanceo de jefes de zona ya hecho esta sesión — el usuario preguntó
+      si está bien balanceado en general, respuesta dada en el chat pero sin
+      una revisión sistemática de, por ejemplo, la curva de XP/nivel o el
+      coste de la Tienda
+- [ ] Revisar si hacen falta más **jefes** o si 33 (uno por zona) es
+      suficiente — el usuario preguntó, respuesta dada en el chat
+- [ ] Más criaturas jugables de **tier 1** (las que empiezan en Común) — el
+      usuario preguntó si hacen falta más; de las 105 familias jugables
+      actuales ~27 son tier 1 (~26%), similar proporción que tier 2 y tier 3,
+      así que no está especialmente escaso, pero se puede seguir añadiendo
 
 ## Pendiente — sistemas grandes (necesitan diseño propio, iteración aparte)
 
@@ -288,6 +381,8 @@ ancho aprox.); se marca aquí lo que se salga bastante de ese rango.
 - **hidradragon_legendario.png** (~470 KB): mismo motivo. `hidradragon_raro.png`
   (~97 KB) y `hidradragon_epico.png` (~251 KB) entran en el rango de
   referencia o muy cerca.
+- **avefenix_epico.png** (~288 KB) y **avefenix_legendario.png** (~473 KB):
+  mismo motivo. `avefenix_raro.png` (~75 KB) entra en el rango de referencia.
 
 ## Sprites de personajes/mobs/jefes pendientes (roster masivo)
 
@@ -346,11 +441,25 @@ se recorta y se asigna en `js/data.js`. Iterando en orden hasta cubrir las
       dirigido (píxel casi gris + alfa medio/bajo → transparente) en vez del
       recorte directo por caja alfa que basta para el resto de imágenes
       pre-recortadas
+- [x] **avefenix** (Fuego/Gurú): Polluelo de Cenizas (`avefenix_raro.png`) →
+      Ave de Fuego Eterno (`avefenix_epico.png`) → Fénix Inmortal
+      (`avefenix_legendario.png`). La más difícil hasta ahora: el recorte
+      del móvil dejó un borde magenta/rosa alrededor de todo el contorno (el
+      color "imposible" típico de las apps de recorte por chroma-key) más
+      dos bolsillos de checkerboard opaco (no solo semitransparente)
+      encerrados en huecos cóncavos del Polluelo (cuello-ala) que ni el
+      filtro de color lograba distinguir de forma fiable de las sombras
+      reales del plumaje. Se combinaron tres pasadas (filtro de tono magenta
+      + limpieza manual de los dos bolsillos por coordenadas en Polluelo +
+      filtro de tono magenta más permisivo en Épico/Legendario) — queda un
+      resto muy fino de borde magenta apenas perceptible en Épico y
+      Legendario, aceptado por tiempo invertido; si se nota mucho en el
+      juego real, recortar de nuevo con fondo plano (como electro/gea) en
+      vez de con transparencia real sería más simple para el usuario
 
 ### Personajes (14.1) — 89 familias × 3 formas
 (las familias ya hechas se quitan de aquí — ver la lista con checkboxes más
 arriba, "Progreso de sprites nuevos", para el registro completo)
-- **avefenix**: Polluelo de Cenizas (`avefenix_raro.png`) → Ave de Fuego Eterno (`avefenix_epico.png`) → Fénix Inmortal (`avefenix_legendario.png`)
 - **hipogrifo**: Potro Alado (`hipogrifo_infrecuente.png`) → Hipogrifo Salvaje (`hipogrifo_raro.png`) → Señor de los Cielos Altos (`hipogrifo_epico.png`)
 - **cerbero**: Cachorro de Tres Cabezas (`cerbero_raro.png`) → Guardián del Umbral (`cerbero_epico.png`) → Cerbero, Custodio del Inframundo (`cerbero_legendario.png`)
 - **centauro**: Potrillo Centauro (`centauro_infrecuente.png`) → Centauro Arquero (`centauro_raro.png`) → Jefe de la Manada Salvaje (`centauro_epico.png`)

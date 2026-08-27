@@ -14,18 +14,7 @@ function el(tag, className, html) { const e = document.createElement(tag); if (c
 // de Formación) dibujarlas todas de forma síncrona notaba como un "bloqueo"
 // o tarjetas a medio pintar. Con esto cada tarjeta aparece con un pequeño
 // fundido en cuanto está lista, sin congelar el resto de la pantalla.
-function creatureCanvas(defId, sizePx) {
-  const def = fighterDef(defId);
-  if (def && def.image) {
-    const img = document.createElement('img');
-    img.className = 'creature-canvas creature-canvas-loading';
-    img.alt = def.name;
-    img.loading = 'lazy';
-    if (sizePx) { img.style.width = sizePx + 'px'; img.style.height = 'auto'; }
-    img.addEventListener('load', () => img.classList.remove('creature-canvas-loading'), { once: true });
-    img.src = 'assets/creatures/' + def.image;
-    return img;
-  }
+function proceduralCreatureCanvas(defId, sizePx) {
   const canvas = document.createElement('canvas');
   canvas.className = 'creature-canvas creature-canvas-loading';
   if (sizePx) { canvas.style.width = sizePx + 'px'; canvas.style.height = (sizePx * SPR_H / SPR_W) + 'px'; }
@@ -36,6 +25,28 @@ function creatureCanvas(defId, sizePx) {
   return canvas;
 }
 
+function creatureCanvas(defId, sizePx) {
+  const def = fighterDef(defId);
+  if (def && def.image) {
+    const img = document.createElement('img');
+    img.className = 'creature-canvas creature-canvas-loading';
+    img.alt = def.name;
+    img.loading = 'lazy';
+    if (sizePx) { img.style.width = sizePx + 'px'; img.style.height = 'auto'; }
+    img.addEventListener('load', () => img.classList.remove('creature-canvas-loading'), { once: true });
+    // Si el PNG falla al cargar (red inestable en móvil, caché corrupta...)
+    // se sustituye por el sprite procedural en vez de dejar un hueco vacío
+    // para siempre (el <img> roto se quedaba con opacity:0 sin más).
+    img.addEventListener('error', () => {
+      const fallback = proceduralCreatureCanvas(defId, sizePx);
+      if (img.parentNode) img.parentNode.replaceChild(fallback, img);
+    }, { once: true });
+    img.src = 'assets/creatures/' + def.image;
+    return img;
+  }
+  return proceduralCreatureCanvas(defId, sizePx);
+}
+
 // mode: 'reciente' (orden de obtención, más nuevo primero), 'nombre',
 // 'familia', 'elemento', 'tier' (rareza, más alta primero), 'copias' (SEF).
 function sortRosterEntries(roster, mode) {
@@ -44,7 +55,8 @@ function sortRosterEntries(roster, mode) {
     case 'nombre':
       return list.sort((a, b) => fighterDef(a.defId).name.localeCompare(fighterDef(b.defId).name));
     case 'familia':
-      return list.sort((a, b) => fighterDef(a.defId).family.localeCompare(fighterDef(b.defId).family) || b.level - a.level);
+      return list.sort((a, b) => fighterDef(a.defId).family.localeCompare(fighterDef(b.defId).family)
+        || rarityIndex(fighterDef(a.defId).rarity) - rarityIndex(fighterDef(b.defId).rarity) || b.level - a.level);
     case 'elemento':
       return list.sort((a, b) => ELEMENT_ORDER.indexOf(fighterDef(a.defId).element) - ELEMENT_ORDER.indexOf(fighterDef(b.defId).element) || b.level - a.level);
     case 'copias':
@@ -523,7 +535,9 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   }
 
   const sefPanel = el('div', 'panel');
-  const evoText = !def.evolvesTo ? 'Forma máxima: los duplicados se convierten en Texel automáticamente.'
+  const evoText = !def.evolvesTo
+    ? (entry.sef >= 5 ? 'Forma máxima y SEF completa: ya se puede usar como sacrificio de Superfusión (elígelo desde la ficha de otro luchador en forma máxima) para darle una ⭐ permanente.'
+      : 'Forma máxima: no evoluciona más, pero usar copias sueltas como material de fusión (abajo) hasta 5/5 lo deja listo para sacrificarlo en una Superfusión y dar una ⭐ permanente a otro luchador.')
     : entry.readyToEvolve ? '¡Fusión completa! Ya puedes evolucionarlo a <b>' + fighterDef(def.evolvesTo).name + '</b>.'
     : 'Usa copias sueltas de este mismo luchador como material de fusión (abajo) para llegar a 5/5 y evolucionarlo a <b>' + fighterDef(def.evolvesTo).name + '</b>.';
   sefPanel.innerHTML = `<h3>Fusión (SEF) <span class="badge">${entry.sef}/5</span></h3>
@@ -547,7 +561,7 @@ UI.openFighterModal = function (state, uid, formationCtx) {
       }
     });
     body.appendChild(evoBtn);
-  } else if (def.evolvesTo && entry.sef < 5) {
+  } else if (entry.sef < 5) {
     // Material de fusión: copias sueltas del mismo defId, elegidas a mano
     // (ya no se fusionan solas al invocar un duplicado).
     const siblings = state.roster.filter(r => r.uid !== uid && r.defId === entry.defId);
@@ -742,9 +756,7 @@ UI.doSummon = function (state, type, count) {
 function revealOutcomeText(result) {
   return {
     nuevo: '¡Nuevo luchador!',
-    duplicado: 'Duplicado · se guarda como copia suelta para fusionar',
-    duplicado_max: 'Ya en forma máxima · convertido en Texel',
-    inventario_lleno: 'Colección llena · convertido en Texel',
+    duplicado: 'Duplicado · se guarda como copia suelta para fusionar o superfusionar',
     homunculo: '🧪 ¡Homúnculo! Fusiónalo con un luchador desde su ficha para darle experiencia.',
   }[result.outcome];
 }
