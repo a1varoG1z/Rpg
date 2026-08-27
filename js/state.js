@@ -387,6 +387,41 @@ function recordStageClear(state, zoneIdx, stageIdx) {
   return null;
 }
 
+// --- Objetivos (pantalla de progreso general) ---
+// Todo de solo lectura: agrega números ya presentes en otras partes del
+// estado (progreso de zonas, Pokédex, roster, arena, equipo...) en un único
+// resumen para la pantalla de Objetivos. No guarda nada nuevo en el save.
+function objectivesSummary(state) {
+  let stagesCleared = 0, bossesDefeated = 0;
+  ZONES.forEach(z => {
+    stagesCleared += highestClearedStage(state, z.id) + 1;
+    if (highestClearedStage(state, z.id) >= STAGES_PER_ZONE - 1) bossesDefeated++;
+  });
+  const discovered = new Set(state.discoveredDefIds || []);
+  const familyIds = {};
+  FIGHTERS.forEach(f => { (familyIds[f.family] ||= []).push(f.id); });
+  const families = Object.values(familyIds);
+  const familiesComplete = families.filter(ids => ids.every(id => discovered.has(id))).length;
+  const rosterDefs = state.roster.map(r => fighterDef(r.defId));
+  return {
+    unlockedZones: state.progress.unlockedZones.length, totalZones: ZONES.length,
+    stagesCleared, totalStages: ZONES.length * STAGES_PER_ZONE,
+    bossesDefeated, totalBosses: ZONES.length,
+    formsDiscovered: discovered.size, totalForms: FIGHTERS.length,
+    familiesComplete, totalFamilies: families.length,
+    rosterSize: state.roster.length,
+    maxLevelCount: state.roster.filter(r => r.level >= XP_LEVEL_CAP).length,
+    finalFormCount: rosterDefs.filter(d => d && !d.evolvesTo).length,
+    totalSefStars: state.roster.reduce((sum, r) => sum + r.stars, 0),
+    elementsInRoster: new Set(rosterDefs.map(d => d && d.element)).size, totalElements: ELEMENT_ORDER.length,
+    classesInRoster: new Set(rosterDefs.map(d => d && d.class)).size, totalClasses: Object.keys(CLASS_INFO).length,
+    battlesWon: state.stats.battlesWon,
+    arenaRank: state.arena.rank, arenaBestRank: state.arena.bestRank,
+    gearOwned: state.gearInventory.length, gearMax: MAX_GEAR,
+    homunculosTotal: state.homunculos.homunculo_t1 + state.homunculos.homunculo_t2 + state.homunculos.homunculo_t3,
+  };
+}
+
 // --- Energía ---
 function tickEnergy(state, dtSeconds) {
   if (state.currencies.energy >= MAX_ENERGY) { state.currencies.energyFrac = 0; return; }

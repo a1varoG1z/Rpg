@@ -398,6 +398,26 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       - **Coste de la Tienda**: revisado y correcto — un recorrido
         completo da ~355.600 Texel, de sobra para el equipo más caro
         (2000 por pieza Legendaria) y varias mejoras de nivel de equipo
+- [x] **Pantalla de Objetivos** (27/08): nuevo botón "🎯" en la barra
+      superior (junto a Ajustes), abre `#objectivesModal` con un resumen
+      de progreso de solo lectura (`objectivesSummary` en `state.js`),
+      pedido explícitamente por el usuario ("bosses derrotados y cuántos
+      te faltan, criaturas por encontrar, y más cosas que se te
+      ocurran"):
+      - 🗺️ Mapa: zonas desbloqueadas, etapas superadas, **jefes
+        derrotados** (X/33 — un jefe cuenta como derrotado si se ha
+        superado la última etapa de su zona)
+      - 📖 Colección: **criaturas descubiertas** (X/390, con atajo para
+        abrir la Pokédex), familias completas (con sus 3 formas
+        descubiertas), elementos y clases representados en la banda
+      - ⭐ Progresión: luchadores en la banda, a nivel máximo, en su
+        evolución final, estrellas de Superfusión totales
+      - ⚔️ Combate: victorias totales, rango de Arena actual y mejor
+        alcanzado
+      - 🎒 Recursos: equipo en inventario, homúnculos conseguidos
+      Verificado en vivo: los números cuadran con una partida nueva
+      (1/33 zonas, 3/390 descubiertas, etc.) y el atajo a la Pokédex
+      funciona
 - [ ] Revisar si hacen falta más **jefes** o si 33 (uno por zona) es
       suficiente — el usuario preguntó, respuesta dada en el chat
 - [ ] Más criaturas jugables de **tier 1** (las que empiezan en Común) — el

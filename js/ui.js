@@ -184,6 +184,68 @@ UI.openPokedex = function (state) {
   $('pokedexModal').classList.remove('hidden');
 };
 
+// ---------- Objetivos ----------
+// Fila de un objetivo con barra de progreso (X/Y). Solo lectura — agrupa
+// números que ya existen en otras pantallas (mapa, Pokédex, banda, arena,
+// equipo) en un único resumen de progreso general, ver objectivesSummary
+// en state.js.
+function objRow(label, current, total) {
+  const pct = total > 0 ? Math.min(100, Math.round(current / total * 100)) : 0;
+  const row = el('div', 'obj-row');
+  row.innerHTML = `<div class="obj-row-top"><span>${label}</span><span>${current}/${total}</span></div>
+    <div class="obj-bar"><div class="obj-fill" style="width:${pct}%"></div></div>`;
+  return row;
+}
+
+UI.openObjectives = function (state) {
+  const s = objectivesSummary(state);
+  const body = $('objectivesModalBody');
+  body.innerHTML = '';
+  body.appendChild(el('h3', null, '🎯 Objetivos'));
+  body.appendChild(el('p', 'settings-info', 'Resumen de tu progreso general en Defensor de Texel.'));
+
+  const mapPanel = el('div', 'panel');
+  mapPanel.innerHTML = '<h3>🗺️ Mapa</h3>';
+  mapPanel.appendChild(objRow('Zonas desbloqueadas', s.unlockedZones, s.totalZones));
+  mapPanel.appendChild(objRow('Etapas superadas', s.stagesCleared, s.totalStages));
+  mapPanel.appendChild(objRow('Jefes derrotados', s.bossesDefeated, s.totalBosses));
+  body.appendChild(mapPanel);
+
+  const dexPanel = el('div', 'panel');
+  dexPanel.innerHTML = '<h3>📖 Colección</h3>';
+  dexPanel.appendChild(objRow('Criaturas descubiertas', s.formsDiscovered, s.totalForms));
+  dexPanel.appendChild(objRow('Familias completas (3/3 formas)', s.familiesComplete, s.totalFamilies));
+  dexPanel.appendChild(objRow('Elementos en tu banda', s.elementsInRoster, s.totalElements));
+  dexPanel.appendChild(objRow('Clases en tu banda', s.classesInRoster, s.totalClasses));
+  const pokedexShortcut = el('button', 'primary-btn', '📖 Abrir Pokédex');
+  pokedexShortcut.addEventListener('click', () => { $('objectivesModal').classList.add('hidden'); UI.openPokedex(state); });
+  dexPanel.appendChild(pokedexShortcut);
+  body.appendChild(dexPanel);
+
+  const rosterPanel = el('div', 'panel');
+  rosterPanel.innerHTML = `<h3>⭐ Progresión de luchadores</h3>
+    <div class="stat-row"><span>Luchadores en tu banda</span><span>${s.rosterSize}</span></div>
+    <div class="stat-row"><span>A nivel máximo (${XP_LEVEL_CAP})</span><span>${s.maxLevelCount}</span></div>
+    <div class="stat-row"><span>En su evolución final</span><span>${s.finalFormCount}</span></div>
+    <div class="stat-row"><span>Estrellas de Superfusión totales</span><span>${s.totalSefStars} ★</span></div>`;
+  body.appendChild(rosterPanel);
+
+  const combatPanel = el('div', 'panel');
+  combatPanel.innerHTML = `<h3>⚔️ Combate</h3>
+    <div class="stat-row"><span>Victorias totales</span><span>${s.battlesWon}</span></div>
+    <div class="stat-row"><span>Rango de Arena actual</span><span>${s.arenaRank}</span></div>
+    <div class="stat-row"><span>Mejor rango de Arena</span><span>${s.arenaBestRank}</span></div>`;
+  body.appendChild(combatPanel);
+
+  const resPanel = el('div', 'panel');
+  resPanel.innerHTML = '<h3>🎒 Recursos</h3>';
+  resPanel.appendChild(objRow('Equipo en inventario', s.gearOwned, s.gearMax));
+  resPanel.appendChild(el('div', 'stat-row', `<span>Homúnculos conseguidos</span><span>${s.homunculosTotal}</span>`));
+  body.appendChild(resPanel);
+
+  $('objectivesModal').classList.remove('hidden');
+};
+
 // ---------- Topbar ----------
 UI.renderTopbar = function (state) {
   $('texelVal').textContent = Math.floor(state.currencies.texel).toLocaleString('es-ES');
