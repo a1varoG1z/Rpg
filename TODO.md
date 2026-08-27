@@ -356,9 +356,20 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
         dios-araña embaucador), `tlaloc` (rayo/brujo/arrasar)
       Verificado con script: 360 fichas, sin ids duplicados, cada familia
       con sus 3 lores únicos
+- [x] **10 familias tier 1 más de folclores poco representados** (27/08):
+      segunda tanda de sugerencias, también aprobada e implementada.
+      Roster jugable pasa de 120 a 130 familias (390 fichas): `fuegofatuo`
+      (fuego/brujo/debilitar), `knocker` (tierra/explorador/furia),
+      `kelpie` (agua/pícaro/furia), `perronegro` (viento/campeón/grito),
+      `trolpuente` (tierra/campeón/escudo), `jackalope`
+      (tierra/explorador/furia), `rusalka` (agua/gurú/bendicion),
+      `mothman` (rayo/pícaro/aturdir), `gremlin`
+      (rayo/explorador/debilitar), `boto` (agua/brujo/drenar — folclore
+      amazónico). Sin arte propio, mismo patrón de 3 lores únicos por
+      evolución. Verificado: 390 fichas, sin ids duplicados
 - [ ] Más ideas de **personajes nuevos** — el usuario pidió sugerencias,
-      dadas en el chat, no todas creadas todavía. Última tanda (27/08) de
-      10 sugerencias extra de tier 1, dadas en el chat, sin implementar
+      dadas en el chat, casi todas ya creadas (25 familias nuevas entre
+      las dos tandas del 27/08); se puede seguir ampliando si se pide más
 - [ ] Auditoría de **balance** (stats/progresión/jugabilidad) más allá del
       balanceo de jefes de zona ya hecho esta sesión — el usuario preguntó
       si está bien balanceado en general, respuesta dada en el chat pero sin
