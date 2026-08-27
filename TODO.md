@@ -335,8 +335,30 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       Fuego/Viento/Tierra/Rayo/Agua) — el usuario preguntó, respuesta dada
       en el chat (probablemente no hace falta, el círculo de 5 con ventajas
       ya es el sistema real de D.o.T.) pero sin más acción
+- [x] **15 familias nuevas de mitologías poco representadas** (27/08): el
+      usuario pidió 5 sugerencias de tier 1/2/3 cada una y luego pidió
+      añadirlas todas. Roster jugable pasa de 105 a 120 familias (360
+      fichas). Sin arte todavía (usan el sprite procedural de respaldo
+      hasta que el usuario suba PNGs), con nombres/lore de 3 evoluciones y
+      skillId escogidos a propósito por temática:
+      - Tier 1: `kappa` (agua/pícaro/aturdir — espíritu japonés del río),
+        `tanuki` (tierra/explorador/debilitar — mapache cambiaformas),
+        `salamandraignea` (fuego/brujo/arrasar — salamandra elemental),
+        `thunderbird` (rayo/explorador/furia — cría del ave del trueno),
+        `selkie` (agua/gurú/purificar — foca transformista nórdica)
+      - Tier 2: `babayaga` (tierra/brujo/debilitar), `tengu`
+        (viento/explorador/furia), `chupacabra` (tierra/pícaro/drenar —
+        encaja perfecto con la ulti vampírica), `huldra`
+        (tierra/gurú/bendicion), `naga` (agua/brujo/arrasar)
+      - Tier 3: `ganesha` (tierra/gurú/purificar), `amaterasu`
+        (fuego/gurú/revivir — diosa que devuelve la luz al mundo),
+        `susanoo` (agua/campeón/grito), `anansi` (tierra/pícaro/veneno —
+        dios-araña embaucador), `tlaloc` (rayo/brujo/arrasar)
+      Verificado con script: 360 fichas, sin ids duplicados, cada familia
+      con sus 3 lores únicos
 - [ ] Más ideas de **personajes nuevos** — el usuario pidió sugerencias,
-      dadas en el chat, no todas creadas todavía
+      dadas en el chat, no todas creadas todavía. Última tanda (27/08) de
+      10 sugerencias extra de tier 1, dadas en el chat, sin implementar
 - [ ] Auditoría de **balance** (stats/progresión/jugabilidad) más allá del
       balanceo de jefes de zona ya hecho esta sesión — el usuario preguntó
       si está bien balanceado en general, respuesta dada en el chat pero sin
