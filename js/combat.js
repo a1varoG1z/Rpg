@@ -84,7 +84,15 @@ function buildEnemyBand(zoneIdx, stageIdx) {
   const zone = ZONES[zoneIdx];
   const isBoss = stageIdx === STAGES_PER_ZONE - 1;
   const globalIdx = zoneIdx * STAGES_PER_ZONE + stageIdx;
-  const level = Math.max(1, 1 + globalIdx);
+  // El jugador tiene un tope de nivel (XP_LEVEL_CAP); el rival no debe
+  // superarlo nunca, o las últimas zonas se vuelven matemáticamente
+  // imposibles por mucho que se invierta en equipo/rareza/estrellas (con
+  // 33 zonas de 8 etapas, sin este tope el rival llegaba a nivel 264 frente
+  // a un jugador tope 40 — más de 3 veces su multiplicador de stats en la
+  // última zona). A partir de aquí la dificultad la aporta solo la rareza
+  // creciente del pool de cada zona (ver ZONES), que ya escala de Común a
+  // Épico por su cuenta.
+  const level = Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalIdx));
   if (isBoss) {
     return { rows: [[makeBossUnit(zone.pool[2], level)]], isBoss, level };
   }

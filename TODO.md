@@ -370,11 +370,34 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
 - [ ] Más ideas de **personajes nuevos** — el usuario pidió sugerencias,
       dadas en el chat, casi todas ya creadas (25 familias nuevas entre
       las dos tandas del 27/08); se puede seguir ampliando si se pide más
-- [ ] Auditoría de **balance** (stats/progresión/jugabilidad) más allá del
-      balanceo de jefes de zona ya hecho esta sesión — el usuario preguntó
-      si está bien balanceado en general, respuesta dada en el chat pero sin
-      una revisión sistemática de, por ejemplo, la curva de XP/nivel o el
-      coste de la Tienda
+- [x] **Auditoría de balance** (27/08): revisión numérica con un script
+      (multiplicador de stats por zona/nivel, XP total para llegar a
+      nivel 40, Texel total ganable en un recorrido completo):
+      - **Bug real encontrado y arreglado**: el nivel del rival
+        (`buildEnemyBand` en `combat.js`) crecía sin tope, 1 por etapa
+        (`1 + globalIdx`), a lo largo de 33 zonas × 8 etapas = hasta
+        nivel 264 — mientras que el jugador tiene un tope duro de nivel
+        40 (`XP_LEVEL_CAP`). Resultado: el multiplicador de stats del
+        rival superaba ya al del mejor luchador posible del jugador
+        (legendario, nivel 40, 3★) a partir de la zona 5-6, y llegaba a
+        ser 3 veces mayor en la última zona (mult ×87 del rival frente a
+        ×28 del jugador en el mejor caso) — las últimas ~28 zonas eran
+        matemáticamente imposibles de ganar por mucho equipo/estrellas
+        que se invirtieran. Arreglado limitando `level` a
+        `XP_LEVEL_CAP` (40) — a partir de ahí la dificultad la sigue
+        aportando solo la rareza creciente del pool de cada zona (que ya
+        escala de Común a Épico de forma independiente), sin tope roto.
+        No afecta a las primeras 5 zonas (ahí el nivel nunca llegaba a
+        40 de todas formas). Verificado con script: nivel de jefe ahora
+        se estabiliza en 40 desde la zona 4/5 en vez de seguir subiendo.
+      - **Curva de XP**: revisada y correcta, no hacía falta tocarla — un
+        luchador que participa en toda la Formación durante un recorrido
+        completo de las 33 zonas gana ~170.300 XP en total frente a
+        78.423 XP necesaria para llegar a nivel 40 (ratio ~2.17), margen
+        razonable
+      - **Coste de la Tienda**: revisado y correcto — un recorrido
+        completo da ~355.600 Texel, de sobra para el equipo más caro
+        (2000 por pieza Legendaria) y varias mejoras de nivel de equipo
 - [ ] Revisar si hacen falta más **jefes** o si 33 (uno por zona) es
       suficiente — el usuario preguntó, respuesta dada en el chat
 - [ ] Más criaturas jugables de **tier 1** (las que empiezan en Común) — el
