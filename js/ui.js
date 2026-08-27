@@ -209,6 +209,9 @@ UI.openObjectives = function (state) {
   mapPanel.appendChild(objRow('Zonas desbloqueadas', s.unlockedZones, s.totalZones));
   mapPanel.appendChild(objRow('Etapas superadas', s.stagesCleared, s.totalStages));
   mapPanel.appendChild(objRow('Jefes derrotados', s.bossesDefeated, s.totalBosses));
+  const bossesShortcut = el('button', 'primary-btn', '👹 Ver jefes');
+  bossesShortcut.addEventListener('click', () => { $('objectivesModal').classList.add('hidden'); UI.openBosses(state); });
+  mapPanel.appendChild(bossesShortcut);
   body.appendChild(mapPanel);
 
   const dexPanel = el('div', 'panel');
@@ -244,6 +247,93 @@ UI.openObjectives = function (state) {
   body.appendChild(resPanel);
 
   $('objectivesModal').classList.remove('hidden');
+};
+
+// ---------- Jefes ----------
+// Misma idea que pokedexCard, pero para los 33 jefes de zona: los nunca
+// derrotados se muestran bloqueados (sin arte ni nombre), los derrotados
+// muestran su ficha normal y se pueden tocar para ver su perfil.
+function bossCard(entry) {
+  if (!entry.defeated) {
+    const card = el('div', 'creature-card pokedex-locked');
+    card.appendChild(el('div', 'pokedex-lock-icon', '❔'));
+    card.appendChild(el('div', 'creature-name', '???'));
+    return card;
+  }
+  const def = entry.def;
+  const rarity = rarityInfo(def.rarity);
+  const card = el('div', 'creature-card rarity-' + def.rarity);
+  card.style.setProperty('--rc', rarity.color);
+  card.style.setProperty('--rg', rarity.glow);
+  const wrap = el('div', 'creature-canvas-wrap');
+  wrap.appendChild(creatureCanvas(def.id));
+  card.appendChild(wrap);
+  const badge = el('div', 'creature-elclass');
+  badge.textContent = ELEMENT_INFO[def.element].icon + CLASS_INFO[def.class].icon;
+  card.appendChild(badge);
+  card.appendChild(el('div', 'creature-tier-icon', rarity.icon));
+  card.appendChild(el('div', 'creature-name', def.name));
+  card.addEventListener('click', () => UI.showBossEntry(entry));
+  return card;
+}
+
+UI.openBosses = function (state) {
+  const body = $('bossesModalBody');
+  body.innerHTML = '';
+  const overview = bossesOverview(state);
+  const defeatedCount = overview.filter(e => e.defeated).length;
+  body.appendChild(el('h3', null, `👹 Jefes ${defeatedCount}/${overview.length}`));
+  body.appendChild(el('p', 'settings-info', 'Los jefes de zona que has derrotado alguna vez. Supera la última etapa de una zona para desbloquear su ficha.'));
+  const grid = el('div', 'creature-grid pokedex-grid');
+  overview.forEach(entry => grid.appendChild(bossCard(entry)));
+  body.appendChild(grid);
+  $('bossesModal').classList.remove('hidden');
+};
+
+// Ficha de solo lectura de un jefe: arte, historia, tipo/tier y las
+// estadísticas de combate REALES con las que se lucha en su zona (mismo
+// nivel y bonus de HP de jefe que buildEnemyBand/makeBossUnit en
+// combat.js) — a diferencia de la Pokédex no tiene sentido mostrar stats
+// "base nivel 1", porque un jefe no es un luchador que el jugador suba de
+// nivel, siempre se combate a su nivel de zona.
+UI.showBossEntry = function (entry) {
+  const def = entry.def;
+  const rarity = rarityInfo(def.rarity);
+  const vuln = TYPE_VULNERABILITY[def.class];
+  const unit = makeBossUnit(def.id, entry.level);
+  const body = $('bossEntryModalBody');
+  body.innerHTML = '';
+  const head = el('div', 'fighter-modal-head');
+  head.appendChild(creatureCanvas(def.id, 90));
+  const info = el('div');
+  info.innerHTML = `<div class="item-modal-name" style="color:${rarity.color}">${def.name}</div>
+    <div class="item-modal-rarity">${rarity.label} · ${ELEMENT_INFO[def.element].label} ${ELEMENT_INFO[def.element].icon} · ${CLASS_INFO[def.class].label} ${CLASS_INFO[def.class].icon}</div>
+    <div class="item-modal-rarity">👹 Jefe de ${entry.zone.name} ${entry.zone.emoji}</div>
+    ${vuln ? `<div class="type-vuln-note">${vuln.desc}</div>` : ''}`;
+  head.appendChild(info);
+  body.appendChild(head);
+
+  if (def.lore) {
+    const lorePanel = el('div', 'panel');
+    lorePanel.innerHTML = `<h3>📜 Historia</h3><p class="settings-info">${def.lore}</p>`;
+    body.appendChild(lorePanel);
+  }
+
+  const statsPanel = el('div', 'panel');
+  statsPanel.innerHTML = `<h3>Estadísticas de combate (Nv. ${entry.level})</h3>
+    <div class="stat-row"><span>❤️ Vida</span><span>${unit.maxHp}</span></div>
+    <div class="stat-row"><span>⚔️ Ataque</span><span>${unit.atk}</span></div>
+    <div class="stat-row"><span>🛡️ Defensa</span><span>${unit.def}</span></div>
+    <div class="stat-row"><span>💨 Agilidad</span><span>${unit.agi}</span></div>
+    <div class="stat-row"><span>🧠 Sabiduría</span><span>${unit.wis}</span></div>`;
+  body.appendChild(statsPanel);
+
+  const skill = SKILL_TYPES[def.skillId];
+  const skillPanel = el('div', 'panel');
+  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p>`;
+  body.appendChild(skillPanel);
+
+  $('bossEntryModal').classList.remove('hidden');
 };
 
 // ---------- Topbar ----------

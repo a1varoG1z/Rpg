@@ -28,6 +28,8 @@
   $('pokedexEntryModalClose').addEventListener('click', () => $('pokedexEntryModal').classList.add('hidden'));
   $('objectivesBtn').addEventListener('click', () => UI.openObjectives(state));
   $('objectivesModalClose').addEventListener('click', () => $('objectivesModal').classList.add('hidden'));
+  $('bossesModalClose').addEventListener('click', () => $('bossesModal').classList.add('hidden'));
+  $('bossEntryModalClose').addEventListener('click', () => $('bossEntryModal').classList.add('hidden'));
   $('resetBtn').addEventListener('click', () => {
     if (confirm('¿Seguro que quieres borrar tu progreso y empezar de nuevo?')) {
       resetGame();

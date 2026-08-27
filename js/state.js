@@ -422,6 +422,22 @@ function objectivesSummary(state) {
   };
 }
 
+// Una entrada por zona con su jefe y si ya se ha derrotado alguna vez (misma
+// condición que bossesDefeated en objectivesSummary: haber superado la
+// última etapa de esa zona). `level` es el nivel real al que se combate ese
+// jefe (mismo tope de XP_LEVEL_CAP que buildEnemyBand en combat.js), para
+// poder mostrar sus estadísticas de combate reales en la ficha.
+function bossesOverview(state) {
+  return ZONES.map((zone, zoneIdx) => {
+    const globalIdx = zoneIdx * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
+    return {
+      zoneIdx, zone, def: bossDef(zone.pool[2]),
+      defeated: highestClearedStage(state, zone.id) >= STAGES_PER_ZONE - 1,
+      level: Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalIdx)),
+    };
+  });
+}
+
 // --- Energía ---
 function tickEnergy(state, dtSeconds) {
   if (state.currencies.energy >= MAX_ENERGY) { state.currencies.energyFrac = 0; return; }

@@ -418,6 +418,24 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       Verificado en vivo: los números cuadran con una partida nueva
       (1/33 zonas, 3/390 descubiertas, etc.) y el atajo a la Pokédex
       funciona
+- [x] **"Ver jefes" en Objetivos** (27/08): el usuario pidió un botón bajo
+      "Jefes derrotados" que abra algo tipo Pokédex pero de jefes, con
+      perfil al tocar uno. Nuevo botón "👹 Ver jefes" en el panel Mapa de
+      Objetivos → `UI.openBosses` (`#bossesModal`): grid de los 33 jefes
+      de zona, los nunca derrotados bloqueados (❔/"???", sin spoiler) y
+      los derrotados con su ficha normal (mismo patrón visual que
+      `pokedexCard`). Al tocar un jefe derrotado se abre
+      `UI.showBossEntry` (`#bossEntryModal`): arte, historia, tipo/tier,
+      zona a la que pertenece, y — a diferencia de la Pokédex, que
+      muestra stats base nivel 1 — las estadísticas de combate REALES con
+      las que se lucha en su zona (mismo nivel tope 40 y bonus ×2.4 HP de
+      `makeBossUnit` en `combat.js`), porque un jefe no es un luchador
+      que el jugador suba de nivel. `bossesOverview(state)` en
+      `state.js` calcula por zona si su jefe está derrotado y a qué
+      nivel se combate. Verificado en vivo: marcando 3 zonas como
+      superadas, el grid muestra 3 desbloqueadas y 30 bloqueadas, y la
+      ficha de un jefe derrotado muestra sus stats reales correctas
+      (jefe de la zona 0, nivel 8, 547 HP)
 - [ ] Revisar si hacen falta más **jefes** o si 33 (uno por zona) es
       suficiente — el usuario preguntó, respuesta dada en el chat
 - [ ] Más criaturas jugables de **tier 1** (las que empiezan en Común) — el
