@@ -264,7 +264,12 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       `state.discoveredDefIds`. Las no conseguidas nunca se muestran
       bloqueadas (icono ❔, "???", sin arte ni nombre, para no hacer
       spoiler) — las conseguidas muestran su ficha normal con arte/nombre/
-      elemento/clase. Cabecera con contador "X/315 descubiertos"
+      elemento/clase. Cabecera con contador "X/315 descubiertos". Al tocar
+      una forma conseguida se abre una ficha de solo lectura
+      (`UI.showPokedexEntry`, modal nuevo `#pokedexEntryModal`): arte,
+      historia, tipo/elemento/clase, tier y estadísticas BASE a nivel 1
+      (`buildUnitStats(defId, 1)`, iguales para cualquier jugador) — sin
+      nivel/XP/equipo/fusión/venta, solo información de referencia
 - [x] **Venta manual de duplicados por Texel**: nuevo panel "🪙 Vender" en la
       ficha de cualquier luchador del roster, con confirmación (la venta es
       definitiva). Precio: `40 × multiplicador de rareza × (1 + 0.15 por

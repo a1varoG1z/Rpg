@@ -118,8 +118,52 @@ function pokedexCard(def, discovered) {
   card.appendChild(badge);
   card.appendChild(el('div', 'creature-tier-icon', rarity.icon));
   card.appendChild(el('div', 'creature-name', def.name));
+  card.addEventListener('click', () => UI.showPokedexEntry(def));
   return card;
 }
+
+// Ficha de solo lectura de una forma de la Pokédex: arte, descripción,
+// tipo/tier y estadísticas BASE (nivel 1, sin nivel/equipo/estrellas del
+// jugador — las mismas para cualquiera). A diferencia de la ficha del
+// roster (openFighterModal) no tiene ninguna acción — ni fusión, ni
+// equipo, ni venta — es solo información de referencia.
+UI.showPokedexEntry = function (def) {
+  const rarity = rarityInfo(def.rarity);
+  const vuln = TYPE_VULNERABILITY[def.class];
+  const stats = buildUnitStats(def.id, 1);
+  const body = $('pokedexEntryModalBody');
+  body.innerHTML = '';
+  const head = el('div', 'fighter-modal-head');
+  head.appendChild(creatureCanvas(def.id, 90));
+  const info = el('div');
+  info.innerHTML = `<div class="item-modal-name" style="color:${rarity.color}">${def.name}</div>
+    <div class="item-modal-rarity">${rarity.label} · ${ELEMENT_INFO[def.element].label} ${ELEMENT_INFO[def.element].icon} · ${CLASS_INFO[def.class].label} ${CLASS_INFO[def.class].icon}</div>
+    ${vuln ? `<div class="type-vuln-note">${vuln.desc}</div>` : ''}`;
+  head.appendChild(info);
+  body.appendChild(head);
+
+  if (def.lore) {
+    const lorePanel = el('div', 'panel');
+    lorePanel.innerHTML = `<h3>📜 Historia</h3><p class="settings-info">${def.lore}</p>`;
+    body.appendChild(lorePanel);
+  }
+
+  const statsPanel = el('div', 'panel');
+  statsPanel.innerHTML = `<h3>Estadísticas base (Nv. 1)</h3>
+    <div class="stat-row"><span>❤️ Vida</span><span>${stats.maxHp}</span></div>
+    <div class="stat-row"><span>⚔️ Ataque</span><span>${stats.atk}</span></div>
+    <div class="stat-row"><span>🛡️ Defensa</span><span>${stats.def}</span></div>
+    <div class="stat-row"><span>💨 Agilidad</span><span>${stats.agi}</span></div>
+    <div class="stat-row"><span>🧠 Sabiduría</span><span>${stats.wis}</span></div>`;
+  body.appendChild(statsPanel);
+
+  const skill = SKILL_TYPES[def.skillId];
+  const skillPanel = el('div', 'panel');
+  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p>`;
+  body.appendChild(skillPanel);
+
+  $('pokedexEntryModal').classList.remove('hidden');
+};
 
 // ---------- Pokédex ----------
 // Registro de todas las formas jugables (FIGHTERS) alguna vez conseguidas,

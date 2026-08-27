@@ -25,6 +25,7 @@
   $('settingsModalClose').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
   $('pokedexBtn').addEventListener('click', () => UI.openPokedex(state));
   $('pokedexModalClose').addEventListener('click', () => $('pokedexModal').classList.add('hidden'));
+  $('pokedexEntryModalClose').addEventListener('click', () => $('pokedexEntryModal').classList.add('hidden'));
   $('resetBtn').addEventListener('click', () => {
     if (confirm('¿Seguro que quieres borrar tu progreso y empezar de nuevo?')) {
       resetGame();
