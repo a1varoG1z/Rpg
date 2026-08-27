@@ -249,8 +249,8 @@ addFamily('hipogrifo', 2, 'viento', 'explorador', 'debilitar', ['Potro Alado', '
 addFamily('cerbero', 3, 'fuego', 'campeon', 'escudo', ['Cachorro de Tres Cabezas', 'Guardián del Umbral', 'Cerbero, Custodio del Inframundo'], 'Vigila la puerta que separa el mundo de los vivos del de los muertos.', true);
 addFamily('centauro', 2, 'tierra', 'explorador', 'debilitar', ['Potrillo Centauro', 'Centauro Arquero', 'Jefe de la Manada Salvaje'], 'Combina la fuerza de un corcel con la puntería de un cazador nato.', true);
 addFamily('minotauro', 2, 'tierra', 'campeon', 'furia', ['Toro Joven del Laberinto', 'Minotauro Furioso', 'Amo del Laberinto Eterno'], 'Nadie que entra en su laberinto vuelve a encontrar la salida.', true);
-addFamily('kraken', 3, 'agua', 'brujo', 'arrasar', ['Cría de Kraken', 'Kraken de las Profundidades', 'Devorador de Flotas'], 'Sus tentáculos han hundido más barcos de los que nadie se atreve a contar.');
-addFamily('leviatan', 3, 'agua', 'campeon', 'escudo', ['Serpiente de Mar Joven', 'Leviatán de las Mareas', 'Leviatán, Terror del Océano'], 'Su sola presencia hace que el mar entero se agite de terror.');
+addFamily('kraken', 3, 'agua', 'brujo', 'arrasar', ['Cría de Kraken', 'Kraken de las Profundidades', 'Devorador de Flotas'], 'Sus tentáculos han hundido más barcos de los que nadie se atreve a contar.', true);
+addFamily('leviatan', 3, 'agua', 'campeon', 'escudo', ['Serpiente de Mar Joven', 'Leviatán de las Mareas', 'Leviatán, Terror del Océano'], 'Su sola presencia hace que el mar entero se agite de terror.', true);
 addFamily('fenrir', 3, 'viento', 'picaro', 'furia', ['Lobezno de Hierro', 'Fenrir Encadenado', 'Fenrir, el Lobo del Fin del Mundo'], 'Se dice que su rugido anunciará el fin de los tiempos.');
 addFamily('nahual', 2, 'tierra', 'brujo', 'debilitar', ['Aprendiz de Nahual', 'Nahual Cambiapieles', 'Gran Brujo Nahual'], 'Puede transformarse en la bestia que más tema su enemigo.');
 addFamily('quetzalcoatl', 3, 'viento', 'guru', 'bendicion', ['Serpiente Emplumada Joven', 'Quetzalcóatl Ascendente', 'Quetzalcóatl, Señor del Viento'], 'Serpiente y ave a la vez, trajo el conocimiento a su pueblo.');
