@@ -286,6 +286,23 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       historia, tipo/elemento/clase, tier y estadísticas BASE a nivel 1
       (`buildUnitStats(defId, 1)`, iguales para cualquier jugador) — sin
       nivel/XP/equipo/fusión/venta, solo información de referencia
+- [x] **Descripción única por evolución**: las ~90 familias de la expansión
+      grande (todo lo añadido tras el roster original de 15 familias)
+      compartían una sola frase de lore (`loreCore`) con un sufijo GENÉRICO
+      por tier (el mismo texto de relleno para todas las familias de tier 1,
+      todas las de tier 2, etc. — ver `TIER_LORE_SUFFIX`). El usuario detectó
+      que eso hacía que las 3 evoluciones de cada familia nueva no tuvieran
+      historia propia, a diferencia de las 15 familias originales (ascua,
+      nigro, lagarto, duende, chispa, piroman, brisa, triton, vidente,
+      marejada, gea, topo, heraldo, electro, marina), que sí tenían las 3
+      frases escritas a mano desde el principio. Arreglado escribiendo 2
+      frases nuevas por familia (evolución 2 y 3), únicas y con hilo con el
+      nombre/tema de cada forma, para las 90 familias de `addFamily(...)`.
+      `addFamily` ahora acepta un array `[lore1, lore2, lore3]` en vez de una
+      única `loreCore` (se mantiene compatibilidad con el string+sufijo
+      genérico por si se usa en el futuro). Verificado con un script que
+      carga las 315 fichas y confirma que ninguna familia repite lore entre
+      sus 3 evoluciones
 - [x] **Venta manual de duplicados por Texel**: nuevo panel "🪙 Vender" en la
       ficha de cualquier luchador del roster, con confirmación (la venta es
       definitiva). Precio: `40 × multiplicador de rareza × (1 + 0.15 por
