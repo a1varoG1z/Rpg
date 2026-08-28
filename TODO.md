@@ -990,6 +990,29 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       con un script: las llamadas existentes sin el flag siguen sin
       `image` (comportamiento idéntico a antes), y una llamada nueva con
       el flag genera el nombre de archivo esperado en ambos casos
+- [x] **Descripción única por evolución en MOBS** (28/08): el usuario avisó
+      que los mobs enemigos (`MOBS`) tenían el mismo problema que antes
+      tenían los personajes jugables — `addMobFamily` solo aceptaba una
+      frase base por familia y le pegaba el mismo sufijo genérico de
+      `TIER_LORE_SUFIX[tier][i]` a las 3 evoluciones, así que la 2ª y 3ª
+      forma de cada familia de mob compartían el mismo texto de relleno
+      que todas las demás familias de su tier. Arreglado exactamente igual
+      que se hizo en su día con `addFamily`:
+      - `addMobFamily(slug, tier, element, cls, skillId, names, lores,
+        hasImages)` ahora acepta `lores` como un array de 3 frases (una
+        por evolución), manteniendo compatibilidad con el string único +
+        sufijo genérico si se le pasa así
+      - Redactadas 2 frases nuevas y propias (evolución intermedia y
+        final) para las 33 familias de `MOBS` existentes: arpía,
+        dullahan, tengu, goblin, trasgo, demonio, esqueleto, draugr,
+        chupacabra, kitsune, momia, orco, dementor, araña, jabalí,
+        gárgola, gigante, ogro, sátiro salvaje, troll, estirge, ondina,
+        zombi, banshee, lamia, hombre de arena, babosa, sapo, serpiente,
+        seta humanoide, Frankenstein, hombre seis brazos e insecto
+        gigante
+      Verificado con un script headless: 99 `MOBS` en total (33 familias
+      × 3 formas), cero lores duplicados dentro de cada familia, cero
+      familias con un número de fichas distinto de 3
 
 ## Notas
 
