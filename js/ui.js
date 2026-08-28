@@ -69,6 +69,42 @@ function creatureCanvas(defId, sizePx) {
   return proceduralCreatureCanvas(defId, sizePx);
 }
 
+// ---------- Icono de equipo reutilizable ----------
+// Mismo patrón que creatureCanvas: intenta la imagen real
+// (assets/gear/<tipo>.png, un archivo por cada uno de los 18 tipos de
+// GEAR_SLOTS[slot].types — el nombre del tipo ya es único en todo el
+// juego) y, si no existe todavía, cae en un icono generado por código
+// (el emoji de ese tipo, ya definido en data.js, sobre un fondo del color
+// de su rareza) que se sustituye solo por el arte real en cuanto se suba.
+function proceduralGearIcon(typeInfo, rarityId, sizePx) {
+  const size = sizePx || 32;
+  const box = document.createElement('div');
+  box.className = 'gear-icon-fallback';
+  box.style.width = size + 'px';
+  box.style.height = size + 'px';
+  box.style.fontSize = Math.round(size * 0.6) + 'px';
+  box.style.borderColor = rarityInfo(rarityId).color;
+  box.textContent = typeInfo.icon;
+  return box;
+}
+function gearIcon(gear, sizePx) {
+  const typeInfo = gearTypeInfo(gear);
+  const size = sizePx || 32;
+  const img = document.createElement('img');
+  img.className = 'gear-icon gear-icon-loading';
+  img.alt = typeInfo.names[gear.rarity];
+  img.loading = 'lazy';
+  img.style.width = size + 'px';
+  img.style.height = size + 'px';
+  img.addEventListener('load', () => img.classList.remove('gear-icon-loading'), { once: true });
+  img.addEventListener('error', () => {
+    const fallback = proceduralGearIcon(typeInfo, gear.rarity, size);
+    if (img.parentNode) img.parentNode.replaceChild(fallback, img);
+  }, { once: true });
+  img.src = 'assets/gear/' + gear.type + '.png';
+  return img;
+}
+
 // mode: 'reciente' (orden de obtención, más nuevo primero), 'nombre',
 // 'familia', 'elemento', 'tier' (rareza, más alta primero), 'copias' (SEF).
 function sortRosterEntries(roster, mode) {
@@ -485,21 +521,29 @@ UI.renderStageRun = function (state) {
 
   if (run.nodeIdx < run.encounters.length) {
     const bandUids = state.band.flat().filter(Boolean);
+    // Se muestra con la forma real de la Formación 3×3 (huecos vacíos
+    // incluidos) en vez de una fila seguida, para que se vea de un
+    // vistazo qué línea puede formarse antes de entrar al combate.
     const bandStatus = el('div', 'stage-run-band');
-    bandUids.forEach(uid => {
-      const entry = rosterEntry(state, uid);
-      if (!entry) return;
-      const status = runFighterStatus(state, run, uid);
-      const card = el('div', 'stage-run-fighter' + (status.fainted ? ' fainted' : ''));
-      card.appendChild(creatureCanvas(entry.defId, 40));
-      const hpBar = el('div', 'hp-bar small');
-      const fill = el('div', 'hp-fill');
-      fill.style.width = Math.max(0, status.hp / status.maxHp * 100) + '%';
-      hpBar.appendChild(fill);
-      card.appendChild(hpBar);
-      if (status.fainted) card.appendChild(el('div', 'fainted-icon', '💀'));
-      bandStatus.appendChild(card);
-    });
+    for (let r = 0; r < BAND_ROWS; r++) {
+      const rowEl = el('div', 'stage-run-band-row');
+      for (let c = 0; c < BAND_COLS; c++) {
+        const uid = state.band[r][c];
+        const entry = uid ? rosterEntry(state, uid) : null;
+        if (!entry) { rowEl.appendChild(el('div', 'stage-run-fighter empty')); continue; }
+        const status = runFighterStatus(state, run, uid);
+        const card = el('div', 'stage-run-fighter' + (status.fainted ? ' fainted' : ''));
+        card.appendChild(creatureCanvas(entry.defId, 40));
+        const hpBar = el('div', 'hp-bar small');
+        const fill = el('div', 'hp-fill');
+        fill.style.width = Math.max(0, status.hp / status.maxHp * 100) + '%';
+        hpBar.appendChild(fill);
+        card.appendChild(hpBar);
+        if (status.fainted) card.appendChild(el('div', 'fainted-icon', '💀'));
+        rowEl.appendChild(card);
+      }
+      bandStatus.appendChild(rowEl);
+    }
     wrap.appendChild(bandStatus);
 
     const hasFainted = bandUids.some(uid => run.faintedSet.has(uid));
@@ -888,7 +932,9 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     const box = el('div', 'doll-slot' + (gearUid ? '' : ' empty'));
     if (gearUid) {
       const g = gearItem(state, gearUid);
-      box.innerHTML = `<div class="doll-icon">${gearTypeInfo(g).icon}</div><div class="doll-plus">+${g.level}</div>`;
+      box.innerHTML = '';
+      box.appendChild(gearIcon(g, 30));
+      box.appendChild(el('div', 'doll-plus', '+' + g.level));
     } else {
       box.innerHTML = `<div class="doll-icon">${GEAR_SLOTS[slotKey].icon}</div><div class="doll-label">${GEAR_SLOTS[slotKey].label}</div>`;
     }
@@ -984,7 +1030,9 @@ UI.openGearPickerForFighter = function (state, fighterUid, slotKey) {
     const rarity = rarityInfo(g.rarity);
     const cell = el('div', 'item-cell');
     cell.style.borderColor = rarity.color;
-    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div><div class="item-icon">${gearTypeInfo(g).icon}</div><div class="item-plus">+${g.level}</div>`;
+    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div>`;
+    cell.appendChild(gearIcon(g, 30));
+    cell.appendChild(el('div', 'item-plus', '+' + g.level));
     cell.addEventListener('click', () => { equipGear(state, fighterUid, g.uid); saveGame(state); $('pickerModal').classList.add('hidden'); UI.openFighterModal(state, fighterUid); });
     list.appendChild(cell);
   });
@@ -1194,7 +1242,8 @@ UI.renderEquipo = function (state) {
     const owner = equippedGearOwner(state, g.uid);
     const cell = el('div', 'item-cell');
     cell.style.borderColor = rarity.color;
-    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div><div class="item-icon">${gearTypeInfo(g).icon}</div><div class="item-plus">+${g.level}</div>${owner ? '<div class="equipped-dot"></div>' : ''}`;
+    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div><div class="item-plus">+${g.level}</div>${owner ? '<div class="equipped-dot"></div>' : ''}`;
+    cell.appendChild(gearIcon(g, 30));
     cell.addEventListener('click', () => UI.openGearModal(state, g.uid));
     grid.appendChild(cell);
   });
@@ -1207,7 +1256,9 @@ UI.renderTienda = function (state) {
   GEAR_SLOT_IDS.forEach(slot => {
     const slotInfo = GEAR_SLOTS[slot];
     const panel = el('div', 'shop-row');
-    panel.appendChild(el('div', 'shop-row-icon', slotInfo.icon));
+    const iconBox = el('div', 'shop-row-icon');
+    iconBox.appendChild(gearIcon({ slot, type: gearTypeIds(slot)[0], rarity: 'raro' }, 34));
+    panel.appendChild(iconBox);
     const info = el('div', 'shop-row-info');
     info.appendChild(el('div', 'shop-row-title', slotInfo.label));
     const buyRow = el('div', 'shop-buy-row');
@@ -1269,7 +1320,7 @@ UI.openGearModal = function (state, gearUid) {
   const val = gearStatValue(g);
   const body = $('gearModalBody');
   body.innerHTML = `
-    <div class="item-modal-header" style="color:${rarity.color}"><span class="item-modal-icon">${t.icon}</span>
+    <div class="item-modal-header" style="color:${rarity.color}">
       <div><div class="item-modal-name">${t.names[g.rarity]} +${g.level}</div><div class="item-modal-rarity">${rarity.label} · ${slot.label} (${t.label})</div></div></div>
     <div class="panel">
       <div class="stat-row"><span>${STAT_LABELS[t.primary]}</span><span>+${Math.round(val * t.primaryMult)}</span></div>
@@ -1277,6 +1328,7 @@ UI.openGearModal = function (state, gearUid) {
     </div>
     ${owner ? `<p class="settings-info">Equipado en ${fighterDef(rosterEntry(state, owner.uid).defId).name}.</p>` : ''}
   `;
+  body.querySelector('.item-modal-header').prepend(gearIcon(g, 50));
   const actions = el('div', 'modal-actions');
   const upgradeBtn = el('button', 'primary-btn', 'Mejorar (🪙 ' + gearUpgradeCost(g) + ')');
   upgradeBtn.addEventListener('click', () => { if (upgradeGear(state, gearUid)) { saveGame(state); UI.openGearModal(state, gearUid); UI.renderTopbar(state); } });
@@ -1354,14 +1406,13 @@ UI.renderClashPreview = function (view) {
     view.enemyRows[i].forEach(u => mini.appendChild(creatureCanvas(u.defId, 26)));
     queuedEl.appendChild(mini);
   }
+  // El resto de la banda disponible ya se ve en la propia rejilla del
+  // selector de línea (o, si se autoconfirma por no haber elección,
+  // directamente en la ficha de combate) — mostrarla aquí también sería
+  // redundante, así que esta vista previa se deja vacía hasta que
+  // commitGroup rellene el banquillo real tras la elección.
   $('playerActiveRow').innerHTML = '';
-  const reserveEl = $('playerQueuedRows');
-  reserveEl.innerHTML = '';
-  unusedAliveGroups(view).forEach(g => {
-    const mini = el('div', 'queued-row-mini');
-    g.row.forEach(u => mini.appendChild(creatureCanvas(u.defId, 26)));
-    reserveEl.appendChild(mini);
-  });
+  $('playerQueuedRows').innerHTML = '';
 };
 
 // Busca al luchador colocado en una celda de la Formación entre las filas ya
@@ -1414,11 +1465,41 @@ UI.showGroupPicker = function (view, remaining) {
         const wrap = el('div', 'creature-canvas-wrap' + (unit.alive ? '' : ' fainted'));
         wrap.appendChild(creatureCanvas(unit.defId, 40));
         cellEl.appendChild(wrap);
+        if (unit.alive) cellEl.appendChild(el('div', 'picker-cell-ult', ultTurnsText(unit)));
       }
       cellEls.push(cellEl);
       rowEl.appendChild(cellEl);
     }
     list.appendChild(rowEl);
+  }
+
+  // Líneas vivas ya usadas este ciclo (no están en `remaining`, pero
+  // tampoco están muertas) — se tachan con una raya sobre la rejilla para
+  // que se vea de un vistazo qué ha usado ya el jugador; vuelven a
+  // desaparecer solas cuando resolveAvailableGroups reinicia el ciclo
+  // porque ya no queda ninguna línea viva sin usar.
+  const usedLines = alivePlayerGroups(view).filter(g => g.usedThisCycle).map(g => BAND_LINES[g.idx]);
+  if (usedLines.length) {
+    requestAnimationFrame(() => {
+      const containerRect = list.getBoundingClientRect();
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'picker-used-overlay');
+      svg.setAttribute('width', containerRect.width);
+      svg.setAttribute('height', containerRect.height);
+      usedLines.forEach(line => {
+        const [r1, c1] = line.cells[0];
+        const [r2, c2] = line.cells[2];
+        const p1 = cellAt(r1, c1).getBoundingClientRect();
+        const p2 = cellAt(r2, c2).getBoundingClientRect();
+        const lineEl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        lineEl.setAttribute('x1', p1.left + p1.width / 2 - containerRect.left);
+        lineEl.setAttribute('y1', p1.top + p1.height / 2 - containerRect.top);
+        lineEl.setAttribute('x2', p2.left + p2.width / 2 - containerRect.left);
+        lineEl.setAttribute('y2', p2.top + p2.height / 2 - containerRect.top);
+        svg.appendChild(lineEl);
+      });
+      list.appendChild(svg);
+    });
   }
 
   function cellAt(r, c) { return cellEls[r * BAND_COLS + c]; }
@@ -1487,28 +1568,13 @@ UI.commitGroup = function (view, group) {
   const { log } = simulateOneRound(clone.p, clone.e);
   view.log = log; view.idx = 0;
 
-  // Si la línea elegida no es una fila recta (columna o diagonal), se
-  // coloca cada luchador en el campo según su posición real de la
-  // Formación en vez de en fila — ver reference/dot-original/
-  // combate-formacion-3x3.jpg. combinationFighterUids ya filtró los
-  // huecos vacíos con el mismo orden que playerRow, así que basta con
-  // repetir ese filtro sobre las celdas de la línea para emparejar cada
-  // unidad con su [fila, columna] real.
-  const line = BAND_LINES[group.idx];
-  const sameRow = line.cells.every(([r]) => r === line.cells[0][0]);
-  const cellsWithUnit = line.cells.filter(([r, c]) => view.state.band[r][c]);
+  // El combate en sí siempre se muestra en fila horizontal, elijas la
+  // línea que elijas (fila/columna/diagonal) — a diferencia de la
+  // rejilla del selector, que sí es espacial.
   const activeEl = $('playerActiveRow');
   activeEl.innerHTML = '';
-  activeEl.classList.toggle('active-row-spread', !sameRow);
-  playerRow.forEach((u, i) => {
-    const card = UI.battleUnitCard(u);
-    if (!sameRow) {
-      const [r, c] = cellsWithUnit[i];
-      card.style.gridRow = String(r + 1);
-      card.style.gridColumn = String(c + 1);
-    }
-    activeEl.appendChild(card);
-  });
+  activeEl.classList.remove('active-row-spread');
+  playerRow.forEach(u => activeEl.appendChild(UI.battleUnitCard(u)));
   const reserveEl = $('playerQueuedRows');
   reserveEl.innerHTML = '';
   unusedAliveGroups(view).forEach(g => {

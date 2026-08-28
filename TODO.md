@@ -870,6 +870,71 @@ Lista inicial (se ampliará según haga falta):
 - Iconos de objetos curativos/revividores de la tienda
 - Icono de habilidad de líder de banda
 
+## Pendiente — ronda de feedback tras el selector de línea por deslizamiento (28/08)
+
+Ocho puntos que el usuario pidió anotar e ir implementando, tras probar el
+selector de línea nuevo y la posición real en el campo:
+
+- [x] **1. Imagen por objeto de equipo**: nuevo `gearIcon(gear, sizePx)` en
+      `ui.js` — mismo patrón que criaturas/escenario, `<img>` apuntando a
+      `assets/gear/<tipo>.png` (un archivo por cada uno de los 18 tipos de
+      `GEAR_SLOTS[slot].types`, el nombre del tipo ya es único en todo el
+      juego) con `onerror` que sustituye por un icono generado por código
+      (el emoji del tipo, ya existente en `data.js`, sobre fondo con el
+      color de su rareza) hasta que se suba el archivo real. Aplicado en
+      doll-slots de la ficha de luchador, selector de equipar, inventario
+      de Equipo, ficha de un objeto y fila de cada slot en la Tienda.
+      Verificado en vivo: cae en el respaldo procedural correctamente al
+      no existir aún el archivo
+- [x] **2. Combate siempre horizontal**: confirmado que era justo lo
+      contrario de lo que quería el usuario — se revierte "posición real
+      en el campo" (27/08): el combate en sí siempre muestra la fila
+      horizontal elijas la línea que elijas; la rejilla del selector de
+      línea (deslizar) sigue siendo espacial, eso no cambia. Verificado
+      en vivo: eligiendo la diagonal, el combate se sigue viendo en fila
+- [x] **3. Carga de ulti en el selector**: cada celda ocupada de la rejilla
+      3×3 del selector ahora muestra `ultTurnsText(unit)` (mismo texto que
+      ya se usa en combate, p.ej. "⚡ 4" o "⚡ ¡LISTA!") debajo del icono.
+      Verificado en vivo
+- [x] **4. Quitado duplicado encima del selector**: `UI.renderClashPreview`
+      ya no rellena `#playerQueuedRows` antes de mostrar el selector (esa
+      información ya la da la propia rejilla) — se deja vacío hasta que
+      `commitGroup` rellena el banquillo real ya dentro del combate.
+      Verificado en vivo: vacío mientras el selector está abierto
+- [x] **5. Líneas usadas tachadas**: al abrir el selector se dibuja un
+      overlay SVG con una raya roja sobre cada línea viva ya usada este
+      ciclo (`alivePlayerGroups(view).filter(g => g.usedThisCycle)`) —
+      la lógica de que vuelvan a estar disponibles solo cuando se han
+      usado TODAS las líneas vivas ya existía (`resolveAvailableGroups`),
+      esto solo añade la señal visual que faltaba. Verificado en vivo:
+      tras usar la columna 1, aparece una raya vertical roja sobre ella
+- [x] **6. Toda ulti golpea al rival**: `mult` subido en las ultis de daño
+      puro para que se note claramente más fuerte que un golpe normal
+      (golpe 2.0→2.2, furia 1.5→2.0, arrasar 1.05→1.5, veneno 1.1→1.5,
+      drenar 1.4→1.8). Nuevo campo `bonusHitMult: 0.85` en las 8 ultis
+      que no son de daño puro (curar, bendición, escudo, grito, debilitar,
+      aturdir, purificar, revivir) — `applyUltBonusHit` en `combat.js` las
+      hace golpear también a un enemigo (el mismo objetivo si ya tenían
+      uno por su efecto, como debilitar/aturdir; si no, uno nuevo), incluso
+      si el efecto propio no tuvo a quién aplicarse (p.ej. revivir sin
+      nadie caído). Ningún turno de ulti se queda ya sin hacer daño.
+      Verificado en vivo
+- [ ] **7. Curarse en el recorrido del mapa**: revisado el código — la
+      curación mid-recorrido YA EXISTE y funciona (`UI.useStageRunItem`,
+      botones de poción/pluma fénix en `UI.renderStageRun` cuando hay daño
+      o algún caído), verificado con una prueba forzando daño simulado:
+      los botones aparecen y curan correctamente. Sin poder reproducir el
+      problema, puede que el usuario se refiera a otra cosa (¿curar sin
+      tener pociones? ¿poder curar desde el Mapa sin entrar en un
+      recorrido?) — pendiente de que el usuario aclare qué falta
+      exactamente
+- [x] **8. Vista previa pre-combate en Formación**: `.stage-run-band` (la
+      fila de tu equipo antes de pulsar "Luchar") pasa de listar los
+      luchadores seguidos a un bucle `r`/`c` que recorre la Formación 3×3
+      real, con huecos vacíos donde no hay nadie colocado (`visibility:
+      hidden` para no romper la forma). Verificado en vivo con una banda
+      en diagonal: la vista previa muestra exactamente "X.. / .X. / ..X"
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

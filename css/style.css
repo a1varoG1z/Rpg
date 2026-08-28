@@ -63,6 +63,13 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 /* ---------- Tarjeta de criatura ---------- */
 .creature-canvas { image-rendering: pixelated; width: 72px; height: 81px; object-fit: contain; display: block; margin: 0 auto; opacity: 1; transition: opacity 0.25s ease; position: relative; z-index: 1; }
 .creature-canvas-loading { opacity: 0; }
+
+.gear-icon { object-fit: contain; display: inline-block; vertical-align: middle; opacity: 1; transition: opacity 0.25s ease; }
+.gear-icon-loading { opacity: 0; }
+.gear-icon-fallback {
+  display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
+  border: 2px solid var(--gold-dim); border-radius: 6px; background: #1f1811; line-height: 1;
+}
 .creature-card {
   position: relative; background: #1f1811; border: 2px solid var(--rc, #888); border-radius: 10px; padding: 8px 6px 10px;
   box-shadow: 0 0 10px var(--rg, transparent); text-align: center;
@@ -143,8 +150,10 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .stage-run-connector { width: 18px; height: 3px; background: var(--gold-dim); opacity: 0.5; }
 .stage-run-connector.cleared { background: var(--green); opacity: 1; }
 .stage-run-preview { display: flex; justify-content: center; gap: 6px; padding: 10px 0; flex-wrap: wrap; }
-.stage-run-band { display: flex; justify-content: center; gap: 8px; padding: 8px 0; flex-wrap: wrap; }
+.stage-run-band { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; }
+.stage-run-band-row { display: flex; justify-content: center; gap: 8px; }
 .stage-run-fighter { width: 44px; text-align: center; position: relative; }
+.stage-run-fighter.empty { visibility: hidden; }
 .stage-run-fighter.fainted { opacity: 0.5; }
 .stage-run-fighter .hp-bar.small { height: 5px; margin-top: 2px; }
 .fainted-icon { position: absolute; top: 0; right: 0; font-size: 0.9rem; }
@@ -246,19 +255,6 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .battle-side { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .battle-vs { text-align: center; font-family: 'Press Start 2P', monospace; color: var(--gold-dim); font-size: 0.75rem; margin: 4px 0; }
 .active-row { display: flex; gap: 10px; justify-content: center; }
-/* Cuando la línea elegida no es una fila recta (columna o diagonal), los
-   luchadores se colocan en el campo según su posición real de la
-   Formación en vez de en fila — como en combate-formacion-3x3.jpg. Cada
-   tarjeta se encoge (ver reglas de abajo) para que las 3 filas de la
-   rejilla quepan en el espacio que antes ocupaba solo una. */
-.active-row.active-row-spread {
-  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, auto);
-  gap: 1px 6px; justify-items: center; width: 100%; max-width: 300px; margin: 0 auto;
-}
-.active-row-spread .battle-unit { width: 62px; }
-.active-row-spread .battle-unit .creature-canvas { width: 44px; height: 49px; }
-.active-row-spread .battle-unit .battle-unit-name { display: none; }
-.active-row-spread .battle-unit .ult-turns { font-size: 0.5rem; }
 .queued-rows { display: flex; flex-direction: column; gap: 3px; opacity: 0.5; }
 .queued-row-mini { display: flex; gap: 4px; justify-content: center; }
 .queued-row-mini .creature-canvas { width: 26px; height: 29px; }
@@ -273,10 +269,10 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 #groupPickerPanel { flex-shrink: 0; text-align: center; padding: 6px 0; }
 #groupPickerPanel.hidden { display: none; }
 .group-picker-title { font-family: 'Press Start 2P', monospace; font-size: 0.65rem; color: var(--gold); margin-bottom: 8px; }
-.group-picker-list { display: flex; flex-direction: column; gap: 4px; align-items: center; touch-action: none; user-select: none; }
+.group-picker-list { position: relative; display: flex; flex-direction: column; gap: 4px; align-items: center; touch-action: none; user-select: none; }
 .picker-row { display: flex; gap: 4px; }
 .picker-cell {
-  width: 52px; height: 58px; border: 2px solid var(--gold-dim); border-radius: 8px; background: var(--panel);
+  position: relative; width: 52px; height: 58px; border: 2px solid var(--gold-dim); border-radius: 8px; background: var(--panel);
   display: flex; align-items: center; justify-content: center; transition: background 60ms, border-color 60ms;
 }
 .picker-cell.empty { border-style: dashed; opacity: 0.5; }
@@ -284,6 +280,9 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .picker-cell .creature-canvas-wrap.fainted { opacity: 0.35; filter: grayscale(1); }
 .picker-cell.selecting { border-color: var(--gold); background: rgba(212,175,55,0.28); }
 .picker-cell.invalid { border-color: #b0392f; background: rgba(176,57,47,0.25); }
+.picker-cell-ult { position: absolute; bottom: 1px; left: 0; right: 0; text-align: center; font-size: 0.48rem; color: #e0bb55; text-shadow: 1px 1px 1px #000; pointer-events: none; }
+.picker-used-overlay { position: absolute; left: 0; top: 0; pointer-events: none; }
+.picker-used-overlay line { stroke: #b0392f; stroke-width: 4; stroke-linecap: round; opacity: 0.85; }
 .battle-unit-name { font-size: 0.6rem; color: var(--cream-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hp-bar { width: 100%; background: #1a1410; border: 1px solid #000; border-radius: 5px; overflow: hidden; }
 .hp-fill { height: 100%; width: 100%; background: linear-gradient(#5fd15f, #2e8b2e); transition: width 0.25s ease-out; }

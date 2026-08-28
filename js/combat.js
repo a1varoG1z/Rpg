@@ -211,6 +211,20 @@ function computeDamage(attacker, target, mult, useWis) {
   return { amount: Math.max(1, Math.round(dmg)), isCrit };
 }
 
+// Las ultis que no son de daño puro (curar, buffs, debilitar, aturdir,
+// purificar, revivir) también deben golpear al rival — ningún turno de
+// ulti debe quedarse sin hacer daño. `existingTarget` reutiliza el mismo
+// objetivo que el efecto propio de la ulti ya eligió (debilitar/aturdir),
+// para que el golpe caiga sobre quien recibió el efecto; el resto elige
+// uno nuevo con pickTarget.
+function applyUltBonusHit(log, unit, enemyRow, skill, existingTarget) {
+  if (!skill.bonusHitMult) return;
+  const target = (existingTarget && existingTarget.alive) ? existingTarget : pickTarget(enemyRow);
+  if (!target) return;
+  const { amount, isCrit } = computeDamage(unit, target, skill.bonusHitMult, false);
+  applyDamage(log, unit, target, amount, isCrit, skill.name);
+}
+
 function tickTimers(unit, log) {
   unit.buffs = unit.buffs.filter(b => --b.turnsLeft > 0);
   unit.debuffs = unit.debuffs.filter(b => --b.turnsLeft > 0);
@@ -272,6 +286,7 @@ function performTurn(log, unit, ownRow, enemyRow) {
       const amount = Math.round(unit.maxHp * skill.pct);
       unit.hp = Math.min(unit.maxHp, unit.hp + amount);
       log.push({ type: 'heal', unitId: unit.id, targetId: unit.id, amount });
+      applyUltBonusHit(log, unit, enemyRow, skill);
       break;
     }
     case 'healRow': {
@@ -280,11 +295,13 @@ function performTurn(log, unit, ownRow, enemyRow) {
         ally.hp = Math.min(ally.maxHp, ally.hp + amount);
         log.push({ type: 'heal', unitId: unit.id, targetId: ally.id, amount });
       });
+      applyUltBonusHit(log, unit, enemyRow, skill);
       break;
     }
     case 'buffSelf': {
       unit.buffs.push({ stat: skill.stat, pct: skill.pct, turnsLeft: skill.turns });
       log.push({ type: 'buff', unitId: unit.id, stat: skill.stat, pct: skill.pct });
+      applyUltBonusHit(log, unit, enemyRow, skill);
       break;
     }
     case 'buffRow': {
@@ -292,6 +309,7 @@ function performTurn(log, unit, ownRow, enemyRow) {
         ally.buffs.push({ stat: skill.stat, pct: skill.pct, turnsLeft: skill.turns });
         log.push({ type: 'buff', unitId: ally.id, stat: skill.stat, pct: skill.pct });
       });
+      applyUltBonusHit(log, unit, enemyRow, skill);
       break;
     }
     case 'debuff': {
@@ -299,6 +317,7 @@ function performTurn(log, unit, ownRow, enemyRow) {
       if (!target) break;
       target.debuffs.push({ stat: skill.stat, pct: skill.pct, turnsLeft: skill.turns });
       log.push({ type: 'debuff', unitId: unit.id, targetId: target.id, stat: skill.stat, pct: skill.pct });
+      applyUltBonusHit(log, unit, enemyRow, skill, target);
       break;
     }
     case 'stun': {
@@ -307,6 +326,7 @@ function performTurn(log, unit, ownRow, enemyRow) {
       const success = Math.random() < skill.chance;
       if (success) target.stunTurns = (target.stunTurns || 0) + skill.turns;
       log.push({ type: 'stunattempt', unitId: unit.id, targetId: target.id, success });
+      applyUltBonusHit(log, unit, enemyRow, skill, target);
       break;
     }
     case 'dot': {
@@ -346,18 +366,22 @@ function performTurn(log, unit, ownRow, enemyRow) {
         ally.stunTurns = 0;
         if (hadSomething) log.push({ type: 'cleanse', unitId: ally.id });
       });
+      applyUltBonusHit(log, unit, enemyRow, skill);
       break;
     }
     case 'revive': {
       // Revive a un aliado caído de su propia fila con parte de su vida
-      // máxima — si no hay ninguno caído, el ulti no hace nada este turno
-      // (igual que debilitar/aturdir cuando ya no queda rival vivo).
+      // máxima — si no hay ninguno caído, no revive a nadie este turno,
+      // pero el golpe extra (bonusHitMult) se aplica igual: un turno de
+      // ulti nunca se queda sin hacer daño.
       const fallen = ownRow.find(u => !u.alive);
-      if (!fallen) break;
-      fallen.alive = true;
-      fallen.hp = Math.round(fallen.maxHp * skill.pct);
-      fallen.buffs = []; fallen.debuffs = []; fallen.dots = []; fallen.stunTurns = 0;
-      log.push({ type: 'revive', unitId: unit.id, targetId: fallen.id, amount: fallen.hp });
+      if (fallen) {
+        fallen.alive = true;
+        fallen.hp = Math.round(fallen.maxHp * skill.pct);
+        fallen.buffs = []; fallen.debuffs = []; fallen.dots = []; fallen.stunTurns = 0;
+        log.push({ type: 'revive', unitId: unit.id, targetId: fallen.id, amount: fallen.hp });
+      }
+      applyUltBonusHit(log, unit, enemyRow, skill);
       break;
     }
   }

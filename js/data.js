@@ -69,19 +69,24 @@ function statVarianceMult(family, statKey) {
 }
 
 const SKILL_TYPES = {
-  golpe: { name: 'Golpe Certero', kind: 'damage', mult: 2.0, target: 'single', desc: 'Un golpe demoledor a un enemigo.' },
-  furia: { name: 'Furia Salvaje', kind: 'damage', mult: 1.5, target: 'single', selfBuff: { stat: 'atk', pct: 0.15, turns: 2 }, desc: 'Golpea con fuerza y se enardece.' },
-  arrasar: { name: 'Arrasar', kind: 'damageRow', mult: 1.05, target: 'row', desc: 'Daño mágico a toda la fila enemiga.' },
-  curar: { name: 'Bendición Sanadora', kind: 'heal', pct: 0.3, target: 'self', desc: 'Recupera parte de su propia vida.' },
-  bendicion: { name: 'Aura Vital', kind: 'healRow', pct: 0.16, target: 'row-ally', desc: 'Cura a toda su fila.' },
-  escudo: { name: 'Muro de Escamas', kind: 'buffSelf', stat: 'def', pct: 0.35, turns: 3, desc: 'Refuerza su propia defensa.' },
-  grito: { name: 'Grito de Guerra', kind: 'buffRow', stat: 'atk', pct: 0.2, turns: 3, desc: 'Aumenta el ataque de su fila.' },
-  debilitar: { name: 'Marca Débil', kind: 'debuff', stat: 'def', pct: 0.25, turns: 3, target: 'single', desc: 'Reduce la defensa de un enemigo.' },
-  aturdir: { name: 'Onda de Trueno', kind: 'stun', turns: 1, chance: 0.65, target: 'single', desc: 'Puede aturdir a un enemigo.' },
-  veneno: { name: 'Mordisco Venenoso', kind: 'dot', mult: 1.1, dotPct: 0.07, dotTurns: 3, target: 'single', desc: 'Golpea a un enemigo y lo envenena: sigue perdiendo vida 3 turnos, ignorando su defensa.' },
-  drenar: { name: 'Golpe Vampírico', kind: 'drain', mult: 1.4, drainPct: 0.5, target: 'single', desc: 'Golpea a un enemigo y recupera la mitad del daño hecho como vida propia.' },
-  purificar: { name: 'Aura Purificadora', kind: 'cleanse', target: 'row-ally', desc: 'Elimina los debuffs, el veneno y el aturdimiento de toda su fila.' },
-  revivir: { name: 'Milagro de Vida', kind: 'revive', pct: 0.4, target: 'row-ally', desc: 'Revive a un aliado caído de su fila con parte de su vida máxima.' },
+  golpe: { name: 'Golpe Certero', kind: 'damage', mult: 2.2, target: 'single', desc: 'Un golpe demoledor a un enemigo, mucho más fuerte que un golpe normal.' },
+  furia: { name: 'Furia Salvaje', kind: 'damage', mult: 2.0, target: 'single', selfBuff: { stat: 'atk', pct: 0.15, turns: 2 }, desc: 'Golpea con mucha fuerza y se enardece.' },
+  arrasar: { name: 'Arrasar', kind: 'damageRow', mult: 1.5, target: 'row', desc: 'Daño mágico considerable a toda la fila enemiga.' },
+  // El resto de ultis (curar, defensivas, de estado...) no hacían daño al
+  // rival, así que un turno de ulti podía no aportar nada de daño — ahora
+  // TODAS golpean también a un enemigo (bonusHitMult), más flojo que un
+  // ulti de daño puro pero cercano a un golpe normal, para que ningún
+  // turno se quede sin hacer daño.
+  curar: { name: 'Bendición Sanadora', kind: 'heal', pct: 0.3, target: 'self', bonusHitMult: 0.85, desc: 'Recupera parte de su propia vida y golpea a un enemigo.' },
+  bendicion: { name: 'Aura Vital', kind: 'healRow', pct: 0.16, target: 'row-ally', bonusHitMult: 0.85, desc: 'Cura a toda su fila y golpea a un enemigo.' },
+  escudo: { name: 'Muro de Escamas', kind: 'buffSelf', stat: 'def', pct: 0.35, turns: 3, bonusHitMult: 0.85, desc: 'Refuerza su propia defensa y golpea a un enemigo.' },
+  grito: { name: 'Grito de Guerra', kind: 'buffRow', stat: 'atk', pct: 0.2, turns: 3, bonusHitMult: 0.85, desc: 'Aumenta el ataque de su fila y golpea a un enemigo.' },
+  debilitar: { name: 'Marca Débil', kind: 'debuff', stat: 'def', pct: 0.25, turns: 3, target: 'single', bonusHitMult: 0.85, desc: 'Reduce la defensa de un enemigo y lo golpea.' },
+  aturdir: { name: 'Onda de Trueno', kind: 'stun', turns: 1, chance: 0.65, target: 'single', bonusHitMult: 0.85, desc: 'Puede aturdir a un enemigo y siempre lo golpea.' },
+  veneno: { name: 'Mordisco Venenoso', kind: 'dot', mult: 1.5, dotPct: 0.07, dotTurns: 3, target: 'single', desc: 'Golpea con fuerza a un enemigo y lo envenena: sigue perdiendo vida 3 turnos, ignorando su defensa.' },
+  drenar: { name: 'Golpe Vampírico', kind: 'drain', mult: 1.8, drainPct: 0.5, target: 'single', desc: 'Golpea con fuerza a un enemigo y recupera la mitad del daño hecho como vida propia.' },
+  purificar: { name: 'Aura Purificadora', kind: 'cleanse', target: 'row-ally', bonusHitMult: 0.85, desc: 'Elimina los debuffs, el veneno y el aturdimiento de toda su fila, y golpea a un enemigo.' },
+  revivir: { name: 'Milagro de Vida', kind: 'revive', pct: 0.4, target: 'row-ally', bonusHitMult: 0.85, desc: 'Revive a un aliado caído de su fila con parte de su vida máxima, y golpea a un enemigo.' },
 };
 
 // Habilidad de líder de banda: una bonificación pasiva para TODA la banda
