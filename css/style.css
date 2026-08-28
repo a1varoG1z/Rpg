@@ -72,7 +72,7 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 }
 .creature-card {
   position: relative; background: #1f1811; border: 2px solid var(--rc, #888); border-radius: 10px; padding: 8px 6px 10px;
-  box-shadow: 0 0 10px var(--rg, transparent); text-align: center;
+  box-shadow: 0 0 10px var(--rg, transparent); text-align: center; min-width: 0;
 }
 .creature-canvas-wrap { display: flex; justify-content: center; position: relative; }
 .creature-canvas-wrap::before {
@@ -87,7 +87,7 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
   position: absolute; top: -7px; left: 50%; transform: translateX(-50%); background: linear-gradient(#e0512f, var(--red-dark));
   color: #fff; font-size: 0.56rem; font-weight: bold; padding: 2px 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 2; white-space: nowrap;
 }
-.creature-name { font-size: 0.72rem; font-weight: bold; margin-top: 4px; line-height: 1.2; min-height: 1.8em; }
+.creature-name { font-size: 0.72rem; font-weight: bold; margin-top: 4px; line-height: 1.2; min-height: 1.8em; overflow-wrap: break-word; }
 .creature-level { font-size: 0.68rem; color: var(--cream-dim); }
 .sef-bar { height: 5px; background: #140d08; border-radius: 3px; overflow: hidden; margin-top: 5px; }
 .sef-bar.big { height: 10px; }
@@ -106,7 +106,7 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 @keyframes legendaryPulse { 0%, 100% { box-shadow: 0 0 14px var(--rg, transparent); } 50% { box-shadow: 0 0 30px var(--rg, transparent); } }
 .creature-card.selected { outline: 3px solid var(--green); outline-offset: 1px; box-shadow: 0 0 12px rgba(76,175,80,0.7); }
 
-.creature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 12px 16px; }
+.creature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 12px 16px; }
 
 .pokedex-box { max-width: 420px; }
 .pokedex-grid { padding: 0; margin-top: 10px; }
@@ -127,7 +127,7 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .loc-card.locked { opacity: 0.5; }
 .locked-tag { font-size: 0.78rem; color: #d08b3a; text-align: center; padding: 6px 0; }
 
-.stage-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 12px; }
+.stage-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 0 12px; }
 .stage-btn {
   aspect-ratio: 1; border-radius: 10px; border: 2px solid var(--gold-dim); background: #1f1811; color: var(--cream);
   font-family: 'Press Start 2P', monospace; font-size: 0.9rem; position: relative;
@@ -181,7 +181,7 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .leader-status-bar { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: #1f1811; border: 1px solid var(--gold-dim); font-size: 0.78rem; color: var(--cream-dim); text-align: center; line-height: 1.5; }
 .leader-status-bar.active { border-color: var(--gold); color: var(--cream); box-shadow: 0 0 10px rgba(212,175,55,0.35); }
 
-.picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 50vh; overflow-y: auto; margin-top: 8px; }
+.picker-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-height: 50vh; overflow-y: auto; margin-top: 8px; }
 
 /* ---------- Tienda ---------- */
 .shop-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px dashed #3a2c17; }
@@ -274,7 +274,7 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 @keyframes evolveNewPop { 0% { transform: scale(0.4); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
 
 /* ---------- Inventario / equipo ---------- */
-.item-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 12px; }
+.item-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 0 12px; }
 .item-cell { aspect-ratio: 1; border: 2px solid #888; border-radius: 10px; background: #1f1811; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; position: relative; overflow: hidden; }
 .reveal-cell-pop { opacity: 0; animation: revealPop 0.4s ease-out forwards; }
 .item-icon { font-size: 1.6rem; }

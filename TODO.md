@@ -1047,6 +1047,27 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       debajo de la cabecera (retrato + nombre/rareza/nivel), antes que el
       panel "🧪 Homúnculos" — antes iba después de Homúnculos, Estadísticas
       y Ulti
+- [x] **Fix: rejillas de selección de luchador desbordaban el modal**
+      (28/08): captura de pantalla del usuario mostrando el panel
+      "Sustituir por" (dentro de la ficha de un luchador colocado en la
+      Formación) con la 3ª columna de cada fila cortada por el borde del
+      modal — "está descuadrado, no cabe bien". Causa: `.picker-grid` (y
+      `.creature-grid`, `.stage-grid`, `.item-grid`, que comparten el mismo
+      patrón) usaban `grid-template-columns: repeat(N, 1fr)` sin
+      `minmax(0, ...)` — con nombres largos de luchador (p.ej. "Titán de
+      las Corrientes", "Señor del Maelström") el ancho mínimo de contenido
+      de una columna podía superar el ancho disponible, y sin un límite de
+      0 la rejilla entera crecía más allá del modal en vez de encogerse,
+      desbordando visualmente por la derecha (el modal solo recorta
+      overflow vertical, no horizontal). Arreglado: las 4 rejillas ahora
+      usan `repeat(N, minmax(0, 1fr))`, más `min-width: 0` en
+      `.creature-card` y `overflow-wrap: break-word` en `.creature-name`
+      como refuerzo para que una palabra larga se ajuste dentro de la
+      tarjeta en vez de forzar su ancho. Verificado con Playwright a 360px
+      de ancho de viewport (Android estrecho típico) con los mismos
+      luchadores del pantallazo (Titán de las Corrientes, Señor del
+      Maelström) llenando las 5 tarjetas candidatas del panel: ninguna
+      sobresale del borde del modal
 
 ## Notas
 
