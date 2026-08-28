@@ -367,8 +367,6 @@ addFamily('thunderbird', 1, 'rayo', 'explorador', 'furia', ['Cría de Thunderbir
 addFamily('selkie', 1, 'agua', 'guru', 'purificar', ['Cría de Selkie', 'Selkie de las Mareas', 'Selkie Guardiana de su Piel'], ['Su piel de foca guarda toda su magia — y todo su secreto.', 'Ha aprendido a moverse entre ambas formas sin perder ni un ápice de su don.', 'Nadie que le arrebate su piel ha logrado quedársela para siempre.'], true);
 
 addFamily('babayaga', 2, 'tierra', 'brujo', 'debilitar', ['Aprendiz de Baba Yaga', 'Baba Yaga Errante', 'Baba Yaga, Señora del Bosque Negro'], ['Vive en una choza que se mueve sobre patas de gallina, siempre un paso por delante.', 'Su mortero vuela cada vez más rápido entre los árboles del bosque.', 'Ningún viajero perdido en el bosque negro escapa a su maldición.'], true);
-addFamily('tengu', 2, 'viento', 'explorador', 'furia', ['Tengu Aprendiz', 'Tengu Espadachín', 'Gran Tengu de las Montañas'], ['Domina el viento y la espada con la misma facilidad con la que respira.', 'Su corte ya es tan rápido como la ráfaga que lo acompaña.', 'Ningún samurái de Texel se atreve a desafiarlo en las cumbres que vigila.'], true);
-addFamily('chupacabra', 2, 'tierra', 'picaro', 'drenar', ['Cría de Chupacabra', 'Chupacabra Nocturno', 'Chupacabra, Terror del Ganado'], ['Ataca de noche y desaparece antes de que nadie pueda verlo bien.', 'Cada mordisco lo deja más fuerte y a su presa más débil.', 'Ningún rebaño de Texel está a salvo cuando cae la noche y él anda cerca.'], true);
 
 
 // ### Enemigos / mobs normales (14.3)
@@ -380,7 +378,7 @@ addMobFamily('trasgo', 1, 'viento', 'picaro', 'aturdir', ['Trasgo Menor', 'Trasg
 addMobFamily('demonio', 2, 'fuego', 'brujo', 'debilitar', ['Demonio Menor', 'Demonio de las Llamas', 'Archidemonio del Abismo'], 'Cada trato que ofrece esconde una trampa que nadie ve venir.');
 addMobFamily('esqueleto', 1, 'tierra', 'campeon', 'golpe', ['Esqueleto Andante', 'Esqueleto Guerrero', 'Comandante de Huesos'], 'Ni la muerte pudo con las ganas de pelear de este guerrero.');
 addMobFamily('draugr', 2, 'agua', 'campeon', 'escudo', ['Draugr Recién Alzado', 'Draugr Vikingo', 'Rey Draugr del Túmulo'], 'Se niega a abandonar el tesoro que custodió en vida.');
-addMobFamily('chupacabras', 1, 'viento', 'picaro', 'furia', ['Chupacabras Joven', 'Chupacabras Nocturno', 'Terror de los Rebaños'], 'Nadie lo ha visto de cerca... y quien lo hizo no vivió para describirlo.');
+addMobFamily('chupacabra', 1, 'viento', 'picaro', 'furia', ['Chupacabras Joven', 'Chupacabras Nocturno', 'Terror de los Rebaños'], 'Nadie lo ha visto de cerca... y quien lo hizo no vivió para describirlo.');
 addMobFamily('kitsune', 2, 'fuego', 'brujo', 'debilitar', ['Kitsune de Una Cola', 'Kitsune de Tres Colas', 'Kitsune de Nueve Colas'], 'Cuantas más colas gana, más poderosa (y más traviesa) se vuelve su magia.');
 addMobFamily('momia', 1, 'tierra', 'brujo', 'debilitar', ['Momia Menor', 'Momia Vendada', 'Faraón Momificado'], 'Duerme durante siglos, hasta que alguien profana su tumba.');
 addMobFamily('orco', 1, 'tierra', 'campeon', 'furia', ['Orco Recluta', 'Orco Guerrero', 'Jefe de Guerra Orco'], 'Vive para la batalla, y muere feliz si es peleando.');
