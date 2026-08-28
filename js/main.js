@@ -20,6 +20,7 @@
   $('settingsBtn').addEventListener('click', () => {
     $('infiniteEnergyToggle').checked = state.settings.infiniteEnergy;
     $('showMedallionToggle').checked = state.settings.showMedallion;
+    $('enableTorreToggle').checked = state.settings.enableTorreBatalla;
     $('settingsModal').classList.remove('hidden');
   });
   $('settingsModalClose').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
@@ -50,6 +51,12 @@
     saveGame(state);
     document.body.classList.toggle('hide-medallion', !state.settings.showMedallion);
     UI.showToast(state.settings.showMedallion ? '⚪ Medallón activado' : '⚪ Medallón desactivado');
+  });
+  $('enableTorreToggle').addEventListener('change', (e) => {
+    state.settings.enableTorreBatalla = e.target.checked;
+    saveGame(state);
+    if (activeScreen === 'torre') UI.renderTorre(state);
+    UI.showToast(state.settings.enableTorreBatalla ? '🗼 Torre Batalla activada (modo de prueba)' : '🗼 Torre Batalla desactivada');
   });
   $('cheatGemasBtn').addEventListener('click', () => {
     state.currencies.gemas += 1000;
@@ -98,7 +105,7 @@
       UI.renderStageRun(state);
     } else if (run) {
       window.__stageRun = null;
-      UI.openZoneStages(state, run.zoneIdx);
+      if (run.isTorre) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
     } else {
       UI.renderScreen(activeScreen, state);
     }

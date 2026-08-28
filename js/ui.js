@@ -240,6 +240,19 @@ UI.openPokedex = function (state) {
   const grid = el('div', 'creature-grid pokedex-grid');
   sorted.forEach(def => grid.appendChild(pokedexCard(def, discovered.has(def.id))));
   body.appendChild(grid);
+
+  // Mobs y jefes solo se consiguen ganando su nivel en la Torre Batalla
+  // (ver TORRE_LEVELS en data.js) — se listan aparte porque son un sistema
+  // de desbloqueo totalmente distinto al de invocación, no porque cuenten
+  // para el mismo porcentaje de arriba.
+  const torreSorted = [...MOBS, ...BOSSES].sort((a, b) => a.family.localeCompare(b.family) || rarityIndex(a.rarity) - rarityIndex(b.rarity));
+  const torreDiscoveredCount = torreSorted.filter(def => discovered.has(def.id)).length;
+  body.appendChild(el('h3', null, `🗼 Torre Batalla ${torreDiscoveredCount}/${torreSorted.length}`));
+  body.appendChild(el('p', 'settings-info', 'Mobs y jefes del mapa, jugables al derrotarlos en la Torre Batalla (ver la pestaña Torre).'));
+  const torreGrid = el('div', 'creature-grid pokedex-grid');
+  torreSorted.forEach(def => torreGrid.appendChild(pokedexCard(def, discovered.has(def.id))));
+  body.appendChild(torreGrid);
+
   $('pokedexModal').classList.remove('hidden');
 };
 
@@ -505,9 +518,20 @@ UI.openGuide = function () {
     Ataque y Agilidad). Cada pieza tiene su propia rareza (igual escalera que los luchadores) y se
     puede mejorar con Texel para subir su bonificación un poco más en cada nivel.</p>`));
 
+  body.appendChild(guideSection('🗼 Torre Batalla', `
+    <p class="settings-info">Modo endgame: se desbloquea al completar el mapa entero (derrotar al
+    jefe de las ${ZONES.length} zonas), o antes desde Ajustes con el modo de prueba. Una escalera de
+    66 niveles: primero uno por cada familia de mob, después uno por cada jefe del mapa, del más
+    sencillo al más difícil.</p>
+    <p class="settings-info">Cada nivel enfrenta siempre al mismo rival (su forma más fuerte, o el
+    jefe en sí) repetido varias veces. Ganar da 1 copia del tier más bajo de esa familia (o del
+    jefe) para tu Colección — jugable igual que cualquier otro luchador: se puede colocar en la
+    Formación, equipar y evolucionar. Los niveles son rejugables para conseguir más copias, y se
+    desbloquean en orden, superando siempre el anterior.</p>`));
+
   body.appendChild(guideSection('🎯 Progreso', `
     <p class="settings-info">📖 <b>Pokédex</b> (en Colección): registro de todas las formas
-    jugables que has conseguido alguna vez.<br>
+    jugables que has conseguido alguna vez, y de los mobs/jefes conseguidos en la Torre Batalla.<br>
     👹 <b>Jefes</b> (en Objetivos → Mapa): igual que la Pokédex, pero de los jefes derrotados.<br>
     🎯 <b>Objetivos</b>: resumen general de tu progreso — zonas, etapas, Pokédex, jefes, banda,
     equipo y más.</p>`));
@@ -538,6 +562,7 @@ UI.renderScreen = function (name, state) {
   else if (name === 'arena') UI.renderArena(state);
   else if (name === 'equipo') UI.renderEquipo(state);
   else if (name === 'tienda') UI.renderTienda(state);
+  else if (name === 'torre') UI.renderTorre(state);
 };
 
 // ---------- Mapa ----------
@@ -619,13 +644,18 @@ UI.renderStageRun = function (state) {
   wrap.classList.remove('hidden');
   wrap.innerHTML = '';
   const run = window.__stageRun;
-  const zone = ZONES[run.zoneIdx];
-  wrap.style.background = zoneBackgroundStyle(zone);
+  const zone = run.isTorre ? null : ZONES[run.zoneIdx];
+  wrap.style.background = run.isTorre ? '' : zoneBackgroundStyle(zone);
 
   const back = el('button', 'mini-btn', '« Retirarse');
-  back.addEventListener('click', () => { window.__stageRun = null; UI.openZoneStages(state, run.zoneIdx); });
+  back.addEventListener('click', () => {
+    window.__stageRun = null;
+    if (run.isTorre) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
+  });
   wrap.appendChild(back);
-  wrap.appendChild(el('h3', null, zone.emoji + ' ' + zone.name + ' · ' + (run.isBoss ? 'Jefe de zona' : 'Etapa ' + (run.stageIdx + 1))));
+  wrap.appendChild(el('h3', null, run.isTorre
+    ? '🗼 Torre — ' + torreLevelLabel(TORRE_LEVELS[run.torreIdx])
+    : zone.emoji + ' ' + zone.name + ' · ' + (run.isBoss ? 'Jefe de zona' : 'Etapa ' + (run.stageIdx + 1))));
 
   const path = el('div', 'stage-run-path');
   run.encounters.forEach((enemyRow, i) => {
@@ -750,8 +780,10 @@ UI.fightStageRunNode = function (state) {
     if (run.chargeMap[u.sourceUid] !== undefined) u.ultCharge = run.chargeMap[u.sourceUid];
   }));
   UI.openBattle(state, playerCombos, [enemyRow], {
-    title: ZONES[run.zoneIdx].name + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length,
-    zone: ZONES[run.zoneIdx],
+    title: run.isTorre
+      ? '🗼 Torre · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length
+      : ZONES[run.zoneIdx].name + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length,
+    zone: run.isTorre ? null : ZONES[run.zoneIdx],
     onEnd: (result, view) => {
       if (view) {
         view.playerGroups.forEach(g => g.row.forEach(u => {
@@ -773,6 +805,20 @@ UI.fightStageRunNode = function (state) {
         saveGame(state);
         return { intermediate: true };
       }
+      if (run.isTorre) {
+        const level = TORRE_LEVELS[run.torreIdx];
+        const rewards = torreRewards(run.torreIdx);
+        state.currencies.texel += rewards.texel;
+        const leveled = [];
+        state.band.flat().filter(Boolean).forEach(uid => {
+          const entry = rosterEntry(state, uid);
+          if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
+        });
+        const capture = applySummonResult(state, level.rewardDefId);
+        recordTorreClear(state, run.torreIdx);
+        saveGame(state);
+        return { rewards, leveled, capturedCopy: fighterDef(level.rewardDefId), capturedIsNew: capture.outcome === 'nuevo' };
+      }
       const rewards = stageRewards(run.zoneIdx, run.stageIdx, run.isBoss);
       state.currencies.texel += rewards.texel;
       if (rewards.drops.pixite) state.currencies.pixite += rewards.drops.pixite;
@@ -789,6 +835,74 @@ UI.fightStageRunNode = function (state) {
       return { rewards, leveled, unlockedZone };
     },
   });
+};
+
+// ---------- Torre Batalla ----------
+// Modo endgame (ver TORRE_LEVELS en data.js): reutiliza el mismo recorrido
+// nodo-a-nodo que una etapa normal del Mapa (UI.renderStageRun/
+// UI.fightStageRunNode, con ramas `run.isTorre` para el título/fondo/
+// recompensa) en vez de duplicar esa pantalla entera.
+function torreLevelLabel(level) {
+  return (level.kind === 'mob' ? 'Mob ' : 'Jefe ') + (level.sectionIdx + 1) + ': ' + fighterDef(level.fightDefId).name;
+}
+UI.renderTorre = function (state) {
+  $('stageRunView').classList.add('hidden');
+  const wrap = $('torreBody');
+  wrap.innerHTML = '';
+  if (!torreUnlocked(state)) {
+    const cleared = ZONES.filter(z => highestClearedStage(state, z.id) >= STAGES_PER_ZONE - 1).length;
+    wrap.appendChild(el('div', 'panel', `
+      <h3>🔒 Torre Batalla bloqueada</h3>
+      <p class="settings-info">Se desbloquea al completar el mapa entero: derrota al jefe de las
+      ${ZONES.length} zonas. Progreso actual: ${cleared}/${ZONES.length} jefes de zona derrotados.</p>
+      <p class="settings-info">También puedes activarla ya para probarla desde Ajustes → "Torre Batalla (modo de prueba)".</p>`));
+    return;
+  }
+  wrap.appendChild(el('p', 'settings-info', `Un nivel por cada mob y cada jefe del juego. Enfréntate
+    a su forma más fuerte repetida varias veces — ganar da 1 copia del tier más bajo de esa familia
+    (o del jefe) para tu Colección, jugable igual que cualquier otro luchador. Los niveles son
+    rejugables para conseguir más copias.`));
+
+  const renderSection = (title, kind) => {
+    wrap.appendChild(el('h3', null, title));
+    const list = el('div', 'torre-list');
+    TORRE_LEVELS.forEach((level, idx) => {
+      if (level.kind !== kind) return;
+      const unlocked = isTorreLevelUnlocked(state, idx);
+      const clears = torreClearCount(state, level);
+      const row = el('div', 'torre-row' + (unlocked ? '' : ' locked'));
+      row.appendChild(creatureCanvas(level.fightDefId, 40));
+      const info = el('div', 'torre-row-info');
+      info.appendChild(el('div', 'torre-row-name', torreLevelLabel(level)));
+      info.appendChild(el('div', 'torre-row-sub', unlocked
+        ? `Nv. ${level.enemyLevel} · ×${level.enemyCount}${clears > 0 ? ' · superado ' + clears + 'x' : ''}`
+        : '🔒 Supera el nivel anterior'));
+      row.appendChild(info);
+      if (unlocked) row.addEventListener('click', () => UI.startTorreLevel(state, idx));
+      list.appendChild(row);
+    });
+    wrap.appendChild(list);
+  };
+  renderSection('👹 Mobs', 'mob');
+  renderSection('👑 Jefes', 'boss');
+};
+
+UI.startTorreLevel = function (state, idx) {
+  if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
+  if (!isTorreLevelUnlocked(state, idx)) return;
+  if (!state.settings.infiniteEnergy) {
+    if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+    state.currencies.energy -= STAGE_ENERGY_COST;
+    saveGame(state);
+    UI.renderTopbar(state);
+  }
+  const level = TORRE_LEVELS[idx];
+  const encounters = buildTorreEncounters(level);
+  window.__stageRun = {
+    isTorre: true, torreIdx: idx, isBoss: level.kind === 'boss',
+    encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {},
+  };
+  UI.renderStageRun(state);
 };
 
 // ---------- Banda ----------
@@ -1936,6 +2050,7 @@ UI.endBattle = function (view, result) {
     }
     if (outcome && outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
     if (outcome && outcome.unlockedZone) html += `<p class="settings-info">🗺️ ¡Nueva zona desbloqueada: ${outcome.unlockedZone.name}!</p>`;
+    if (outcome && outcome.capturedCopy) html += `<div class="stat-row"><span>${outcome.capturedIsNew ? '🆕' : '🔁'} ${outcome.capturedCopy.name}</span><span>+1 copia</span></div>`;
     body.innerHTML = html;
   } else {
     body.innerHTML = `<h3>💀 Derrota</h3><p class="settings-info">Tu banda ha caído. Mejora tu equipo y vuelve a intentarlo.</p>`;

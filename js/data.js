@@ -680,3 +680,72 @@ const BAND_LINES = [
 function bandLineInfo(id) { return BAND_LINES.find(l => l.id === id) || BAND_LINES[0]; }
 const XP_LEVEL_CAP = 40;
 function fighterXpToNext(level) { return Math.floor(20 * Math.pow(level, 1.5)); }
+
+// ---------- Torre Batalla ----------
+// Modo endgame: se desbloquea al completar el mapa entero (ver
+// mapFullyCleared en state.js), o antes con el ajuste de prueba de
+// Ajustes. Una única escalera de 66 niveles: primero un nivel por cada
+// una de las 33 familias de MOBS (del más sencillo al más difícil según
+// en qué zona aparecen por primera vez), después un nivel por cada uno de
+// los 33 BOSSES (mismo criterio) — el último es el jefe de la última zona
+// del mapa, como pidió el usuario. Cada nivel enfrenta SIEMPRE al mismo
+// rival repetido varias veces: la forma MÁS FUERTE de la familia de mob
+// (un reto real), o el jefe en sí (que no tiene tiers). Ganar da SIEMPRE 1
+// copia del tier MÁS BAJO de esa familia (o del propio jefe) — así el
+// jugador la sube él mismo por el camino normal de Fusión/Evolución en
+// vez de recibirla ya hecha; los niveles son rejugables para conseguir
+// más copias (útil como material de Fusión/Superfusión).
+function buildTorreLevels() {
+  const mobFamilies = {};
+  MOBS.forEach(m => { (mobFamilies[m.family] = mobFamilies[m.family] || []).push(m); });
+  // Zona de origen = la primera (más temprana) cuyo pool de relleno incluye
+  // alguna de las 3 formas de esa familia — así la escalera sigue el mismo
+  // orden de dificultad que ya tiene calibrado el propio mapa.
+  const originZoneForDefIds = (defIds) => {
+    let best = ZONES.length - 1;
+    ZONES.forEach((z, zi) => { if (defIds.includes(z.pool[0]) || defIds.includes(z.pool[1])) best = Math.min(best, zi); });
+    return best;
+  };
+  const mobLevels = Object.keys(mobFamilies).map(family => {
+    const forms = mobFamilies[family].slice().sort((a, b) => rarityIndex(a.rarity) - rarityIndex(b.rarity));
+    return {
+      kind: 'mob', family, key: 'mob_' + family,
+      fightDefId: forms[forms.length - 1].id, rewardDefId: forms[0].id,
+      originZoneIdx: originZoneForDefIds(forms.map(f => f.id)),
+    };
+  }).sort((a, b) => a.originZoneIdx - b.originZoneIdx || a.family.localeCompare(b.family));
+
+  const bossLevels = BOSSES.map(b => {
+    const zi = ZONES.findIndex(z => z.pool[2] === b.id);
+    return { kind: 'boss', family: b.family, key: b.id, fightDefId: b.id, rewardDefId: b.id, originZoneIdx: zi < 0 ? ZONES.length - 1 : zi };
+  }).sort((a, b) => a.originZoneIdx - b.originZoneIdx);
+
+  [mobLevels, bossLevels].forEach(section => {
+    section.forEach((level, sectionIdx) => {
+      level.sectionIdx = sectionIdx;
+      // Potencia del rival: se reutiliza el mismo tramo de dificultad que
+      // ya tiene calibrado su zona de origen (el de su última etapa, la
+      // del jefe), con el mismo tope que el resto del juego.
+      const globalStageIdx = level.originZoneIdx * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
+      level.enemyLevel = Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalStageIdx));
+      // Nº de rivales: crece cada 8 niveles de su propia escalera. Los
+      // mobs llegan en filas de hasta 3 simultáneos, como una oleada
+      // normal; los jefes SIEMPRE en solitario, en oleadas sucesivas — un
+      // jefe nunca debe recibir compañía (ver makeBossUnit en combat.js,
+      // ya calibrado para pelear 1 contra hasta 3 sin ayuda).
+      const tier = Math.floor(sectionIdx / 8);
+      level.enemyCount = level.kind === 'mob' ? 3 * (tier + 1) : (tier + 1);
+    });
+  });
+
+  const all = [...mobLevels, ...bossLevels];
+  all.forEach((level, i) => { level.globalIdx = i; });
+  return all;
+}
+const TORRE_LEVELS = buildTorreLevels();
+function torreRewards(idx) {
+  const level = TORRE_LEVELS[idx];
+  const texel = Math.round((40 + level.globalIdx * 6) * (level.kind === 'boss' ? 2 : 1));
+  const fighterXp = Math.round((25 + level.globalIdx * 5) * (level.kind === 'boss' ? 1.8 : 1));
+  return { texel, fighterXp };
+}

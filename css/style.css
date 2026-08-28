@@ -189,6 +189,18 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .shop-row-icon { font-size: 1.8rem; width: 40px; text-align: center; flex-shrink: 0; }
 .shop-row-info { flex: 1; }
 .shop-row-title { font-weight: bold; font-size: 0.85rem; margin-bottom: 4px; }
+
+.torre-list { margin: 0 12px 16px; }
+.torre-row {
+  display: flex; gap: 10px; align-items: center; padding: 8px 10px; margin-bottom: 6px;
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px;
+}
+.torre-row:not(.locked) { cursor: pointer; }
+.torre-row.locked { opacity: 0.5; }
+.torre-row .creature-canvas { width: 40px; height: 45px; }
+.torre-row-info { flex: 1; min-width: 0; }
+.torre-row-name { font-weight: bold; font-size: 0.78rem; overflow-wrap: break-word; }
+.torre-row-sub { font-size: 0.66rem; color: var(--cream-dim); margin-top: 2px; }
 .shop-buy-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .shop-buy-btn {
   flex: 1; min-width: 56px; background: #1f1811; border: 2px solid var(--gold-dim); border-radius: 8px; color: var(--cream);
@@ -281,6 +293,17 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .item-plus { position: absolute; bottom: 2px; right: 5px; font-size: 0.62rem; color: var(--gold); font-weight: bold; }
 .equipped-dot { position: absolute; top: 4px; left: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
 .item-tier-icon { position: absolute; top: 3px; right: 5px; font-size: 0.6rem; }
+
+/* ---------- Recorrido de etapa / nivel de Torre ---------- */
+/* Vive fuera de cualquier .screen (ver index.html) para poder abrirse
+   igual desde el Mapa que desde la Torre Batalla; por eso necesita su
+   propio position:fixed en vez de heredar el de .screen.active. z-index
+   por debajo de .overlay (80) porque la Batalla se abre POR ENCIMA de
+   este recorrido, nunca al revés. */
+#stageRunView:not(.hidden) {
+  position: fixed; inset: 0; background: var(--bg); z-index: 75; overflow-y: auto;
+  -webkit-overflow-scrolling: touch; padding: calc(var(--safe-top) + 6px) 10px calc(var(--safe-bottom) + 14px);
+}
 
 /* ---------- Batalla ---------- */
 .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 80; display: flex; flex-direction: column; padding: calc(var(--safe-top) + 6px) 10px calc(var(--safe-bottom) + 10px); }

@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260828e">
+<link rel="stylesheet" href="css/style.css?v=20260828g">
 </head>
 <body>
 <div id="app">
@@ -35,7 +35,6 @@
       <h2 class="screen-title">Mapa</h2>
       <div id="zoneList"></div>
       <div id="stageList" class="hidden"></div>
-      <div id="stageRunView" class="hidden"></div>
     </section>
 
     <section id="screen-banda" class="screen">
@@ -93,6 +92,11 @@
       </div>
     </section>
 
+    <section id="screen-torre" class="screen">
+      <h2 class="screen-title">Torre Batalla</h2>
+      <div id="torreBody"></div>
+    </section>
+
   </main>
 
   <nav id="bottomnav">
@@ -102,8 +106,14 @@
     <button class="nav-btn" data-screen="arena"><span class="nav-icon">⚔️</span><span>Arena</span></button>
     <button class="nav-btn" data-screen="equipo"><span class="nav-icon">🎒</span><span>Equipo</span></button>
     <button class="nav-btn" data-screen="tienda"><span class="nav-icon">🛒</span><span>Tienda</span></button>
+    <button class="nav-btn" data-screen="torre"><span class="nav-icon">🗼</span><span>Torre</span></button>
   </nav>
 </div>
+
+<!-- Recorrido de etapa (Mapa) / nivel de Torre Batalla — vive fuera de
+     cualquier .screen porque se puede empezar desde el Mapa o desde la
+     Torre por igual, y cubre toda la pantalla mientras dura. -->
+<div id="stageRunView" class="hidden"></div>
 
 <!-- Batalla -->
 <div id="battleOverlay" class="overlay hidden">
@@ -220,6 +230,11 @@
       <input type="checkbox" id="showMedallionToggle">
     </label>
     <p class="settings-info">Círculo claro detrás de cada criatura en Banda y Arena para que se vea bien sobre el fondo oscuro.</p>
+    <label class="settings-toggle-row">
+      <span>🗼 Torre Batalla (modo de prueba)</span>
+      <input type="checkbox" id="enableTorreToggle">
+    </label>
+    <p class="settings-info">La Torre Batalla se desbloquea normalmente al completar el mapa entero. Actívalo aquí para probarla en cualquier momento, sin tener que terminarte el mapa antes.</p>
     <h3>🎁 Trucos</h3>
     <p class="settings-info">Añade recursos para probar el juego sin límites.</p>
     <button class="primary-btn" id="cheatGemasBtn">+1000 💎 Gemas</button>
@@ -237,11 +252,11 @@
 
 <div id="toastContainer"></div>
 
-<script src="js/data.js?v=20260828e"></script>
-<script src="js/sprite.js?v=20260828e"></script>
-<script src="js/state.js?v=20260828e"></script>
-<script src="js/combat.js?v=20260828e"></script>
-<script src="js/ui.js?v=20260828e"></script>
-<script src="js/main.js?v=20260828e"></script>
+<script src="js/data.js?v=20260828g"></script>
+<script src="js/sprite.js?v=20260828g"></script>
+<script src="js/state.js?v=20260828g"></script>
+<script src="js/combat.js?v=20260828g"></script>
+<script src="js/ui.js?v=20260828g"></script>
+<script src="js/main.js?v=20260828g"></script>
 </body>
 </html>

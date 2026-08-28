@@ -109,6 +109,27 @@ function buildEnemyBand(zoneIdx, stageIdx) {
   return { rows, isBoss, level };
 }
 
+// Oleadas de un nivel de la Torre Batalla (ver TORRE_LEVELS en data.js):
+// siempre el mismo rival del nivel, repetido level.enemyCount veces. Los
+// mobs llegan en filas de hasta 3 simultáneos, como una oleada normal; los
+// jefes SIEMPRE en solitario, en oleadas sucesivas — un jefe nunca debe
+// recibir compañía (ver el comentario de makeBossUnit más arriba).
+function buildTorreEncounters(level) {
+  const perRow = level.kind === 'boss' ? 1 : 3;
+  const rows = [];
+  let remaining = level.enemyCount;
+  while (remaining > 0) {
+    const count = Math.min(perRow, remaining);
+    const row = [];
+    for (let i = 0; i < count; i++) {
+      row.push(level.kind === 'boss' ? makeBossUnit(level.fightDefId, level.enemyLevel) : makeUnit('enemy', level.fightDefId, level.enemyLevel));
+    }
+    rows.push(row);
+    remaining -= count;
+  }
+  return rows;
+}
+
 function stageRewards(zoneIdx, stageIdx, isBoss) {
   const globalIdx = zoneIdx * STAGES_PER_ZONE + stageIdx;
   const texel = Math.round((20 + globalIdx * 8) * (isBoss ? 3 : 1));

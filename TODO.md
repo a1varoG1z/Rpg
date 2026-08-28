@@ -1120,6 +1120,74 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       con Ajustes y Guía abiertos a la vez, el elemento que recibe el click
       en la zona del botón de cerrar es ahora el de la Guía, y cerrarla
       deja Ajustes debajo sin cerrarlo también
+- [x] **Torre Batalla** (28/08): nuevo modo endgame pedido por el usuario —
+      se desbloquea al completar el mapa entero, y el objetivo es capturar
+      como jugables a los mobs y jefes del mapa. Antes de implementar se
+      preguntaron 4 dudas de diseño (niveles por familia vs. por forma,
+      contra qué tier se lucha, si son 100% jugables o solo de Pokédex, y
+      dónde vive en la interfaz) — respuestas: por familia, la forma más
+      fuerte, 100% jugables, y pestaña nueva en la barra inferior.
+      - **Escalera** (`buildTorreLevels()` en `data.js`, `TORRE_LEVELS`):
+        66 niveles — uno por cada una de las 33 familias de `MOBS`, luego
+        uno por cada uno de los 33 `BOSSES`, ordenados por la zona del
+        mapa en la que aparecen por primera vez (el último es el jefe de
+        la última zona, como pidió el usuario). Cada nivel enfrenta
+        siempre a la forma MÁS FUERTE de esa familia (o al jefe), y da
+        como recompensa 1 copia del tier MÁS BAJO de esa familia (o del
+        jefe) — el jugador la sube él mismo con Fusión/Evolución normal.
+        Rivales y dificultad reutilizan el mismo cálculo ya calibrado de
+        `buildEnemyBand` (nivel tope 40, capado) atado a la zona de origen,
+        sin inventar una escala nueva. Nº de rivales por nivel: crece cada
+        8 escalones de su propia escalera (mobs en filas de hasta 3 a la
+        vez, de 3 a 12; jefes SIEMPRE en solitario en oleadas sucesivas —
+        nunca en compañía, ver `makeBossUnit` — de 1 a 5).
+      - **100% jugables**: gana un nivel de Torre y usa exactamente
+        `applySummonResult()`, la misma función que ya usa una invocación
+        normal — la copia entra al roster con uid propio, se puede
+        colocar en la Formación, equipar, fusionar/evolucionar (Fusión y
+        Superfusión incluidas) y vender, sin ningún camino especial. Los
+        niveles son rejugables para conseguir más copias (útiles como
+        material de Fusión).
+      - **Desbloqueo secuencial**: nivel 1 siempre abierto; cada uno más
+        se abre en cuanto se supera el anterior al menos una vez (igual
+        que las etapas de una zona), y se queda abierto para siempre.
+        `state.torre.clears` (clave = familia o id de jefe) lleva la
+        cuenta de cuántas veces se ha superado cada uno.
+      - **Pantalla nueva**: pestaña "🗼 Torre" en la barra inferior (7ª,
+        antes eran 6) con una lista de las 33 familias de mob y los 33
+        jefes, mostrando nivel/rareza del rival, nº de copias y "supera el
+        nivel anterior" mientras esté bloqueado. Reutiliza el mismo
+        recorrido nodo-a-nodo que una etapa normal del Mapa
+        (`UI.renderStageRun`/`UI.fightStageRunNode`, con ramas `run.isTorre`
+        para el título/recompensa) en vez de duplicar esa pantalla entera.
+      - **Pokédex ampliada**: como pedía el usuario ("hay que añadirlos a
+        la pokédex"), `UI.openPokedex` ahora tiene una segunda sección
+        "🗼 Torre Batalla" con los 99 `MOBS` + 33 `BOSSES`, con el mismo
+        formato de fichas bloqueadas/"???" que ya tenía la sección de
+        personajes jugables — aparte del contador principal, porque son
+        dos sistemas de desbloqueo distintos (invocación vs. Torre).
+      - **Ajustes**: toggle "🗼 Torre Batalla (modo de prueba)" para
+        habilitarla en cualquier momento sin tener que completar el mapa
+        primero, pedido explícitamente para poder probarla.
+      - **Fix de arquitectura necesario**: `#stageRunView` vivía anidado
+        dentro de `#screen-mapa`, así que abrir un nivel de Torre desde la
+        pestaña Torre se quedaba invisible (su ancestro `.screen` no
+        activo lo ocultaba igual, aunque su propia clase `.hidden` se
+        hubiera quitado). Se movió fuera de cualquier `.screen`, como
+        elemento de nivel superior con su propio `position:fixed` (igual
+        que ya hace `#battleOverlay`, con z-index por debajo para que la
+        Batalla siga abriéndose por encima) — funciona igual desde el
+        Mapa que desde la Torre.
+      Verificado extensamente con Playwright: escalera de 66 niveles bien
+      generada y ordenada; nivel de mob (1 oleada) y dos niveles de jefe
+      (1 y 2 oleadas sucesivas) superados con victoria, recompensa y copia
+      correctas; desbloqueo del siguiente nivel confirmado; Pokédex con
+      las dos secciones y el conteo correcto (132 = 99+33); la copia
+      capturada colocada en la Formación genera una unidad de combate
+      válida con estadísticas correctas; y el recorrido normal del Mapa
+      sigue funcionando igual tras mover `#stageRunView`. Sin
+      desbordamiento horizontal en la nueva pantalla ni en la barra de 7
+      pestañas a 360px de ancho
 
 ## Notas
 

@@ -33,7 +33,11 @@ function createNewState() {
     roster, gearInventory: [], band, progress,
     arena: { rank: 1, bestRank: 1 },
     stats: { battlesWon: 0, battlesLost: 0 },
-    settings: { infiniteEnergy: false, showMedallion: true },
+    settings: { infiniteEnergy: false, showMedallion: true, enableTorreBatalla: false },
+    // Torre Batalla: cuántas veces se ha superado cada nivel (clave =
+    // level.key de TORRE_LEVELS en data.js) — 0/ausente = nivel no
+    // superado todavía (y por tanto el siguiente sigue bloqueado).
+    torre: { clears: {} },
     // Objetos consumibles comprados en la Tienda (pociones, plumas fénix).
     items: { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 },
     // Homúnculos conseguidos por invocación: solo cuentan (no tienen uid
@@ -387,6 +391,23 @@ function recordStageClear(state, zoneIdx, stageIdx) {
   return null;
 }
 
+// --- Torre Batalla (ver TORRE_LEVELS en data.js) ---
+function mapFullyCleared(state) { return ZONES.every(z => highestClearedStage(state, z.id) >= STAGES_PER_ZONE - 1); }
+function torreUnlocked(state) { return !!state.settings.enableTorreBatalla || mapFullyCleared(state); }
+function torreClearCount(state, level) { return state.torre.clears[level.key] || 0; }
+// Escalera secuencial, igual que las etapas de una zona: el nivel 0
+// siempre está abierto; cada uno más se abre en cuanto se supera el
+// anterior al menos una vez (y se queda abierto para siempre, aunque luego
+// se rejueguen niveles anteriores por más copias).
+function isTorreLevelUnlocked(state, idx) {
+  if (idx === 0) return true;
+  return torreClearCount(state, TORRE_LEVELS[idx - 1]) > 0;
+}
+function recordTorreClear(state, idx) {
+  const level = TORRE_LEVELS[idx];
+  state.torre.clears[level.key] = torreClearCount(state, level) + 1;
+}
+
 // --- Objetivos (pantalla de progreso general) ---
 // Todo de solo lectura: agrega números ya presentes en otras partes del
 // estado (progreso de zonas, Pokédex, roster, arena, equipo...) en un único
@@ -470,8 +491,10 @@ function loadGame() {
     if (!state || state.version !== 2 || !state.roster) return null;
     if (!state.settings) state.settings = { infiniteEnergy: false, showMedallion: true };
     if (state.settings.showMedallion === undefined) state.settings.showMedallion = true;
+    if (state.settings.enableTorreBatalla === undefined) state.settings.enableTorreBatalla = false;
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     if (!state.homunculos) state.homunculos = { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 };
+    if (!state.torre) state.torre = { clears: {} };
     // Partidas guardadas antes de que existiera este registro: se
     // reconstruye a partir de lo que haya ahora mismo en el roster (no es
     // perfecto — no recuerda luchadores vendidos/evolucionados antes de
