@@ -445,12 +445,30 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
 
 ## Pendiente — sistemas grandes (necesitan diseño propio, iteración aparte)
 
-- [ ] **Combate — pulido visual**: las capturas de referencia del D.o.T. real
-      ya llegaron y están guardadas en `reference/dot-original/` (ver Notas)
-      — `combate-formacion-3x3.jpg` y `combate-elegir-linea.jpg`. La mecánica
-      ya está implementada (elegir línea libremente, HP/carga compartidos);
-      esto es solo para afinar cómo se ve/anima el choque (posiciones,
-      movimiento de ataque) para acercarlo más al original
+- [x] **Selección de línea por deslizamiento** (27/08), parte de "Combate —
+      pulido visual": el usuario señaló `reference/dot-original/
+      combate-elegir-linea.jpg` — en el D.o.T. original se elige la línea
+      deslizando el dedo sobre una cuadrícula 3×3 ("Swipe to choose 1
+      line"), no tocando botones en una lista. El selector de combinación
+      (`UI.showGroupPicker`) pasa de una lista vertical de botones a una
+      cuadrícula 3×3 real (mismo layout que la Formación de Banda) con
+      gesto de deslizar: `pointerdown`/`pointermove`/`pointerup` sobre la
+      rejilla (sirven igual para dedo que para ratón), se determina con
+      qué 2 celdas tocadas hay alineación única entre las 8 `BAND_LINES`
+      posibles (fila/columna/diagonal), se resalta esa línea en dorado si
+      sigue disponible este ciclo o en rojo si no (usada o inexistente), y
+      soltar sobre una línea disponible la confirma — sin necesidad de
+      soltar sobre ningún botón. Verificado con eventos de puntero
+      sintéticos: tocar 2 celdas de una fila resalta las 3 celdas
+      correctas y soltar cierra el selector confirmando esa línea; con
+      Playwright real el drag headless de mouse.move+down+up no dispara
+      pointermove de forma fiable en este sandbox (limitación conocida
+      del entorno de test, no del código: los mismos eventos disparados
+      directamente sí funcionan perfectamente)
+- [ ] **Combate — pulido visual (resto)**: la selección de línea por
+      deslizamiento ya está (ver punto de arriba); queda por afinar cómo
+      se ve/anima el choque en sí (posiciones, movimiento de ataque) para
+      acercarlo más al original — ver `combate-formacion-3x3.jpg`
 - [ ] **Mapa — pulido visual**: capturas de referencia ya guardadas en
       `reference/dot-original/recorrido-escenario.jpg` y
       `encuentro-enemigo.jpg`. El recorrido nodo a nodo ya funciona, esto es

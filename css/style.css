@@ -260,13 +260,17 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 #groupPickerPanel { flex-shrink: 0; text-align: center; padding: 6px 0; }
 #groupPickerPanel.hidden { display: none; }
 .group-picker-title { font-family: 'Press Start 2P', monospace; font-size: 0.65rem; color: var(--gold); margin-bottom: 8px; }
-.group-picker-list { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-.group-picker-btn {
-  display: flex; gap: 2px; padding: 8px 10px; background: var(--panel); border: 2px solid var(--gold-dim);
-  border-radius: 10px;
+.group-picker-list { display: flex; flex-direction: column; gap: 4px; align-items: center; touch-action: none; user-select: none; }
+.picker-row { display: flex; gap: 4px; }
+.picker-cell {
+  width: 52px; height: 58px; border: 2px solid var(--gold-dim); border-radius: 8px; background: var(--panel);
+  display: flex; align-items: center; justify-content: center; transition: background 60ms, border-color 60ms;
 }
-.group-picker-btn .creature-canvas { width: 40px; height: 45px; }
-.group-picker-btn:active { border-color: var(--gold); }
+.picker-cell.empty { border-style: dashed; opacity: 0.5; }
+.picker-cell .creature-canvas { width: 40px; height: 45px; }
+.picker-cell .creature-canvas-wrap.fainted { opacity: 0.35; filter: grayscale(1); }
+.picker-cell.selecting { border-color: var(--gold); background: rgba(212,175,55,0.28); }
+.picker-cell.invalid { border-color: #b0392f; background: rgba(176,57,47,0.25); }
 .battle-unit-name { font-size: 0.6rem; color: var(--cream-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hp-bar { width: 100%; background: #1a1410; border: 1px solid #000; border-radius: 5px; overflow: hidden; }
 .hp-fill { height: 100%; width: 100%; background: linear-gradient(#5fd15f, #2e8b2e); transition: width 0.25s ease-out; }

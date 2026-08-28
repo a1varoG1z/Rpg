@@ -1338,16 +1338,112 @@ UI.renderClashPreview = function (view) {
   });
 };
 
+// Busca al luchador colocado en una celda de la Formación entre las filas ya
+// calculadas por buildPlayerCombinations (view.playerGroups) — evita tener
+// que reconstruir el objeto de combate desde cero, el mismo uid ya vive en
+// cualquier línea que lo contenga.
+function cellPickerUnit(view, uid) {
+  for (const g of view.playerGroups) {
+    const found = g.row.find(u => u.sourceUid === uid);
+    if (found) return found;
+  }
+  return null;
+}
+
+// Dado un conjunto de celdas ya tocadas durante el gesto de deslizar,
+// encuentra la única de las 8 BAND_LINES que las contiene todas (2 celdas
+// distintas ya bastan para determinar una línea sin ambigüedad en una
+// cuadrícula 3×3 — cualquier par de celdas está alineado como mucho en una
+// fila, columna o diagonal). Con menos de 2 celdas, o si las celdas tocadas
+// no están alineadas entre sí, no hay línea determinada todavía.
+function lineForCells(cells) {
+  if (cells.length < 2) return null;
+  return BAND_LINES.find(line => cells.every(([r, c]) => line.cells.some(([lr, lc]) => lr === r && lc === c)));
+}
+
+// Igual que la Formación 3×3 de Banda, pero pensado para el gesto de
+// "deslizar para elegir 1 línea" del D.o.T. original (ver
+// reference/dot-original/combate-elegir-linea.jpg): se sigue el puntero con
+// eventos pointerdown/move/up (sirven igual para dedo o ratón), se resuelve
+// qué línea de las 8 posibles forman las celdas tocadas y, si esa línea
+// sigue disponible este ciclo, se suelta para confirmarla — sin soltar
+// sobre ninguna línea válida no pasa nada y se puede reintentar.
 UI.showGroupPicker = function (view, remaining) {
   const panel = $('groupPickerPanel');
   const list = $('groupPickerList');
   list.innerHTML = '';
-  remaining.forEach(group => {
-    const btn = el('button', 'group-picker-btn');
-    group.row.forEach(u => btn.appendChild(creatureCanvas(u.defId, 40)));
-    btn.addEventListener('click', () => UI.commitGroup(view, group));
-    list.appendChild(btn);
-  });
+  list.className = 'group-picker-list';
+
+  const remainingByIdx = {};
+  remaining.forEach(g => { remainingByIdx[g.idx] = g; });
+
+  const cellEls = [];
+  for (let r = 0; r < BAND_ROWS; r++) {
+    const rowEl = el('div', 'picker-row');
+    for (let c = 0; c < BAND_COLS; c++) {
+      const uid = view.state.band[r][c];
+      const unit = uid ? cellPickerUnit(view, uid) : null;
+      const cellEl = el('div', 'picker-cell' + (unit ? '' : ' empty'));
+      if (unit) {
+        const wrap = el('div', 'creature-canvas-wrap' + (unit.alive ? '' : ' fainted'));
+        wrap.appendChild(creatureCanvas(unit.defId, 40));
+        cellEl.appendChild(wrap);
+      }
+      cellEls.push(cellEl);
+      rowEl.appendChild(cellEl);
+    }
+    list.appendChild(rowEl);
+  }
+
+  function cellAt(r, c) { return cellEls[r * BAND_COLS + c]; }
+  function clearHighlight() { cellEls.forEach(el2 => el2.classList.remove('selecting', 'invalid')); }
+  function applyHighlight(line) {
+    clearHighlight();
+    if (!line) return;
+    const group = remainingByIdx[BAND_LINES.indexOf(line)];
+    const cls = group ? 'selecting' : 'invalid';
+    line.cells.forEach(([r, c]) => cellAt(r, c).classList.add(cls));
+  }
+  function cellFromPoint(x, y) {
+    const hit = document.elementFromPoint(x, y);
+    const cellEl = hit && hit.closest('.picker-cell');
+    if (!cellEl) return null;
+    const idx = cellEls.indexOf(cellEl);
+    return idx < 0 ? null : [Math.floor(idx / BAND_COLS), idx % BAND_COLS];
+  }
+
+  let dragCells = null;
+  function onPointerDown(e) {
+    const start = cellFromPoint(e.clientX, e.clientY);
+    if (!start) return;
+    dragCells = [start];
+    list.setPointerCapture(e.pointerId);
+  }
+  function onPointerMove(e) {
+    if (!dragCells) return;
+    const cell = cellFromPoint(e.clientX, e.clientY);
+    if (!cell) return;
+    const already = dragCells.some(([r, c]) => r === cell[0] && c === cell[1]);
+    if (already) return;
+    const candidate = [...dragCells, cell];
+    if (!lineForCells(candidate)) return; // no alineado con lo ya tocado: se ignora
+    dragCells = candidate;
+    applyHighlight(lineForCells(dragCells));
+  }
+  function onPointerUp() {
+    if (!dragCells) return;
+    const line = lineForCells(dragCells);
+    dragCells = null;
+    if (!line) { clearHighlight(); return; }
+    const group = remainingByIdx[BAND_LINES.indexOf(line)];
+    if (group) UI.commitGroup(view, group);
+    else clearHighlight();
+  }
+  list.addEventListener('pointerdown', onPointerDown);
+  list.addEventListener('pointermove', onPointerMove);
+  list.addEventListener('pointerup', onPointerUp);
+  list.addEventListener('pointercancel', onPointerUp);
+
   panel.classList.remove('hidden');
 };
 
