@@ -1108,6 +1108,18 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Verificado con Playwright: se abre sin errores desde Ajustes, las 9
       secciones se pintan, y no hay desbordamiento horizontal ni siquiera
       a 360px de ancho de viewport
+- [x] **Fix: la Guía se abría detrás de Ajustes** (28/08): el usuario avisó
+      que al pulsar "Guía del juego" desde Ajustes, el modal de la Guía se
+      pintaba POR DEBAJO del modal de Ajustes en vez de encima — había que
+      cerrar Ajustes primero para poder leerla. Causa: todos los `.modal`
+      comparten el mismo z-index; sin una diferencia explícita, quien esté
+      más abajo en el HTML se pinta encima cuando dos están abiertos a la
+      vez, y `#guideModal` estaba declarado ANTES que `#settingsModal` en
+      `index.html`. Arreglado moviendo el bloque de `#guideModal` a justo
+      después de `#settingsModal` en el HTML. Verificado con Playwright:
+      con Ajustes y Guía abiertos a la vez, el elemento que recibe el click
+      en la zona del botón de cerrar es ahora el de la Guía, y cerrarla
+      deja Ajustes debajo sin cerrarlo también
 
 ## Notas
 
