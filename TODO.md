@@ -503,12 +503,32 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
         en escalera (arriba-izquierda/centro/abajo-derecha) sin
         desbordar la pantalla, y seleccionar una fila normal se ve
         idéntico a como se veía antes del cambio
-- [ ] **Mapa — pulido visual**: capturas de referencia ya guardadas en
-      `reference/dot-original/recorrido-escenario.jpg` y
-      `encuentro-enemigo.jpg`. El recorrido nodo a nodo ya funciona, esto es
-      para el arte del camino (ahora mismo son círculos con emoji, sin
-      sprites de escenario)
-  - [ ] Sprites de escenario/paisaje pendientes (ver lista de sprites no-personaje)
+- [x] **Fondos de zona procedurales (respaldo mientras no hay arte)** (28/08):
+      el usuario pidió lo mismo que ya existe para los personajes — un
+      respaldo generado por código mientras no haya arte real, que se
+      sustituya solo en cuanto se suba la imagen, sin tocar código.
+      Nuevo `zoneBackgroundStyle(zone)` en `ui.js`: capa 1 (encima de
+      todo) un velo oscuro para que el texto siga legible, capa 2 la
+      imagen real `assets/scenery/<id>.jpg` (mismo `id` que la zona en
+      `ZONES`, p.ej. `assets/scenery/bosque.jpg`), capa 3 un degradado
+      radial de respaldo hecho con el `color` que cada zona ya tenía
+      definido en `ZONES` (aclarado/oscurecido con un pequeño helper
+      `shadeColor`). A diferencia del sprite de criatura (que necesita
+      un `<img>` con `onerror` porque cambia de un `<canvas>` a una
+      `<img>`), un `background-image` de CSS que da 404 simplemente no
+      se pinta y se ve la capa de abajo — no hace falta detectar el
+      fallo a mano, en cuanto exista el archivo se ve solo. Aplicado en
+      las 3 pantallas de la referencia: tarjetas de zona en el Mapa,
+      recorrido nodo a nodo (`recorrido-escenario.jpg`) y fondo de
+      combate (`encuentro-enemigo.jpg`, sin fondo de zona en la Arena,
+      que no pertenece a ninguna). Verificado en vivo con capturas de
+      las 3 pantallas: cada zona ya tiene un color/ambiente propio y
+      distinto, con el texto perfectamente legible
+  - [ ] Sprites de escenario/paisaje reales pendientes de subir — cuando
+        se suba `assets/scenery/<id>.jpg` de una zona (ids en `ZONES`,
+        `js/data.js`: `bosque`, `pantano`, `cuevas`, `picos`, `ruinas`,
+        `guarida`, etc.) sustituye al degradado automáticamente, sin
+        tocar código
 - [x] Más tipos de ulti variados más allá de los que ya existen — hecho:
       "daño en el tiempo" (veneno/dot), "revivir en combate" (revive) y
       "dispersar/curar estados" (cleanse) ya están, más un vampírico

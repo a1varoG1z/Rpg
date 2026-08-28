@@ -6,6 +6,28 @@ let mapaZoneIdx = null;
 function $(id) { return document.getElementById(id); }
 function el(tag, className, html) { const e = document.createElement(tag); if (className) e.className = className; if (html !== undefined) e.innerHTML = html; return e; }
 
+// ---------- Fondos de zona ----------
+// Mismo espíritu que el respaldo procedural de las criaturas (dibujar algo
+// de momento, sustituible por arte real más tarde), pero mucho más simple
+// porque una imagen de fondo CSS no necesita detectar el fallo a mano: si
+// `assets/scenery/<id>.jpg` no existe todavía, esa capa del `background`
+// simplemente no se pinta y se ve el degradado de abajo sin más código —
+// a diferencia del sprite de criatura (que sí necesita un <img> con
+// `onerror` porque ahí cambia de elemento entero, canvas vs imagen). En
+// cuanto el usuario suba `assets/scenery/<id>.jpg` (mismo `id` que la zona
+// en ZONES) se ve automáticamente, sin tocar código.
+function shadeColor(hex, amt) {
+  const num = parseInt(hex.slice(1), 16);
+  const clamp = v => Math.max(0, Math.min(255, v));
+  const r = clamp((num >> 16) + amt), g = clamp(((num >> 8) & 0xff) + amt), b = clamp((num & 0xff) + amt);
+  return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+}
+function zoneBackgroundStyle(zone) {
+  const light = shadeColor(zone.color, 25);
+  const dark = shadeColor(zone.color, -35);
+  return `linear-gradient(rgba(10,6,3,0.45), rgba(10,6,3,0.7)), url('assets/scenery/${zone.id}.jpg') center/cover no-repeat, radial-gradient(ellipse at 50% 30%, ${light}, ${zone.color} 55%, ${dark} 100%)`;
+}
+
 // ---------- Tarjetas de criatura reutilizables ----------
 // Si el luchador tiene arte real asignado (data.js -> image), se usa esa
 // imagen; si no, se genera un sprite pixel-art por código como respaldo.
@@ -373,6 +395,7 @@ UI.renderMapa = function (state) {
     const unlocked = isZoneUnlocked(state, zone.id);
     const best = highestClearedStage(state, zone.id);
     const card = el('div', 'panel loc-card' + (unlocked ? '' : ' locked'));
+    card.style.background = zoneBackgroundStyle(zone);
     card.innerHTML = `
       <div class="loc-card-head"><span class="loc-card-emoji">${zone.emoji}</span><div><b>${zone.name}</b><br><small>${unlocked ? 'Progreso: ' + (best + 1) + '/' + STAGES_PER_ZONE : '🔒 Bloqueado'}</small></div></div>
       ${unlocked ? `<button class="primary-btn" id="openzone-${zone.id}">Entrar</button>` : `<div class="locked-tag">Derrota al jefe de la zona anterior</div>`}`;
@@ -440,6 +463,7 @@ UI.renderStageRun = function (state) {
   wrap.innerHTML = '';
   const run = window.__stageRun;
   const zone = ZONES[run.zoneIdx];
+  wrap.style.background = zoneBackgroundStyle(zone);
 
   const back = el('button', 'mini-btn', '« Retirarse');
   back.addEventListener('click', () => { window.__stageRun = null; UI.openZoneStages(state, run.zoneIdx); });
@@ -562,6 +586,7 @@ UI.fightStageRunNode = function (state) {
   }));
   UI.openBattle(state, playerCombos, [enemyRow], {
     title: ZONES[run.zoneIdx].name + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length,
+    zone: ZONES[run.zoneIdx],
     onEnd: (result, view) => {
       if (view) {
         view.playerGroups.forEach(g => g.row.forEach(u => {
@@ -1283,6 +1308,7 @@ UI.openBattle = function (state, playerRowsRaw, enemyRowsRaw, opts) {
   };
   window.__battleView = view;
   $('battleTitle').textContent = opts.title;
+  $('battleOverlay').style.background = opts.zone ? zoneBackgroundStyle(opts.zone) : '';
   $('battleResult').classList.add('hidden');
   $('groupPickerPanel').classList.add('hidden');
   $('battleLog').innerHTML = '';
