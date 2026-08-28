@@ -1598,14 +1598,17 @@ UI.applyBattleEvent = function (view, ev) {
       if (u) { u.ultCharge = ev.value; UI.updateUnitCardCharge(u); }
       break;
     case 'attack':
+      triggerBattleAnim(attacker.id, attacker.side === 'player' ? 'lunge-up' : 'lunge-down', 300);
       target.hp = Math.max(0, target.hp - ev.amount);
       UI.updateUnitCardHp(target);
+      triggerBattleAnim(target.id, 'hit-shake', 300);
       UI.spawnBattleFloat(target.id, '-' + ev.amount + (ev.isCrit ? '!' : ''), ev.isCrit);
       UI.logLine(`${attacker.name} → ${target.name}: -${ev.amount}${ev.isCrit ? ' ¡CRÍTICO!' : ''}`);
       break;
     case 'heal':
       target.hp = Math.min(target.maxHp, target.hp + ev.amount);
       UI.updateUnitCardHp(target);
+      triggerBattleAnim(target.id, 'heal-glow', 500);
       UI.spawnBattleFloat(target.id, '+' + ev.amount, false);
       break;
     case 'faint':
@@ -1621,6 +1624,7 @@ UI.applyBattleEvent = function (view, ev) {
     case 'dot':
       u.hp = Math.max(0, u.hp - ev.amount);
       UI.updateUnitCardHp(u);
+      triggerBattleAnim(u.id, 'hit-shake', 300);
       UI.spawnBattleFloat(u.id, '-' + ev.amount, false);
       UI.logLine(`🧪 ${u.name} sufre ${ev.amount} de daño por ${ev.label}.`);
       break;
@@ -1631,6 +1635,7 @@ UI.applyBattleEvent = function (view, ev) {
       target.alive = true;
       target.hp = ev.amount;
       UI.updateUnitCardHp(target);
+      triggerBattleAnim(target.id, 'heal-glow', 500);
       UI.spawnBattleFloat(target.id, '+' + ev.amount, false);
       UI.logLine(`🌟 ${u.name} revive a ${target.name}!`);
       break;
@@ -1648,6 +1653,19 @@ UI.spawnBattleFloat = function (unitId, text, crit) {
   cardEl.appendChild(fl);
   setTimeout(() => fl.remove(), 800);
 };
+
+// Reinicia y vuelve a lanzar una animación CSS de un solo disparo sobre la
+// tarjeta de un luchador (forzando reflow con offsetWidth) para que se
+// repita aunque el mismo golpe le vuelva a tocar antes de que termine la
+// anterior; la quita sola pasado `duration` para no dejar clases colgadas.
+function triggerBattleAnim(unitId, className, duration) {
+  const cardEl = document.querySelector(`.battle-unit[data-unit-id="${unitId}"]`);
+  if (!cardEl) return;
+  cardEl.classList.remove(className);
+  void cardEl.offsetWidth;
+  cardEl.classList.add(className);
+  setTimeout(() => cardEl.classList.remove(className), duration);
+}
 
 UI.endBattle = function (view, result) {
   const outcome = view.opts.onEnd(result, view);

@@ -280,6 +280,19 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .battle-float.crit { color: #ff3b3b; font-size: 0.78rem; }
 @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -26px); } }
 
+/* Movimiento de golpe: el atacante se lanza hacia el bando rival (arriba si
+   es del jugador, abajo si es del rival, ya que las filas se apilan en
+   columna) y vuelve a su sitio; quien recibe el golpe tiembla. Puramente
+   cosmético — no toca el timing real del combate (ver triggerAnim en ui.js). */
+@keyframes lungeUp { 0% { transform: translateY(0); } 40% { transform: translateY(-14px); } 100% { transform: translateY(0); } }
+@keyframes lungeDown { 0% { transform: translateY(0); } 40% { transform: translateY(14px); } 100% { transform: translateY(0); } }
+.battle-unit.lunge-up { animation: lungeUp 0.3s ease-out; }
+.battle-unit.lunge-down { animation: lungeDown 0.3s ease-out; }
+@keyframes hitShake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
+.battle-unit.hit-shake { animation: hitShake 0.3s ease-out; }
+@keyframes healPulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+.battle-unit.heal-glow { animation: healPulse 0.5s ease-out; }
+
 .battle-log { flex-shrink: 0; height: 84px; overflow-y: auto; background: #140d08; border: 1px solid #3a2c17; border-radius: 8px; padding: 6px 8px; margin-top: 6px; font-size: 0.72rem; color: var(--cream-dim); }
 .battle-log-line { padding: 1px 0; }
 

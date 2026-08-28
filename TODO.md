@@ -465,10 +465,31 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       pointermove de forma fiable en este sandbox (limitación conocida
       del entorno de test, no del código: los mismos eventos disparados
       directamente sí funcionan perfectamente)
-- [ ] **Combate — pulido visual (resto)**: la selección de línea por
-      deslizamiento ya está (ver punto de arriba); queda por afinar cómo
-      se ve/anima el choque en sí (posiciones, movimiento de ataque) para
-      acercarlo más al original — ver `combate-formacion-3x3.jpg`
+- [x] **Movimiento de ataque en combate** (28/08), parte de "Combate —
+      pulido visual (resto)": las tarjetas de combate eran completamente
+      estáticas (solo cambiaba la barra de vida y el número flotante) —
+      en `combate-formacion-3x3.jpg` se ve al atacante lanzarse hacia el
+      rival. Añadidas 3 animaciones CSS de un solo disparo sobre
+      `.battle-unit`, disparadas desde `UI.applyBattleEvent` vía el nuevo
+      helper `triggerBattleAnim` (fuerza reflow para poder repetirse
+      aunque el mismo golpe caiga dos veces seguidas):
+      - `lunge-up`/`lunge-down`: el atacante se lanza hacia la fila
+        rival (arriba si es del jugador, abajo si es del rival, ya que
+        las filas se apilan en columna) y vuelve a su sitio — en cada
+        evento `attack`
+      - `hit-shake`: quien recibe el golpe tiembla — en `attack` y en
+        el tick de veneno/quemadura (`dot`)
+      - `heal-glow`: pequeño pulso de escala al curar o revivir
+      Solo cosmético, no toca el timing real del combate (los eventos
+      siguen resolviéndose exactamente igual, la animación es un extra
+      visual de 300-500ms sobre cada tarjeta). Verificado en vivo con un
+      observer de mutaciones durante una batalla real: las clases
+      `lunge-down` y `hit-shake` aparecen correctamente al golpear
+      - [ ] Queda pendiente el resto de "pulido visual": posicionar a los
+        3 elegidos de la Formación en el campo de batalla según su
+        posición real en la línea (ahora mismo van en fila recta, no en
+        diagonal/columna como en la referencia cuando la línea elegida
+        no es una fila) — cambio de layout más grande, no abordado hoy
 - [ ] **Mapa — pulido visual**: capturas de referencia ya guardadas en
       `reference/dot-original/recorrido-escenario.jpg` y
       `encuentro-enemigo.jpg`. El recorrido nodo a nodo ya funciona, esto es
