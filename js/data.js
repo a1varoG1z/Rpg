@@ -231,14 +231,19 @@ function addFamily(slug, tier, element, cls, skillId, names, lores, hasImages) {
 // 3 tiers y misma forma de ficha que el resto (fighterDef los reconoce
 // igual, ver más abajo).
 const MOBS = [];
-function addMobFamily(slug, tier, element, cls, skillId, names, loreCore) {
+// Mismo mecanismo de arte real que addFamily: pásale `true` como último
+// argumento una vez hayas subido assets/creatures/<slug>_<rareza>.png (una
+// por cada una de las 3 formas) y las usará en vez del sprite procedural.
+function addMobFamily(slug, tier, element, cls, skillId, names, loreCore, hasImages) {
   const rarities = TIER_CHAINS[tier];
   const suffixes = TIER_LORE_SUFFIX[tier];
   rarities.forEach((rarity, i) => {
-    MOBS.push({
+    const entry = {
       id: slug + '_' + rarity, name: names[i], element, class: cls, rarity, family: slug,
       evolvesTo: i < 2 ? slug + '_' + rarities[i + 1] : null, skillId, lore: loreCore + suffixes[i],
-    });
+    };
+    if (hasImages) entry.image = slug + '_' + rarity + '.png';
+    MOBS.push(entry);
   });
 }
 
@@ -248,9 +253,13 @@ function addMobFamily(slug, tier, element, cls, skillId, names, loreCore) {
 // los reconoce igualmente (ver más abajo) para que el resto del código
 // (sprite, batallas) los trate igual que a cualquier otro luchador el día
 // que se usen como jefes de mapa.
+// Al no tener evoluciones, un jefe solo necesita UNA imagen (no hay rareza
+// por forma): pásale `true` una vez subido assets/creatures/<slug>.png.
 const BOSSES = [];
-function addBoss(slug, element, cls, skillId, name, lore, rarity) {
-  BOSSES.push({ id: 'boss_' + slug, name, element, class: cls, rarity: rarity || 'legendario', family: 'boss_' + slug, evolvesTo: null, skillId, lore });
+function addBoss(slug, element, cls, skillId, name, lore, rarity, hasImage) {
+  const entry = { id: 'boss_' + slug, name, element, class: cls, rarity: rarity || 'legendario', family: 'boss_' + slug, evolvesTo: null, skillId, lore };
+  if (hasImage) entry.image = slug + '.png';
+  BOSSES.push(entry);
 }
 function bossDef(id) { return BOSSES.find(b => b.id === id); }
 

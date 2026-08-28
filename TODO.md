@@ -971,6 +971,25 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       de luz al aparecer (`legendaryFlash`, un pico de brillo). En el
       carrusel x10 también se queda 1.8s en pantalla en vez de 0.9s, para
       que dé tiempo a apreciarlo
+- [x] **Arte real para mobs y jefes** (28/08): el usuario preguntó cómo
+      subir fotos a los mobs (`MOBS`, los rivales de relleno del mapa) y
+      a los jefes (`BOSSES`) — hasta ahora `addMobFamily`/`addBoss` no
+      tenían la capacidad de `hasImages` que ya tenía `addFamily` desde
+      hace tiempo, así que sus fichas siempre usaban el sprite
+      procedural por mucho arte que se subiera. Añadido el mismo
+      mecanismo:
+      - `addMobFamily(..., hasImages)`: con `true`, la familia usa
+        `assets/creatures/<slug>_<rareza>.png` (una por cada una de sus
+        3 formas, igual que las criaturas jugables)
+      - `addBoss(..., rarity, hasImage)`: con `true`, usa
+        `assets/creatures/<slug>.png` — un jefe no tiene evoluciones, así
+        que solo necesita UNA imagen, sin sufijo de rareza
+      Mismo flujo de trabajo que con los personajes: subir el/los
+      archivo(s) a `assets/creatures/` y añadir `true` como último
+      argumento en la llamada correspondiente de `data.js`. Verificado
+      con un script: las llamadas existentes sin el flag siguen sin
+      `image` (comportamiento idéntico a antes), y una llamada nueva con
+      el flag genera el nombre de archivo esperado en ambos casos
 
 ## Notas
 
