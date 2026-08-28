@@ -246,6 +246,19 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .battle-side { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .battle-vs { text-align: center; font-family: 'Press Start 2P', monospace; color: var(--gold-dim); font-size: 0.75rem; margin: 4px 0; }
 .active-row { display: flex; gap: 10px; justify-content: center; }
+/* Cuando la línea elegida no es una fila recta (columna o diagonal), los
+   luchadores se colocan en el campo según su posición real de la
+   Formación en vez de en fila — como en combate-formacion-3x3.jpg. Cada
+   tarjeta se encoge (ver reglas de abajo) para que las 3 filas de la
+   rejilla quepan en el espacio que antes ocupaba solo una. */
+.active-row.active-row-spread {
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, auto);
+  gap: 1px 6px; justify-items: center; width: 100%; max-width: 300px; margin: 0 auto;
+}
+.active-row-spread .battle-unit { width: 62px; }
+.active-row-spread .battle-unit .creature-canvas { width: 44px; height: 49px; }
+.active-row-spread .battle-unit .battle-unit-name { display: none; }
+.active-row-spread .battle-unit .ult-turns { font-size: 0.5rem; }
 .queued-rows { display: flex; flex-direction: column; gap: 3px; opacity: 0.5; }
 .queued-row-mini { display: flex; gap: 4px; justify-content: center; }
 .queued-row-mini .creature-canvas { width: 26px; height: 29px; }

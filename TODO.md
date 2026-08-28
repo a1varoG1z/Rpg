@@ -485,11 +485,24 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       visual de 300-500ms sobre cada tarjeta). Verificado en vivo con un
       observer de mutaciones durante una batalla real: las clases
       `lunge-down` y `hit-shake` aparecen correctamente al golpear
-      - [ ] Queda pendiente el resto de "pulido visual": posicionar a los
-        3 elegidos de la Formación en el campo de batalla según su
-        posición real en la línea (ahora mismo van en fila recta, no en
-        diagonal/columna como en la referencia cuando la línea elegida
-        no es una fila) — cambio de layout más grande, no abordado hoy
+      - [x] **Posición real en el campo según la línea** (28/08): cuando
+        la línea elegida es una columna o diagonal, los 3 luchadores ya
+        no se muestran en fila recta — se colocan en `#playerActiveRow`
+        (ahora con `display:grid` bajo `.active-row-spread`) en la
+        posición `[fila, columna]` real que ocupan en la Formación,
+        igual que en `combate-formacion-3x3.jpg`. `UI.commitGroup`
+        recupera esas coordenadas repitiendo sobre `BAND_LINES[group.idx]
+        .cells` el mismo filtro de huecos vacíos que ya usa
+        `combinationFighterUids` (mismo orden, así que casan índice a
+        índice con `playerRow`). Las tarjetas se encogen en este modo
+        (icono más pequeño, sin nombre) para que quepan las 3 filas de
+        la rejilla en el espacio que antes ocupaba una sola línea. Las
+        líneas horizontales (fila1/2/3) no cambian nada — se renderizan
+        exactamente igual que antes, cero regresión ahí. Verificado en
+        vivo: seleccionar la diagonal principal coloca los 3 luchadores
+        en escalera (arriba-izquierda/centro/abajo-derecha) sin
+        desbordar la pantalla, y seleccionar una fila normal se ve
+        idéntico a como se veía antes del cambio
 - [ ] **Mapa — pulido visual**: capturas de referencia ya guardadas en
       `reference/dot-original/recorrido-escenario.jpg` y
       `encuentro-enemigo.jpg`. El recorrido nodo a nodo ya funciona, esto es

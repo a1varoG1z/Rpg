@@ -1461,8 +1461,28 @@ UI.commitGroup = function (view, group) {
   const { log } = simulateOneRound(clone.p, clone.e);
   view.log = log; view.idx = 0;
 
-  $('playerActiveRow').innerHTML = '';
-  playerRow.forEach(u => $('playerActiveRow').appendChild(UI.battleUnitCard(u)));
+  // Si la línea elegida no es una fila recta (columna o diagonal), se
+  // coloca cada luchador en el campo según su posición real de la
+  // Formación en vez de en fila — ver reference/dot-original/
+  // combate-formacion-3x3.jpg. combinationFighterUids ya filtró los
+  // huecos vacíos con el mismo orden que playerRow, así que basta con
+  // repetir ese filtro sobre las celdas de la línea para emparejar cada
+  // unidad con su [fila, columna] real.
+  const line = BAND_LINES[group.idx];
+  const sameRow = line.cells.every(([r]) => r === line.cells[0][0]);
+  const cellsWithUnit = line.cells.filter(([r, c]) => view.state.band[r][c]);
+  const activeEl = $('playerActiveRow');
+  activeEl.innerHTML = '';
+  activeEl.classList.toggle('active-row-spread', !sameRow);
+  playerRow.forEach((u, i) => {
+    const card = UI.battleUnitCard(u);
+    if (!sameRow) {
+      const [r, c] = cellsWithUnit[i];
+      card.style.gridRow = String(r + 1);
+      card.style.gridColumn = String(c + 1);
+    }
+    activeEl.appendChild(card);
+  });
   const reserveEl = $('playerQueuedRows');
   reserveEl.innerHTML = '';
   unusedAliveGroups(view).forEach(g => {
