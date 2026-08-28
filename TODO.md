@@ -1068,6 +1068,24 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       luchadores del pantallazo (Titán de las Corrientes, Señor del
       Maelström) llenando las 5 tarjetas candidatas del panel: ninguna
       sobresale del borde del modal
+- [x] **Fix: carga de ulti invisible en el selector de línea del combate**
+      (28/08): el usuario avisó que, tras el cambio anterior que superpuso
+      la carga de ulti a la foto del personaje en las tarjetas de la fila
+      de batalla, seguía sin verse bien en la rejilla 3×3 de "Desliza para
+      elegir 1 línea" — la captura mostraba las 9 celdas sin ningún
+      indicador visible de carga. Causa: `.picker-cell-ult` (a diferencia
+      de `.ult-turns` en `.battle-unit-canvas-wrap`, ya arreglado antes)
+      seguía con el estilo antiguo: texto plano de 0.48rem sin fondo,
+      pegado al borde inferior de la celda, encima o detrás del arte del
+      personaje — prácticamente ilegible, sobre todo con arte real de
+      colores similares. Arreglado con el mismo tratamiento que ya
+      funciona en la fila de batalla: ahora es una píldora con fondo
+      oscuro semitransparente, borde dorado y texto en negrita, anclada en
+      la esquina superior derecha de cada celda (`top:-6px; right:-6px;
+      z-index:3`) para no taparse con el propio retrato. Verificado con
+      capturas de Playwright: se ve con claridad tanto sobre sprites
+      procedurales como sobre arte real ya subido (arpía, dullahan,
+      goblin)
 
 ## Notas
 

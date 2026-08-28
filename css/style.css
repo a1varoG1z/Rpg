@@ -319,7 +319,11 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .picker-cell .creature-canvas-wrap.fainted { opacity: 0.35; filter: grayscale(1); }
 .picker-cell.selecting { border-color: var(--gold); background: rgba(212,175,55,0.28); }
 .picker-cell.invalid { border-color: #b0392f; background: rgba(176,57,47,0.25); }
-.picker-cell-ult { position: absolute; bottom: 1px; left: 0; right: 0; text-align: center; font-size: 0.48rem; color: #e0bb55; text-shadow: 1px 1px 1px #000; pointer-events: none; }
+.picker-cell-ult {
+  position: absolute; top: -6px; right: -6px; z-index: 3; font-size: 0.5rem; font-weight: bold; color: #e0bb55;
+  background: rgba(10,6,3,0.9); border: 1px solid #7a5f22; border-radius: 8px; padding: 1px 4px; line-height: 1.4;
+  white-space: nowrap; pointer-events: none;
+}
 .picker-used-overlay { position: absolute; left: 0; top: 0; pointer-events: none; }
 .picker-used-overlay line { stroke: #b0392f; stroke-width: 4; stroke-linecap: round; opacity: 0.85; }
 .battle-unit-name { font-size: 0.6rem; color: var(--cream-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
