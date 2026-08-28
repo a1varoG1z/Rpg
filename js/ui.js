@@ -395,6 +395,126 @@ UI.showBossEntry = function (entry) {
   $('bossEntryModal').classList.remove('hidden');
 };
 
+// ---------- Guía ----------
+// Referencia estática de todas las mecánicas del juego (elementos, clases,
+// estadísticas, rareza/evolución, ultis, Formación/combate, equipo...) —
+// pedida por el usuario tras preguntar qué significan los avisos de
+// vulnerabilidad de tipo en la ficha de un luchador. No depende de `state`,
+// es la misma para cualquier partida; se abre desde el botón "📖 Guía" de
+// Ajustes.
+function guideSection(title, bodyHtml) {
+  const panel = el('div', 'panel');
+  panel.innerHTML = `<h3>${title}</h3>${bodyHtml}`;
+  return panel;
+}
+UI.openGuide = function () {
+  const body = $('guideModalBody');
+  body.innerHTML = '';
+  body.appendChild(el('h3', null, '📖 Guía de Defensor de Texel'));
+  body.appendChild(el('p', 'settings-info', 'Todas las mecánicas del juego explicadas en un solo sitio.'));
+
+  body.appendChild(guideSection('🌪️ Elementos', `
+    <p class="settings-info">Cada luchador tiene un elemento de los 5, en un círculo de ventajas
+    (cada uno es fuerte contra el siguiente y débil contra el anterior):</p>
+    <p class="settings-info">🔥 Fuego → 🌪️ Viento → ⛰️ Tierra → ⚡ Rayo → 💧 Agua → 🔥 Fuego (y vuelta a empezar)</p>
+    <p class="settings-info">Atacar a un elemento del que eres fuerte da <b>+25% de daño</b>; atacar a uno
+    del que eres débil hace <b>-20% de daño</b> (0.8×). Sin ventaja ni desventaja, el daño es el normal.</p>`));
+
+  body.appendChild(guideSection('🎭 Clases / Tribus', `
+    <p class="settings-info">Cada luchador pertenece a una de 5 clases, que fijan su perfil de
+    estadísticas y su rol:</p>
+    <p class="settings-info">🛡️ <b>Campeón</b> — Tanque: mucha vida y defensa.<br>
+    🗡️ <b>Pícaro</b> — Daño físico: mucho ataque y agilidad.<br>
+    🔮 <b>Gurú</b> — Daño mágico: mucha sabiduría.<br>
+    💀 <b>Brujo</b> — Híbrido entre ataque y sabiduría.<br>
+    🏹 <b>Explorador</b> — Soporte: estadísticas equilibradas.</p>
+    <p class="settings-info">Además, cada clase tiene una <b>vulnerabilidad de tipo</b> (el aviso que
+    aparece en la ficha del luchador) — daño extra según si el golpe que recibe es "físico" o
+    "mágico":</p>
+    <p class="settings-info">🛡️ Campeón: <b>+25% de daño mágico</b> recibido.<br>
+    🔮 Gurú: <b>+25% de daño físico</b> recibido.<br>
+    🗡️ Pícaro: <b>+12% de cualquier daño</b> recibido (físico y mágico).<br>
+    💀 Brujo: cruce entre Campeón y Gurú, <b>+10% de cada tipo</b> de daño recibido.<br>
+    🏹 Explorador: sin vulnerabilidad especial, no recibe ningún extra.</p>
+    <p class="settings-info"><b>¿Qué cuenta como "mágico"?</b> Solo las ultis que golpean a toda una
+    fila enemiga a la vez (como Arrasar) — usan la Sabiduría del atacante en vez del Ataque. Todo lo
+    demás (golpes básicos y ultis de un solo objetivo) cuenta como "físico" y usa el Ataque.</p>`));
+
+  body.appendChild(guideSection('📊 Estadísticas', `
+    <p class="settings-info">❤️ <b>Vida (HP)</b> — cuánto daño aguanta antes de caer.<br>
+    ⚔️ <b>Ataque (ATK)</b> — potencia de los golpes básicos y de casi todas las ultis (las "físicas").<br>
+    🛡️ <b>Defensa (DEF)</b> — reduce el daño físico y mágico que recibe (la mitad de la Defensa se
+    resta directamente del Ataque/Sabiduría de quien golpea).<br>
+    💨 <b>Agilidad (AGI)</b> — decide el orden de turnos (actúa antes quien tenga más), sube la
+    probabilidad de golpe crítico (+0.15% por punto, hasta 40%) y la carga de ulti que se gana al
+    golpear.<br>
+    🧠 <b>Sabiduría (WIS)</b> — potencia de las ultis "mágicas" (las de fila, como Arrasar).</p>
+    <p class="settings-info">Un golpe <b>crítico</b> multiplica el daño ×1.5; el daño también varía
+    de forma aleatoria un ±10% en cada golpe, así que dos ataques idénticos nunca hacen exactamente
+    lo mismo.</p>`));
+
+  body.appendChild(guideSection('⭐ Rareza y evolución', `
+    <p class="settings-info">5 escalones de rareza: ⚪ Común → 🟢 Infrecuente → 🔵 Raro → 🟣 Épico →
+    🟡 Legendario. Cada escalón multiplica bastante las estadísticas base.</p>
+    <p class="settings-info">Cada familia de luchador evoluciona 2 veces (3 formas en total), pero
+    no todas arrancan en Común: algunas empiezan más arriba en la escalera y llegan más lejos.</p>
+    <p class="settings-info"><b>Fusión (SEF)</b>: usa copias sueltas del mismo luchador como material
+    (cada una suma 1 a la barra, hasta 5/5) para poder evolucionarlo a su siguiente forma. Al
+    evolucionar, la barra SEF vuelve a 0 para la nueva forma.</p>
+    <p class="settings-info"><b>Superfusión</b>: cuando un luchador ya está en su forma máxima (no
+    evoluciona más) y tiene la barra SEF a 5/5, se puede <b>sacrificar</b> como material de
+    Superfusión de OTRO luchador (en la forma máxima) para darle una ⭐ permanente — hasta 3
+    estrellas, cada una da <b>+8% a todas sus estadísticas</b> para siempre.</p>`));
+
+  body.appendChild(guideSection('📈 Nivel, XP y Homúnculos', `
+    <p class="settings-info">Los luchadores suben de nivel (hasta el tope de nivel ${XP_LEVEL_CAP})
+    ganando experiencia al ganar combates — cada nivel sube todas sus estadísticas un poco.</p>
+    <p class="settings-info">Los <b>Homúnculos</b> (se consiguen invocando) no luchan nunca: se
+    fusionan directamente con un luchador de tu Colección para darle experiencia al instante, sin
+    tener que combatir. Cuanto mayor el Homúnculo, más experiencia da.</p>`));
+
+  body.appendChild(guideSection('⚡ Ultis', `
+    <p class="settings-info">Cada luchador tiene una única habilidad especial (ulti) que se carga
+    peleando: golpear o recibir daño llena la barra morada. Al llegar al máximo, se desata sola en
+    el siguiente turno de ese luchador en vez de un golpe normal.</p>
+    <p class="settings-info">Hay ultis de varios tipos: daño a un objetivo, daño mágico a toda una
+    fila (Arrasar), curar (a sí mismo o a toda la fila propia), subir una estadística (a sí mismo o
+    a toda la fila), debilitar la defensa rival, aturdir (con probabilidad de fallar), veneno/quemadura
+    que muerde varios turnos ignorando defensa, drenar vida (cura una parte del daño hecho),
+    purificar (quita todos los males de estado de la fila propia) y revivir a un aliado caído.</p>
+    <p class="settings-info">Las ultis que no hacen daño por sí mismas (curar, subir estadísticas,
+    purificar, revivir...) también golpean a un enemigo con un golpe extra más flojo — ningún turno
+    de ulti se queda sin hacer daño.</p>`));
+
+  body.appendChild(guideSection('🐾 Formación y combate', `
+    <p class="settings-info">La Formación es una rejilla 3×3 donde colocas hasta 9 luchadores. La
+    celda central es la de <b>líder</b>: si el luchador que la ocupa tiene habilidad de líder, esa
+    bonificación (+15% a una estadística de toda la banda) se aplica mientras esté ahí colocado.</p>
+    <p class="settings-info">En combate, cada ronda eliges 1 de las 8 líneas posibles de la
+    Formación (3 filas, 3 columnas, 2 diagonales) deslizando el dedo sobre la rejilla — esos 3
+    luchadores se enfrentan a la fila enemiga activa. Una vez usada, esa línea queda tachada hasta
+    que se agoten las demás; cuando ya no queda ninguna línea viva sin usar, todas vuelven a estar
+    disponibles.</p>
+    <p class="settings-info">El pequeño número junto al rayo ⚡ sobre cada luchador indica cuántos
+    golpes le faltan para tener la ulti lista ("¡LISTA!" cuando ya puede desatarla).</p>`));
+
+  body.appendChild(guideSection('🗡️ Equipo', `
+    <p class="settings-info">6 huecos de equipo por luchador (arma, armadura, casco, guantes,
+    botas, amuleto), cada uno con 3 tipos distintos que reparten sus bonificaciones entre dos
+    estadísticas de forma diferente (p.ej. un hacha da mucho Ataque y algo de Vida; una lanza da
+    Ataque y Agilidad). Cada pieza tiene su propia rareza (igual escalera que los luchadores) y se
+    puede mejorar con Texel para subir su bonificación un poco más en cada nivel.</p>`));
+
+  body.appendChild(guideSection('🎯 Progreso', `
+    <p class="settings-info">📖 <b>Pokédex</b> (en Colección): registro de todas las formas
+    jugables que has conseguido alguna vez.<br>
+    👹 <b>Jefes</b> (en Objetivos → Mapa): igual que la Pokédex, pero de los jefes derrotados.<br>
+    🎯 <b>Objetivos</b>: resumen general de tu progreso — zonas, etapas, Pokédex, jefes, banda,
+    equipo y más.</p>`));
+
+  $('guideModal').classList.remove('hidden');
+};
+
 // ---------- Topbar ----------
 UI.renderTopbar = function (state) {
   $('texelVal').textContent = Math.floor(state.currencies.texel).toLocaleString('es-ES');

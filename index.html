@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260828c">
+<link rel="stylesheet" href="css/style.css?v=20260828d">
 </head>
 <body>
 <div id="app">
@@ -182,6 +182,13 @@
   </div>
 </div>
 
+<div id="guideModal" class="modal hidden">
+  <div class="modal-box">
+    <button class="modal-close" id="guideModalClose">✕</button>
+    <div id="guideModalBody"></div>
+  </div>
+</div>
+
 <div id="bossEntryModal" class="modal hidden">
   <div class="modal-box">
     <button class="modal-close" id="bossEntryModalClose">✕</button>
@@ -209,6 +216,7 @@
     <button class="modal-close" id="settingsModalClose">✕</button>
     <h3>⚙️ Ajustes</h3>
     <p class="settings-info">Defensor de Texel — progreso guardado automáticamente en este dispositivo.</p>
+    <button class="primary-btn" id="guideBtn">📖 Guía del juego</button>
     <label class="settings-toggle-row">
       <span>⚡ Energía infinita</span>
       <input type="checkbox" id="infiniteEnergyToggle">
@@ -229,11 +237,11 @@
 
 <div id="toastContainer"></div>
 
-<script src="js/data.js?v=20260828c"></script>
-<script src="js/sprite.js?v=20260828c"></script>
-<script src="js/state.js?v=20260828c"></script>
-<script src="js/combat.js?v=20260828c"></script>
-<script src="js/ui.js?v=20260828c"></script>
-<script src="js/main.js?v=20260828c"></script>
+<script src="js/data.js?v=20260828d"></script>
+<script src="js/sprite.js?v=20260828d"></script>
+<script src="js/state.js?v=20260828d"></script>
+<script src="js/combat.js?v=20260828d"></script>
+<script src="js/ui.js?v=20260828d"></script>
+<script src="js/main.js?v=20260828d"></script>
 </body>
 </html>

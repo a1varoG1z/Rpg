@@ -1086,6 +1086,28 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       capturas de Playwright: se ve con claridad tanto sobre sprites
       procedurales como sobre arte real ya subido (arpía, dullahan,
       goblin)
+- [x] **Guía del juego** (28/08): el usuario preguntó qué significaban los
+      avisos de vulnerabilidad de tipo en la ficha de un luchador ("cruce
+      entre Campeón y Gurú...", "vulnerable a ataques mágicos") y pidió un
+      botón de guía en Ajustes con una guía completa de las mecánicas
+      actuales (combate, estadísticas, ultis, tipos, bonificaciones...).
+      Añadido `UI.openGuide()` — nuevo modal `#guideModal`, botón "📖 Guía
+      del juego" al principio de Ajustes — con 9 secciones de referencia
+      estática (no depende de la partida, es la misma para cualquiera):
+      Elementos (círculo de ventajas ±25%/-20%), Clases/Tribus (rol de
+      cada una + su vulnerabilidad de tipo, y qué cuenta como daño
+      "mágico" vs "físico" — solo las ultis de fila como Arrasar usan
+      Sabiduría y cuentan como mágicas, todo lo demás es físico y usa
+      Ataque), Estadísticas (qué hace cada una: HP/ATK/DEF/AGI/WIS, crítico
+      ×1.5, varianza ±10%), Rareza y evolución (5 escalones, Fusión/SEF,
+      Superfusión +8% por estrella hasta 3), Nivel/XP/Homúnculos, Ultis
+      (carga, los 10 tipos de ulti que existen, el golpe extra de las que
+      no hacen daño por sí mismas), Formación y combate (líder, las 8
+      líneas, cómo se tachan al usarse), Equipo (6 huecos, 18 tipos, cómo
+      reparten sus bonificaciones) y Progreso (Pokédex/Jefes/Objetivos).
+      Verificado con Playwright: se abre sin errores desde Ajustes, las 9
+      secciones se pintan, y no hay desbordamiento horizontal ni siquiera
+      a 360px de ancho de viewport
 
 ## Notas
 
