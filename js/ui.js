@@ -797,6 +797,12 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   head.appendChild(info);
   body.appendChild(head);
 
+  if (def.lore) {
+    const lorePanel = el('div', 'panel');
+    lorePanel.innerHTML = `<h3>📜 Historia</h3><p class="settings-info">${def.lore}</p>`;
+    body.appendChild(lorePanel);
+  }
+
   if (entry.level < XP_LEVEL_CAP) {
     const homPanel = el('div', 'panel');
     homPanel.innerHTML = '<h3>🧪 Homúnculos</h3><p class="settings-info">Fusiónalos con este luchador para darle experiencia directamente — nunca luchan, solo sirven para esto.</p>';
@@ -832,12 +838,6 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   const skillPanel = el('div', 'panel');
   skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p><p class="settings-info">Se carga peleando: golpea o recibe daño para llenar la barra morada y desatarla.</p>`;
   body.appendChild(skillPanel);
-
-  if (def.lore) {
-    const lorePanel = el('div', 'panel');
-    lorePanel.innerHTML = `<h3>📜 Historia</h3><p class="settings-info">${def.lore}</p>`;
-    body.appendChild(lorePanel);
-  }
 
   if (def.leaderSkillId) {
     const leaderInfo = LEADER_SKILLS[def.leaderSkillId];

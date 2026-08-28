@@ -492,6 +492,27 @@ function loadGame() {
         GEAR_SLOT_IDS.forEach(slot => { if (!(slot in entry.gear)) entry.gear[slot] = null; });
       }
     });
+    // Limpieza de luchadores huérfanos: si una familia se elimina de
+    // FIGHTERS/MOBS/BOSSES/HOMUNCULOS (p.ej. el jugador la borra a mano en
+    // data.js), las copias que ya tenía guardadas en el roster se quedan
+    // apuntando a un defId que ya no existe. fighterDef() devuelve undefined
+    // para ellas, y como muchas pantallas (orden de la Colección, selector
+    // de Formación...) leen def.name/def.rarity/etc. sin comprobar antes,
+    // una sola ficha huérfana rompía silenciosamente TODA la lista — de ahí
+    // que desaparecieran luchadores y fallara elegir/ordenar en la
+    // Formación. Se retiran aquí, junto con su hueco en la Formación si lo
+    // ocupaban (el equipo que llevaran puestos no se pierde, solo queda sin
+    // equipar en el inventario).
+    const orphanUids = new Set();
+    state.roster = state.roster.filter(entry => {
+      if (fighterDef(entry.defId)) return true;
+      orphanUids.add(entry.uid);
+      return false;
+    });
+    if (orphanUids.size > 0) {
+      state.band = state.band.map(row => row.map(uid => (uid && orphanUids.has(uid)) ? null : uid));
+      state.__orphanCount = orphanUids.size;
+    }
     return state;
   } catch (e) { return null; }
 }

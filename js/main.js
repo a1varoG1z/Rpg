@@ -109,6 +109,13 @@
   UI.renderTopbar(state);
   UI.renderScreen(activeScreen, state);
 
+  if (state.__orphanCount) {
+    const n = state.__orphanCount;
+    delete state.__orphanCount;
+    saveGame(state);
+    UI.showToast('⚠️ Se ' + (n > 1 ? 'han retirado ' + n + ' luchadores' : 'ha retirado 1 luchador') + ' de tu Colección/Formación: ya no existen en el juego');
+  }
+
   setInterval(() => {
     tickEnergy(state, 1);
     UI.renderTopbar(state);

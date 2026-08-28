@@ -1013,6 +1013,40 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Verificado con un script headless: 99 `MOBS` en total (33 familias
       × 3 formas), cero lores duplicados dentro de cada familia, cero
       familias con un número de fichas distinto de 3
+- [x] **Fix: luchadores "desaparecidos" y Formación/orden rotos** (28/08):
+      el usuario reportó que no le funcionaba elegir personajes en la
+      Formación, ni ordenar la Colección, y que no le salían todos los
+      luchadores que tenía, "como si hubieran desaparecido". Causa raíz: el
+      propio usuario había borrado a mano 17 familias de `FIGHTERS` desde
+      GitHub (ver nota anterior de esta sesión); las copias que ya tenía
+      guardadas en su partida (localStorage) de esas familias se quedaron
+      con un `defId` que ya no existe en `data.js`. `fighterDef()` devuelve
+      `undefined` para ellas, y tanto `sortRosterEntries` (todos los modos
+      salvo "reciente") como `creatureCard` leen `def.name`/`def.rarity`/
+      etc. sin comprobar antes — bastaba con que UNA ficha de la Colección
+      fuera huérfana para que la excepción cortara a mitad el `forEach` que
+      pinta la rejilla entera, dejando la Colección vacía o a medias y
+      rompiendo el selector de la Formación (mismo `creatureCard`) en
+      cualquier orden que no fuera "Más reciente"
+      Arreglado en el origen, en `loadGame()` (`state.js`): al cargar la
+      partida se retiran ahora del roster las fichas cuyo `defId` ya no
+      resuelve a ningún personaje/mob/jefe/homúnculo real, y se limpian
+      también los huecos de la Formación que ocuparan (el equipo que
+      llevaran puesto no se pierde, solo se queda sin equipar en el
+      inventario, listo para ponérselo a otro luchador). Se avisa una vez
+      con un toast ("Se ha(n) retirado N luchador(es)...") la primera vez
+      que se detecta, para que no parezca un fallo silencioso.
+      Verificado con Playwright: partida con 1 luchador válido + 1 huérfano
+      (`huldra_comun`, familia borrada) → tras recargar, roster queda en 1,
+      el hueco de Formación que ocupaba el huérfano queda vacío, aparece el
+      toast de aviso, y los 6 modos de orden de la Colección + el selector
+      de la Formación funcionan sin excepción
+- [x] **Orden de la ficha de personaje: Historia antes que Homúnculos**
+      (28/08): a petición del usuario, en `UI.openFighterModal` el panel
+      "📜 Historia" (el lore de esa forma concreta) ahora se pinta justo
+      debajo de la cabecera (retrato + nombre/rareza/nivel), antes que el
+      panel "🧪 Homúnculos" — antes iba después de Homúnculos, Estadísticas
+      y Ulti
 
 ## Notas
 
