@@ -935,6 +935,43 @@ selector de línea nuevo y la posición real en el campo:
       hidden` para no romper la forma). Verificado en vivo con una banda
       en diagonal: la vista previa muestra exactamente "X.. / .X. / ..X"
 
+## Pendiente — segunda ronda de feedback con capturas (28/08)
+
+Cinco puntos más, con capturas de pantalla reales del usuario jugando:
+
+- [x] **1. Carga de ulti superpuesta a la foto**: la insignia "⚡ N" ya no
+      va en una barra separada debajo de la tarjeta de combate — se
+      superpone como insignia (fondo oscuro, borde dorado) en la esquina
+      superior derecha de la propia foto del personaje, tanto en el
+      combate como al elegir línea. Tarjeta más compacta y legible
+- [x] **2. Vista previa pre-combate con el mismo estilo de cuadrados**:
+      `.stage-run-fighter` pasa de icono suelto a un cuadrado con borde
+      (mismo estilo que `.picker-cell`/`.doll-slot`) con la barra de vida
+      debajo, dentro del propio cuadrado — ya no es solo un icono con una
+      rayita de vida al lado
+- [x] **3. Quitadas las combinaciones restantes debajo de tus personajes
+      en combate**: `UI.commitGroup` ya no rellena `#playerQueuedRows`
+      con la lista de líneas vivas que aún quedan por usar — esa
+      información ya se ve, si hace falta, en la propia rejilla del
+      selector la próxima vez que toque elegir
+- [x] **4. Una foto por cada objeto de equipo (tipo + rareza)**: hasta
+      ahora `gearIcon()` apuntaba a `assets/gear/<tipo>.png` (una imagen
+      por tipo, compartida entre las 5 rarezas — de ahí que "en arma
+      salga una daga" para todo). Ahora apunta a
+      `assets/gear/<tipo>_<rareza>.png`: 18 tipos × 5 rarezas = 90
+      imágenes posibles, mismo nivel de detalle que las criaturas por
+      evolución. Los 5 botones de compra de cada hueco en la Tienda
+      también muestran ya la foto real de esa rareza concreta (del tipo
+      representativo del hueco) en vez de un icono de color genérico
+- [x] **5. Animación distinta para invocación Legendaria**: además del
+      resplandor ya existente, ahora un Legendario en Invocar (tanto x1
+      como en el carrusel x10) tiene: un anillo de rayos dorados girando
+      detrás del retrato (`legendary-burst`), una explosión de 6 chispas
+      que salen disparadas alrededor (`legendary-spark`), y un destello
+      de luz al aparecer (`legendaryFlash`, un pico de brillo). En el
+      carrusel x10 también se queda 1.8s en pantalla en vez de 0.9s, para
+      que dé tiempo a apreciarlo
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

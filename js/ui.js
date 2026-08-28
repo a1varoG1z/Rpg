@@ -71,8 +71,9 @@ function creatureCanvas(defId, sizePx) {
 
 // ---------- Icono de equipo reutilizable ----------
 // Mismo patrón que creatureCanvas: intenta la imagen real
-// (assets/gear/<tipo>.png, un archivo por cada uno de los 18 tipos de
-// GEAR_SLOTS[slot].types — el nombre del tipo ya es único en todo el
+// (assets/gear/<tipo>_<rareza>.png — un archivo por cada tipo Y rareza,
+// igual de granular que las criaturas por evolución: 18 tipos × 5 rarezas
+// = 90 imágenes en total, el nombre del tipo ya es único en todo el
 // juego) y, si no existe todavía, cae en un icono generado por código
 // (el emoji de ese tipo, ya definido en data.js, sobre un fondo del color
 // de su rareza) que se sustituye solo por el arte real en cuanto se suba.
@@ -101,7 +102,7 @@ function gearIcon(gear, sizePx) {
     const fallback = proceduralGearIcon(typeInfo, gear.rarity, size);
     if (img.parentNode) img.parentNode.replaceChild(fallback, img);
   }, { once: true });
-  img.src = 'assets/gear/' + gear.type + '.png';
+  img.src = 'assets/gear/' + gear.type + '_' + gear.rarity + '.png';
   return img;
 }
 
@@ -1092,13 +1093,29 @@ function revealOutcomeText(result) {
   }[result.outcome];
 }
 
+// Un anillo de rayos girando detrás del retrato + una explosión de
+// chispas alrededor, solo para Legendario — para que el momento de tocar
+// el tier más alto se note claramente distinto al resto de rarezas, no
+// solo un resplandor un poco más grande (ver también legendaryFlash en
+// .reveal-flash.rarity-legendario, el destello de luz al aparecer).
+function appendLegendaryFx(wrap) {
+  wrap.appendChild(el('div', 'legendary-burst'));
+  for (let i = 0; i < 6; i++) {
+    const spark = el('div', 'legendary-spark');
+    spark.style.setProperty('--i', i);
+    wrap.appendChild(spark);
+  }
+}
+
 UI.showSingleReveal = function (result) {
   const def = fighterDef(result.defId);
   const rarity = rarityInfo(def.rarity);
   const body = $('summonRevealBody');
   body.className = 'reveal-flash rarity-' + def.rarity;
   body.innerHTML = `<div class="reveal-canvas-wrap"></div><div class="item-modal-name" style="color:${rarity.color}">${def.name}</div><div class="item-modal-rarity">${rarity.label}</div><div class="reveal-outcome">${revealOutcomeText(result)}</div>`;
-  body.querySelector('.reveal-canvas-wrap').appendChild(creatureCanvas(result.defId, 120));
+  const canvasWrap = body.querySelector('.reveal-canvas-wrap');
+  if (def.rarity === 'legendario') appendLegendaryFx(canvasWrap);
+  canvasWrap.appendChild(creatureCanvas(result.defId, 120));
   $('summonRevealClose').classList.remove('hidden');
   $('summonRevealModal').classList.remove('hidden');
 };
@@ -1146,11 +1163,16 @@ UI.showMultiReveal = function (results) {
       <div class="item-modal-rarity">${rarity.label}</div>
       <div class="reveal-outcome">${revealOutcomeText(r)}</div>
       <button class="mini-btn reveal-skip-btn" id="revealSkipBtn">Saltar »</button>`;
-    body.querySelector('.reveal-canvas-wrap').appendChild(creatureCanvas(r.defId, 120));
+    const canvasWrap = body.querySelector('.reveal-canvas-wrap');
+    if (def.rarity === 'legendario') appendLegendaryFx(canvasWrap);
+    canvasWrap.appendChild(creatureCanvas(r.defId, 120));
     $('revealSkipBtn').addEventListener('click', (e) => { e.stopPropagation(); i = results.length; renderCard(); });
     body.addEventListener('click', advance, { once: true });
     i++;
-    timer = setTimeout(advance, 900);
+    // Un Legendario se queda más tiempo en pantalla para que dé tiempo a
+    // apreciar el destello y las chispas, en vez de pasar tan rápido como
+    // el resto de rarezas.
+    timer = setTimeout(advance, def.rarity === 'legendario' ? 1800 : 900);
   }
   renderCard();
 };
@@ -1255,18 +1277,23 @@ UI.renderTienda = function (state) {
   gearWrap.innerHTML = '';
   GEAR_SLOT_IDS.forEach(slot => {
     const slotInfo = GEAR_SLOTS[slot];
+    const repType = gearTypeIds(slot)[0];
     const panel = el('div', 'shop-row');
     const iconBox = el('div', 'shop-row-icon');
-    iconBox.appendChild(gearIcon({ slot, type: gearTypeIds(slot)[0], rarity: 'raro' }, 34));
+    iconBox.appendChild(gearIcon({ slot, type: repType, rarity: 'raro' }, 34));
     panel.appendChild(iconBox);
     const info = el('div', 'shop-row-info');
     info.appendChild(el('div', 'shop-row-title', slotInfo.label));
     const buyRow = el('div', 'shop-buy-row');
+    // Cada botón muestra la foto real de esa rareza concreta (del tipo
+    // representativo del hueco — el tipo exacto que toque sigue siendo al
+    // azar al comprar, como ya era), no solo un icono de color genérico.
     RARITIES.forEach(rarity => {
       const price = GEAR_SHOP_PRICES[rarity.id];
       const btn = el('button', 'shop-buy-btn');
       btn.style.borderColor = rarity.color;
-      btn.innerHTML = `${rarity.icon}<br>🪙${price}`;
+      btn.appendChild(gearIcon({ slot, type: repType, rarity: rarity.id }, 30));
+      btn.appendChild(el('div', 'shop-buy-price', '🪙' + price));
       btn.disabled = state.currencies.texel < price || state.gearInventory.length >= MAX_GEAR;
       btn.addEventListener('click', () => {
         const gear = buyShopGear(state, slot, rarity.id);
@@ -1575,13 +1602,10 @@ UI.commitGroup = function (view, group) {
   activeEl.innerHTML = '';
   activeEl.classList.remove('active-row-spread');
   playerRow.forEach(u => activeEl.appendChild(UI.battleUnitCard(u)));
-  const reserveEl = $('playerQueuedRows');
-  reserveEl.innerHTML = '';
-  unusedAliveGroups(view).forEach(g => {
-    const mini = el('div', 'queued-row-mini');
-    g.row.forEach(u => mini.appendChild(creatureCanvas(u.defId, 26)));
-    reserveEl.appendChild(mini);
-  });
+  // Las combinaciones restantes ya no se listan aquí debajo — el jugador
+  // las vuelve a ver, si hace falta, en la propia rejilla del selector
+  // cuando toque elegir de nuevo.
+  $('playerQueuedRows').innerHTML = '';
 
   UI.stepBattle(view, false);
 };
@@ -1590,18 +1614,18 @@ UI.battleUnitCard = function (u) {
   const card = el('div', 'battle-unit rarity-' + u.rarity + (u.alive ? '' : ' fainted'));
   card.dataset.unitId = u.id;
   card.addEventListener('click', () => UI.showBattleUnitStats(u));
-  card.appendChild(creatureCanvas(u.defId, 76));
+  // La carga de ulti va superpuesta como insignia sobre la propia foto
+  // (esquina superior), no como barra aparte debajo — deja la tarjeta
+  // más compacta y legible.
+  const canvasWrap = el('div', 'battle-unit-canvas-wrap');
+  canvasWrap.appendChild(creatureCanvas(u.defId, 76));
+  canvasWrap.appendChild(el('div', 'ult-turns', ultTurnsText(u)));
+  card.appendChild(canvasWrap);
   const hpBar = el('div', 'hp-bar small');
   const fill = el('div', 'hp-fill');
   fill.style.width = Math.max(0, u.hp / u.maxHp * 100) + '%';
   hpBar.appendChild(fill);
   card.appendChild(hpBar);
-  const ultBar = el('div', 'ult-bar');
-  const ultFill = el('div', 'ult-fill');
-  ultFill.style.width = (u.ultCharge || 0) + '%';
-  ultBar.appendChild(ultFill);
-  card.appendChild(ultBar);
-  card.appendChild(el('div', 'ult-turns', ultTurnsText(u)));
   card.appendChild(el('div', 'battle-unit-name', u.name));
   return card;
 };
@@ -1660,8 +1684,6 @@ UI.updateUnitCardHp = function (u) {
 UI.updateUnitCardCharge = function (u) {
   const cardEl = document.querySelector(`.battle-unit[data-unit-id="${u.id}"]`);
   if (!cardEl) return;
-  const fill = cardEl.querySelector('.ult-fill');
-  if (fill) fill.style.width = (u.ultCharge || 0) + '%';
   const turns = cardEl.querySelector('.ult-turns');
   if (turns) turns.textContent = ultTurnsText(u);
 };

@@ -151,11 +151,19 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .stage-run-connector.cleared { background: var(--green); opacity: 1; }
 .stage-run-preview { display: flex; justify-content: center; gap: 6px; padding: 10px 0; flex-wrap: wrap; }
 .stage-run-band { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; }
-.stage-run-band-row { display: flex; justify-content: center; gap: 8px; }
-.stage-run-fighter { width: 44px; text-align: center; position: relative; }
+.stage-run-band-row { display: flex; justify-content: center; gap: 6px; }
+/* Mismo estilo de cuadrado con borde que el resto de rejillas de combate
+   (picker-cell, doll-slot) — más la barra de vida debajo, que esas otras
+   rejillas no necesitan. */
+.stage-run-fighter {
+  width: 52px; height: 68px; border: 2px solid var(--gold-dim); border-radius: 8px; background: var(--panel);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  text-align: center; position: relative;
+}
 .stage-run-fighter.empty { visibility: hidden; }
 .stage-run-fighter.fainted { opacity: 0.5; }
-.stage-run-fighter .hp-bar.small { height: 5px; margin-top: 2px; }
+.stage-run-fighter .creature-canvas { width: 40px; height: 45px; }
+.stage-run-fighter .hp-bar.small { height: 5px; width: 90%; }
 .fainted-icon { position: absolute; top: 0; right: 0; font-size: 0.9rem; }
 .stage-run-items { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; }
 
@@ -184,9 +192,10 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .shop-buy-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .shop-buy-btn {
   flex: 1; min-width: 56px; background: #1f1811; border: 2px solid var(--gold-dim); border-radius: 8px; color: var(--cream);
-  font-size: 0.65rem; padding: 6px 2px; line-height: 1.5;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px;
 }
 .shop-buy-btn:disabled { opacity: 0.35; }
+.shop-buy-price { font-size: 0.65rem; }
 
 /* ---------- Modales ---------- */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.72); display: flex; align-items: center; justify-content: center; z-index: 90; padding: 16px; }
@@ -226,8 +235,34 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .reveal-flash.rarity-infrecuente { box-shadow: 0 0 20px var(--rg, #4caf6b); }
 .reveal-flash.rarity-raro { box-shadow: 0 0 30px var(--rg, #3f9fe0); }
 .reveal-flash.rarity-epico { box-shadow: 0 0 35px var(--rg, #a463e0); }
-.reveal-flash.rarity-legendario { box-shadow: 0 0 40px #e8a23c; animation: revealPop 0.5s ease-out, legendaryPulse 1.4s ease-in-out infinite 0.5s; }
-.reveal-canvas-wrap { display: flex; justify-content: center; margin-bottom: 6px; }
+.reveal-flash.rarity-legendario { box-shadow: 0 0 40px #e8a23c; animation: revealPop 0.5s ease-out, legendaryPulse 1.4s ease-in-out infinite 0.5s, legendaryFlash 0.7s ease-out; }
+@keyframes legendaryFlash { 0% { filter: brightness(1); } 12% { filter: brightness(2.2); } 100% { filter: brightness(1); } }
+.reveal-canvas-wrap { position: relative; display: flex; justify-content: center; margin-bottom: 6px; }
+/* Anillo de rayos girando detrás del retrato + chispas que salen
+   disparadas — solo para Legendario, ver appendLegendaryFx en ui.js. */
+.legendary-burst {
+  position: absolute; top: 50%; left: 50%; width: 160px; height: 160px; margin: -80px 0 0 -80px; z-index: 0;
+  border-radius: 50%; pointer-events: none; animation: legendaryBurstSpin 6s linear infinite;
+  background: conic-gradient(from 0deg,
+    transparent 0deg, rgba(232,162,60,0.55) 8deg, transparent 16deg, transparent 40deg,
+    rgba(232,162,60,0.4) 48deg, transparent 56deg, transparent 80deg, rgba(232,162,60,0.5) 88deg,
+    transparent 96deg, transparent 120deg, rgba(232,162,60,0.4) 128deg, transparent 136deg,
+    transparent 160deg, rgba(232,162,60,0.5) 168deg, transparent 176deg, transparent 200deg,
+    rgba(232,162,60,0.4) 208deg, transparent 216deg, transparent 240deg, rgba(232,162,60,0.5) 248deg,
+    transparent 256deg, transparent 280deg, rgba(232,162,60,0.4) 288deg, transparent 296deg,
+    transparent 320deg, rgba(232,162,60,0.5) 328deg, transparent 336deg);
+}
+@keyframes legendaryBurstSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.legendary-spark {
+  position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; z-index: 2;
+  background: #ffe28a; border-radius: 50%; box-shadow: 0 0 8px 2px #ffe28a; pointer-events: none;
+  animation: legendarySparkFly 1.1s ease-out calc(var(--i) * 0.08s) infinite;
+}
+@keyframes legendarySparkFly {
+  0% { transform: rotate(calc(var(--i) * 60deg)) translate(0, 0) scale(0); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: rotate(calc(var(--i) * 60deg)) translate(70px, 0) scale(1); opacity: 0; }
+}
 .reveal-outcome { margin-top: 6px; font-size: 0.85rem; color: var(--gold); }
 .reveal-progress { font-family: 'Press Start 2P', monospace; font-size: 0.65rem; color: var(--gold-dim); margin-bottom: 8px; }
 .reveal-skip-btn { margin-top: 14px; }
@@ -262,9 +297,13 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .battle-unit { position: relative; width: 100px; text-align: center; transition: opacity 0.3s; }
 .battle-unit.fainted { opacity: 0.25; filter: grayscale(1); }
 .battle-unit .hp-bar.small { height: 7px; margin-top: 2px; }
+.battle-unit-canvas-wrap { position: relative; }
+.battle-unit-canvas-wrap .ult-turns {
+  position: absolute; top: -2px; right: 2px; z-index: 2; font-size: 0.58rem; font-weight: bold; color: #e0bb55;
+  background: rgba(10,6,3,0.75); border: 1px solid #7a5f22; border-radius: 8px; padding: 0 4px; line-height: 1.4;
+}
 .ult-bar { height: 5px; width: 100%; background: #1a1410; border: 1px solid #000; border-radius: 3px; overflow: hidden; margin-top: 2px; }
 .ult-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #c98fe8, #e8a23c); transition: width 0.25s ease-out; }
-.ult-turns { font-size: 0.6rem; color: #e0bb55; font-weight: bold; margin-top: 1px; }
 
 #groupPickerPanel { flex-shrink: 0; text-align: center; padding: 6px 0; }
 #groupPickerPanel.hidden { display: none; }
