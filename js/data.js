@@ -370,15 +370,15 @@ addFamily('babayaga', 2, 'tierra', 'brujo', 'debilitar', ['Aprendiz de Baba Yaga
 
 
 // ### Enemigos / mobs normales (14.3)
-addMobFamily('arpia', 1, 'viento', 'picaro', 'furia', ['Arpía Joven', 'Arpía Chillona', 'Arpía Matriarca del Nido'], 'Ataca en bandada, chillando para desorientar a su presa.');
-addMobFamily('dullahan', 2, 'rayo', 'brujo', 'debilitar', ['Jinete sin Cabeza Menor', 'Dullahan Cabalgante', 'Dullahan, Heraldo de la Muerte'], 'Lleva su propia cabeza bajo el brazo, y donde se detiene, alguien muere.');
-addMobFamily('tengu', 1, 'viento', 'picaro', 'aturdir', ['Tengu Travieso', 'Tengu Guerrero', 'Gran Tengu de la Montaña'], 'Maestro del engaño y la espada a partes iguales.');
-addMobFamily('goblin', 1, 'tierra', 'picaro', 'golpe', ['Goblin Novato', 'Goblin Saqueador', 'Jefe de la Horda Goblin'], 'Solo, es débil. En horda, es una plaga imparable.');
-addMobFamily('trasgo', 1, 'viento', 'picaro', 'aturdir', ['Trasgo Menor', 'Trasgo Revoltoso', 'Trasgo Rey de las Travesuras'], 'Le divierte más molestar a los viajeros que robarles.');
+addMobFamily('arpia', 1, 'viento', 'picaro', 'furia', ['Arpía Joven', 'Arpía Chillona', 'Arpía Matriarca del Nido'], 'Ataca en bandada, chillando para desorientar a su presa.', true);
+addMobFamily('dullahan', 2, 'rayo', 'brujo', 'debilitar', ['Jinete sin Cabeza Menor', 'Dullahan Cabalgante', 'Dullahan, Heraldo de la Muerte'], 'Lleva su propia cabeza bajo el brazo, y donde se detiene, alguien muere.', true);
+addMobFamily('tengu', 1, 'viento', 'picaro', 'aturdir', ['Tengu Travieso', 'Tengu Guerrero', 'Gran Tengu de la Montaña'], 'Maestro del engaño y la espada a partes iguales.', true);
+addMobFamily('goblin', 1, 'tierra', 'picaro', 'golpe', ['Goblin Novato', 'Goblin Saqueador', 'Jefe de la Horda Goblin'], 'Solo, es débil. En horda, es una plaga imparable.', true);
+addMobFamily('trasgo', 1, 'viento', 'picaro', 'aturdir', ['Trasgo Menor', 'Trasgo Revoltoso', 'Trasgo Rey de las Travesuras'], 'Le divierte más molestar a los viajeros que robarles.', true);
 addMobFamily('demonio', 2, 'fuego', 'brujo', 'debilitar', ['Demonio Menor', 'Demonio de las Llamas', 'Archidemonio del Abismo'], 'Cada trato que ofrece esconde una trampa que nadie ve venir.');
 addMobFamily('esqueleto', 1, 'tierra', 'campeon', 'golpe', ['Esqueleto Andante', 'Esqueleto Guerrero', 'Comandante de Huesos'], 'Ni la muerte pudo con las ganas de pelear de este guerrero.');
 addMobFamily('draugr', 2, 'agua', 'campeon', 'escudo', ['Draugr Recién Alzado', 'Draugr Vikingo', 'Rey Draugr del Túmulo'], 'Se niega a abandonar el tesoro que custodió en vida.');
-addMobFamily('chupacabra', 1, 'viento', 'picaro', 'furia', ['Chupacabras Joven', 'Chupacabras Nocturno', 'Terror de los Rebaños'], 'Nadie lo ha visto de cerca... y quien lo hizo no vivió para describirlo.');
+addMobFamily('chupacabra', 1, 'viento', 'picaro', 'furia', ['Chupacabras Joven', 'Chupacabras Nocturno', 'Terror de los Rebaños'], 'Nadie lo ha visto de cerca... y quien lo hizo no vivió para describirlo.', true);
 addMobFamily('kitsune', 2, 'fuego', 'brujo', 'debilitar', ['Kitsune de Una Cola', 'Kitsune de Tres Colas', 'Kitsune de Nueve Colas'], 'Cuantas más colas gana, más poderosa (y más traviesa) se vuelve su magia.');
 addMobFamily('momia', 1, 'tierra', 'brujo', 'debilitar', ['Momia Menor', 'Momia Vendada', 'Faraón Momificado'], 'Duerme durante siglos, hasta que alguien profana su tumba.');
 addMobFamily('orco', 1, 'tierra', 'campeon', 'furia', ['Orco Recluta', 'Orco Guerrero', 'Jefe de Guerra Orco'], 'Vive para la batalla, y muere feliz si es peleando.');
