@@ -1726,7 +1726,14 @@ UI.showGroupPicker = function (view, remaining) {
         const wrap = el('div', 'creature-canvas-wrap' + (unit.alive ? '' : ' fainted'));
         wrap.appendChild(creatureCanvas(unit.defId, 40));
         cellEl.appendChild(wrap);
-        if (unit.alive) cellEl.appendChild(el('div', 'picker-cell-ult', ultTurnsText(unit)));
+        if (unit.alive) {
+          cellEl.appendChild(el('div', 'picker-cell-ult', ultTurnsText(unit)));
+          const hpBar = el('div', 'hp-bar small');
+          const fill = el('div', 'hp-fill');
+          fill.style.width = Math.max(0, unit.hp / unit.maxHp * 100) + '%';
+          hpBar.appendChild(fill);
+          cellEl.appendChild(hpBar);
+        }
       }
       cellEls.push(cellEl);
       rowEl.appendChild(cellEl);

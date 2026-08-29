@@ -1188,6 +1188,21 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       sigue funcionando igual tras mover `#stageRunView`. Sin
       desbordamiento horizontal en la nueva pantalla ni en la barra de 7
       pestañas a 360px de ancho
+- [x] **Barra de vida en el selector de línea del combate** (29/08): el
+      usuario pidió que se viera la vida que le queda a cada luchador
+      también en la rejilla 3×3 de "Desliza para elegir 1 línea" (antes
+      solo se veía en la fila de batalla de arriba, no en el propio
+      selector de abajo). Añadida una `.hp-bar.small` bajo cada celda
+      ocupada, junto a la píldora de carga de ulti que ya tenía. Al
+      añadirla apareció un problema de apilamiento (z-index): el círculo
+      claro de fondo tras el retrato (`.creature-canvas-wrap::before`) la
+      tapaba por completo y quedaba invisible — arreglado dándole
+      `position: relative; z-index: 1` explícito a la barra. También se
+      subió la altura de la celda (58px → 66px) y se pasó su layout a
+      columna para que quepan holgados el retrato, la píldora y la barra.
+      Verificado con capturas de Playwright con distintos niveles de vida
+      simulados por celda: la barra se ve con claridad, y sigue sin haber
+      desbordamiento horizontal ni a 340px de ancho de viewport
 
 ## Notas
 
