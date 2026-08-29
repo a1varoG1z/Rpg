@@ -509,7 +509,16 @@ UI.openGuide = function () {
     que se agoten las demás; cuando ya no queda ninguna línea viva sin usar, todas vuelven a estar
     disponibles.</p>
     <p class="settings-info">El pequeño número junto al rayo ⚡ sobre cada luchador indica cuántos
-    golpes le faltan para tener la ulti lista ("¡LISTA!" cuando ya puede desatarla).</p>`));
+    golpes le faltan para tener la ulti lista ("¡LISTA!" cuando ya puede desatarla).</p>
+    <p class="settings-info">Cada personaje del selector también muestra un ▲ verde o ▼ rojo si
+    tiene ventaja o desventaja elemental clara contra la fila enemiga activa — útil para decidir qué
+    línea enviar. El botón "🤖 Auto" resuelve la batalla entera sin tener que elegir línea cada
+    ronda (elige siempre la de mejor ventaja elemental media); queda activado para el resto de la
+    partida hasta que lo desactives, incluidos los siguientes combates de un mismo recorrido.</p>
+    <p class="settings-info">Los jefes de zona tienen 2 mecánicas propias que ningún otro rival
+    tiene: al bajar del 30% de su vida entran en <b>Furia</b> (+25% Ataque y Sabiduría el resto del
+    combate), y cada 4º golpe básico suyo es un <b>Golpe Devastador</b> — crítico garantizado y algo
+    más fuerte de lo normal.</p>`));
 
   body.appendChild(guideSection('🗡️ Equipo', `
     <p class="settings-info">6 huecos de equipo por luchador (arma, armadura, casco, guantes,
@@ -1612,12 +1621,18 @@ UI.openGearModal = function (state, gearUid) {
 // vivas ya han actuado en este ciclo sin acabar con el enemigo, se reinicia
 // el ciclo y se vuelve a elegir entre ellas. Al caer la fila enemiga, las 3
 // combinaciones quedan disponibles de nuevo para la siguiente oleada.
+// Combate automático: se recuerda entre batallas (UI.autoBattleEnabled,
+// como UI.rosterSortMode) para que no haya que reactivarlo en cada nodo de
+// un recorrido o nivel de Torre — es un modo "déjalo jugar solo", no algo
+// que se active por combate suelto.
+UI.autoBattleEnabled = false;
 UI.openBattle = function (state, playerRowsRaw, enemyRowsRaw, opts) {
   const playerGroups = playerRowsRaw.map((row, idx) => ({ idx, row, usedThisCycle: false })).filter(g => g.row.length > 0);
   const enemyRows = enemyRowsRaw.filter(r => r.length > 0);
   const view = {
     state, opts, playerGroups, enemyRows, enemyIdx: 0,
     currentPlayerRow: null, currentEnemyRow: null, unitById: {}, log: [], idx: 0, timer: null,
+    autoBattle: UI.autoBattleEnabled,
   };
   window.__battleView = view;
   $('battleTitle').textContent = opts.title;
@@ -1626,8 +1641,38 @@ UI.openBattle = function (state, playerRowsRaw, enemyRowsRaw, opts) {
   $('groupPickerPanel').classList.add('hidden');
   $('battleLog').innerHTML = '';
   $('battleOverlay').classList.remove('hidden');
+  UI.updateAutoBattleBtn(view);
   UI.promptNextClash(view);
 };
+
+UI.updateAutoBattleBtn = function (view) {
+  const btn = $('battleAutoBtn');
+  if (!btn) return;
+  btn.classList.toggle('active', !!view.autoBattle);
+  btn.textContent = view.autoBattle ? '🤖 Auto: ON' : '🤖 Auto';
+};
+
+UI.toggleAutoBattle = function () {
+  const view = window.__battleView;
+  UI.autoBattleEnabled = !UI.autoBattleEnabled;
+  if (!view) return;
+  view.autoBattle = UI.autoBattleEnabled;
+  UI.updateAutoBattleBtn(view);
+  // Si se activa justo cuando toca elegir línea, resuelve esa elección ya
+  // mismo en vez de esperar al siguiente choque.
+  if (view.autoBattle && !$('groupPickerPanel').classList.contains('hidden')) {
+    const remaining = resolveAvailableGroups(view);
+    if (remaining.length) UI.commitGroup(view, pickAutoGroup(view, remaining));
+  }
+};
+
+// Heurística del combate automático: la línea con mejor ventaja elemental
+// media contra la fila enemiga activa (ver rowElementScore en combat.js) —
+// el mismo criterio que ya usa el aviso visual del selector manual.
+function pickAutoGroup(view, remaining) {
+  const enemyRow = view.enemyRows[view.enemyIdx];
+  return remaining.reduce((best, g) => rowElementScore(g.row, enemyRow) > rowElementScore(best.row, enemyRow) ? g : best);
+}
 
 function alivePlayerGroups(view) { return view.playerGroups.filter(g => rowAlive(g.row)); }
 function unusedAliveGroups(view) { return alivePlayerGroups(view).filter(g => !g.usedThisCycle); }
@@ -1652,6 +1697,7 @@ UI.promptNextClash = function (view) {
   if (remaining.length === 0) { UI.endBattle(view, 'derrota'); return; }
   UI.renderClashPreview(view);
   if (remaining.length === 1) UI.commitGroup(view, remaining[0]);
+  else if (view.autoBattle) UI.commitGroup(view, pickAutoGroup(view, remaining));
   else UI.showGroupPicker(view, remaining);
 };
 
@@ -1733,6 +1779,14 @@ UI.showGroupPicker = function (view, remaining) {
           fill.style.width = Math.max(0, unit.hp / unit.maxHp * 100) + '%';
           hpBar.appendChild(fill);
           cellEl.appendChild(hpBar);
+          // Aviso de ventaja elemental: ▲ verde si este luchador pega
+          // fuerte contra la fila enemiga activa, ▼ rojo si sale
+          // perdiendo — mismo criterio (unitElementScore) que usa el
+          // combate automático para elegir línea. Se omite si es neutro,
+          // para no llenar la celda de iconos quieran decir o no nada.
+          const advScore = unitElementScore(unit, view.enemyRows[view.enemyIdx]);
+          if (advScore > 1.05) cellEl.appendChild(el('div', 'picker-cell-adv adv-good', '▲'));
+          else if (advScore < 0.95) cellEl.appendChild(el('div', 'picker-cell-adv adv-bad', '▼'));
         }
       }
       cellEls.push(cellEl);
@@ -1971,6 +2025,13 @@ UI.applyBattleEvent = function (view, ev) {
       break;
     case 'charge':
       if (u) { u.ultCharge = ev.value; UI.updateUnitCardCharge(u); }
+      break;
+    case 'enrage':
+      triggerBattleAnim(u.id, 'hit-shake', 400);
+      UI.logLine(`🔥 ¡${u.name} entra en FURIA! (+25% ataque y sabiduría)`);
+      break;
+    case 'bossattack':
+      UI.logLine(`💢 ¡${u.name} prepara un Golpe Devastador!`);
       break;
     case 'attack':
       triggerBattleAnim(attacker.id, attacker.side === 'player' ? 'lunge-up' : 'lunge-down', 300);

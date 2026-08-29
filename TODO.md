@@ -534,6 +534,19 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       "dispersar/curar estados" (cleanse) ya están, más un vampírico
       (drain) que no estaba en esta lista original. Ver detalle en la
       sección de la ronda de 14 preguntas más arriba
+- [ ] **Torre infinita**: extensión de la Torre Batalla (ver más abajo, ya
+      implementada con 66 niveles fijos) para cuando se hayan superado
+      todos — un modo survival sin fin con dificultad creciente sin tope y
+      marcador de "mejor ronda alcanzada", sugerido por Claude a petición
+      del usuario ("dame más sugerencias de modos de juego")
+- [ ] **Sinergias de equipo**: bonus de combate si la línea activa elegida
+      comparte elemento o clase (p.ej. +10% de daño si los 3 luchadores son
+      del mismo elemento) — daría sentido estratégico a cómo se monta la
+      Formación más allá de "meter a los más fuertes". Sugerido por Claude
+- [ ] **Sets de equipo**: lleva 2-3 piezas del mismo tipo (p.ej. todo
+      "rúnico") a la vez y da un bonus extra de estadísticas, para dar más
+      profundidad al sistema de equipo (`GEAR_SLOTS`) ya existente.
+      Sugerido por Claude
 
 ## Criaturas jugables con PNG ya asignado (candidatas a sustituir)
 
@@ -1203,6 +1216,54 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Verificado con capturas de Playwright con distintos niveles de vida
       simulados por celda: la barra se ve con claridad, y sigue sin haber
       desbordamiento horizontal ni a 340px de ancho de viewport
+- [x] **Combate automático, aviso de ventaja elemental y habilidades de
+      jefe** (29/08): tres mejoras de combate pedidas por el usuario tras
+      preguntarle sugerencias.
+      - **Botón "🤖 Auto"** (junto a "Saltar »" en la cabecera de la
+        Batalla): resuelve la batalla entera sin elegir línea a mano —
+        cada vez que tocaría mostrar el selector, `UI.promptNextClash`
+        elige sola la línea con mejor ventaja elemental media
+        (`pickAutoGroup`/`rowElementScore` en `combat.js`) y sigue
+        jugando. Se recuerda entre combates (`UI.autoBattleEnabled`, igual
+        que el orden de la Colección) para no tener que reactivarlo en
+        cada nodo de un recorrido o nivel de Torre — es un "déjalo jugar
+        solo" para todo el recorrido, no un combate suelto. Se puede
+        activar/desactivar en cualquier momento, incluso a mitad de un
+        combate.
+      - **Aviso de ventaja elemental**: cada personaje del selector de
+        línea ahora muestra ▲ verde o ▼ rojo si tiene ventaja o
+        desventaja elemental clara contra la fila enemiga activa
+        (`unitElementScore` en `combat.js`, mismo criterio que usa el
+        combate automático para elegir), sin icono si es neutro. Se ve el
+        propio pantallazo del usuario del punto anterior para confirmar
+        que hacía falta este aviso.
+      - **Habilidades propias de jefe**: hasta ahora un jefe combatía
+        exactamente igual que cualquier otro rival de su clase — dos
+        mecánicas EXCLUSIVAS de `makeBossUnit` (nunca de un mob normal,
+        marcadas con `u.isBoss`):
+        - **Furia**: al bajar del 30% de su vida (`BOSS_ENRAGE_HP_PCT`),
+          gana +25% de Ataque y Sabiduría para el resto del combate — un
+          único disparo (`maybeTriggerEnrage`, revisado tanto en golpes
+          normales como en veneno/quemadura). Deliberadamente TARDÍO y
+          MODESTO: con el ×2.4 de vida que ya tiene un jefe (ver el
+          comentario de `makeBossUnit`) tarda varias rondas en llegar
+          ahí, y no reintroduce el bug de balance ya arreglado antes (un
+          jefe con demasiado ataque desde el turno 1 podía ganarle a una
+          banda entera de Legendarios).
+        - **Golpe Devastador**: cada 4º golpe BÁSICO suyo (no ulti) es un
+          crítico garantizado y algo más fuerte (×1.6 en vez de ×1) —
+          `computeDamage` ganó un parámetro `forceCrit` para esto. Dos
+          eventos de log nuevos (`enrage`/`bossattack`) con su propia
+          línea en el registro de combate.
+      Verificado con Playwright: 3 luchadores de agua muestran ▲ y 6 de
+      viento muestran ▼ contra un rival de fuego (círculo de ventajas
+      correcto); una batalla completa se resuelve sola con "Auto"
+      activado sin que el selector de línea llegue a aparecer nunca; un
+      jefe de prueba dispara Furia exactamente una vez al cruzar el 30% de
+      vida (+25% ataque/sabiduría exactos) y Golpe Devastador cada 4º
+      golpe básico (7 veces en 30 golpes básicos de 40 turnos, con 10
+      turnos de ulti intercalados); un mob normal nunca dispara ninguna de
+      las dos mecánicas
 
 ## Notas
 

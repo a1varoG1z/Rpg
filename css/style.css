@@ -309,6 +309,9 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 80; display: flex; flex-direction: column; padding: calc(var(--safe-top) + 6px) 10px calc(var(--safe-bottom) + 10px); }
 .overlay.hidden { display: none; }
 .battle-header { display: flex; justify-content: space-between; align-items: center; font-family: 'Press Start 2P', monospace; font-size: 0.7rem; color: var(--gold); margin-bottom: 8px; }
+.battle-header-btns { display: flex; gap: 6px; }
+.battle-header-btns .mini-btn { margin: 0; }
+.mini-btn.active { background: var(--gold); color: #1c140b; border-color: var(--gold); }
 .battle-rows { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; overflow: hidden; }
 .battle-side { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .battle-vs { text-align: center; font-family: 'Press Start 2P', monospace; color: var(--gold-dim); font-size: 0.75rem; margin: 4px 0; }
@@ -348,6 +351,12 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
   background: rgba(10,6,3,0.9); border: 1px solid #7a5f22; border-radius: 8px; padding: 1px 4px; line-height: 1.4;
   white-space: nowrap; pointer-events: none;
 }
+.picker-cell-adv {
+  position: absolute; bottom: -6px; left: -6px; z-index: 3; font-size: 0.6rem; font-weight: bold;
+  background: rgba(10,6,3,0.9); border: 1px solid; border-radius: 8px; padding: 0 4px; line-height: 1.4; pointer-events: none;
+}
+.picker-cell-adv.adv-good { color: #5fd15f; border-color: #2e8b2e; }
+.picker-cell-adv.adv-bad { color: #e0654e; border-color: #a83a2c; }
 .picker-used-overlay { position: absolute; left: 0; top: 0; pointer-events: none; }
 .picker-used-overlay line { stroke: #b0392f; stroke-width: 4; stroke-linecap: round; opacity: 0.85; }
 .battle-unit-name { font-size: 0.6rem; color: var(--cream-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

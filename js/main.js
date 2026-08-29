@@ -95,6 +95,7 @@
     const view = window.__battleView;
     if (view) UI.stepBattle(view, true);
   });
+  $('battleAutoBtn').addEventListener('click', () => UI.toggleAutoBattle());
   $('battleCloseBtn').addEventListener('click', () => {
     $('battleOverlay').classList.add('hidden');
     window.__battleView = null;

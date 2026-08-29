@@ -72,6 +72,12 @@ function makeBossUnit(defId, level) {
   const u = makeUnit('enemy', defId, level);
   u.maxHp = Math.round(u.maxHp * 2.4);
   u.hp = u.maxHp;
+  // Marca de jefe: habilita sus dos mecánicas exclusivas (ver
+  // maybeTriggerEnrage y el "Golpe Devastador" en performTurn) — ningún
+  // rival normal las tiene, solo afectan al camino de combate del jefe.
+  u.isBoss = true;
+  u.enraged = false;
+  u.bossAtkCount = 0;
   return u;
 }
 
@@ -181,6 +187,22 @@ function buildArenaBand(rank) {
 // --- Motor de turnos ---
 function elementDamageMult(a, d) { return elementMultiplier(a, d); }
 
+// Ventaja elemental media de un luchador (o de toda una línea) contra los
+// rivales vivos de la fila enemiga activa — 1.0 = neutro, >1 = ventaja,
+// <1 = desventaja (mismos umbrales que elementMultiplier: ±25%/-20%).
+// Usado tanto por el aviso visual del selector de línea como por el modo
+// de combate automático para elegir la mejor línea disponible.
+function unitElementScore(unit, enemyRow) {
+  const aliveEnemy = enemyRow.filter(u => u.alive);
+  if (!aliveEnemy.length) return 1;
+  return aliveEnemy.reduce((sum, e) => sum + elementMultiplier(unit.element, e.element), 0) / aliveEnemy.length;
+}
+function rowElementScore(row, enemyRow) {
+  const aliveRow = row.filter(u => u.alive);
+  if (!aliveRow.length) return 1;
+  return aliveRow.reduce((sum, u) => sum + unitElementScore(u, enemyRow), 0) / aliveRow.length;
+}
+
 function pickTarget(row) {
   const alive = row.filter(u => u.alive);
   if (alive.length === 0) return null;
@@ -193,6 +215,26 @@ function pickTarget(row) {
 const ULT_CHARGE_MAX = 100;
 const ULT_CHARGE_ON_HIT = 9;
 
+// Furia de jefe: la única mecánica propia de los BOSSES (ver makeBossUnit),
+// que si no son mecánicamente idénticos a cualquier otro rival de su clase.
+// Al caer por debajo del 30% de su vida, gana +25% de Ataque y Sabiduría
+// para el resto del combate — un único disparo (target.enraged evita que
+// se repita). Deliberadamente MODESTO y TARDÍO (con el ×2.4 de vida de
+// makeBossUnit, un jefe tarda varias rondas en llegar ahí): la razón por
+// la que un jefe NO recibe bonus de ataque/defensa desde el principio (ver
+// el comentario de makeBossUnit) sigue aplicando — esto no la contradice,
+// solo añade un "segundo aliento" tardío y siempre igual de moderado.
+const BOSS_ENRAGE_HP_PCT = 0.3;
+const BOSS_ENRAGE_MULT = 1.25;
+function maybeTriggerEnrage(log, target) {
+  if (!target.isBoss || target.enraged || !target.alive) return;
+  if (target.hp / target.maxHp > BOSS_ENRAGE_HP_PCT) return;
+  target.enraged = true;
+  target.atk = Math.round(target.atk * BOSS_ENRAGE_MULT);
+  target.wis = Math.round(target.wis * BOSS_ENRAGE_MULT);
+  log.push({ type: 'enrage', unitId: target.id });
+}
+
 function applyDamage(log, attacker, target, rawAmount, isCrit, label) {
   const before = target.hp;
   target.hp = Math.max(0, target.hp - rawAmount);
@@ -203,6 +245,7 @@ function applyDamage(log, attacker, target, rawAmount, isCrit, label) {
   } else if (target.alive) {
     target.ultCharge = Math.min(ULT_CHARGE_MAX, target.ultCharge + ULT_CHARGE_ON_HIT);
     log.push({ type: 'charge', unitId: target.id, value: target.ultCharge });
+    maybeTriggerEnrage(log, target);
   }
 }
 
@@ -215,7 +258,7 @@ function typeVulnerabilityMult(targetClass, useWis) {
   return 1 + (useWis ? (vuln.magic || 0) : (vuln.physical || 0));
 }
 
-function computeDamage(attacker, target, mult, useWis) {
+function computeDamage(attacker, target, mult, useWis, forceCrit) {
   const power = useWis ? attacker.wis : attacker.atk;
   const atkBuff = attacker.buffs.find(b => b.stat === 'atk');
   const power2 = power * (1 + (atkBuff ? atkBuff.pct : 0));
@@ -227,7 +270,7 @@ function computeDamage(attacker, target, mult, useWis) {
   const vulnMult = typeVulnerabilityMult(target.class, useWis);
   const variance = 0.9 + Math.random() * 0.2;
   const critChance = Math.min(40, 5 + attacker.agi * 0.15);
-  const isCrit = Math.random() * 100 < critChance;
+  const isCrit = forceCrit || Math.random() * 100 < critChance;
   const dmg = base * elMult * vulnMult * mult * variance * (isCrit ? 1.5 : 1);
   return { amount: Math.max(1, Math.round(dmg)), isCrit };
 }
@@ -256,6 +299,7 @@ function tickTimers(unit, log) {
       unit.hp = Math.max(0, unit.hp - d.amount);
       log.push({ type: 'dot', unitId: unit.id, amount: d.amount, label: d.label });
       if (before > 0 && unit.hp <= 0) { unit.alive = false; log.push({ type: 'faint', unitId: unit.id, side: unit.side }); }
+      else maybeTriggerEnrage(log, unit);
       d.turnsLeft--;
     });
     unit.dots = unit.dots.filter(d => d.turnsLeft > 0);
@@ -275,7 +319,14 @@ function performTurn(log, unit, ownRow, enemyRow) {
   if (!useUlt) {
     const target = pickTarget(enemyRow);
     if (!target) return;
-    const { amount, isCrit } = computeDamage(unit, target, 1.0, false);
+    // Golpe Devastador: la segunda mecánica exclusiva de jefe (ver
+    // makeBossUnit) — cada 4º golpe básico de un jefe es un crítico
+    // garantizado y algo más fuerte (×1.6 en vez de ×1), para dar un
+    // ritmo reconocible al combate sin tocar su daño medio el resto de
+    // golpes (que siguen siendo el ataque normal de siempre).
+    const isDevastador = unit.isBoss && (unit.bossAtkCount = (unit.bossAtkCount || 0) + 1) % 4 === 0;
+    if (isDevastador) log.push({ type: 'bossattack', unitId: unit.id });
+    const { amount, isCrit } = computeDamage(unit, target, isDevastador ? 1.6 : 1.0, false, isDevastador);
     applyDamage(log, unit, target, amount, isCrit, null);
     if (unit.alive) {
       const gain = Math.round(22 + unit.agi * 0.4);
