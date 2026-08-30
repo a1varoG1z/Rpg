@@ -32,7 +32,15 @@ function createNewState() {
     currencies: { texel: 400, gemas: 20, pixite: 5, voxite: 1, doxite: 0, energy: MAX_ENERGY, energyFrac: 0 },
     roster, gearInventory: [], band, progress,
     arena: { rank: 1, bestRank: 1 },
-    stats: { battlesWon: 0, battlesLost: 0 },
+    // Estadísticas históricas de toda la partida — se acumulan en
+    // UI.endBattle, el único punto por el que pasa TODO combate (etapa,
+    // Torre, Mazmorra Elemental, Arena, Prueba del Campeón, Duelo por
+    // apuesta), así que cuentan de verdad todo lo jugado sin importar el modo.
+    stats: {
+      battlesWon: 0, battlesLost: 0,
+      totalDmgDealt: 0, totalDmgReceived: 0, totalHealDone: 0,
+      totalTexelEarned: 0, totalFighterXpEarned: 0, highestSingleHit: 0,
+    },
     settings: { infiniteEnergy: false, showMedallion: true, enableTorreBatalla: false, enableElementalDungeon: false },
     // Torre Batalla: cuántas veces se ha superado cada nivel (clave =
     // level.key de TORRE_LEVELS en data.js) — 0/ausente = nivel no
@@ -471,7 +479,10 @@ function objectivesSummary(state) {
     totalSefStars: state.roster.reduce((sum, r) => sum + r.stars, 0),
     elementsInRoster: new Set(rosterDefs.map(d => d && d.element)).size, totalElements: ELEMENT_ORDER.length,
     classesInRoster: new Set(rosterDefs.map(d => d && d.class)).size, totalClasses: Object.keys(CLASS_INFO).length,
-    battlesWon: state.stats.battlesWon,
+    battlesWon: state.stats.battlesWon, battlesLost: state.stats.battlesLost,
+    totalDmgDealt: state.stats.totalDmgDealt, totalDmgReceived: state.stats.totalDmgReceived,
+    totalHealDone: state.stats.totalHealDone, highestSingleHit: state.stats.highestSingleHit,
+    totalTexelEarned: state.stats.totalTexelEarned, totalFighterXpEarned: state.stats.totalFighterXpEarned,
     arenaRank: state.arena.rank, arenaBestRank: state.arena.bestRank,
     gearOwned: state.gearInventory.length, gearMax: MAX_GEAR,
     homunculosTotal: state.homunculos.homunculo_t1 + state.homunculos.homunculo_t2 + state.homunculos.homunculo_t3,
@@ -522,7 +533,15 @@ function loadGame() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
-    const state = JSON.parse(raw);
+    return migrateState(JSON.parse(raw));
+  } catch (e) { return null; }
+}
+
+// Normaliza/migra un objeto de partida ya parseado (de localStorage o de un
+// código de Exportar/Importar partida, ver exportSaveCode/importSaveCode) a
+// la forma actual del estado — null si no es una partida válida.
+function migrateState(state) {
+  try {
     if (!state || state.version !== 2 || !state.roster) return null;
     if (!state.settings) state.settings = { infiniteEnergy: false, showMedallion: true };
     if (state.settings.showMedallion === undefined) state.settings.showMedallion = true;
@@ -535,6 +554,10 @@ function loadGame() {
     if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
     if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };
     if (!state.merchant) state.merchant = { lastRedeemedKey: null };
+    if (!state.stats) state.stats = { battlesWon: 0, battlesLost: 0 };
+    ['totalDmgDealt', 'totalDmgReceived', 'totalHealDone', 'totalTexelEarned', 'totalFighterXpEarned', 'highestSingleHit'].forEach(key => {
+      if (state.stats[key] === undefined) state.stats[key] = 0;
+    });
     // Partidas guardadas antes de que existiera este registro: se
     // reconstruye a partir de lo que haya ahora mismo en el roster (no es
     // perfecto — no recuerda luchadores vendidos/evolucionados antes de
@@ -582,4 +605,39 @@ function loadGame() {
 
 function resetGame() {
   try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+}
+
+// ---------- Exportar/Importar partida ----------
+// Códigos de texto (base64 de los bytes UTF-8 del JSON de la partida) para
+// hacer copia de seguridad manual o pasar la partida a otro dispositivo,
+// sin depender de ningún servidor. Se convierte en trozos (en vez de
+// String.fromCharCode(...bytes) de una vez) para no reventar la pila con
+// partidas grandes.
+function bytesToBase64(bytes) {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+function base64ToBytes(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+function exportSaveCode(state) {
+  return bytesToBase64(new TextEncoder().encode(JSON.stringify(state)));
+}
+// Reutiliza migrateState (las mismas migraciones/limpiezas que una partida
+// cargada normal) para que un código exportado en una versión anterior del
+// juego se ponga al día igual que cualquier partida guardada. Lanza si el
+// código no es un base64 válido o no decodifica a JSON.
+function importSaveCode(code) {
+  const bytes = base64ToBytes(code.trim());
+  const parsed = JSON.parse(new TextDecoder().decode(bytes));
+  const state = migrateState(parsed);
+  if (!state) throw new Error('Código de partida no válido.');
+  return state;
 }

@@ -306,11 +306,27 @@ UI.openObjectives = function (state) {
   body.appendChild(rosterPanel);
 
   const combatPanel = el('div', 'panel');
+  const totalBattles = s.battlesWon + s.battlesLost;
+  const winRate = totalBattles > 0 ? Math.round(s.battlesWon / totalBattles * 100) : 0;
   combatPanel.innerHTML = `<h3>⚔️ Combate</h3>
     <div class="stat-row"><span>Victorias totales</span><span>${s.battlesWon}</span></div>
     <div class="stat-row"><span>Rango de Arena actual</span><span>${s.arenaRank}</span></div>
     <div class="stat-row"><span>Mejor rango de Arena</span><span>${s.arenaBestRank}</span></div>`;
   body.appendChild(combatPanel);
+
+  const historyPanel = el('div', 'panel');
+  historyPanel.innerHTML = `<h3>📊 Estadísticas históricas</h3>
+    <p class="settings-info">Acumuladas en TODOS los combates de la partida, sea cual sea el modo.</p>
+    <div class="stat-row"><span>Combates totales</span><span>${totalBattles}</span></div>
+    <div class="stat-row"><span>Derrotas totales</span><span>${s.battlesLost}</span></div>
+    <div class="stat-row"><span>% de victorias</span><span>${winRate}%</span></div>
+    <div class="stat-row"><span>⚔️ Daño total infligido</span><span>${Math.round(s.totalDmgDealt).toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>🛡️ Daño total recibido</span><span>${Math.round(s.totalDmgReceived).toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>💚 Curación total</span><span>${Math.round(s.totalHealDone).toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>💥 Golpe más fuerte</span><span>${Math.round(s.highestSingleHit).toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>🪙 Texel ganado en combate</span><span>${Math.round(s.totalTexelEarned).toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>⭐ XP de luchador ganada</span><span>${Math.round(s.totalFighterXpEarned).toLocaleString('es-ES')}</span></div>`;
+  body.appendChild(historyPanel);
 
   const resPanel = el('div', 'panel');
   resPanel.innerHTML = '<h3>🎒 Recursos</h3>';
@@ -569,7 +585,16 @@ UI.openGuide = function () {
     jugables que has conseguido alguna vez, y de los mobs/jefes conseguidos en la Torre Batalla.<br>
     👹 <b>Jefes</b> (en Objetivos → Mapa): igual que la Pokédex, pero de los jefes derrotados.<br>
     🎯 <b>Objetivos</b>: resumen general de tu progreso — zonas, etapas, Pokédex, jefes, banda,
-    equipo y más.</p>`));
+    equipo y más, incluidas las <b>estadísticas históricas</b> de toda la partida (combates,
+    daño hecho/recibido, Texel y XP ganados en combate...), acumuladas en todos los modos.</p>`));
+
+  body.appendChild(guideSection('💾 Copia de seguridad y acciones en lote', `
+    <p class="settings-info">Desde Ajustes puedes <b>exportar tu partida</b> a un código de texto
+    para guardarla a salvo o pasarla a otro dispositivo, y <b>importarla</b> pegando ese código —
+    sustituye la partida actual, así que exporta primero si quieres conservarla.</p>
+    <p class="settings-info">En la Colección, el botón "☑️ Selección múltiple" te deja tocar varios
+    luchadores a la vez para venderlos o fusionar duplicados del mismo tipo de golpe, en vez de
+    tener que hacerlo uno a uno.</p>`));
 
   $('guideModal').classList.remove('hidden');
 };
@@ -919,12 +944,10 @@ UI.fightStageRunNode = function (state) {
       }
       if (result !== 'victoria') {
         run.failed = true;
-        state.stats.battlesLost++;
         saveGame(state);
         return null;
       }
       run.nodeIdx++;
-      state.stats.battlesWon++;
       if (run.nodeIdx < run.encounters.length) {
         saveGame(state);
         return { intermediate: true };
@@ -1325,10 +1348,83 @@ UI.renderBanda = function (state) {
   const bandUids = state.band.flat().filter(Boolean);
   sorted.forEach(entry => {
     const card = creatureCard(state, entry, { inBand: bandUids.includes(entry.uid) });
-    card.addEventListener('click', () => UI.openFighterModal(state, entry.uid));
+    if (UI.bulkMode && UI.bulkSelection.has(entry.uid)) card.classList.add('selected');
+    card.addEventListener('click', () => {
+      if (UI.bulkMode) {
+        if (UI.bulkSelection.has(entry.uid)) UI.bulkSelection.delete(entry.uid);
+        else UI.bulkSelection.add(entry.uid);
+        UI.renderBanda(state);
+        return;
+      }
+      UI.openFighterModal(state, entry.uid);
+    });
     rGrid.appendChild(card);
   });
+
+  const bulkBtn = $('bulkModeBtn');
+  bulkBtn.textContent = UI.bulkMode ? '✕ Cancelar selección' : '☑️ Selección múltiple';
+  bulkBtn.classList.toggle('active', UI.bulkMode);
+  renderBulkActionBar(state);
 };
+
+// ---------- Acciones en lote sobre la Colección ----------
+// Selección múltiple de copias sueltas del roster para venderlas o
+// fusionarlas todas de golpe, en vez de una a una desde la ficha — pensado
+// para cuando la Colección acumula muchos duplicados de bajo tier.
+UI.bulkMode = false;
+UI.bulkSelection = new Set();
+
+function renderBulkActionBar(state) {
+  const bar = $('bulkActionBar');
+  if (!UI.bulkMode) { bar.classList.add('hidden'); bar.innerHTML = ''; return; }
+  bar.classList.remove('hidden');
+  bar.innerHTML = '';
+  // Descarta de la selección cualquier uid que ya no exista (p.ej. si se
+  // vendió por otra vía mientras seguía seleccionado).
+  const uids = [...UI.bulkSelection].filter(uid => rosterEntry(state, uid));
+  if (uids.length !== UI.bulkSelection.size) UI.bulkSelection = new Set(uids);
+  const entries = uids.map(uid => rosterEntry(state, uid));
+  bar.appendChild(el('p', 'settings-info', entries.length === 0
+    ? 'Toca luchadores de la Colección para seleccionarlos.'
+    : `${entries.length} luchador${entries.length === 1 ? '' : 'es'} seleccionado${entries.length === 1 ? '' : 's'}.`));
+
+  const totalValue = entries.reduce((sum, e) => sum + fighterSellValue(e), 0);
+  const sellBtn = el('button', 'danger-btn', entries.length ? `🪙 Vender seleccionados (+${totalValue})` : '🪙 Vender seleccionados');
+  sellBtn.disabled = entries.length === 0;
+  sellBtn.addEventListener('click', () => {
+    if (!confirm(`¿Vender ${entries.length} luchadores por ${totalValue} Texel en total? No se puede deshacer.`)) return;
+    uids.forEach(uid => sellFighter(state, uid));
+    UI.bulkSelection.clear();
+    saveGame(state);
+    UI.renderTopbar(state);
+    UI.renderBanda(state);
+    UI.showToast(`🪙 Vendidos ${entries.length} luchadores por +${totalValue} Texel`);
+  });
+  bar.appendChild(sellBtn);
+
+  const sameDefId = entries.length >= 2 && entries.every(e => e.defId === entries[0].defId);
+  const fuseBtn = el('button', 'primary-btn', '🔗 Fusionar en el de más nivel');
+  fuseBtn.disabled = !sameDefId;
+  bar.appendChild(fuseBtn);
+  if (!sameDefId) bar.appendChild(el('p', 'settings-info', 'Elige 2 o más copias del MISMO luchador para poder fusionarlas.'));
+  fuseBtn.addEventListener('click', () => {
+    if (!sameDefId) return;
+    const target = entries.reduce((best, e) => (e.level > best.level ? e : best), entries[0]);
+    const materials = uids.filter(uid => uid !== target.uid);
+    const used = fuseMaterials(state, target.uid, materials);
+    UI.bulkSelection.clear();
+    saveGame(state);
+    UI.renderTopbar(state);
+    UI.renderBanda(state);
+    UI.showToast(`🔗 ${used} copia${used === 1 ? '' : 's'} fusionada${used === 1 ? '' : 's'} en ${fighterDef(target.defId).name}`);
+  });
+
+  if (entries.length > 0) {
+    const clearBtn = el('button', 'mini-btn', 'Vaciar selección');
+    clearBtn.addEventListener('click', () => { UI.bulkSelection.clear(); UI.renderBanda(state); });
+    bar.appendChild(clearBtn);
+  }
+}
 
 // ---------- Selector reutilizable de luchadores (con orden) ----------
 // Usado por el picker de Formación (slot vacío) y por el panel de
@@ -1854,11 +1950,9 @@ UI.startArenaBattle = function (state) {
         state.arena.bestRank = Math.max(state.arena.bestRank, state.arena.rank);
         const texel = 40 + state.arena.rank * 6, gemas = 3 + Math.floor(state.arena.rank / 3);
         state.currencies.texel += texel; state.currencies.gemas += gemas;
-        state.stats.battlesWon++;
         saveGame(state);
         return { rewards: { texel, fighterXp: 0, drops: {} }, leveled: [], gemas };
       }
-      state.stats.battlesLost++;
       saveGame(state);
       return null;
     },
@@ -2074,7 +2168,7 @@ UI.openBattle = function (state, playerRowsRaw, enemyRowsRaw, opts) {
     // Resumen post-combate (ver battleStatsSummaryHtml): se acumula con
     // cada evento de UI.applyBattleEvent a lo largo de este combate
     // entero (todas las líneas/oleadas), no se resetea entre choques.
-    battleStats: { dmgDealt: 0, dmgReceived: 0, healDone: 0, byUnit: {} },
+    battleStats: { dmgDealt: 0, dmgReceived: 0, healDone: 0, maxHit: 0, byUnit: {} },
   };
   window.__battleView = view;
   $('battleTitle').textContent = opts.title;
@@ -2499,6 +2593,7 @@ UI.applyBattleEvent = function (view, ev) {
       UI.logLine(`${attacker.name} → ${target.name}: -${ev.amount}${ev.isCrit ? ' ¡CRÍTICO!' : ''}`);
       if (attacker.side === 'player') {
         view.battleStats.dmgDealt += ev.amount;
+        if (ev.amount > view.battleStats.maxHit) view.battleStats.maxHit = ev.amount;
         const rec = view.battleStats.byUnit[attacker.id] || (view.battleStats.byUnit[attacker.id] = { name: attacker.name, dmg: 0, kills: 0 });
         rec.dmg += ev.amount;
       } else {
@@ -2593,6 +2688,25 @@ function battleStatsSummaryHtml(view) {
 
 UI.endBattle = function (view, result) {
   const outcome = view.opts.onEnd(result, view);
+  // Estadísticas históricas de toda la partida: se acumulan aquí, el único
+  // punto por el que pasa el cierre de CUALQUIER combate (etapa, Torre,
+  // Mazmorra Elemental, Arena, Prueba del Campeón, Duelo por apuesta), así
+  // que cuentan de verdad todo lo jugado sin tener que repetir esta lógica
+  // en cada modo por separado.
+  const st = view.state.stats;
+  if (result === 'victoria') st.battlesWon++; else st.battlesLost++;
+  st.totalDmgDealt += view.battleStats.dmgDealt;
+  st.totalDmgReceived += view.battleStats.dmgReceived;
+  st.totalHealDone += view.battleStats.healDone;
+  if (view.battleStats.maxHit > st.highestSingleHit) st.highestSingleHit = view.battleStats.maxHit;
+  if (outcome) {
+    if (outcome.rewards) {
+      st.totalTexelEarned += outcome.rewards.texel || 0;
+      st.totalFighterXpEarned += outcome.rewards.fighterXp || 0;
+    }
+    if (outcome.wagerWon !== undefined) st.totalTexelEarned += outcome.wagerWon;
+  }
+  saveGame(view.state);
   const body = $('battleResultBody');
   let html;
   if (outcome && outcome.championContinue) {
@@ -2640,4 +2754,57 @@ UI.showToast = function (text) {
 UI.showOfflineModal = function (energyGained) {
   $('offlineBody').innerHTML = `<div class="stat-row"><span>⚡ Energía recuperada</span><span>+${energyGained}</span></div>`;
   $('offlineModal').classList.remove('hidden');
+};
+
+// ---------- Exportar/Importar partida ----------
+UI.openExportSave = function (state) {
+  const code = exportSaveCode(state);
+  const body = $('pickerModalBody');
+  body.innerHTML = `<h3>📤 Exportar partida</h3>
+    <p class="settings-info">Copia este código y guárdalo en un sitio seguro — sirve para restaurar
+    tu partida en este dispositivo o pasarla a otro, desde "📥 Importar partida".</p>`;
+  const textarea = document.createElement('textarea');
+  textarea.className = 'save-code-box';
+  textarea.readOnly = true;
+  textarea.value = code;
+  body.appendChild(textarea);
+  const copyBtn = el('button', 'primary-btn', '📋 Copiar al portapapeles');
+  copyBtn.addEventListener('click', () => {
+    textarea.select();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code)
+        .then(() => UI.showToast('📋 Código copiado'))
+        .catch(() => UI.showToast('No se pudo copiar solo — el código ya está seleccionado, cópialo a mano'));
+    } else {
+      UI.showToast('El código ya está seleccionado, cópialo a mano');
+    }
+  });
+  body.appendChild(copyBtn);
+  $('pickerModal').classList.remove('hidden');
+};
+
+UI.openImportSave = function () {
+  const body = $('pickerModalBody');
+  body.innerHTML = `<h3>📥 Importar partida</h3>
+    <p class="settings-info">Pega aquí un código exportado antes. <b>Sustituirá tu partida actual y
+    no se puede deshacer</b> — expórtala primero si quieres conservarla por si acaso.</p>`;
+  const textarea = document.createElement('textarea');
+  textarea.className = 'save-code-box';
+  textarea.placeholder = 'Pega aquí el código de la partida...';
+  body.appendChild(textarea);
+  const importBtn = el('button', 'danger-btn', '📥 Importar y sustituir partida');
+  importBtn.addEventListener('click', () => {
+    let imported;
+    try {
+      imported = importSaveCode(textarea.value);
+    } catch (e) {
+      UI.showToast('⚠️ Código no válido o corrupto');
+      return;
+    }
+    if (!confirm('¿Seguro? Se sustituirá tu partida actual por la importada — no se puede deshacer.')) return;
+    saveGame(imported);
+    location.reload();
+  });
+  body.appendChild(importBtn);
+  $('pickerModal').classList.remove('hidden');
 };

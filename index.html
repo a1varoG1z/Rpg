@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260830a">
+<link rel="stylesheet" href="css/style.css?v=20260830b">
 </head>
 <body>
 <div id="app">
@@ -45,6 +45,7 @@
         <div class="leader-status-bar" id="leaderStatusBar"></div>
       </div>
       <h2 class="screen-title">Colección <span class="badge" id="rosterCount">0</span>
+        <button class="mini-btn" id="bulkModeBtn">☑️ Selección múltiple</button>
         <button class="mini-btn pokedex-open-btn" id="pokedexBtn">📖 Pokédex</button>
       </h2>
       <div class="roster-sort-row">
@@ -64,6 +65,7 @@
         <select id="rosterFilterRarity"></select>
       </div>
       <div class="roster-filter-hint settings-info" id="rosterFilterHint"></div>
+      <div id="bulkActionBar" class="hidden"></div>
       <div class="creature-grid" id="rosterGrid"></div>
     </section>
 
@@ -251,6 +253,10 @@
       <input type="checkbox" id="enableElementalToggle">
     </label>
     <p class="settings-info">La Mazmorra Elemental se desbloquea normalmente al completar las 6 primeras zonas del mapa. Actívala aquí para probarla desde el principio.</p>
+    <h3>💾 Copia de seguridad</h3>
+    <p class="settings-info">Exporta tu partida a un código de texto para guardarla a salvo o pasarla a otro dispositivo.</p>
+    <button class="primary-btn" id="exportSaveBtn">📤 Exportar partida</button>
+    <button class="primary-btn" id="importSaveBtn">📥 Importar partida</button>
     <h3>🎁 Trucos</h3>
     <p class="settings-info">Añade recursos para probar el juego sin límites.</p>
     <button class="primary-btn" id="cheatGemasBtn">+1000 💎 Gemas</button>
@@ -268,11 +274,11 @@
 
 <div id="toastContainer"></div>
 
-<script src="js/data.js?v=20260830a"></script>
-<script src="js/sprite.js?v=20260830a"></script>
-<script src="js/state.js?v=20260830a"></script>
-<script src="js/combat.js?v=20260830a"></script>
-<script src="js/ui.js?v=20260830a"></script>
-<script src="js/main.js?v=20260830a"></script>
+<script src="js/data.js?v=20260830b"></script>
+<script src="js/sprite.js?v=20260830b"></script>
+<script src="js/state.js?v=20260830b"></script>
+<script src="js/combat.js?v=20260830b"></script>
+<script src="js/ui.js?v=20260830b"></script>
+<script src="js/main.js?v=20260830b"></script>
 </body>
 </html>

@@ -1423,6 +1423,52 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     cicla 1×→2×→3×→1× y el texto del botón se actualiza en cada clic; el
     bug de contaminación entre `window.__championRun`/`window.__stageRun`
     ya no se reproduce tras el fix.
+  - [x] **Estadísticas históricas, exportar/importar partida y acciones en
+    lote** (3 funcionalidades pedidas juntas):
+    - **Estadísticas históricas de toda la partida** (Objetivos → nuevo
+      panel "📊 Estadísticas históricas"): combates totales, derrotas, %
+      de victorias, daño total infligido/recibido, curación total, golpe
+      más fuerte y Texel/XP de luchador ganados en combate — acumulados
+      en TODOS los modos (etapa normal, Torre, Mazmorra Elemental, Arena,
+      Prueba del Campeón, Duelo por apuesta) desde un único punto:
+      `UI.endBattle`, el único sitio por el que pasa el cierre de
+      cualquier combate del juego. Se apoya en `view.battleStats` (ya
+      existía para el resumen post-combate) más un nuevo `maxHit` que
+      registra el golpe más fuerte de cada combate. Antes de esto,
+      `state.stats.battlesWon/Lost` solo se incrementaba en 2 de los 6
+      flujos de combate (etapa/Torre/Elemental y Arena) — se centralizó
+      en `UI.endBattle` y se retiraron los incrementos sueltos para no
+      contar por duplicado.
+    - **Exportar/Importar partida** (Ajustes → "💾 Copia de seguridad"):
+      exporta la partida completa a un código de texto (base64 de sus
+      bytes UTF-8, `exportSaveCode`/`importSaveCode` en state.js) para
+      guardarla a salvo o pasarla a otro dispositivo, sin depender de
+      ningún servidor. Para que un código de una versión antigua del
+      juego se ponga al día igual que una partida cargada normal, se
+      extrajo toda la lógica de migración/limpieza de huérfanos de
+      `loadGame()` a una función nueva `migrateState(state)` que ambos
+      caminos reutilizan. Importar pide confirmación (sustituye la
+      partida actual sin poder deshacerse) y recarga la página.
+    - **Acciones en lote** (Colección → "☑️ Selección múltiple"): activa
+      un modo en el que tocar tarjetas las selecciona en vez de abrir su
+      ficha, con una barra de acciones que permite vender todas las
+      seleccionadas de golpe (con el Texel total y confirmación antes) o
+      fusionar duplicados del mismo luchador en la copia de mayor nivel
+      del grupo (solo se habilita con 2+ copias del mismo defId
+      seleccionadas) — antes había que hacer ambas cosas una copia a la
+      vez desde la ficha.
+    Verificado con Playwright: las estadísticas históricas suben tras
+    combates de verdad (daño hecho/recibido, Texel/XP ganado, golpe más
+    fuerte) y se ven en el panel nuevo de Objetivos; exportar genera un
+    código base64 válido cuyo `importSaveCode` reconstruye exactamente el
+    mismo roster/Texel/estadísticas que la partida en curso (ida y
+    vuelta), y un código corrupto se rechaza con un error controlado en
+    vez de romper la página; selección múltiple marca visualmente las
+    tarjetas elegidas, fusionar 3 copias del mismo luchador en lote
+    consume 2 como material (el roster baja en 2, la de mayor nivel sube
+    su barra de SEF), y vender 2 luchadores en lote los retira del
+    roster y suma el Texel correcto, con la selección vaciándose sola
+    después de cada acción.
 
 ## Notas
 

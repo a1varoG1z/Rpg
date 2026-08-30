@@ -49,6 +49,11 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
 .primary-btn { width: 100%; padding: 10px; margin-top: 6px; background: linear-gradient(#e0bb55, var(--gold-dim)); border: 1px solid #7a5f22; border-radius: 8px; color: #1a1410; font-weight: bold; font-size: 0.85rem; }
 .primary-btn:disabled { opacity: 0.4; }
 .danger-btn { width: 100%; padding: 10px; margin-top: 8px; background: linear-gradient(#c0392b, var(--red-dark)); border: 1px solid #5a1810; border-radius: 8px; color: #fff; font-weight: bold; font-size: 0.85rem; }
+.save-code-box {
+  width: 100%; min-height: 90px; margin-top: 10px; padding: 8px; box-sizing: border-box;
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px;
+  color: var(--cream); font-family: monospace; font-size: 0.72rem; word-break: break-all; resize: vertical;
+}
 .mini-btn { padding: 6px 12px; background: var(--panel); border: 1px solid var(--gold-dim); border-radius: 8px; color: var(--gold); font-size: 0.75rem; margin: 6px 12px; }
 .pokedex-open-btn { margin: 0 0 0 auto; font-size: 0.68rem; padding: 5px 10px; white-space: nowrap; }
 .mini-btn:disabled { opacity: 0.4; }

@@ -29,6 +29,11 @@
   });
   $('settingsModalClose').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
   $('pokedexBtn').addEventListener('click', () => UI.openPokedex(state));
+  $('bulkModeBtn').addEventListener('click', () => {
+    UI.bulkMode = !UI.bulkMode;
+    UI.bulkSelection.clear();
+    UI.renderBanda(state);
+  });
   $('pokedexModalClose').addEventListener('click', () => $('pokedexModal').classList.add('hidden'));
   $('pokedexEntryModalClose').addEventListener('click', () => $('pokedexEntryModal').classList.add('hidden'));
   $('objectivesBtn').addEventListener('click', () => UI.openObjectives(state));
@@ -37,6 +42,8 @@
   $('bossEntryModalClose').addEventListener('click', () => $('bossEntryModal').classList.add('hidden'));
   $('guideBtn').addEventListener('click', () => UI.openGuide());
   $('guideModalClose').addEventListener('click', () => $('guideModal').classList.add('hidden'));
+  $('exportSaveBtn').addEventListener('click', () => UI.openExportSave(state));
+  $('importSaveBtn').addEventListener('click', () => UI.openImportSave());
   $('resetBtn').addEventListener('click', () => {
     if (confirm('¿Seguro que quieres borrar tu progreso y empezar de nuevo?')) {
       resetGame();
