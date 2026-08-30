@@ -749,3 +749,44 @@ function torreRewards(idx) {
   const fighterXp = Math.round((25 + level.globalIdx * 5) * (level.kind === 'boss' ? 1.8 : 1));
   return { texel, fighterXp };
 }
+
+// ---------- Mazmorra Elemental ----------
+// Reto opcional de equipo mono-elemento: se desbloquea al terminar las 6
+// zonas originales del mapa (bosque..guarida, hasta desbloquear 'cantera',
+// la 7ª) — antes de eso el roster invocado todavía no suele tener 3
+// copias del mismo elemento para formar un equipo, y es demasiado pronto
+// para el reto que supone (ver más abajo); mucho antes que Torre Batalla
+// (que pide el mapa ENTERO), porque esto es contenido de mitad de
+// partida, no de final. También se puede activar antes desde Ajustes con
+// el ajuste de prueba (ver elementalDungeonUnlocked en state.js).
+//
+// Cada mazmorra de elemento X está poblada por el elemento que CONTRARRESTA
+// a X en el círculo de ventajas (ELEMENT_INFO[...].beats) — un equipo de
+// fuego se enfrenta a enemigos de agua, con la desventaja elemental de
+// partida que eso conlleva (agua pega +25% a fuego, fuego pega -20% a
+// agua): un reto real de sinergia de equipo, no un farm cómodo. 2 oleadas
+// de relleno (la forma más fuerte de 2 familias distintas de MOBS de ese
+// elemento) + un Guardián Elemental final (un BOSS de ese elemento, en
+// solitario como cualquier jefe).
+const ELEMENTAL_DUNGEON_ZONE_ID = 'cantera';
+function findCounterElement(el) { return ELEMENT_ORDER.find(other => ELEMENT_INFO[other].beats === el); }
+function buildElementalDungeons() {
+  const dungeons = {};
+  ELEMENT_ORDER.forEach(el => {
+    const counter = findCounterElement(el);
+    const mobFamilies = [...new Set(MOBS.filter(m => m.element === counter).map(m => m.family))].sort();
+    const waveDefIds = mobFamilies.slice(0, 2).map(family => {
+      const forms = MOBS.filter(m => m.family === family).sort((a, b) => rarityIndex(b.rarity) - rarityIndex(a.rarity));
+      return forms[0].id; // la forma más fuerte de la familia
+    });
+    const bosses = BOSSES.filter(b => b.element === counter).sort((a, b) => a.id.localeCompare(b.id));
+    dungeons[el] = { element: el, counterElement: counter, waveDefIds, guardianDefId: bosses[0].id };
+  });
+  return dungeons;
+}
+const ELEMENTAL_DUNGEONS = buildElementalDungeons();
+function elementalDungeonLevel() {
+  const zoneIdx = ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID);
+  const globalStageIdx = zoneIdx * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
+  return Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalStageIdx));
+}

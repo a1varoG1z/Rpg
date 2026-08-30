@@ -527,11 +527,20 @@ UI.openGuide = function () {
     Ataque y Agilidad). Cada pieza tiene su propia rareza (igual escalera que los luchadores) y se
     puede mejorar con Texel para subir su bonificación un poco más en cada nivel.</p>`));
 
+  body.appendChild(guideSection('🌋 Mazmorra Elemental', `
+    <p class="settings-info">Reto de mitad de partida: se desbloquea al completar las primeras
+    ${ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID)} zonas del mapa, o antes desde
+    Ajustes con el modo de prueba. Hay una mazmorra por cada uno de los 5 elementos.</p>
+    <p class="settings-info">Eliges hasta 3 luchadores del MISMO elemento (se guardan para la
+    próxima vez) y se enfrentan a 2 oleadas y un Guardián Elemental del elemento que CONTRARRESTA
+    al tuyo — desventaja elemental de partida a propósito, así que hace falta buen nivel y equipo
+    para ganar. Recompensa mejor que una etapa normal, con una pieza de equipo garantizada.</p>`));
+
   body.appendChild(guideSection('🗼 Torre Batalla', `
     <p class="settings-info">Modo endgame: se desbloquea al completar el mapa entero (derrotar al
     jefe de las ${ZONES.length} zonas), o antes desde Ajustes con el modo de prueba. Una escalera de
-    66 niveles: primero uno por cada familia de mob, después uno por cada jefe del mapa, del más
-    sencillo al más difícil.</p>
+    ${TORRE_LEVELS.length} niveles: primero uno por cada familia de mob, después uno por cada jefe
+    del mapa, del más sencillo al más difícil.</p>
     <p class="settings-info">Cada nivel enfrenta siempre al mismo rival (su forma más fuerte, o el
     jefe en sí) repetido varias veces. Ganar da 1 copia del tier más bajo de esa familia (o del
     jefe) para tu Colección — jugable igual que cualquier otro luchador: se puede colocar en la
@@ -646,6 +655,13 @@ UI.startStageBattle = function (state, zoneIdx, stageIdx) {
   UI.renderStageRun(state);
 };
 
+// Uids que realmente combaten en este recorrido: la Formación 3×3 normal
+// para una etapa del Mapa o un nivel de Torre, o el equipo mono-elemento
+// de 3 elegido para una Mazmorra Elemental (ver UI.openElementalTeamPicker).
+function runFighterUids(state, run) {
+  return run.isElemental ? elementalTeamUids(state, run.elementId) : state.band.flat().filter(Boolean);
+}
+
 UI.renderStageRun = function (state) {
   $('zoneList').classList.add('hidden');
   $('stageList').classList.add('hidden');
@@ -653,16 +669,19 @@ UI.renderStageRun = function (state) {
   wrap.classList.remove('hidden');
   wrap.innerHTML = '';
   const run = window.__stageRun;
-  const zone = run.isTorre ? null : ZONES[run.zoneIdx];
-  wrap.style.background = run.isTorre ? '' : zoneBackgroundStyle(zone);
+  const zone = (run.isTorre || run.isElemental) ? null : ZONES[run.zoneIdx];
+  if (run.isElemental) wrap.style.background = zoneBackgroundStyle({ id: 'elemental_' + run.elementId, color: ELEMENT_INFO[run.elementId].color });
+  else wrap.style.background = run.isTorre ? '' : zoneBackgroundStyle(zone);
 
   const back = el('button', 'mini-btn', '« Retirarse');
   back.addEventListener('click', () => {
     window.__stageRun = null;
-    if (run.isTorre) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
+    if (run.isTorre || run.isElemental) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
   });
   wrap.appendChild(back);
-  wrap.appendChild(el('h3', null, run.isTorre
+  wrap.appendChild(el('h3', null, run.isElemental
+    ? ELEMENT_INFO[run.elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[run.elementId].label
+    : run.isTorre
     ? '🗼 Torre — ' + torreLevelLabel(TORRE_LEVELS[run.torreIdx])
     : zone.emoji + ' ' + zone.name + ' · ' + (run.isBoss ? 'Jefe de zona' : 'Etapa ' + (run.stageIdx + 1))));
 
@@ -680,29 +699,40 @@ UI.renderStageRun = function (state) {
   wrap.appendChild(path);
 
   if (run.nodeIdx < run.encounters.length) {
-    const bandUids = state.band.flat().filter(Boolean);
-    // Se muestra con la forma real de la Formación 3×3 (huecos vacíos
-    // incluidos) en vez de una fila seguida, para que se vea de un
-    // vistazo qué línea puede formarse antes de entrar al combate.
+    const bandUids = runFighterUids(state, run);
+    const fighterCard = (uid) => {
+      const entry = rosterEntry(state, uid);
+      const status = runFighterStatus(state, run, uid);
+      const card = el('div', 'stage-run-fighter' + (status.fainted ? ' fainted' : ''));
+      card.appendChild(creatureCanvas(entry.defId, 40));
+      const hpBar = el('div', 'hp-bar small');
+      const fill = el('div', 'hp-fill');
+      fill.style.width = Math.max(0, status.hp / status.maxHp * 100) + '%';
+      hpBar.appendChild(fill);
+      card.appendChild(hpBar);
+      if (status.fainted) card.appendChild(el('div', 'fainted-icon', '💀'));
+      return card;
+    };
     const bandStatus = el('div', 'stage-run-band');
-    for (let r = 0; r < BAND_ROWS; r++) {
+    if (run.isElemental) {
+      // Equipo mono-elemento de hasta 3: una única fila, sin huecos vacíos
+      // de la Formación 3×3 (aquí no aplica esa forma).
       const rowEl = el('div', 'stage-run-band-row');
-      for (let c = 0; c < BAND_COLS; c++) {
-        const uid = state.band[r][c];
-        const entry = uid ? rosterEntry(state, uid) : null;
-        if (!entry) { rowEl.appendChild(el('div', 'stage-run-fighter empty')); continue; }
-        const status = runFighterStatus(state, run, uid);
-        const card = el('div', 'stage-run-fighter' + (status.fainted ? ' fainted' : ''));
-        card.appendChild(creatureCanvas(entry.defId, 40));
-        const hpBar = el('div', 'hp-bar small');
-        const fill = el('div', 'hp-fill');
-        fill.style.width = Math.max(0, status.hp / status.maxHp * 100) + '%';
-        hpBar.appendChild(fill);
-        card.appendChild(hpBar);
-        if (status.fainted) card.appendChild(el('div', 'fainted-icon', '💀'));
-        rowEl.appendChild(card);
-      }
+      bandUids.forEach(uid => rowEl.appendChild(fighterCard(uid)));
       bandStatus.appendChild(rowEl);
+    } else {
+      // Se muestra con la forma real de la Formación 3×3 (huecos vacíos
+      // incluidos) en vez de una fila seguida, para que se vea de un
+      // vistazo qué línea puede formarse antes de entrar al combate.
+      for (let r = 0; r < BAND_ROWS; r++) {
+        const rowEl = el('div', 'stage-run-band-row');
+        for (let c = 0; c < BAND_COLS; c++) {
+          const uid = state.band[r][c];
+          if (!uid || !rosterEntry(state, uid)) { rowEl.appendChild(el('div', 'stage-run-fighter empty')); continue; }
+          rowEl.appendChild(fighterCard(uid));
+        }
+        bandStatus.appendChild(rowEl);
+      }
     }
     wrap.appendChild(bandStatus);
 
@@ -751,7 +781,7 @@ UI.useStageRunItem = function (state, itemId) {
   const run = window.__stageRun;
   if (!run || (state.items[itemId] || 0) <= 0) return;
   const item = CONSUMABLES[itemId];
-  const bandUids = state.band.flat().filter(Boolean);
+  const bandUids = runFighterUids(state, run);
   if (item.healPct) {
     bandUids.forEach(uid => {
       if (run.faintedSet.has(uid)) return;
@@ -778,7 +808,11 @@ UI.useStageRunItem = function (state, itemId) {
 UI.fightStageRunNode = function (state) {
   const run = window.__stageRun;
   const enemyRow = run.encounters[run.nodeIdx];
-  const playerCombos = buildPlayerCombinations(state);
+  // Una Mazmorra Elemental no tiene 8 líneas entre las que elegir (solo un
+  // equipo fijo de hasta 3) — se le pasa a UI.openBattle como una única
+  // fila, igual que cuando a una etapa normal solo le queda 1 combinación
+  // viva: se autoconfirma sin mostrar el selector de línea.
+  const playerCombos = run.isElemental ? [buildElementalTeamUnits(state, run.elementId)] : buildPlayerCombinations(state);
   // Aplica el HP/estado/carga de ulti con el que ha llegado cada luchador de
   // nodos anteriores de este recorrido — ya no se cura ni se reinicia la
   // ulti sola al pasar de encuentro.
@@ -789,10 +823,12 @@ UI.fightStageRunNode = function (state) {
     if (run.chargeMap[u.sourceUid] !== undefined) u.ultCharge = run.chargeMap[u.sourceUid];
   }));
   UI.openBattle(state, playerCombos, [enemyRow], {
-    title: run.isTorre
+    title: run.isElemental
+      ? ELEMENT_INFO[run.elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[run.elementId].label + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length
+      : run.isTorre
       ? '🗼 Torre · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length
       : ZONES[run.zoneIdx].name + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length,
-    zone: run.isTorre ? null : ZONES[run.zoneIdx],
+    zone: (run.isTorre || run.isElemental) ? null : ZONES[run.zoneIdx],
     onEnd: (result, view) => {
       if (view) {
         view.playerGroups.forEach(g => g.row.forEach(u => {
@@ -813,6 +849,21 @@ UI.fightStageRunNode = function (state) {
       if (run.nodeIdx < run.encounters.length) {
         saveGame(state);
         return { intermediate: true };
+      }
+      if (run.isElemental) {
+        const rewards = elementalDungeonRewards();
+        state.currencies.texel += rewards.texel;
+        if (rewards.drops.voxite) state.currencies.voxite += rewards.drops.voxite;
+        if (rewards.drops.doxite) state.currencies.doxite += rewards.drops.doxite;
+        if (rewards.drops.gear) addGear(state, rewards.drops.gear);
+        const leveled = [];
+        (state.elementalTeams[run.elementId] || []).forEach(uid => {
+          const entry = rosterEntry(state, uid);
+          if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
+        });
+        recordElementalClear(state, run.elementId);
+        saveGame(state);
+        return { rewards, leveled };
       }
       if (run.isTorre) {
         const level = TORRE_LEVELS[run.torreIdx];
@@ -846,11 +897,11 @@ UI.fightStageRunNode = function (state) {
   });
 };
 
-// ---------- Torre Batalla ----------
-// Modo endgame (ver TORRE_LEVELS en data.js): reutiliza el mismo recorrido
-// nodo-a-nodo que una etapa normal del Mapa (UI.renderStageRun/
-// UI.fightStageRunNode, con ramas `run.isTorre` para el título/fondo/
-// recompensa) en vez de duplicar esa pantalla entera.
+// ---------- Retos (Mazmorra Elemental + Torre Batalla) ----------
+// Ambas reutilizan el mismo recorrido nodo-a-nodo que una etapa normal del
+// Mapa (UI.renderStageRun/UI.fightStageRunNode, con ramas `run.isElemental`
+// / `run.isTorre` para el título/fondo/recompensa) en vez de duplicar esa
+// pantalla entera.
 function torreLevelLabel(level) {
   return (level.kind === 'mob' ? 'Mob ' : 'Jefe ') + (level.sectionIdx + 1) + ': ' + fighterDef(level.fightDefId).name;
 }
@@ -858,6 +909,8 @@ UI.renderTorre = function (state) {
   $('stageRunView').classList.add('hidden');
   const wrap = $('torreBody');
   wrap.innerHTML = '';
+  UI.renderElementalDungeons(state, wrap);
+
   if (!torreUnlocked(state)) {
     const cleared = ZONES.filter(z => highestClearedStage(state, z.id) >= STAGES_PER_ZONE - 1).length;
     wrap.appendChild(el('div', 'panel', `
@@ -867,6 +920,7 @@ UI.renderTorre = function (state) {
       <p class="settings-info">También puedes activarla ya para probarla desde Ajustes → "Torre Batalla (modo de prueba)".</p>`));
     return;
   }
+  wrap.appendChild(el('h3', null, '🗼 Torre Batalla'));
   wrap.appendChild(el('p', 'settings-info', `Un nivel por cada mob y cada jefe del juego. Enfréntate
     a su forma más fuerte repetida varias veces — ganar da 1 copia del tier más bajo de esa familia
     (o del jefe) para tu Colección, jugable igual que cualquier otro luchador. Los niveles son
@@ -909,6 +963,103 @@ UI.startTorreLevel = function (state, idx) {
   const encounters = buildTorreEncounters(level);
   window.__stageRun = {
     isTorre: true, torreIdx: idx, isBoss: level.kind === 'boss',
+    encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {},
+  };
+  UI.renderStageRun(state);
+};
+
+// ---------- Mazmorra Elemental ----------
+// Reto opcional de equipo mono-elemento (ver ELEMENTAL_DUNGEONS en
+// data.js): se desbloquea a mitad de partida, mucho antes que Torre
+// Batalla — por eso vive arriba del todo en esta misma pantalla.
+UI.renderElementalDungeons = function (state, wrap) {
+  wrap.appendChild(el('h3', null, '🌋 Mazmorra Elemental'));
+  if (!elementalDungeonUnlocked(state)) {
+    const cleared = ZONES.filter(z => highestClearedStage(state, z.id) >= STAGES_PER_ZONE - 1).length;
+    const target = ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID);
+    wrap.appendChild(el('div', 'panel', `
+      <p class="settings-info">🔒 Se desbloquea al completar las ${target} primeras zonas del mapa
+      (progreso actual: ${cleared}/${target}). También puedes activarla ya desde Ajustes →
+      "Mazmorra Elemental (modo de prueba)".</p>`));
+    return;
+  }
+  wrap.appendChild(el('p', 'settings-info', `Un equipo de hasta 3 luchadores del MISMO elemento se
+    enfrenta a 2 oleadas y un Guardián Elemental del elemento que lo contrarresta — desventaja
+    elemental de partida, así que hace falta buen nivel y equipo para ganar. Recompensa mejor que
+    una etapa normal, con equipo garantizado.`));
+  const list = el('div', 'torre-list');
+  ELEMENT_ORDER.forEach(elementId => {
+    const dungeon = ELEMENTAL_DUNGEONS[elementId];
+    const teamUids = elementalTeamUids(state, elementId);
+    const clears = state.elementalClears[elementId] || 0;
+    const row = el('div', 'torre-row');
+    row.appendChild(creatureCanvas(dungeon.guardianDefId, 40));
+    const info = el('div', 'torre-row-info');
+    info.appendChild(el('div', 'torre-row-name', ELEMENT_INFO[elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[elementId].label));
+    info.appendChild(el('div', 'torre-row-sub', `Equipo: ${teamUids.length}/3${clears > 0 ? ' · superada ' + clears + 'x' : ''}`));
+    row.appendChild(info);
+    const btnCol = el('div', 'torre-row-btns');
+    const teamBtn = el('button', 'mini-btn', '👥 Equipo');
+    teamBtn.addEventListener('click', (e) => { e.stopPropagation(); UI.openElementalTeamPicker(state, elementId); });
+    btnCol.appendChild(teamBtn);
+    row.appendChild(btnCol);
+    if (teamUids.length > 0) row.addEventListener('click', () => UI.startElementalDungeon(state, elementId));
+    list.appendChild(row);
+  });
+  wrap.appendChild(list);
+};
+
+// mode: si se pasa, filtra la Colección al elemento indicado y deja
+// elegir hasta 3 (multi-selección, igual patrón que el material de
+// fusión en la ficha de un luchador) — se guarda en
+// state.elementalTeams[elementId] para la próxima vez, editable siempre.
+UI.openElementalTeamPicker = function (state, elementId) {
+  const body = $('pickerModalBody');
+  body.innerHTML = `<h3>${ELEMENT_INFO[elementId].icon} Equipo de ${ELEMENT_INFO[elementId].label}</h3>
+    <p class="settings-info">Elige hasta 3 luchadores de este elemento para la Mazmorra. Se guardan
+    para la próxima vez, y siempre puedes volver a cambiarlos.</p>`;
+  const candidates = state.roster.filter(entry => fighterDef(entry.defId).element === elementId);
+  const selected = new Set(elementalTeamUids(state, elementId));
+  const confirmBtn = el('button', 'primary-btn', 'Guardar equipo (' + selected.size + '/3)');
+  if (candidates.length === 0) {
+    body.appendChild(el('div', 'empty-hint', 'Todavía no tienes ningún luchador de este elemento.'));
+  } else {
+    const grid = el('div', 'picker-grid');
+    candidates.forEach(entry => {
+      const card = creatureCard(state, entry, {});
+      if (selected.has(entry.uid)) card.classList.add('selected');
+      card.addEventListener('click', () => {
+        if (selected.has(entry.uid)) { selected.delete(entry.uid); card.classList.remove('selected'); }
+        else { if (selected.size >= 3) return; selected.add(entry.uid); card.classList.add('selected'); }
+        confirmBtn.textContent = 'Guardar equipo (' + selected.size + '/3)';
+      });
+      grid.appendChild(card);
+    });
+    body.appendChild(grid);
+  }
+  confirmBtn.addEventListener('click', () => {
+    state.elementalTeams[elementId] = [...selected];
+    saveGame(state);
+    $('pickerModal').classList.add('hidden');
+    UI.renderTorre(state);
+  });
+  body.appendChild(confirmBtn);
+  $('pickerModal').classList.remove('hidden');
+};
+
+UI.startElementalDungeon = function (state, elementId) {
+  if (!elementalDungeonUnlocked(state)) return;
+  const teamUids = elementalTeamUids(state, elementId);
+  if (teamUids.length === 0) { UI.showToast('⚠️ Elige primero tu equipo de ' + ELEMENT_INFO[elementId].label + '.'); return; }
+  if (!state.settings.infiniteEnergy) {
+    if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+    state.currencies.energy -= STAGE_ENERGY_COST;
+    saveGame(state);
+    UI.renderTopbar(state);
+  }
+  const encounters = buildElementalDungeonEncounters(elementId);
+  window.__stageRun = {
+    isElemental: true, elementId, isBoss: false,
     encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {},
   };
   UI.renderStageRun(state);

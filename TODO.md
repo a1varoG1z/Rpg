@@ -1290,6 +1290,72 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       (auto-combate, 2 oleadas) termina mostrando daño hecho/recibido y el
       MVP correctos; sin desbordamiento horizontal en la fila de 3
       filtros ni a 340px de ancho de viewport
+- [x] **Mazmorra Elemental** (29/08): nuevo modo de mitad de partida, idea
+      que Claude había sugerido y el usuario pidió implementar, calculando
+      a partir de qué punto de la partida desbloquearla para que quede
+      balanceado.
+      - **Desbloqueo** (`elementalDungeonUnlocked` en `state.js`): al
+        completar las 6 zonas ORIGINALES del mapa (hasta desbloquear
+        `cantera`, la 7ª) — mucho antes que Torre Batalla, que pide el
+        mapa entero. Se eligió ese punto porque antes el roster invocado
+        normalmente no tiene todavía 3 copias del mismo elemento para
+        formar equipo, y porque para entonces el nivel de rival ya está
+        topado en 40 de todas formas (el mismo cálculo que ya usa
+        `buildEnemyBand`), así que no tiene sentido desbloquearlo antes.
+        Toggle de prueba "🌋 Mazmorra Elemental" en Ajustes para saltarse
+        la condición, igual patrón que ya tenía Torre Batalla.
+      - **5 mazmorras, una por elemento** (`ELEMENTAL_DUNGEONS` en
+        `data.js`, calculado con `buildElementalDungeons()`): cada una
+        poblada por el elemento que CONTRARRESTA al elegido en el círculo
+        de ventajas (`findCounterElement`) — una mazmorra de Fuego
+        enfrenta a un equipo de fuego contra enemigos de Agua, con la
+        desventaja elemental de partida que eso conlleva (-20% de daño
+        hecho, +25% de daño recibido) a propósito: un reto real de nivel y
+        equipo, no un farm cómodo. 2 oleadas de relleno (la forma más
+        fuerte de 2 familias de `MOBS` de ese elemento contrario) + un
+        Guardián Elemental final en solitario (un `BOSS` de ese elemento).
+      - **Equipo de hasta 3, no la Formación completa**: a diferencia del
+        Mapa/Torre (que usan la Formación 3×3 y sus 8 líneas), aquí el
+        jugador elige directamente hasta 3 luchadores del elemento exacto
+        (`UI.openElementalTeamPicker`, mismo patrón de multi-selección que
+        el material de Fusión) — se guardan en `state.elementalTeams` para
+        la próxima vez, editables siempre. Al combatir se genera un único
+        grupo (`buildElementalTeamUnits`), así que nunca hay selector de
+        línea que elegir — se autoconfirma solo, igual que cuando a una
+        etapa normal ya solo le queda una combinación viva.
+      - **Recompensa**: más generosa que una etapa normal de esa misma
+        zona (`elementalDungeonRewards` en `combat.js`) y con una pieza de
+        equipo SIEMPRE garantizada (no al azar como las etapas normales),
+        para compensar la dificultad de la desventaja elemental.
+      - **Pantalla**: vive en la misma pestaña que Torre Batalla (renombrada
+        de "Torre Batalla" a "Retos" en la barra inferior/cabecera, ya que
+        ahora aloja dos modos), como sección aparte arriba del todo, ya que
+        se desbloquea mucho antes.
+      - **Refactor necesario para reutilizar el recorrido nodo-a-nodo**:
+        `UI.renderStageRun`/`UI.useStageRunItem` asumían que el equipo
+        que combate es siempre `state.band` (la Formación); ahora usan un
+        `runFighterUids(state, run)` que resuelve a la Formación normal o
+        al equipo mono-elemento según el tipo de recorrido, con una vista
+        de una sola fila (sin huecos de la Formación 3×3) para el caso
+        mono-elemento.
+      - **Fix encontrado con las pruebas**: el botón "Continuar" de después
+        de UNA VICTORIA (no una derrota ni un encuentro intermedio) seguía
+        comprobando solo `run.isTorre` para decidir volver a "Retos" en
+        vez de `UI.openZoneStages(state, run.zoneIdx)` — con
+        `run.isElemental` (que no tiene `zoneIdx`) esto rompía al terminar
+        la mazmorra con victoria. Arreglado añadiendo la misma condición
+        `run.isTorre || run.isElemental` que ya tenían el resto de sitios.
+      Verificado extensamente con Playwright: bloqueada/desbloqueada según
+      el ajuste; el selector de equipo filtra correctamente por elemento
+      (3 candidatos de fuego, ninguno de agua) y guarda la selección;
+      arrancar la mazmorra usa SOLO el equipo elegido (no arrastra
+      luchadores de la Formación principal); enemigo confirmado del
+      elemento contrario correcto; recorrido completo (2 oleadas + Guardián)
+      superado con victoria, Texel/XP/equipo garantizado y contador de
+      superaciones correctos; una derrota (equipo débil a propósito) no da
+      ninguna recompensa y vuelve a "Retos" sin errores; el recorrido
+      normal del Mapa y Torre Batalla siguen funcionando igual tras el
+      refactor de `runFighterUids`; sin desbordamiento horizontal a 360px
 
 ## Notas
 

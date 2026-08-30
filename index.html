@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260829c">
+<link rel="stylesheet" href="css/style.css?v=20260829d">
 </head>
 <body>
 <div id="app">
@@ -99,7 +99,7 @@
     </section>
 
     <section id="screen-torre" class="screen">
-      <h2 class="screen-title">Torre Batalla</h2>
+      <h2 class="screen-title">Retos</h2>
       <div id="torreBody"></div>
     </section>
 
@@ -112,7 +112,7 @@
     <button class="nav-btn" data-screen="arena"><span class="nav-icon">⚔️</span><span>Arena</span></button>
     <button class="nav-btn" data-screen="equipo"><span class="nav-icon">🎒</span><span>Equipo</span></button>
     <button class="nav-btn" data-screen="tienda"><span class="nav-icon">🛒</span><span>Tienda</span></button>
-    <button class="nav-btn" data-screen="torre"><span class="nav-icon">🗼</span><span>Torre</span></button>
+    <button class="nav-btn" data-screen="torre"><span class="nav-icon">🗼</span><span>Retos</span></button>
   </nav>
 </div>
 
@@ -244,6 +244,11 @@
       <input type="checkbox" id="enableTorreToggle">
     </label>
     <p class="settings-info">La Torre Batalla se desbloquea normalmente al completar el mapa entero. Actívalo aquí para probarla en cualquier momento, sin tener que terminarte el mapa antes.</p>
+    <label class="settings-toggle-row">
+      <span>🌋 Mazmorra Elemental (modo de prueba)</span>
+      <input type="checkbox" id="enableElementalToggle">
+    </label>
+    <p class="settings-info">La Mazmorra Elemental se desbloquea normalmente al completar las 6 primeras zonas del mapa. Actívala aquí para probarla desde el principio.</p>
     <h3>🎁 Trucos</h3>
     <p class="settings-info">Añade recursos para probar el juego sin límites.</p>
     <button class="primary-btn" id="cheatGemasBtn">+1000 💎 Gemas</button>
@@ -261,11 +266,11 @@
 
 <div id="toastContainer"></div>
 
-<script src="js/data.js?v=20260829c"></script>
-<script src="js/sprite.js?v=20260829c"></script>
-<script src="js/state.js?v=20260829c"></script>
-<script src="js/combat.js?v=20260829c"></script>
-<script src="js/ui.js?v=20260829c"></script>
-<script src="js/main.js?v=20260829c"></script>
+<script src="js/data.js?v=20260829d"></script>
+<script src="js/sprite.js?v=20260829d"></script>
+<script src="js/state.js?v=20260829d"></script>
+<script src="js/combat.js?v=20260829d"></script>
+<script src="js/ui.js?v=20260829d"></script>
+<script src="js/main.js?v=20260829d"></script>
 </body>
 </html>

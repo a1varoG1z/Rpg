@@ -136,6 +136,37 @@ function buildTorreEncounters(level) {
   return rows;
 }
 
+// Equipo mono-elemento elegido para una Mazmorra Elemental (ver
+// UI.openElementalTeamPicker) — hasta 3 uids, sin las 8 líneas de la
+// Formación normal porque aquí solo hay un grupo posible.
+function buildElementalTeamUnits(state, elementId) {
+  return elementalTeamUids(state, elementId).map(uid => makePlayerUnit(state, uid));
+}
+
+// Oleadas de una Mazmorra Elemental (ver ELEMENTAL_DUNGEONS en data.js):
+// 2 oleadas de relleno (3 copias de la forma más fuerte de cada una de 2
+// familias de MOBS del elemento que contrarresta al elegido) + un
+// Guardián Elemental final en solitario (mismo patrón que un jefe de
+// zona, ver makeBossUnit).
+function buildElementalDungeonEncounters(elementId) {
+  const dungeon = ELEMENTAL_DUNGEONS[elementId];
+  const level = elementalDungeonLevel();
+  const rows = dungeon.waveDefIds.map(defId => [0, 1, 2].map(() => makeUnit('enemy', defId, level)));
+  rows.push([makeBossUnit(dungeon.guardianDefId, level)]);
+  return rows;
+}
+
+function elementalDungeonRewards() {
+  const globalIdx = ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID) * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
+  // Más generoso que una etapa normal de esa misma zona (×3.5/×3 en vez de
+  // ×3/×2.5 de un jefe de zona) y con equipo garantizado — la desventaja
+  // elemental de partida contra el Guardián hace que el reto sea mayor.
+  const texel = Math.round((20 + globalIdx * 8) * 3.5);
+  const fighterXp = Math.round((15 + globalIdx * 4) * 3);
+  const drops = { voxite: 1, doxite: Math.random() < 0.4 ? 1 : 0, gear: generateGear(randomGearSlot(), gearDropRarity(globalIdx)) };
+  return { texel, fighterXp, drops };
+}
+
 function stageRewards(zoneIdx, stageIdx, isBoss) {
   const globalIdx = zoneIdx * STAGES_PER_ZONE + stageIdx;
   const texel = Math.round((20 + globalIdx * 8) * (isBoss ? 3 : 1));

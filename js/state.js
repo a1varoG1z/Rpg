@@ -33,11 +33,16 @@ function createNewState() {
     roster, gearInventory: [], band, progress,
     arena: { rank: 1, bestRank: 1 },
     stats: { battlesWon: 0, battlesLost: 0 },
-    settings: { infiniteEnergy: false, showMedallion: true, enableTorreBatalla: false },
+    settings: { infiniteEnergy: false, showMedallion: true, enableTorreBatalla: false, enableElementalDungeon: false },
     // Torre Batalla: cuántas veces se ha superado cada nivel (clave =
     // level.key de TORRE_LEVELS en data.js) — 0/ausente = nivel no
     // superado todavía (y por tanto el siguiente sigue bloqueado).
     torre: { clears: {} },
+    // Mazmorra Elemental: equipo de hasta 3 uids elegido para cada
+    // elemento (se recuerda entre visitas, editable en cualquier momento)
+    // y cuántas veces se ha superado cada una.
+    elementalTeams: { fuego: [], viento: [], tierra: [], rayo: [], agua: [] },
+    elementalClears: { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 },
     // Objetos consumibles comprados en la Tienda (pociones, plumas fénix).
     items: { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 },
     // Homúnculos conseguidos por invocación: solo cuentan (no tienen uid
@@ -408,6 +413,22 @@ function recordTorreClear(state, idx) {
   state.torre.clears[level.key] = torreClearCount(state, level) + 1;
 }
 
+// --- Mazmorra Elemental (ver ELEMENTAL_DUNGEONS en data.js) ---
+// Se desbloquea al completar las 6 zonas originales del mapa (contenido de
+// mitad de partida, mucho antes que Torre Batalla, que pide el mapa
+// entero) — ver el comentario de ELEMENTAL_DUNGEON_ZONE_ID en data.js.
+function elementalDungeonUnlocked(state) { return !!state.settings.enableElementalDungeon || isZoneUnlocked(state, ELEMENTAL_DUNGEON_ZONE_ID); }
+function recordElementalClear(state, elementId) { state.elementalClears[elementId] = (state.elementalClears[elementId] || 0) + 1; }
+// Filtra los uids del equipo elegido que ya no existen en el roster
+// (vendidos, evolucionados...) y, si encuentra alguno, deja el hueco
+// limpio guardado — evita que un uid huérfano llegue a combate.
+function elementalTeamUids(state, elementId) {
+  const raw = state.elementalTeams[elementId] || [];
+  const valid = raw.filter(uid => rosterEntry(state, uid));
+  if (valid.length !== raw.length) state.elementalTeams[elementId] = valid;
+  return valid;
+}
+
 // --- Objetivos (pantalla de progreso general) ---
 // Todo de solo lectura: agrega números ya presentes en otras partes del
 // estado (progreso de zonas, Pokédex, roster, arena, equipo...) en un único
@@ -492,9 +513,12 @@ function loadGame() {
     if (!state.settings) state.settings = { infiniteEnergy: false, showMedallion: true };
     if (state.settings.showMedallion === undefined) state.settings.showMedallion = true;
     if (state.settings.enableTorreBatalla === undefined) state.settings.enableTorreBatalla = false;
+    if (state.settings.enableElementalDungeon === undefined) state.settings.enableElementalDungeon = false;
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     if (!state.homunculos) state.homunculos = { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 };
     if (!state.torre) state.torre = { clears: {} };
+    if (!state.elementalTeams) state.elementalTeams = { fuego: [], viento: [], tierra: [], rayo: [], agua: [] };
+    if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
     // Partidas guardadas antes de que existiera este registro: se
     // reconstruye a partir de lo que haya ahora mismo en el roster (no es
     // perfecto — no recuerda luchadores vendidos/evolucionados antes de

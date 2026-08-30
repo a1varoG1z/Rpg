@@ -208,6 +208,8 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .torre-row-info { flex: 1; min-width: 0; }
 .torre-row-name { font-weight: bold; font-size: 0.78rem; overflow-wrap: break-word; }
 .torre-row-sub { font-size: 0.66rem; color: var(--cream-dim); margin-top: 2px; }
+.torre-row-btns { flex-shrink: 0; }
+.torre-row-btns .mini-btn { margin: 0; padding: 5px 8px; font-size: 0.66rem; }
 .shop-buy-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .shop-buy-btn {
   flex: 1; min-width: 56px; background: #1f1811; border: 2px solid var(--gold-dim); border-radius: 8px; color: var(--cream);

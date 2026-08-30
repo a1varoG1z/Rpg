@@ -24,6 +24,7 @@
     $('infiniteEnergyToggle').checked = state.settings.infiniteEnergy;
     $('showMedallionToggle').checked = state.settings.showMedallion;
     $('enableTorreToggle').checked = state.settings.enableTorreBatalla;
+    $('enableElementalToggle').checked = state.settings.enableElementalDungeon;
     $('settingsModal').classList.remove('hidden');
   });
   $('settingsModalClose').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
@@ -60,6 +61,12 @@
     saveGame(state);
     if (activeScreen === 'torre') UI.renderTorre(state);
     UI.showToast(state.settings.enableTorreBatalla ? '🗼 Torre Batalla activada (modo de prueba)' : '🗼 Torre Batalla desactivada');
+  });
+  $('enableElementalToggle').addEventListener('change', (e) => {
+    state.settings.enableElementalDungeon = e.target.checked;
+    saveGame(state);
+    if (activeScreen === 'torre') UI.renderTorre(state);
+    UI.showToast(state.settings.enableElementalDungeon ? '🌋 Mazmorra Elemental activada (modo de prueba)' : '🌋 Mazmorra Elemental desactivada');
   });
   $('cheatGemasBtn').addEventListener('click', () => {
     state.currencies.gemas += 1000;
@@ -109,7 +116,7 @@
       UI.renderStageRun(state);
     } else if (run) {
       window.__stageRun = null;
-      if (run.isTorre) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
+      if (run.isTorre || run.isElemental) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
     } else {
       UI.renderScreen(activeScreen, state);
     }
