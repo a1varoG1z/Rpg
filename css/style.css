@@ -205,6 +205,10 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .torre-row:not(.locked) { cursor: pointer; }
 .torre-row.locked { opacity: 0.5; }
 .torre-row .creature-canvas { width: 40px; height: 45px; }
+.torre-row-empty-icon {
+  width: 40px; height: 45px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; opacity: 0.5;
+}
 .torre-row-info { flex: 1; min-width: 0; }
 .torre-row-name { font-weight: bold; font-size: 0.78rem; overflow-wrap: break-word; }
 .torre-row-sub { font-size: 0.66rem; color: var(--cream-dim); margin-top: 2px; }

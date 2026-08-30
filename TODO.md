@@ -1356,6 +1356,73 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       ninguna recompensa y vuelve a "Retos" sin errores; el recorrido
       normal del Mapa y Torre Batalla siguen funcionando igual tras el
       refactor de `runFighterUids`; sin desbordamiento horizontal a 360px
+  - [x] **Prueba del Campeón, Mercader Itinerante, Duelo por apuesta y
+    control de velocidad de combate** (4 funcionalidades pedidas juntas):
+    - **Prueba del Campeón** (sección Retos, siempre disponible desde el
+      principio — no necesita desbloqueo ni profundidad de roster, solo 1
+      luchador): se elige un único luchador de la Colección que encadena
+      duelos 1 contra 1 cada vez más difíciles, SIN curarse ni recargar
+      ulti entre ellos — perder termina el intento ahí donde esté. El
+      rival de cada duelo se genera al vuelo (`buildChampionOpponent` en
+      combat.js): nivel `1 + 1.5×duelo` (tope de nivel normal del juego) y
+      probabilidad creciente de rareza Épica/Legendaria según el duelo. Se
+      guarda la mejor racha conseguida (`state.champion.bestStreak`) y da
+      Texel/XP crecientes por duelo ganado (`championDuelRewards`). Usa un
+      run propio (`window.__championRun`, con `uid/duelIdx/hp/ultCharge`)
+      en vez de reutilizar `window.__stageRun`, porque no es un recorrido
+      de nodos con encuentros fijos sino una cadena potencialmente
+      indefinida de duelos generados uno a uno; `UI.fightChampionDuel` se
+      relanza sola desde `battleCloseBtn` mientras la racha siga viva.
+    - **Mercader Itinerante** (sección Tienda, panel superior): una oferta
+      diaria determinista (sin servidor: semilla = hash de la fecha local,
+      `merchantOffer()` en data.js) que cambia N copias sueltas de una
+      rareza por una pieza de equipo de la rareza siguiente o por cristales
+      — solo se puede canjear una vez al día
+      (`state.merchant.lastRedeemedKey`). El selector de copias exige
+      elegir exactamente el número pedido antes de habilitar el botón de
+      confirmar.
+    - **Duelo por apuesta**: en cada zona con al menos 1 etapa superada,
+      un botón en "Etapas" abre un combate rápido (una sola oleada, no el
+      recorrido de nodos) contra el relleno de la etapa más avanzada ya
+      superada de esa zona, apostando 100/300/1000 Texel (solo se ofrecen
+      las cantidades que el jugador puede pagar) — ganar devuelve el
+      doble, perder pierde lo apostado. No usa `window.__stageRun`: es una
+      llamada directa a `UI.openBattle`.
+    - **Control de velocidad de combate**: botón ⏱️ en la cabecera de
+      batalla que cicla 1×→2×→3×→1× (`UI.cycleBattleSpeed`); cambia
+      `UI.battleSpeed`, que divide el intervalo de 420 ms entre eventos de
+      `UI.stepBattle` — la velocidad se aplica a toda animación de
+      combate, cualquiera que sea el modo.
+    - **Bug encontrado y arreglado durante las pruebas**: como
+      `window.__championRun` no se limpiaba al empezar CUALQUIER otro tipo
+      de combate (etapa normal, Torre, Mazmorra Elemental, Arena, Duelo
+      por apuesta), si el jugador dejaba una Prueba del Campeón a medias
+      (sin ganar ni perder el último duelo) y luego luchaba en otro sitio,
+      al cerrar ESE OTRO combate `battleCloseBtn` reanudaba por error la
+      Prueba del Campeón en vez de volver a la pantalla correcta —
+      confirmado escribiendo un test que deja la Prueba del Campeón activa
+      y arranca una etapa normal después. Arreglado limpiando
+      `window.__championRun = null` al arrancar cualquier otro combate
+      (`UI.startStageBattle`, `UI.startTorreLevel`,
+      `UI.startElementalDungeon`, `UI.startArenaBattle`,
+      `UI.startWagerDuel`) y `window.__stageRun = null` al arrancar la
+      Prueba del Campeón, para que los distintos tipos de combate en curso
+      sean siempre mutuamente excluyentes.
+    Verificado con Playwright (bucle de avance rápido de
+    `UI.stepBattle(view, true)`, sin esperas en tiempo real): Prueba del
+    Campeón sin luchador elegido muestra el aviso correcto; el selector
+    filtra y guarda el luchador elegido; una racha de 6 duelos ganados
+    (HP/carga de ulti persistiendo sin curarse entre ellos) termina en
+    derrota en el duelo 7, con la mejor racha (6) guardada correctamente y
+    el run limpiado; Mercader Itinerante genera la misma oferta dos veces
+    en el mismo día (determinismo confirmado), el canje descuenta
+    exactamente las copias pedidas y suma los cristales/equipo prometido,
+    y el botón queda deshabilitado con "Ya cambiado hoy" tras canjear;
+    Duelo por apuesta no aparece sin etapas superadas, aparece tras
+    superar una, y ganar duplica el Texel apostado; velocidad de combate
+    cicla 1×→2×→3×→1× y el texto del botón se actualiza en cada clic; el
+    bug de contaminación entre `window.__championRun`/`window.__stageRun`
+    ya no se reproduce tras el fix.
 
 ## Notas
 

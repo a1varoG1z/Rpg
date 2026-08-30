@@ -215,6 +215,27 @@ function buildArenaBand(rank) {
   return { rows, level };
 }
 
+// Prueba del Campeón: un único rival por duelo, cada vez más fuerte según
+// cuántos duelos seguidos se lleven ganados — mismo patrón de rareza
+// creciente que buildArenaBand, pero con un solo enemigo en vez de una
+// banda entera (es un duelo 1 contra 1).
+function buildChampionOpponent(duelIdx) {
+  const level = Math.min(XP_LEVEL_CAP, Math.max(1, 1 + Math.round(duelIdx * 1.5)));
+  const legendaryChance = Math.min(0.4, duelIdx * 0.02);
+  const epicChance = Math.min(0.3, duelIdx * 0.02);
+  const roll = Math.random();
+  const pool = roll < legendaryChance
+    ? FIGHTERS.filter(f => f.rarity === 'legendario')
+    : roll < legendaryChance + epicChance
+      ? FIGHTERS.filter(f => f.rarity === 'epico')
+      : FIGHTERS.filter(f => f.rarity === 'comun' || f.rarity === 'infrecuente' || f.rarity === 'raro');
+  const def = pool[Math.floor(Math.random() * pool.length)];
+  return makeUnit('enemy', def.id, level);
+}
+function championDuelRewards(duelIdx) {
+  return { texel: Math.round(30 + duelIdx * 10), fighterXp: Math.round(20 + duelIdx * 8) };
+}
+
 // --- Motor de turnos ---
 function elementDamageMult(a, d) { return elementMultiplier(a, d); }
 

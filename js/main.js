@@ -106,10 +106,15 @@
     if (view) UI.stepBattle(view, true);
   });
   $('battleAutoBtn').addEventListener('click', () => UI.toggleAutoBattle());
+  $('battleSpeedBtn').addEventListener('click', () => UI.cycleBattleSpeed());
   $('battleCloseBtn').addEventListener('click', () => {
     $('battleOverlay').classList.add('hidden');
     window.__battleView = null;
     UI.renderTopbar(state);
+    // Prueba del Campeón: flujo aparte del recorrido nodo-a-nodo (window.__stageRun) —
+    // si sigue viva (ganó el duelo), el siguiente duelo empieza ya mismo; si acabó
+    // (perdió), UI.fightChampionDuel ya la puso a null dentro de onEnd.
+    if (window.__championRun) { UI.fightChampionDuel(state); return; }
     const run = window.__stageRun;
     if (run && !run.failed && run.nodeIdx < run.encounters.length) {
       // Encuentro intermedio superado: de vuelta al recorrido, no a la pantalla normal.

@@ -790,3 +790,30 @@ function elementalDungeonLevel() {
   const globalStageIdx = zoneIdx * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
   return Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalStageIdx));
 }
+
+// ---------- Mercader Itinerante ----------
+// Oferta diaria determinista (misma oferta todo el día, cambia sola al día
+// siguiente, sin necesitar servidor: se deriva de la fecha real con
+// hashStr, igual mecanismo que ya usa statVarianceMult más arriba) —
+// cambia copias sueltas de una rareza concreta (que ya solo servían de
+// material de Fusión) por 1 pieza de equipo de rareza superior, o por un
+// puñado de cristales. Sin Legendario como coste (demasiado valioso para
+// un simple cambio diario).
+function merchantTodayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+function merchantOffer() {
+  const key = merchantTodayKey();
+  const seed = Math.abs(hashStr(key));
+  const costRarities = ['comun', 'infrecuente', 'raro', 'epico'];
+  const costRarity = costRarities[seed % costRarities.length];
+  const costCount = 3 + (seed % 3);
+  if (seed % 2 === 0) {
+    const rewardRarity = RARITIES[Math.min(RARITIES.length - 1, rarityIndex(costRarity) + 1)].id;
+    return { key, costRarity, costCount, kind: 'gear', rewardRarity };
+  }
+  const crystalType = ['pixite', 'voxite', 'doxite'][Math.floor(seed / 11) % 3];
+  const crystalAmount = 2 + (seed % 4);
+  return { key, costRarity, costCount, kind: 'crystal', crystalType, crystalAmount };
+}

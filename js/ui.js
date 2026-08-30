@@ -514,7 +514,8 @@ UI.openGuide = function () {
     tiene ventaja o desventaja elemental clara contra la fila enemiga activa — útil para decidir qué
     línea enviar. El botón "🤖 Auto" resuelve la batalla entera sin tener que elegir línea cada
     ronda (elige siempre la de mejor ventaja elemental media); queda activado para el resto de la
-    partida hasta que lo desactives, incluidos los siguientes combates de un mismo recorrido.</p>
+    partida hasta que lo desactives, incluidos los siguientes combates de un mismo recorrido. El
+    botón ⏱️ junto a él cicla la velocidad de la animación de combate entre 1×, 2× y 3×.</p>
     <p class="settings-info">Los jefes de zona tienen 2 mecánicas propias que ningún otro rival
     tiene: al bajar del 30% de su vida entran en <b>Furia</b> (+25% Ataque y Sabiduría el resto del
     combate), y cada 4º golpe básico suyo es un <b>Golpe Devastador</b> — crítico garantizado y algo
@@ -546,6 +547,22 @@ UI.openGuide = function () {
     jefe) para tu Colección — jugable igual que cualquier otro luchador: se puede colocar en la
     Formación, equipar y evolucionar. Los niveles son rejugables para conseguir más copias, y se
     desbloquean en orden, superando siempre el anterior.</p>`));
+
+  body.appendChild(guideSection('⚔️ Prueba del Campeón', `
+    <p class="settings-info">Disponible desde el principio, sin desbloqueo: elige UN único luchador
+    de tu Colección para encadenar duelos 1 contra 1 cada vez más difíciles, sin curarse ni recargar
+    ulti entre uno y otro — perder termina el intento donde esté. Cada duelo ganado da Texel y XP
+    crecientes, y se guarda tu mejor racha de duelos seguidos.</p>`));
+
+  body.appendChild(guideSection('🧳 Mercader Itinerante', `
+    <p class="settings-info">En la Tienda: una oferta nueva cada día que cambia varias copias sueltas
+    de una rareza por una pieza de equipo o un puñado de cristales — solo se puede canjear una vez al
+    día, así que conviene revisarla a menudo.</p>`));
+
+  body.appendChild(guideSection('🎲 Duelo por apuesta', `
+    <p class="settings-info">En cualquier zona con al menos 1 etapa superada: un combate rápido
+    (una sola oleada) contra el rival de tu etapa más avanzada de esa zona, apostando Texel — ganas
+    y te devuelve el doble, pierdes y lo pierdes.</p>`));
 
   body.appendChild(guideSection('🎯 Progreso', `
     <p class="settings-info">📖 <b>Pokédex</b> (en Colección): registro de todas las formas
@@ -630,6 +647,67 @@ UI.openZoneStages = function (state, zoneIdx) {
   }
   wrap.appendChild(grid);
   wrap.appendChild(el('p', 'settings-info', 'Cada etapa cuesta ' + STAGE_ENERGY_COST + ' ⚡ y se recorre nodo a nodo, con varios encuentros antes de la recompensa. La etapa 8 es el jefe de zona: un único combate, solo contra él.'));
+
+  // Duelo por apuesta: solo si ya hay al menos 1 etapa superada en esta
+  // zona — un combate rápido (una sola oleada, no el recorrido entero)
+  // contra el relleno de la etapa más avanzada ya superada, arriesgando
+  // Texel a cambio del doble si se gana.
+  const bestStage = highestClearedStage(state, zone.id);
+  if (bestStage >= 0) {
+    const wagerBtn = el('button', 'mini-btn', '🎲 Duelo por apuesta');
+    wagerBtn.addEventListener('click', () => UI.openWagerDuel(state, zoneIdx, bestStage));
+    wrap.appendChild(wagerBtn);
+  }
+};
+
+// ---------- Duelo por apuesta ----------
+// Combate rápido (una sola oleada, no el recorrido de la etapa entero)
+// contra el mismo relleno de una etapa ya superada, arriesgando Texel por
+// adelantado a cambio del doble si se gana — nada si se pierde.
+UI.openWagerDuel = function (state, zoneIdx, stageIdx) {
+  const zone = ZONES[zoneIdx];
+  const body = $('pickerModalBody');
+  body.innerHTML = `<h3>🎲 Duelo por apuesta</h3>
+    <p class="settings-info">Reto rápido contra el mismo rival de ${zone.name} · Etapa ${stageIdx + 1}.
+    Ganas y te devuelve el doble de lo apostado; pierdes y lo pierdes.</p>`;
+  const wagerOptions = [100, 300, 1000].filter(amount => amount <= state.currencies.texel);
+  if (wagerOptions.length === 0) {
+    body.appendChild(el('div', 'empty-hint', 'No tienes suficiente Texel para apostar.'));
+  } else {
+    wagerOptions.forEach(amount => {
+      const btn = el('button', 'primary-btn', '🪙 Apostar ' + amount + ' (ganas ' + amount * 2 + ')');
+      btn.addEventListener('click', () => {
+        $('pickerModal').classList.add('hidden');
+        UI.startWagerDuel(state, zoneIdx, stageIdx, amount);
+      });
+      body.appendChild(btn);
+    });
+  }
+  $('pickerModal').classList.remove('hidden');
+};
+
+UI.startWagerDuel = function (state, zoneIdx, stageIdx, amount) {
+  if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
+  if (state.currencies.texel < amount) { UI.showToast('⚠️ No tienes suficiente Texel.'); return; }
+  window.__championRun = null;
+  state.currencies.texel -= amount;
+  saveGame(state);
+  UI.renderTopbar(state);
+  const { rows } = buildEnemyBand(zoneIdx, stageIdx);
+  const combos = buildPlayerCombinations(state);
+  UI.openBattle(state, combos, [rows[0]], {
+    title: '🎲 Apuesta · ' + ZONES[zoneIdx].name,
+    zone: ZONES[zoneIdx],
+    onEnd: (result) => {
+      if (result === 'victoria') {
+        state.currencies.texel += amount * 2;
+        saveGame(state);
+        return { wagerWon: amount * 2 };
+      }
+      saveGame(state);
+      return { wagerLost: amount };
+    },
+  });
 };
 
 // Entrar en una etapa ya no abre directamente una batalla: se paga la
@@ -651,6 +729,7 @@ UI.startStageBattle = function (state, zoneIdx, stageIdx) {
   // carga de ulti de cada luchador durante TODA la etapa (entre nodos del
   // recorrido) — ya no se cura ni se reinicia la ulti sola al pasar de
   // encuentro, de ahí que la Tienda venda pociones y plumas fénix.
+  window.__championRun = null;
   window.__stageRun = { zoneIdx, stageIdx, isBoss, encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {} };
   UI.renderStageRun(state);
 };
@@ -909,6 +988,7 @@ UI.renderTorre = function (state) {
   $('stageRunView').classList.add('hidden');
   const wrap = $('torreBody');
   wrap.innerHTML = '';
+  UI.renderChampionTrial(state, wrap);
   UI.renderElementalDungeons(state, wrap);
 
   if (!torreUnlocked(state)) {
@@ -961,11 +1041,106 @@ UI.startTorreLevel = function (state, idx) {
   }
   const level = TORRE_LEVELS[idx];
   const encounters = buildTorreEncounters(level);
+  window.__championRun = null;
   window.__stageRun = {
     isTorre: true, torreIdx: idx, isBoss: level.kind === 'boss',
     encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {},
   };
   UI.renderStageRun(state);
+};
+
+// ---------- Prueba del Campeón ----------
+// Duelos 1 contra 1: un único luchador elegido se enfrenta a rivales cada
+// vez más fuertes en serie, SIN curarse entre duelos — perder termina el
+// intento. Disponible desde el principio (sin desbloqueo, a diferencia de
+// la Mazmorra o la Torre): no necesita profundidad de roster, solo 1
+// luchador, así que sirve de reto accesible desde el primer momento.
+UI.renderChampionTrial = function (state, wrap) {
+  wrap.appendChild(el('h3', null, '⚔️ Prueba del Campeón'));
+  wrap.appendChild(el('p', 'settings-info', `Elige un único luchador para una serie de duelos 1 contra 1
+    cada vez más difíciles, sin curarse entre ellos — pierde y el intento termina ahí. Se guarda tu
+    mejor racha.`));
+  const uid = state.champion.selectedUid;
+  const entry = uid ? rosterEntry(state, uid) : null;
+  const row = el('div', 'torre-row');
+  if (entry) row.appendChild(creatureCanvas(entry.defId, 40));
+  else { const ph = el('div', 'torre-row-empty-icon', '❔'); row.appendChild(ph); }
+  const info = el('div', 'torre-row-info');
+  info.appendChild(el('div', 'torre-row-name', entry ? fighterDef(entry.defId).name : 'Ningún luchador elegido'));
+  info.appendChild(el('div', 'torre-row-sub', 'Mejor racha: ' + state.champion.bestStreak + ' duelo' + (state.champion.bestStreak === 1 ? '' : 's')));
+  row.appendChild(info);
+  const btnCol = el('div', 'torre-row-btns');
+  const pickBtn = el('button', 'mini-btn', '👤 Elegir');
+  pickBtn.addEventListener('click', (e) => { e.stopPropagation(); UI.openChampionPicker(state); });
+  btnCol.appendChild(pickBtn);
+  row.appendChild(btnCol);
+  if (entry) row.addEventListener('click', () => UI.startChampionTrial(state));
+  wrap.appendChild(row);
+};
+
+UI.openChampionPicker = function (state) {
+  const body = $('pickerModalBody');
+  body.innerHTML = '<h3>⚔️ Elige tu luchador</h3><p class="settings-info">Se enfrentará solo, en duelos seguidos cada vez más difíciles.</p>';
+  const listWrap = el('div');
+  let mode = UI.pickerSortMode;
+  const pick = (entry) => {
+    state.champion.selectedUid = entry.uid;
+    saveGame(state);
+    $('pickerModal').classList.add('hidden');
+    UI.renderTorre(state);
+  };
+  const refresh = () => renderPickerCandidates(listWrap, state, state.roster, mode, pick);
+  body.appendChild(buildSortSelect(mode, (v) => { mode = v; UI.pickerSortMode = v; refresh(); }));
+  body.appendChild(listWrap);
+  refresh();
+  $('pickerModal').classList.remove('hidden');
+};
+
+UI.startChampionTrial = function (state) {
+  const uid = state.champion.selectedUid;
+  if (!uid || !rosterEntry(state, uid)) { UI.showToast('⚠️ Elige primero tu luchador.'); return; }
+  window.__stageRun = null;
+  if (!state.settings.infiniteEnergy) {
+    if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+    state.currencies.energy -= STAGE_ENERGY_COST;
+    saveGame(state);
+    UI.renderTopbar(state);
+  }
+  window.__championRun = { uid, duelIdx: 0, hp: null, ultCharge: 0 };
+  UI.fightChampionDuel(state);
+};
+
+UI.fightChampionDuel = function (state) {
+  const run = window.__championRun;
+  const entry = rosterEntry(state, run.uid);
+  const playerUnit = makePlayerUnit(state, run.uid);
+  if (run.hp !== null) playerUnit.hp = Math.min(playerUnit.maxHp, run.hp);
+  playerUnit.ultCharge = run.ultCharge;
+  const opponent = buildChampionOpponent(run.duelIdx);
+  UI.openBattle(state, [[playerUnit]], [[opponent]], {
+    title: '⚔️ Prueba del Campeón · Duelo ' + (run.duelIdx + 1),
+    zone: null,
+    onEnd: (result, view) => {
+      if (view) {
+        const u = view.playerGroups[0].row[0];
+        run.hp = u.hp; run.ultCharge = u.ultCharge;
+      }
+      if (result !== 'victoria') {
+        const duelsWon = run.duelIdx;
+        recordChampionStreak(state, duelsWon);
+        window.__championRun = null;
+        saveGame(state);
+        return { championDefeat: true, duelsWon };
+      }
+      run.duelIdx++;
+      const rewards = championDuelRewards(run.duelIdx - 1);
+      state.currencies.texel += rewards.texel;
+      fighterAddXp(entry, rewards.fighterXp);
+      recordChampionStreak(state, run.duelIdx);
+      saveGame(state);
+      return { rewards, championContinue: true, duelsWon: run.duelIdx };
+    },
+  });
 };
 
 // ---------- Mazmorra Elemental ----------
@@ -1058,6 +1233,7 @@ UI.startElementalDungeon = function (state, elementId) {
     UI.renderTopbar(state);
   }
   const encounters = buildElementalDungeonEncounters(elementId);
+  window.__championRun = null;
   window.__stageRun = {
     isElemental: true, elementId, isBoss: false,
     encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {},
@@ -1667,6 +1843,7 @@ UI.renderArena = function (state) {
 
 UI.startArenaBattle = function (state) {
   if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
+  window.__championRun = null;
   const enemyRows = state.arena.scouted.map(row => row.map(u => makeUnit('enemy', u.defId, u.level)));
   UI.openBattle(state, buildPlayerCombinations(state), enemyRows, {
     title: 'Arena · Rango ' + state.arena.rank,
@@ -1706,8 +1883,77 @@ UI.renderEquipo = function (state) {
   });
 };
 
+// ---------- Mercader Itinerante ----------
+// Oferta diaria (ver merchantOffer en data.js): cambia copias sueltas de
+// una rareza concreta — que ahora solo sirven de material de Fusión — por
+// 1 pieza de equipo o un puñado de cristales. Solo una vez al día
+// (`state.merchant.lastRedeemedKey`); la oferta cambia sola al día
+// siguiente, sin tocar nada del jugador.
+function renderMerchantPanel(state) {
+  const container = $('shopMerchantPanel');
+  container.innerHTML = '';
+  const offer = merchantOffer();
+  const redeemed = merchantOfferRedeemedToday(state);
+  const panel = el('div', 'panel');
+  panel.appendChild(el('h3', null, '🧳 Mercader Itinerante'));
+  const rewardText = offer.kind === 'gear'
+    ? '1 pieza de equipo ' + rarityInfo(offer.rewardRarity).label
+    : offer.crystalAmount + ' ' + CRYSTALS[offer.crystalType].label;
+  panel.appendChild(el('p', 'settings-info', `Hoy cambia ${offer.costCount} copias ${rarityInfo(offer.costRarity).label} por ${rewardText}. Oferta nueva cada día.`));
+  const btn = el('button', redeemed ? 'mini-btn' : 'primary-btn', redeemed ? 'Ya cambiado hoy' : '🧳 Cambiar');
+  btn.disabled = redeemed;
+  if (!redeemed) btn.addEventListener('click', () => UI.openMerchantTrade(state));
+  panel.appendChild(btn);
+  container.appendChild(panel);
+}
+
+UI.openMerchantTrade = function (state) {
+  const offer = merchantOffer();
+  const body = $('pickerModalBody');
+  const rewardText = offer.kind === 'gear'
+    ? '1 pieza de equipo ' + rarityInfo(offer.rewardRarity).label
+    : offer.crystalAmount + ' ' + CRYSTALS[offer.crystalType].label;
+  body.innerHTML = `<h3>🧳 Mercader Itinerante</h3>
+    <p class="settings-info">Elige ${offer.costCount} copias ${rarityInfo(offer.costRarity).label} para
+    cambiarlas por ${rewardText}. Se pierden al cambiarlas.</p>`;
+  const candidates = state.roster.filter(entry => fighterDef(entry.defId).rarity === offer.costRarity);
+  const selected = new Set();
+  const confirmBtn = el('button', 'primary-btn', 'Cambiar (0/' + offer.costCount + ')');
+  confirmBtn.disabled = true;
+  if (candidates.length < offer.costCount) {
+    body.appendChild(el('div', 'empty-hint', 'No tienes suficientes copias ' + rarityInfo(offer.costRarity).label + ' todavía.'));
+  } else {
+    const grid = el('div', 'picker-grid');
+    candidates.forEach(entry => {
+      const card = creatureCard(state, entry, {});
+      card.addEventListener('click', () => {
+        if (selected.has(entry.uid)) { selected.delete(entry.uid); card.classList.remove('selected'); }
+        else { if (selected.size >= offer.costCount) return; selected.add(entry.uid); card.classList.add('selected'); }
+        confirmBtn.textContent = 'Cambiar (' + selected.size + '/' + offer.costCount + ')';
+        confirmBtn.disabled = selected.size !== offer.costCount;
+      });
+      grid.appendChild(card);
+    });
+    body.appendChild(grid);
+  }
+  confirmBtn.addEventListener('click', () => {
+    if (selected.size !== offer.costCount) return;
+    [...selected].forEach(uid => removeFromRoster(state, uid));
+    if (offer.kind === 'gear') addGear(state, generateGear(randomGearSlot(), offer.rewardRarity));
+    else state.currencies[offer.crystalType] += offer.crystalAmount;
+    state.merchant.lastRedeemedKey = offer.key;
+    saveGame(state);
+    $('pickerModal').classList.add('hidden');
+    UI.renderTienda(state);
+    UI.showToast('🧳 Intercambio realizado');
+  });
+  body.appendChild(confirmBtn);
+  $('pickerModal').classList.remove('hidden');
+};
+
 // ---------- Tienda ----------
 UI.renderTienda = function (state) {
+  renderMerchantPanel(state);
   const gearWrap = $('shopGearPanels');
   gearWrap.innerHTML = '';
   GEAR_SLOT_IDS.forEach(slot => {
@@ -1838,6 +2084,7 @@ UI.openBattle = function (state, playerRowsRaw, enemyRowsRaw, opts) {
   $('battleLog').innerHTML = '';
   $('battleOverlay').classList.remove('hidden');
   UI.updateAutoBattleBtn(view);
+  UI.updateBattleSpeedBtn();
   UI.promptNextClash(view);
 };
 
@@ -1846,6 +2093,20 @@ UI.updateAutoBattleBtn = function (view) {
   if (!btn) return;
   btn.classList.toggle('active', !!view.autoBattle);
   btn.textContent = view.autoBattle ? '🤖 Auto: ON' : '🤖 Auto';
+};
+
+// Control de velocidad de la animación de combate: cicla 1×/2×/3× (se
+// recuerda entre combates, igual que el auto-combate). UI.stepBattle
+// divide el retardo fijo de 420ms entre esta velocidad.
+UI.battleSpeed = 1;
+UI.cycleBattleSpeed = function () {
+  const speeds = [1, 2, 3];
+  UI.battleSpeed = speeds[(speeds.indexOf(UI.battleSpeed) + 1) % speeds.length];
+  UI.updateBattleSpeedBtn();
+};
+UI.updateBattleSpeedBtn = function () {
+  const btn = $('battleSpeedBtn');
+  if (btn) btn.textContent = '⏱️ ' + UI.battleSpeed + '×';
 };
 
 UI.toggleAutoBattle = function () {
@@ -2193,7 +2454,7 @@ UI.stepBattle = function (view, instant) {
     if (view.idx >= view.log.length) { UI.onClashDone(view); return; }
     const ev = view.log[view.idx++];
     UI.applyBattleEvent(view, ev);
-    if (!instant) view.timer = setTimeout(advance, 420);
+    if (!instant) view.timer = setTimeout(advance, Math.round(420 / UI.battleSpeed));
     else advance();
   };
   advance();
@@ -2334,7 +2595,19 @@ UI.endBattle = function (view, result) {
   const outcome = view.opts.onEnd(result, view);
   const body = $('battleResultBody');
   let html;
-  if (outcome && outcome.intermediate) {
+  if (outcome && outcome.championContinue) {
+    html = `<h3>🏆 ¡Duelo ganado!</h3><p class="settings-info">Duelo ${outcome.duelsWon} superado — sigues sin curarte al siguiente.</p>`;
+    if (outcome.rewards) {
+      html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>
+        <div class="stat-row"><span>⭐ XP</span><span>+${outcome.rewards.fighterXp}</span></div>`;
+    }
+  } else if (outcome && outcome.championDefeat) {
+    html = `<h3>💀 Fin de la Prueba</h3><p class="settings-info">Caíste en el duelo ${outcome.duelsWon + 1}, tras ganar ${outcome.duelsWon}. Mejor racha: ${view.state.champion.bestStreak}.</p>`;
+  } else if (outcome && outcome.wagerWon !== undefined) {
+    html = `<h3>🏆 ¡Apuesta ganada!</h3><div class="stat-row"><span>🪙 Texel</span><span>+${outcome.wagerWon}</span></div>`;
+  } else if (outcome && outcome.wagerLost !== undefined) {
+    html = `<h3>💀 Apuesta perdida</h3><p class="settings-info">Perdiste los ${outcome.wagerLost} 🪙 Texel apostados.</p>`;
+  } else if (outcome && outcome.intermediate) {
     html = `<h3>✅ Encuentro superado</h3><p class="settings-info">Continúa por el resto de la etapa.</p>`;
   } else if (result === 'victoria') {
     html = `<h3>🏆 ¡Victoria!</h3>`;

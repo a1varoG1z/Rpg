@@ -43,6 +43,12 @@ function createNewState() {
     // y cuántas veces se ha superado cada una.
     elementalTeams: { fuego: [], viento: [], tierra: [], rayo: [], agua: [] },
     elementalClears: { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 },
+    // Prueba del Campeón: luchador elegido para los duelos 1 contra 1 y la
+    // mejor racha (duelos ganados seguidos) conseguida hasta ahora.
+    champion: { selectedUid: null, bestStreak: 0 },
+    // Mercader Itinerante: la clave (fecha) de la última oferta ya
+    // canjeada, para no poder repetirla hasta que cambie la oferta del día.
+    merchant: { lastRedeemedKey: null },
     // Objetos consumibles comprados en la Tienda (pociones, plumas fénix).
     items: { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 },
     // Homúnculos conseguidos por invocación: solo cuentan (no tienen uid
@@ -429,6 +435,14 @@ function elementalTeamUids(state, elementId) {
   return valid;
 }
 
+// --- Prueba del Campeón (duelos 1 contra 1, ver combat.js) ---
+function recordChampionStreak(state, duelsWon) {
+  if (duelsWon > state.champion.bestStreak) state.champion.bestStreak = duelsWon;
+}
+
+// --- Mercader Itinerante (ver merchantOffer en data.js) ---
+function merchantOfferRedeemedToday(state) { return state.merchant.lastRedeemedKey === merchantOffer().key; }
+
 // --- Objetivos (pantalla de progreso general) ---
 // Todo de solo lectura: agrega números ya presentes en otras partes del
 // estado (progreso de zonas, Pokédex, roster, arena, equipo...) en un único
@@ -519,6 +533,8 @@ function loadGame() {
     if (!state.torre) state.torre = { clears: {} };
     if (!state.elementalTeams) state.elementalTeams = { fuego: [], viento: [], tierra: [], rayo: [], agua: [] };
     if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
+    if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };
+    if (!state.merchant) state.merchant = { lastRedeemedKey: null };
     // Partidas guardadas antes de que existiera este registro: se
     // reconstruye a partir de lo que haya ahora mismo en el roster (no es
     // perfecto — no recuerda luchadores vendidos/evolucionados antes de
