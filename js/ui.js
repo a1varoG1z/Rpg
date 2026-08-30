@@ -914,6 +914,43 @@ UI.startTorreLevel = function (state, idx) {
   UI.renderStageRun(state);
 };
 
+// ---------- Filtro de la Colección ----------
+// Independiente del orden (UI.rosterSortMode): reduce qué tarjetas se
+// pintan en #rosterGrid antes de ordenarlas, por elemento/clase/rareza a
+// la vez. 'all' en cualquiera de los 3 = sin filtrar por ese criterio.
+UI.rosterFilter = { element: 'all', class: 'all', rarity: 'all' };
+function rosterMatchesFilter(entry) {
+  const def = fighterDef(entry.defId);
+  if (UI.rosterFilter.element !== 'all' && def.element !== UI.rosterFilter.element) return false;
+  if (UI.rosterFilter.class !== 'all' && def.class !== UI.rosterFilter.class) return false;
+  if (UI.rosterFilter.rarity !== 'all' && def.rarity !== UI.rosterFilter.rarity) return false;
+  return true;
+}
+// Los 3 <select> se rellenan una única vez (a partir de ELEMENT_INFO/
+// CLASS_INFO/RARITIES, ya definidos en data.js — nada hardcodeado a mano
+// dos veces) y luego solo se sincroniza su valor mostrado con el filtro
+// activo en cada render, sin reconstruir las opciones.
+function buildRosterFilterSelects() {
+  const elSel = $('rosterFilterElement');
+  if (!elSel.options.length) {
+    elSel.appendChild(new Option('Todos los elementos', 'all'));
+    ELEMENT_ORDER.forEach(id => elSel.appendChild(new Option(ELEMENT_INFO[id].icon + ' ' + ELEMENT_INFO[id].label, id)));
+  }
+  elSel.value = UI.rosterFilter.element;
+  const clsSel = $('rosterFilterClass');
+  if (!clsSel.options.length) {
+    clsSel.appendChild(new Option('Todas las clases', 'all'));
+    Object.keys(CLASS_INFO).forEach(id => clsSel.appendChild(new Option(CLASS_INFO[id].icon + ' ' + CLASS_INFO[id].label, id)));
+  }
+  clsSel.value = UI.rosterFilter.class;
+  const rarSel = $('rosterFilterRarity');
+  if (!rarSel.options.length) {
+    rarSel.appendChild(new Option('Todas las rarezas', 'all'));
+    RARITIES.forEach(r => rarSel.appendChild(new Option(r.icon + ' ' + r.label, r.id)));
+  }
+  rarSel.value = UI.rosterFilter.rarity;
+}
+
 // ---------- Banda ----------
 UI.renderBanda = function (state) {
   const grid = $('formationGrid');
@@ -951,9 +988,13 @@ UI.renderBanda = function (state) {
   leaderBar.classList.toggle('active', !!leader);
 
   $('rosterCount').textContent = state.roster.length;
+  buildRosterFilterSelects();
+  const filtered = state.roster.filter(rosterMatchesFilter);
+  $('rosterFilterHint').textContent = filtered.length === state.roster.length ? ''
+    : (filtered.length === 0 ? 'Ningún luchador coincide con el filtro.' : `Mostrando ${filtered.length} de ${state.roster.length}.`);
   const rGrid = $('rosterGrid');
   rGrid.innerHTML = '';
-  const sorted = sortRosterEntries(state.roster, UI.rosterSortMode);
+  const sorted = sortRosterEntries(filtered, UI.rosterSortMode);
   const bandUids = state.band.flat().filter(Boolean);
   sorted.forEach(entry => {
     const card = creatureCard(state, entry, { inBand: bandUids.includes(entry.uid) });
@@ -1633,6 +1674,10 @@ UI.openBattle = function (state, playerRowsRaw, enemyRowsRaw, opts) {
     state, opts, playerGroups, enemyRows, enemyIdx: 0,
     currentPlayerRow: null, currentEnemyRow: null, unitById: {}, log: [], idx: 0, timer: null,
     autoBattle: UI.autoBattleEnabled,
+    // Resumen post-combate (ver battleStatsSummaryHtml): se acumula con
+    // cada evento de UI.applyBattleEvent a lo largo de este combate
+    // entero (todas las líneas/oleadas), no se resetea entre choques.
+    battleStats: { dmgDealt: 0, dmgReceived: 0, healDone: 0, byUnit: {} },
   };
   window.__battleView = view;
   $('battleTitle').textContent = opts.title;
@@ -2040,16 +2085,25 @@ UI.applyBattleEvent = function (view, ev) {
       triggerBattleAnim(target.id, 'hit-shake', 300);
       UI.spawnBattleFloat(target.id, '-' + ev.amount + (ev.isCrit ? '!' : ''), ev.isCrit);
       UI.logLine(`${attacker.name} → ${target.name}: -${ev.amount}${ev.isCrit ? ' ¡CRÍTICO!' : ''}`);
+      if (attacker.side === 'player') {
+        view.battleStats.dmgDealt += ev.amount;
+        const rec = view.battleStats.byUnit[attacker.id] || (view.battleStats.byUnit[attacker.id] = { name: attacker.name, dmg: 0, kills: 0 });
+        rec.dmg += ev.amount;
+      } else {
+        view.battleStats.dmgReceived += ev.amount;
+      }
       break;
     case 'heal':
       target.hp = Math.min(target.maxHp, target.hp + ev.amount);
       UI.updateUnitCardHp(target);
       triggerBattleAnim(target.id, 'heal-glow', 500);
       UI.spawnBattleFloat(target.id, '+' + ev.amount, false);
+      if (u && u.side === 'player') view.battleStats.healDone += ev.amount;
       break;
     case 'faint':
       if (u) { u.alive = false; UI.updateUnitCardHp(u); }
       UI.logLine(`💀 ${u ? u.name : ''} ha caído.`);
+      if (ev.side === 'enemy' && ev.killerId && view.battleStats.byUnit[ev.killerId]) view.battleStats.byUnit[ev.killerId].kills++;
       break;
     case 'stunattempt':
       UI.logLine(ev.success ? `⚡ ${target.name} queda aturdido.` : `${target.name} resiste el aturdimiento.`);
@@ -2103,13 +2157,36 @@ function triggerBattleAnim(unitId, className, duration) {
   setTimeout(() => cardEl.classList.remove(className), duration);
 }
 
+// Resumen post-combate (daño hecho/recibido, curación, MVP) — acumulado en
+// view.battleStats por UI.applyBattleEvent a lo largo de TODOS los choques
+// de este combate (puede haber varias líneas/oleadas antes de llegar aquí).
+// Se muestra en la pantalla de resultado pase lo que pase (encuentro
+// intermedio, victoria o derrota), no solo al ganar del todo.
+function battleStatsSummaryHtml(view) {
+  const stats = view.battleStats;
+  if (!stats || (stats.dmgDealt === 0 && stats.dmgReceived === 0 && stats.healDone === 0)) return '';
+  let mvpHtml = '';
+  const entries = Object.values(stats.byUnit);
+  if (entries.length) {
+    const mvp = entries.reduce((best, r) => (r.dmg + r.kills * 50) > (best.dmg + best.kills * 50) ? r : best);
+    mvpHtml = `<div class="stat-row"><span>⭐ MVP</span><span>${mvp.name} (${mvp.dmg} daño${mvp.kills ? ', ' + mvp.kills + ' baja' + (mvp.kills > 1 ? 's' : '') : ''})</span></div>`;
+  }
+  return `<div class="panel battle-stats-panel"><h3>📊 Resumen del combate</h3>
+    <div class="stat-row"><span>⚔️ Daño hecho</span><span>${stats.dmgDealt}</span></div>
+    <div class="stat-row"><span>🛡️ Daño recibido</span><span>${stats.dmgReceived}</span></div>
+    ${stats.healDone ? `<div class="stat-row"><span>💚 Curación</span><span>${stats.healDone}</span></div>` : ''}
+    ${mvpHtml}
+  </div>`;
+}
+
 UI.endBattle = function (view, result) {
   const outcome = view.opts.onEnd(result, view);
   const body = $('battleResultBody');
+  let html;
   if (outcome && outcome.intermediate) {
-    body.innerHTML = `<h3>✅ Encuentro superado</h3><p class="settings-info">Continúa por el resto de la etapa.</p>`;
+    html = `<h3>✅ Encuentro superado</h3><p class="settings-info">Continúa por el resto de la etapa.</p>`;
   } else if (result === 'victoria') {
-    let html = `<h3>🏆 ¡Victoria!</h3>`;
+    html = `<h3>🏆 ¡Victoria!</h3>`;
     if (outcome && outcome.rewards) {
       html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>`;
       if (outcome.rewards.fighterXp) html += `<div class="stat-row"><span>⭐ XP por luchador</span><span>+${outcome.rewards.fighterXp}</span></div>`;
@@ -2119,10 +2196,11 @@ UI.endBattle = function (view, result) {
     if (outcome && outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
     if (outcome && outcome.unlockedZone) html += `<p class="settings-info">🗺️ ¡Nueva zona desbloqueada: ${outcome.unlockedZone.name}!</p>`;
     if (outcome && outcome.capturedCopy) html += `<div class="stat-row"><span>${outcome.capturedIsNew ? '🆕' : '🔁'} ${outcome.capturedCopy.name}</span><span>+1 copia</span></div>`;
-    body.innerHTML = html;
   } else {
-    body.innerHTML = `<h3>💀 Derrota</h3><p class="settings-info">Tu banda ha caído. Mejora tu equipo y vuelve a intentarlo.</p>`;
+    html = `<h3>💀 Derrota</h3><p class="settings-info">Tu banda ha caído. Mejora tu equipo y vuelve a intentarlo.</p>`;
   }
+  html += battleStatsSummaryHtml(view);
+  body.innerHTML = html;
   $('battleResult').classList.remove('hidden');
 };
 

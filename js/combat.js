@@ -241,7 +241,7 @@ function applyDamage(log, attacker, target, rawAmount, isCrit, label) {
   log.push({ type: 'attack', attackerId: attacker.id, targetId: target.id, amount: rawAmount, isCrit, label });
   if (before > 0 && target.hp <= 0) {
     target.alive = false;
-    log.push({ type: 'faint', unitId: target.id, side: target.side });
+    log.push({ type: 'faint', unitId: target.id, side: target.side, killerId: attacker.id });
   } else if (target.alive) {
     target.ultCharge = Math.min(ULT_CHARGE_MAX, target.ultCharge + ULT_CHARGE_ON_HIT);
     log.push({ type: 'charge', unitId: target.id, value: target.ultCharge });

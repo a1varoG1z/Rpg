@@ -119,6 +119,13 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
   flex: 1; background: #1f1811; border: 1px solid var(--gold-dim); border-radius: 8px; color: var(--cream);
   font-family: inherit; font-size: 0.8rem; padding: 6px 8px;
 }
+.roster-filter-row { display: flex; gap: 6px; padding: 0 12px 6px; }
+.roster-filter-row select {
+  flex: 1; min-width: 0; background: #1f1811; border: 1px solid var(--gold-dim); border-radius: 8px; color: var(--cream);
+  font-family: inherit; font-size: 0.7rem; padding: 5px 2px;
+}
+.roster-filter-hint { padding: 0 12px 8px; }
+.roster-filter-hint:empty { display: none; }
 
 /* ---------- Mapa ---------- */
 .loc-card { margin-top: 12px; }

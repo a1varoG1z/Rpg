@@ -1264,6 +1264,32 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       golpe básico (7 veces en 30 golpes básicos de 40 turnos, con 10
       turnos de ulti intercalados); un mob normal nunca dispara ninguna de
       las dos mecánicas
+- [x] **Historial de combate y filtro de la Colección** (29/08): dos
+      mejoras que Claude había sugerido y el usuario pidió implementar.
+      - **Resumen post-combate** (`battleStatsSummaryHtml` en `ui.js`):
+        cada pantalla de resultado de un combate (encuentro intermedio,
+        victoria o derrota — no solo al ganar del todo) añade un panel
+        "📊 Resumen del combate" con daño total hecho, daño total
+        recibido, curación (si hubo) y el luchador MVP (más daño, con las
+        bajas rivales que se le atribuyen pesando en el desempate). Se
+        acumula en `view.battleStats` a lo largo de TODO el combate (todas
+        las líneas/oleadas de un mismo `UI.openBattle`, no se resetea
+        entre choques) desde `UI.applyBattleEvent`. Las bajas se
+        atribuyen gracias a un `killerId` nuevo en el evento `faint` que
+        genera `applyDamage` en `combat.js`.
+      - **Filtro de la Colección**: 3 `<select>` nuevos bajo el de orden
+        ("Ordenar por") — elemento, clase y rareza, poblados dinámicamente
+        desde `ELEMENT_ORDER`/`CLASS_INFO`/`RARITIES` (nada duplicado a
+        mano) — que se combinan entre sí (`UI.rosterFilter`,
+        `rosterMatchesFilter`) antes de ordenar y pintar `#rosterGrid`. Un
+        texto pequeño avisa cuántos luchadores se están mostrando cuando
+        el filtro reduce la lista, o que ninguno coincide.
+      Verificado con Playwright: filtrar por elemento+rareza a la vez deja
+      solo la tarjeta esperada, y el aviso de "ninguno coincide" aparece
+      cuando la combinación no tiene resultados; una batalla completa
+      (auto-combate, 2 oleadas) termina mostrando daño hecho/recibido y el
+      MVP correctos; sin desbordamiento horizontal en la fila de 3
+      filtros ni a 340px de ancho de viewport
 
 ## Notas
 
