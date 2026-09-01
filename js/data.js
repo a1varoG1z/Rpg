@@ -434,7 +434,11 @@ addMobFamily('hombreseisbrazos', 2, 'rayo', 'picaro', 'furia', ['Aprendiz de Sei
 addMobFamily('insectogigante', 1, 'tierra', 'picaro', 'aturdir', ['Insecto Pequeño', 'Insecto Gigante', 'Enjambre Alfa'], ['Solo es un insecto... hasta que ves cuántos son.', 'Ya ha crecido lo suficiente como para ser una amenaza por sí solo.', 'Lidera al enjambre entero, y ningún insecto se mueve sin su señal.'], true);
 
 // ### Jefes / bosses (14.2) — combate único, sin evolución, fuera del pool de invocación.
-addBoss('tifon', 'rayo', 'brujo', 'arrasar', 'Tifón, Padre de los Monstruos', 'El monstruo más temible de todos, capaz de desafiar a los propios dioses.', 'epico', true, { hp: 1465, atk: 313, def: 220, agi: 141, wis: 394 });
+// Tifón y Balrog son a propósito los dos últimos jefes del mapa (zonas
+// 'salon_enganos' y 'torre_prohibida', las 2 últimas de ZONES) y los más
+// fuertes de los 33 en TODAS sus estadísticas — el final del juego. Tifón
+// (la última zona de todas) es ligeramente más fuerte que Balrog (penúltima).
+addBoss('tifon', 'rayo', 'brujo', 'arrasar', 'Tifón, Padre de los Monstruos', 'El monstruo más temible de todos, capaz de desafiar a los propios dioses.', 'epico', true, { hp: 2850, atk: 480, def: 420, agi: 430, wis: 480 });
 addBoss('quimera', 'fuego', 'campeon', 'arrasar', 'Quimera, la Bestia de Tres Cabezas', 'León, cabra y serpiente en un solo cuerpo, y fuego en cada aliento.', 'epico', true, { hp: 2151, atk: 240, def: 328, agi: 137, wis: 94 });
 addBoss('garn', 'tierra', 'campeon', 'golpe', 'Garn, el Devorador de Piedra', 'Se alimenta de roca y escupe fragmentos capaces de atravesar una armadura.', 'raro', true, { hp: 1626, atk: 177, def: 241, agi: 79, wis: 69 });
 addBoss('nian', 'fuego', 'campeon', 'furia', 'Nian, la Bestia del Año Nuevo', 'Solo el ruido y el color rojo lo mantienen alejado de los pueblos.', 'raro', true, { hp: 1725, atk: 200, def: 214, agi: 90, wis: 61 });
@@ -445,7 +449,7 @@ addBoss('medusa', 'tierra', 'brujo', 'debilitar', 'Medusa, la Gorgona de Mirada 
 addBoss('apofis', 'tierra', 'brujo', 'arrasar', 'Apofis, la Serpiente del Caos', 'Cada noche intenta devorar al sol, y cada noche es derrotado — por poco.', 'epico', true, { hp: 1678, atk: 346, def: 242, agi: 157, wis: 342 });
 addBoss('ammit', 'tierra', 'campeon', 'furia', 'Ammit, Devoradora de Corazones', 'Devora el corazón de quien no es digno de pasar al más allá.', 'raro', true, { hp: 1668, atk: 171, def: 233, agi: 76, wis: 67 });
 addBoss('cthulhu', 'agua', 'brujo', 'arrasar', 'Cthulhu, el que Duerme en las Profundidades', 'Su despertar traería la locura a cualquiera que lo presencie.', 'epico', true, { hp: 1619, atk: 300, def: 211, agi: 173, wis: 380 });
-addBoss('balrog', 'fuego', 'brujo', 'arrasar', 'Balrog, Demonio de Sombra y Fuego', 'Envuelto en llamas y sombra, ningún pasillo es lo bastante estrecho para detenerlo.', 'epico', true, { hp: 1675, atk: 302, def: 212, agi: 174, wis: 382 });
+addBoss('balrog', 'fuego', 'brujo', 'arrasar', 'Balrog, Demonio de Sombra y Fuego', 'Envuelto en llamas y sombra, ningún pasillo es lo bastante estrecho para detenerlo.', 'epico', true, { hp: 2700, atk: 460, def: 400, agi: 410, wis: 460 });
 addBoss('leondenemea', 'tierra', 'campeon', 'golpe', 'León de Nemea, Piel Impenetrable', 'Ningún arma forjada por mortales ha logrado atravesar su piel.', 'raro', true, { hp: 1741, atk: 166, def: 227, agi: 95, wis: 65 });
 addBoss('pajaroroc', 'viento', 'explorador', 'furia', 'Roc, el Ave que Oscurece el Cielo', 'Sus alas al abrirse tapan el sol entero sobre el desierto.', 'raro', true, { hp: 978, atk: 180, def: 165, agi: 193, wis: 116 });
 addBoss('torodecreta', 'tierra', 'campeon', 'furia', 'Toro de Creta, Furia Desatada', 'Arrasó campos enteros antes de que nadie lograra domarlo.', 'raro', true, { hp: 1494, atk: 171, def: 233, agi: 76, wis: 67 });
@@ -558,18 +562,18 @@ const ZONES = [
   { id: 'nido_colosal', name: 'Nido Colosal', emoji: '🕷️', color: '#2f2a24', pool: ['gargola_epico', 'demonio_epico', 'boss_acromantula'] },
   { id: 'tundra_helada', name: 'Tundra Helada', emoji: '🥶', color: '#2f4550', pool: ['draugr_epico', 'ondina_epico', 'boss_wendigo'] },
   { id: 'jungla_silenciosa', name: 'Jungla Silenciosa', emoji: '🌿', color: '#2f4a2f', pool: ['lamia_epico', 'frankenstein_epico', 'boss_mantisreligiosa'] },
-  { id: 'abismo_ojos', name: 'Abismo de los Cien Ojos', emoji: '👁️', color: '#1f2a3a', pool: ['troll_epico', 'gigante_epico', 'boss_tifon'] },
+  { id: 'abismo_ojos', name: 'Abismo de los Cien Ojos', emoji: '👁️', color: '#1f2a3a', pool: ['troll_epico', 'gigante_epico', 'boss_magooscuro'] },
   { id: 'cima_quimerica', name: 'Cima Quimérica', emoji: '🔥', color: '#4a2a1f', pool: ['dullahan_epico', 'hombreseisbrazos_epico', 'boss_quimera'] },
   { id: 'caos_primordial', name: 'Caos Primordial', emoji: '🌊', color: '#1f3a4a', pool: ['kitsune_epico', 'banshee_epico', 'boss_tiamat'] },
   { id: 'forja_fin', name: 'Forja del Fin del Mundo', emoji: '⚒️', color: '#4a2414', pool: ['demonio_epico', 'gargola_epico', 'boss_surtr'] },
   { id: 'llanura_titan', name: 'Llanura del Titán', emoji: '🦣', color: '#3a3424', pool: ['gigante_epico', 'troll_epico', 'boss_behemoth'] },
   { id: 'templo_eclipse', name: 'Templo del Sol Eclipsado', emoji: '🌑', color: '#241f3a', pool: ['dementor_epico', 'ondina_epico', 'boss_apofis'] },
   { id: 'fosa_rlyeh', name: "Fosa de R'lyeh", emoji: '🐙', color: '#1f2a2a', pool: ['lamia_epico', 'kitsune_epico', 'boss_cthulhu'] },
-  { id: 'minas_sinfondo', name: 'Minas Sin Fondo', emoji: '⛏️', color: '#3a1414', pool: ['demonio_epico', 'frankenstein_epico', 'boss_balrog'] },
+  { id: 'minas_sinfondo', name: 'Minas Sin Fondo', emoji: '⛏️', color: '#3a1414', pool: ['demonio_epico', 'frankenstein_epico', 'boss_loki'] },
   { id: 'palacio_espejos', name: 'Palacio de Espejos', emoji: '🪞', color: '#3a2a4a', pool: ['dullahan_epico', 'hombreseisbrazos_epico', 'boss_rakshasa'] },
   { id: 'necropolis', name: 'Necrópolis Eterna', emoji: '💀', color: '#242424', pool: ['draugr_epico', 'banshee_epico', 'boss_liche'] },
-  { id: 'torre_prohibida', name: 'Torre Prohibida', emoji: '🏰', color: '#2a1f3a', pool: ['gargola_epico', 'dementor_epico', 'boss_magooscuro'] },
-  { id: 'salon_enganos', name: 'Salón de los Engaños', emoji: '🎭', color: '#3a2424', pool: ['troll_epico', 'gigante_epico', 'boss_loki'] },
+  { id: 'torre_prohibida', name: 'Torre Prohibida', emoji: '🏰', color: '#2a1f3a', pool: ['gargola_epico', 'dementor_epico', 'boss_balrog'] },
+  { id: 'salon_enganos', name: 'Salón de los Engaños', emoji: '🎭', color: '#3a2424', pool: ['troll_epico', 'gigante_epico', 'boss_tifon'] },
 ];
 const STAGES_PER_ZONE = 8;
 const STAGE_ENERGY_COST = 6;

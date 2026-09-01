@@ -1508,6 +1508,26 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     (nivel 1 vs. nivel 20) sigue subiendo de estadísticas con el nivel con
     normalidad; y la tarjeta de combate del jefe en una pelea de zona real
     lleva la clase `battle-unit rarity-jefe`.
+  - [x] **Tifón y Balrog como los 2 últimos jefes del mapa, y los más
+    fuertes**, a petición del usuario: se intercambió su `pool[2]` con el
+    de Loki y el Mago Oscuro (que ocupaban las 2 últimas zonas,
+    `salon_enganos` y `torre_prohibida`) — sin tocar el orden ni el número
+    de zonas, solo qué jefe pelea en cada una. Tifón queda en la ÚLTIMA
+    zona de todas (final del juego) y Balrog en la penúltima. Sus
+    `fixedStats` se subieron muy por encima del resto (antes eran del
+    nivel medio del pool de jefes): ahora dominan estrictamente en las 5
+    estadísticas a los otros 31 jefes — Tifón (2850/480/420/430/480) un
+    poco por encima de Balrog (2700/460/400/410/460), que a su vez supera
+    con holgura al que antes era el jefe más fuerte del juego (Dracorex,
+    2372 HP). Como el nivel de zona ya estaba al tope (40) desde bastante
+    antes en el mapa, mover a un jefe de zona no cambiaba nada por sí solo
+    — hacía falta subir sus `fixedStats` a mano para que de verdad fueran
+    más difíciles, que es justo la ventaja de tenerlos fijos en vez de
+    atados a la fórmula de zona. Verificado con Playwright: la última y
+    penúltima zona del mapa llevan a Tifón y Balrog; ambos superan a los
+    otros 31 jefes en las 5 estadísticas; y el orden de la Torre Batalla
+    (que se basa en `pool[2]` para calcular su tramo) los coloca también
+    como los 2 últimos de su escalera de jefes.
 
 ## Notas
 
