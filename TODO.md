@@ -1469,6 +1469,45 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     su barra de SEF), y vender 2 luchadores en lote los retira del
     roster y suma el Texel correcto, con la selección vaciándose sola
     después de cada acción.
+  - [x] **Jefes con tier propio (recuadro rojo) y estadísticas de combate
+    fijas**, a petición del usuario:
+    - **Tier visual distintivo**: los jefes ya no se muestran con el color
+      de su `rarity` real (Raro/Épico...) en ninguna tarjeta — llevan
+      siempre un recuadro rojo pulsante propio ("Jefe", 💀), vía un nuevo
+      `BOSS_RARITY_INFO`/`rarityInfoFor(def)` en data.js que devuelve este
+      tier cuando `def.isBoss` es true, en vez de tocar la escalera
+      compartida `RARITIES` (así ningún código que itera esa lista —
+      Mercader, Tienda, evolución, Superfusión... — se ve afectado). Se
+      aplica en la Colección, la ficha de luchador, la galería de Jefes y
+      la tarjeta de combate (`.battle-unit`, que no usaba antes ningún
+      color de rareza).
+    - **Estadísticas de combate fijas**: cada jefe tiene ahora un
+      `fixedStats` ({hp, atk, def, agi, wis}) hardcodeado directamente en
+      su `addBoss(...)` de data.js, usado por `buildUnitStats` (combat.js)
+      en vez de la fórmula compartida de rareza×nivel×clase — así se puede
+      recalibrar la dificultad de un jefe concreto sin que un cambio en
+      `RARITIES` o en el nivel de su zona afecte también a los demás. Los
+      33 jefes se sembraron ejecutando la fórmula ANTIGUA una sola vez
+      (mismo nivel/rareza/clase que ya tenían en su zona) para no cambiar
+      la dificultad actual del juego ni un punto — a partir de ahora son
+      libremente editables a mano en data.js. El bonus de ×2.4 HP de jefe
+      (para que aguante varias rondas en solitario) se sigue aplicando
+      igual, por encima del `fixedStats.hp` fijo.
+    - **Decisión de diseño**: `fixedStats` solo afecta al jefe en su papel
+      de RIVAL (`makeBossUnit`/`buildUnitStats`). Una copia que el jugador
+      llegue a poseer (premio de Torre Batalla) sigue usando `fighterStats`
+      en state.js sin tocar — la fórmula normal de nivel/rareza/equipo —
+      para no romper que se pueda subir de nivel, equipar y vender como
+      cualquier otro luchador; solo cambia el color de su tarjeta (rojo
+      "Jefe" también cuando está en tu Colección).
+    Verificado con Playwright: los 33 jefes tienen `isBoss`/`fixedStats`
+    correctos y `makeBossUnit` reproduce EXACTAMENTE el HP/ATK/DEF/AGI/WIS
+    que tenían antes del cambio (0 diferencias, comparado contra la fórmula
+    vieja); la tarjeta de la Colección, la ficha y la galería de Jefes
+    muestran `rarity-jefe` con `--rc` rojo; una copia propia de jefe
+    (nivel 1 vs. nivel 20) sigue subiendo de estadísticas con el nivel con
+    normalidad; y la tarjeta de combate del jefe en una pelea de zona real
+    lleva la clase `battle-unit rarity-jefe`.
 
 ## Notas
 

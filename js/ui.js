@@ -131,8 +131,8 @@ function sortRosterEntries(roster, mode) {
 function creatureCard(state, entry, opts) {
   opts = opts || {};
   const def = fighterDef(entry.defId);
-  const rarity = rarityInfo(def.rarity);
-  const card = el('div', 'creature-card rarity-' + def.rarity);
+  const rarity = rarityInfoFor(def);
+  const card = el('div', 'creature-card rarity-' + rarity.id);
   card.style.setProperty('--rc', rarity.color);
   card.style.setProperty('--rg', rarity.glow);
   if (entry.isNew) card.appendChild(el('div', 'new-badge', '¡Nuevo!'));
@@ -349,8 +349,8 @@ function bossCard(entry) {
     return card;
   }
   const def = entry.def;
-  const rarity = rarityInfo(def.rarity);
-  const card = el('div', 'creature-card rarity-' + def.rarity);
+  const rarity = rarityInfoFor(def);
+  const card = el('div', 'creature-card rarity-' + rarity.id);
   card.style.setProperty('--rc', rarity.color);
   card.style.setProperty('--rg', rarity.glow);
   const wrap = el('div', 'creature-canvas-wrap');
@@ -386,7 +386,7 @@ UI.openBosses = function (state) {
 // nivel, siempre se combate a su nivel de zona.
 UI.showBossEntry = function (entry) {
   const def = entry.def;
-  const rarity = rarityInfo(def.rarity);
+  const rarity = rarityInfoFor(def);
   const vuln = TYPE_VULNERABILITY[def.class];
   const unit = makeBossUnit(def.id, entry.level);
   const body = $('bossEntryModalBody');
@@ -485,6 +485,9 @@ UI.openGuide = function () {
   body.appendChild(guideSection('⭐ Rareza y evolución', `
     <p class="settings-info">5 escalones de rareza: ⚪ Común → 🟢 Infrecuente → 🔵 Raro → 🟣 Épico →
     🟡 Legendario. Cada escalón multiplica bastante las estadísticas base.</p>
+    <p class="settings-info">💀 <b>Los jefes de zona son su propio tier</b>, fuera de esta escalera —
+    recuadro rojo siempre distintivo, y estadísticas de combate FIJAS ajustadas a mano (no dependen
+    del nivel ni de la rareza), para poder calibrar la dificultad de cada uno por separado.</p>
     <p class="settings-info">Cada familia de luchador evoluciona 2 veces (3 formas en total), pero
     no todas arrancan en Común: algunas empiezan más arriba en la escalera y llegan más lejos.</p>
     <p class="settings-info"><b>Fusión (SEF)</b>: usa copias sueltas del mismo luchador como material
@@ -1486,7 +1489,7 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   if (!entry) return;
   if (entry.isNew) { entry.isNew = false; saveGame(state); }
   const def = fighterDef(entry.defId);
-  const rarity = rarityInfo(def.rarity);
+  const rarity = rarityInfoFor(def);
   const { total: stats, bonus: gearBonus } = fighterStatsBreakdown(state, entry);
   const skill = SKILL_TYPES[def.skillId];
   const body = $('fighterModalBody');
@@ -2457,7 +2460,7 @@ UI.commitGroup = function (view, group) {
 };
 
 UI.battleUnitCard = function (u) {
-  const card = el('div', 'battle-unit rarity-' + u.rarity + (u.alive ? '' : ' fainted'));
+  const card = el('div', 'battle-unit rarity-' + (u.isBoss ? 'jefe' : u.rarity) + (u.alive ? '' : ' fainted'));
   card.dataset.unitId = u.id;
   card.addEventListener('click', () => UI.showBattleUnitStats(u));
   // La carga de ulti va superpuesta como insignia sobre la propia foto
@@ -2489,7 +2492,7 @@ function ultTurnsText(u) {
 // modal genérico de picker; el CSS del modal va por encima del overlay de
 // batalla para que se vea aunque la batalla esté en pantalla completa.
 UI.showBattleUnitStats = function (u) {
-  const rarity = rarityInfo(u.rarity);
+  const rarity = u.isBoss ? BOSS_RARITY_INFO : rarityInfo(u.rarity);
   const skill = SKILL_TYPES[u.skillId];
   const body = $('pickerModalBody');
   body.innerHTML = '';

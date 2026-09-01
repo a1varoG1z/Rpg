@@ -4,6 +4,23 @@ let unitSeq = 1;
 
 function buildUnitStats(defId, level, extraMult) {
   const def = fighterDef(defId);
+  // Los jefes de zona pelean como rival con estadísticas FIJAS (def.fixedStats,
+  // ver addBoss en data.js) en vez de la fórmula de rareza×nivel compartida
+  // con el resto de luchadores — así se puede calibrar la dificultad de cada
+  // jefe uno a uno sin que un cambio en RARITIES o en el nivel de su zona
+  // los recalcule también a ellos. Solo afecta a su papel de rival: una
+  // copia que el jugador llegue a poseer (ver Torre Batalla) sigue usando
+  // fighterStats() en state.js, con la fórmula normal de nivel/rareza.
+  if (def.fixedStats) {
+    const m = extraMult || 1;
+    return {
+      maxHp: Math.round(def.fixedStats.hp * m),
+      atk: Math.round(def.fixedStats.atk * m),
+      def: Math.round(def.fixedStats.def * m),
+      agi: Math.round(def.fixedStats.agi * m),
+      wis: Math.round(def.fixedStats.wis * m),
+    };
+  }
   const w = CLASS_INFO[def.class].weights;
   const mult = rarityInfo(def.rarity).mult * levelGrowth(level) * (extraMult || 1);
   return {

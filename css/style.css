@@ -107,9 +107,19 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .rarity-epico .creature-canvas-wrap { animation: floatSprite 2.4s ease-in-out infinite; }
 .rarity-legendario { box-shadow: 0 0 22px var(--rg, transparent); animation: legendaryPulse 2s ease-in-out infinite; }
 .rarity-legendario .creature-canvas-wrap { animation: floatSprite 2.2s ease-in-out infinite; }
+/* Jefes: tier propio, fuera de la escalera de rareza — rojo siempre
+   distintivo (border-color viene de --rc, puesto vía rarityInfoFor). */
+.rarity-jefe { border-width: 3px !important; box-shadow: 0 0 20px var(--rg, transparent); animation: bossPulse 1.6s ease-in-out infinite; }
+.rarity-jefe .creature-canvas-wrap { animation: floatSprite 2.3s ease-in-out infinite; }
 @keyframes floatSprite { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 @keyframes legendaryPulse { 0%, 100% { box-shadow: 0 0 14px var(--rg, transparent); } 50% { box-shadow: 0 0 30px var(--rg, transparent); } }
+@keyframes bossPulse { 0%, 100% { box-shadow: 0 0 14px var(--rg, transparent); } 50% { box-shadow: 0 0 28px var(--rg, transparent); } }
 .creature-card.selected { outline: 3px solid var(--green); outline-offset: 1px; box-shadow: 0 0 12px rgba(76,175,80,0.7); }
+/* .battle-unit no usa --rc/--rg (nunca los necesitó para rareza normal),
+   así que el marco de jefe en combate se declara directo, sin depender
+   de la variable. */
+.battle-unit.rarity-jefe { border: 2px solid #e0392b; border-radius: 10px; box-shadow: 0 0 12px rgba(224,57,43,0.75); }
+.battle-unit.rarity-jefe .battle-unit-name { color: #ff6b57; font-weight: bold; }
 
 .creature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 12px 16px; }
 
