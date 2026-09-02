@@ -1344,6 +1344,24 @@ UI.renderBanda = function (state) {
     grid.appendChild(rowEl);
   }
 
+  // Aviso para saber cómo rellenar los huecos vacíos de la Formación:
+  // distingue entre "ya tienes luchadores sueltos, solo hay que colocarlos"
+  // y "no te queda ninguno suelto, hace falta invocar más" — con la banda
+  // de inicio (3 luchadores) los 6 huecos vacíos, sin este aviso, no queda
+  // claro que la forma de llenarlos es la pantalla Invocar.
+  const placedCount = state.band.flat().filter(Boolean).length;
+  const emptySlots = BAND_ROWS * BAND_COLS - placedCount;
+  const fillHint = $('formationFillHint');
+  if (emptySlots === 0) {
+    fillHint.classList.add('hidden');
+  } else if (state.roster.length > placedCount) {
+    fillHint.textContent = `💡 Tienes luchadores en tu Colección sin colocar — toca un hueco "+" de la Formación para añadirlos.`;
+    fillHint.classList.remove('hidden');
+  } else {
+    fillHint.textContent = `🔮 Te quedan ${emptySlots} huecos vacíos en la Formación. Ve a la pestaña "Invocar" para conseguir más luchadores.`;
+    fillHint.classList.remove('hidden');
+  }
+
   const leader = activeLeaderSkill(state);
   const leaderBar = $('leaderStatusBar');
   leaderBar.innerHTML = leader

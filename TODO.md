@@ -1660,6 +1660,23 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     Importar partida con un código exportado de otra partida distinta →
     tras la recarga, el Texel es el de la partida importada, no el que
     había antes de importar (mismo bug, mismo arreglo).
+  - [x] **Aviso de cómo rellenar los huecos vacíos de la Formación**. El
+    usuario pidió empezar la partida con 6 luchadores en vez de 3 para
+    poder librar un combate completo desde el principio, pero al comentar
+    el porqué (con 3 luchadores solo llenas 1 fila de las 3, y en las
+    etapas con varias oleadas te tocan líneas de 1 solo luchador contra 3
+    rivales) se aclaró que el problema real no era el número de
+    luchadores de inicio, sino que NO estaba indicado que hay que ir a
+    Invocar para conseguir más y llenar la Formación — así que se dejó la
+    banda de inicio tal cual (3) y en su lugar se añadió un aviso nuevo,
+    justo debajo de la rejilla de Formación en Banda
+    (`#formationFillHint`), que distingue dos casos mientras queden huecos
+    vacíos: si ya tienes luchadores sueltos sin colocar, invita a tocar un
+    hueco "+"; si no te queda ninguno suelto, invita a ir a la pestaña
+    "Invocar". Desaparece solo en cuanto se llenan los 9 huecos.
+    Verificado con Playwright los 3 estados (banda nueva con huecos vacíos
+    y sin sueltos → aviso de Invocar; con un luchador suelto sin colocar →
+    aviso de tocar el hueco; los 9 huecos llenos → aviso oculto).
 
 ## Notas
 
