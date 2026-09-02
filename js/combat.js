@@ -85,8 +85,12 @@ function buildPlayerCombinations(state) {
 // vez de acabar de un golpe. Si se le subiera también el ataque o la
 // defensa (como se hacía antes) un solo Épico podía llegar a ganarle a una
 // banda entera de Legendarios, que es justo lo que no tiene que pasar.
-function makeBossUnit(defId, level) {
-  const u = makeUnit('enemy', defId, level);
+// `extraMult`, si se pasa, sí sube ataque/defensa/agilidad/sabiduría además
+// del HP — solo lo usa el Duelo por apuesta (ver WAGER_BOSS_BOOST en ui.js)
+// para que el revancha contra el jefe ya derrotado sea un reto de verdad en
+// vez de un trámite, ya que en ese momento el jugador ya lo venció una vez.
+function makeBossUnit(defId, level, extraMult) {
+  const u = makeUnit('enemy', defId, level, extraMult);
   u.maxHp = Math.round(u.maxHp * 2.4);
   u.hp = u.maxHp;
   // Marca de jefe: habilita sus dos mecánicas exclusivas (ver
@@ -103,7 +107,7 @@ function makeBossUnit(defId, level) {
 // bajan de 2 oleadas y siempre presentan 3 rivales por oleada (aunque alguno
 // sea de relleno más débil); el jefe de zona es la única pelea contra un
 // único rival, sin oleadas previas.
-function buildEnemyBand(zoneIdx, stageIdx) {
+function buildEnemyBand(zoneIdx, stageIdx, bossExtraMult) {
   const zone = ZONES[zoneIdx];
   const isBoss = stageIdx === STAGES_PER_ZONE - 1;
   const globalIdx = zoneIdx * STAGES_PER_ZONE + stageIdx;
@@ -117,7 +121,7 @@ function buildEnemyBand(zoneIdx, stageIdx) {
   // Épico por su cuenta.
   const level = Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalIdx));
   if (isBoss) {
-    return { rows: [[makeBossUnit(zone.pool[2], level)]], isBoss, level };
+    return { rows: [[makeBossUnit(zone.pool[2], level, bossExtraMult)]], isBoss, level };
   }
   const rowCount = stageIdx < 3 ? 2 : 3;
   const rows = [];

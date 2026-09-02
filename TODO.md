@@ -1861,6 +1861,42 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     al vaciar la Formación y llenarla solo de un elemento; `daysPlayed`
     registra la fecha de la sesión de prueba correctamente.
 
+- [x] **Comprar Gemas con Texel en la Tienda / Duelo por apuesta solo contra
+    el jefe ya derrotado, con estadísticas reforzadas**. Dos pedidos del
+    usuario en la misma ronda.
+    - **Gemas por Texel**: panel nuevo "💎 Gemas" en la Tienda (antes del de
+      Equipo nuevo), con 3 lotes fijos y repetibles —
+      `GEMAS_TEXEL_OFFERS` en data.js: 10 Gemas por 600 Texel, 50 por
+      2.500, 200 por 8.000 (mejora algo el precio por Gema en los lotes
+      grandes, como cualquier tienda con descuento por volumen). A
+      propósito caro — Texel es abundante y Gemas escasas, no debía ser
+      una forma barata de saltarse esa escasez — pero siempre disponible,
+      así que quedarse sin Gemas y sin cristales ya no bloquea del todo
+      poder seguir invocando. `buyGemasWithTexel` en state.js. También se
+      actualizó el aviso de la pantalla Invocar (desactualizado desde la
+      ronda anterior: ya no es verdad que Arena sea "la única fuente") para
+      mencionar Objetivos, la bonificación de zona y esta compra.
+    - **Duelo por apuesta**: antes estaba disponible con solo 1 etapa
+      superada en la zona y luchaba contra el relleno (mobs normales) de
+      la etapa más avanzada — nunca contra el jefe. Ahora solo aparece
+      cuando el jefe de la zona ya está derrotado, y el combate es
+      SIEMPRE la revancha contra ese jefe. Como ya se le venció una vez,
+      pelea con estadísticas reforzadas (`WAGER_BOSS_BOOST = 1.3` en
+      ui.js): a diferencia del jefe normal (que por diseño NUNCA sube
+      ataque/defensa, solo HP, para que sea matemáticamente imposible que
+      gane a una banda entera — ver el comentario de `makeBossUnit` en
+      combat.js), esta revancha SÍ sube también ataque/defensa/agilidad/
+      sabiduría un 30% además del HP (`makeBossUnit`/`buildEnemyBand`
+      ganaron un `extraMult` opcional para esto), para que apostar el
+      doble sea un riesgo real y no un trámite.
+    Verificado con Playwright: el botón de Duelo por apuesta no aparece sin
+    ninguna etapa superada, sigue sin aparecer tras superar una etapa
+    normal (no jefe), y aparece en cuanto se derrota al jefe; las
+    estadísticas del jefe en el duelo (HP/ataque/defensa) son exactamente
+    ×1.3 las del combate normal contra ese mismo jefe; el panel de Gemas
+    de la Tienda muestra los 3 lotes, comprar descuenta el Texel y suma las
+    Gemas correctas, y los botones se deshabilitan sin Texel suficiente.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

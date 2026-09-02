@@ -191,6 +191,14 @@ function buyConsumable(state, itemId) {
   return true;
 }
 
+// Ver GEMAS_TEXEL_OFFERS en data.js — comprar Gemas con Texel, repetible.
+function buyGemasWithTexel(state, offer) {
+  if (state.currencies.texel < offer.price) return false;
+  state.currencies.texel -= offer.price;
+  state.currencies.gemas += offer.amount;
+  return true;
+}
+
 // El equipo (state.gearInventory) contiene TODAS las piezas que posee el jugador,
 // estén o no equipadas; los luchadores solo guardan una referencia (uid) a la pieza.
 function equippedGearOwner(state, gearUid) {

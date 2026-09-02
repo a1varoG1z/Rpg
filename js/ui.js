@@ -640,8 +640,8 @@ UI.openGuide = function () {
     día, así que conviene revisarla a menudo.</p>`));
 
   body.appendChild(guideSection('🎲 Duelo por apuesta', `
-    <p class="settings-info">En cualquier zona con al menos 1 etapa superada: un combate rápido
-    (una sola oleada) contra el rival de tu etapa más avanzada de esa zona, apostando Texel — ganas
+    <p class="settings-info">En cualquier zona cuyo jefe ya hayas derrotado: una revancha contra
+    él, con las estadísticas reforzadas respecto a la primera vez, apostando Texel — ganas
     y te devuelve el doble, pierdes y lo pierdes.</p>`));
 
   body.appendChild(guideSection('🎯 Progreso', `
@@ -738,27 +738,30 @@ UI.openZoneStages = function (state, zoneIdx) {
   wrap.appendChild(grid);
   wrap.appendChild(el('p', 'settings-info', 'Cada etapa cuesta ' + STAGE_ENERGY_COST + ' ⚡ y se recorre nodo a nodo, con varios encuentros antes de la recompensa. La etapa 8 es el jefe de zona: un único combate, solo contra él.'));
 
-  // Duelo por apuesta: solo si ya hay al menos 1 etapa superada en esta
-  // zona — un combate rápido (una sola oleada, no el recorrido entero)
-  // contra el relleno de la etapa más avanzada ya superada, arriesgando
-  // Texel a cambio del doble si se gana.
-  const bestStage = highestClearedStage(state, zone.id);
-  if (bestStage >= 0) {
+  // Duelo por apuesta: solo si ya se derrotó al jefe de esta zona — una
+  // revancha contra ÉL (con las estadísticas reforzadas, ver
+  // WAGER_BOSS_BOOST) arriesgando Texel a cambio del doble si se gana.
+  if (highestClearedStage(state, zone.id) >= STAGES_PER_ZONE - 1) {
     const wagerBtn = el('button', 'mini-btn', '🎲 Duelo por apuesta');
-    wagerBtn.addEventListener('click', () => UI.openWagerDuel(state, zoneIdx, bestStage));
+    wagerBtn.addEventListener('click', () => UI.openWagerDuel(state, zoneIdx));
     wrap.appendChild(wagerBtn);
   }
 };
 
 // ---------- Duelo por apuesta ----------
-// Combate rápido (una sola oleada, no el recorrido de la etapa entero)
-// contra el mismo relleno de una etapa ya superada, arriesgando Texel por
-// adelantado a cambio del doble si se gana — nada si se pierde.
-UI.openWagerDuel = function (state, zoneIdx, stageIdx) {
+// Revancha contra el jefe de una zona ya derrotada — un único combate,
+// arriesgando Texel por adelantado a cambio del doble si se gana, nada si
+// se pierde. El jefe pelea con estadísticas reforzadas respecto a la
+// primera vez (ver WAGER_BOSS_BOOST más abajo): ya se le venció una vez con
+// el nivel de esa zona, así que sin el refuerzo sería un trámite en vez de
+// un reto que justifique arriesgar el doble.
+const WAGER_BOSS_BOOST = 1.3;
+UI.openWagerDuel = function (state, zoneIdx) {
   const zone = ZONES[zoneIdx];
   const body = $('pickerModalBody');
   body.innerHTML = `<h3>🎲 Duelo por apuesta</h3>
-    <p class="settings-info">Reto rápido contra el mismo rival de ${zone.name} · Etapa ${stageIdx + 1}.
+    <p class="settings-info">Revancha contra ${zone.emoji} ${zone.name} · el jefe de la zona, con las
+    estadísticas reforzadas — más difícil que la primera vez que lo venciste.
     Ganas y te devuelve el doble de lo apostado; pierdes y lo pierdes.</p>`;
   const wagerOptions = [100, 300, 1000].filter(amount => amount <= state.currencies.texel);
   if (wagerOptions.length === 0) {
@@ -768,7 +771,7 @@ UI.openWagerDuel = function (state, zoneIdx, stageIdx) {
       const btn = el('button', 'primary-btn', '🪙 Apostar ' + amount + ' (ganas ' + amount * 2 + ')');
       btn.addEventListener('click', () => {
         $('pickerModal').classList.add('hidden');
-        UI.startWagerDuel(state, zoneIdx, stageIdx, amount);
+        UI.startWagerDuel(state, zoneIdx, amount);
       });
       body.appendChild(btn);
     });
@@ -776,17 +779,17 @@ UI.openWagerDuel = function (state, zoneIdx, stageIdx) {
   $('pickerModal').classList.remove('hidden');
 };
 
-UI.startWagerDuel = function (state, zoneIdx, stageIdx, amount) {
+UI.startWagerDuel = function (state, zoneIdx, amount) {
   if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
   if (state.currencies.texel < amount) { UI.showToast('⚠️ No tienes suficiente Texel.'); return; }
   window.__championRun = null;
   state.currencies.texel -= amount;
   saveGame(state);
   UI.renderTopbar(state);
-  const { rows } = buildEnemyBand(zoneIdx, stageIdx);
+  const { rows } = buildEnemyBand(zoneIdx, STAGES_PER_ZONE - 1, WAGER_BOSS_BOOST);
   const combos = buildPlayerCombinations(state);
   UI.openBattle(state, combos, [rows[0]], {
-    title: '🎲 Apuesta · ' + ZONES[zoneIdx].name,
+    title: '🎲 Apuesta · ' + ZONES[zoneIdx].name + ' (jefe reforzado)',
     zone: ZONES[zoneIdx],
     onEnd: (result) => {
       if (result === 'victoria') {
@@ -1918,9 +1921,10 @@ UI.openGearPickerForFighter = function (state, fighterUid, slotKey) {
 UI.renderInvocar = function (state) {
   const wrap = $('summonPanels');
   wrap.innerHTML = '';
-  wrap.appendChild(el('p', 'settings-info', `💎 Las Gemas se consiguen ganando combates de Arena (unas pocas por
-    victoria, más cuanto más alto tu rango) — de momento es la única fuente. Sirven para comprar cristales sueltos
-    aquí abajo cuando te falten para invocar.`));
+  wrap.appendChild(el('p', 'settings-info', `💎 Las Gemas se consiguen ganando combates de Arena, completando
+    Objetivos (🎯 arriba) y derrotando por primera vez al jefe de cada zona — y si alguna vez te quedas sin
+    ninguna, siempre puedes comprar más con Texel en la Tienda (caro a propósito). Sirven para comprar cristales
+    sueltos aquí abajo cuando te falten para invocar.`));
   Object.keys(CRYSTALS).forEach(type => {
     const c = CRYSTALS[type];
     const panel = el('div', 'panel summon-panel');
@@ -2217,6 +2221,29 @@ UI.openMerchantTrade = function (state) {
 // ---------- Tienda ----------
 UI.renderTienda = function (state) {
   renderMerchantPanel(state);
+
+  const gemasWrap = $('shopGemasPanels');
+  gemasWrap.innerHTML = '';
+  GEMAS_TEXEL_OFFERS.forEach(offer => {
+    const panel = el('div', 'shop-row');
+    panel.appendChild(el('div', 'shop-row-icon', '💎'));
+    const info = el('div', 'shop-row-info');
+    info.appendChild(el('div', 'shop-row-title', offer.amount + ' Gemas'));
+    const buyBtn = el('button', 'primary-btn', 'Comprar (🪙' + offer.price + ')');
+    buyBtn.disabled = state.currencies.texel < offer.price;
+    buyBtn.addEventListener('click', () => {
+      if (buyGemasWithTexel(state, offer)) {
+        saveGame(state);
+        UI.renderTopbar(state);
+        UI.renderTienda(state);
+        UI.showToast('💎 +' + offer.amount + ' Gemas compradas');
+      }
+    });
+    info.appendChild(buyBtn);
+    panel.appendChild(info);
+    gemasWrap.appendChild(panel);
+  });
+
   const gearWrap = $('shopGearPanels');
   gearWrap.innerHTML = '';
   GEAR_SLOT_IDS.forEach(slot => {

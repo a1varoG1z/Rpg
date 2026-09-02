@@ -687,6 +687,17 @@ const CONSUMABLES = {
   pluma_fenix: { label: 'Pluma Fénix', icon: '🪶', desc: 'Revive a un luchador caído con el 50% de su vida.', revivePct: 0.5, price: 12, currency: 'gemas' },
 };
 
+// Comprar Gemas con Texel: caro a propósito (Texel es abundante, Gemas
+// escasas — no debe ser una forma barata de saltarse esa escasez), pero
+// siempre disponible, para que quedarse sin Gemas y sin cristales nunca
+// bloquee del todo poder seguir invocando. Precio por Gema baja un poco en
+// los lotes grandes (igual que cualquier tienda con descuento por volumen).
+const GEMAS_TEXEL_OFFERS = [
+  { amount: 10, price: 600 },
+  { amount: 50, price: 2500 },
+  { amount: 200, price: 8000 },
+];
+
 const MAX_ENERGY = 60;
 const ENERGY_REGEN_SECONDS = 45; // 1 punto cada 45s
 const BAND_ROWS = 3;
