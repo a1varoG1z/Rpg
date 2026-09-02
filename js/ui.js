@@ -657,6 +657,7 @@ UI.openZoneStages = function (state, zoneIdx) {
   wrap.classList.remove('hidden');
   wrap.innerHTML = '';
   const zone = ZONES[zoneIdx];
+  wrap.style.background = zoneBackgroundStyle(zone);
   const back = el('button', 'mini-btn', '« Volver al mapa');
   back.addEventListener('click', () => UI.renderMapa(state));
   wrap.appendChild(back);

@@ -660,30 +660,21 @@ en cuanto el archivo exista con ese nombre, se usa solo, sin tocar código
 (cae automáticamente en la imagen real en vez del respaldo procedural o
 del color liso).
 
-#### 1. Criaturas (`assets/creatures/`) — 465/468, solo faltan 3
+#### 1. Criaturas (`assets/creatures/`) — 468/468, completo ✅
 
-- [ ] **`shenlong_legendario.png`**. Es la 3ª forma (Legendario) del dragón
-      Shenlong (Rayo/Brujo): "Shenlong, Dragón de la Lluvia". Ya están
-      subidas sus otras 2 formas (`shenlong_raro.png`,
-      `shenlong_epico.png`).
-- [ ] **`tengu_comun.png`**. Es la 1ª forma (Común) del mob Tengu: "Tengu
-      Travieso". Ya están subidas sus otras 2 formas
-      (`tengu_infrecuente.png`, `tengu_raro.png`).
-- [ ] **`chupacabra_comun.png`**. Es la 1ª forma (Común) del mob
-      Chupacabra: "Chupacabras Joven". Ojo: la familia se llama
-      "chupacabra" en singular, sin la "s" final (había un bug donde una
-      zona apuntaba mal a "chupacabras_raro", ya corregido). Ya están
-      subidas sus otras 2 formas (`chupacabra_infrecuente.png`,
-      `chupacabra_raro.png`).
+- [x] `shenlong_legendario.png`, `tengu_comun.png` y `chupacabra_comun.png`
+      — las 3 que faltaban, subidas el 02/09.
 
-#### 2. Fondos de escenario (`assets/scenery/`) — 0/33, faltan las 33
+#### 2. Fondos de escenario (`assets/scenery/`) — 1/33, faltan 32
 
-La carpeta `assets/scenery/` todavía no existe — ninguna zona tiene fondo
-real todavía, todas usan el degradado de color liso de respaldo (el color
-de cada zona en `ZONES`). Un archivo `.jpg` por zona, nombrado con el
-`id` exacto de la zona (no el nombre visible):
+Un archivo `.jpg` por zona, nombrado con el `id` exacto de la zona (no el
+nombre visible). Además de subir la imagen, la pantalla de "Etapas" (la
+que enseña la rejilla de 8 números por zona) no llevaba fondo de zona
+como sí lo llevan el recorrido de nodos y la propia tarjeta de la zona en
+el Mapa — se le añadió (`UI.openZoneStages` en ui.js) para que se vea
+también ahí en cuanto haya imagen subida.
 
-- [ ] `bosque.jpg` — Linde del Bosque
+- [x] `bosque.jpg` — Linde del Bosque (subido el 02/09)
 - [ ] `pantano.jpg` — Pantano Oscuro
 - [ ] `cuevas.jpg` — Cuevas de Cristal
 - [ ] `picos.jpg` — Picos Helados
