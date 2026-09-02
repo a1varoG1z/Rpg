@@ -260,20 +260,29 @@ function championDuelRewards(duelIdx) {
 // --- Motor de turnos ---
 function elementDamageMult(a, d) { return elementMultiplier(a, d); }
 
-// Ventaja elemental media de un luchador (o de toda una línea) contra los
-// rivales vivos de la fila enemiga activa — 1.0 = neutro, >1 = ventaja,
-// <1 = desventaja (mismos umbrales que elementMultiplier: ±25%/-20%).
-// Usado tanto por el aviso visual del selector de línea como por el modo
-// de combate automático para elegir la mejor línea disponible.
+// Ventaja elemental media de un luchador contra los rivales vivos de la
+// fila enemiga activa — 1.0 = neutro, >1 = ventaja, <1 = desventaja (mismos
+// umbrales que elementMultiplier: ±25%/-20%). Usado por el aviso visual
+// (▲/▼) del selector manual de línea.
 function unitElementScore(unit, enemyRow) {
   const aliveEnemy = enemyRow.filter(u => u.alive);
   if (!aliveEnemy.length) return 1;
   return aliveEnemy.reduce((sum, e) => sum + elementMultiplier(unit.element, e.element), 0) / aliveEnemy.length;
 }
-function rowElementScore(row, enemyRow) {
+
+// Daño total estimado que causaría esta línea contra la fila enemiga activa
+// en un choque: la misma fórmula simplificada de computeDamage (ataque menos
+// mitad de la defensa rival media, con la ventaja elemental de cada
+// atacante ya aplicada) sumada para cada superviviente de la línea, sin
+// crítico ni varianza — solo sirve para comparar líneas entre sí, nunca
+// para aplicar daño real. La usa el combate automático (ver pickAutoGroup
+// en ui.js) para elegir siempre la línea que más daño le hace al rival.
+function rowDamageScore(row, enemyRow) {
   const aliveRow = row.filter(u => u.alive);
-  if (!aliveRow.length) return 1;
-  return aliveRow.reduce((sum, u) => sum + unitElementScore(u, enemyRow), 0) / aliveRow.length;
+  const aliveEnemy = enemyRow.filter(u => u.alive);
+  if (!aliveRow.length || !aliveEnemy.length) return 0;
+  const avgDef = aliveEnemy.reduce((sum, e) => sum + e.def, 0) / aliveEnemy.length;
+  return aliveRow.reduce((sum, u) => sum + Math.max(1, u.atk - avgDef * 0.5) * unitElementScore(u, enemyRow), 0);
 }
 
 function pickTarget(row) {

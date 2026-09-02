@@ -2454,12 +2454,19 @@ UI.toggleAutoBattle = function () {
   }
 };
 
-// Heurística del combate automático: la línea con mejor ventaja elemental
-// media contra la fila enemiga activa (ver rowElementScore en combat.js) —
-// el mismo criterio que ya usa el aviso visual del selector manual.
+// Heurística del combate automático: la línea que más daño estimado le
+// haga a la fila enemiga activa (rowDamageScore en combat.js, que ya
+// incluye la ventaja elemental de cada atacante), con un bonus por cada
+// superviviente extra en la línea — así, entre dos líneas de daño similar,
+// prefiere la que reparte quién recibe el golpe de vuelta entre más
+// personajes en vez de enviar siempre al mismo único superviviente.
 function pickAutoGroup(view, remaining) {
   const enemyRow = view.enemyRows[view.enemyIdx];
-  return remaining.reduce((best, g) => rowElementScore(g.row, enemyRow) > rowElementScore(best.row, enemyRow) ? g : best);
+  const score = (g) => {
+    const aliveCount = g.row.filter(u => u.alive).length;
+    return rowDamageScore(g.row, enemyRow) * (1 + (aliveCount - 1) * 0.15);
+  };
+  return remaining.reduce((best, g) => score(g) > score(best) ? g : best);
 }
 
 function alivePlayerGroups(view) { return view.playerGroups.filter(g => rowAlive(g.row)); }
@@ -2561,7 +2568,6 @@ UI.showGroupPicker = function (view, remaining) {
         wrap.appendChild(creatureCanvas(unit.defId, 40));
         cellEl.appendChild(wrap);
         if (unit.alive) {
-          cellEl.appendChild(el('div', 'picker-cell-ult', ultTurnsText(unit)));
           const hpBar = el('div', 'hp-bar small');
           const fill = el('div', 'hp-fill');
           fill.style.width = Math.max(0, unit.hp / unit.maxHp * 100) + '%';
@@ -2697,12 +2703,12 @@ UI.battleUnitCard = function (u) {
   const card = el('div', 'battle-unit rarity-' + (u.isBoss ? 'jefe' : u.rarity) + (u.alive ? '' : ' fainted'));
   card.dataset.unitId = u.id;
   card.addEventListener('click', () => UI.showBattleUnitStats(u));
-  // La carga de ulti va superpuesta como insignia sobre la propia foto
-  // (esquina superior), no como barra aparte debajo — deja la tarjeta
-  // más compacta y legible.
+  // La carga de ulti (turnos que faltan) ya no se muestra como insignia
+  // superpuesta sobre la foto — quedaba visualmente recargado en pantallas
+  // pequeñas con toda la banda a la vista. Sigue disponible al tocar la
+  // tarjeta (UI.showBattleUnitStats, ver ultTurnsText más abajo).
   const canvasWrap = el('div', 'battle-unit-canvas-wrap');
   canvasWrap.appendChild(creatureCanvas(u.defId, 76));
-  canvasWrap.appendChild(el('div', 'ult-turns', ultTurnsText(u)));
   card.appendChild(canvasWrap);
   const hpBar = el('div', 'hp-bar small');
   const fill = el('div', 'hp-fill');
@@ -2764,13 +2770,6 @@ UI.updateUnitCardHp = function (u) {
   cardEl.classList.toggle('fainted', !u.alive);
 };
 
-UI.updateUnitCardCharge = function (u) {
-  const cardEl = document.querySelector(`.battle-unit[data-unit-id="${u.id}"]`);
-  if (!cardEl) return;
-  const turns = cardEl.querySelector('.ult-turns');
-  if (turns) turns.textContent = ultTurnsText(u);
-};
-
 UI.logLine = function (text) {
   const logEl = $('battleLog');
   const line = el('div', 'battle-log-line', text);
@@ -2808,11 +2807,10 @@ UI.applyBattleEvent = function (view, ev) {
   switch (ev.type) {
     case 'ult':
       u.ultCharge = 0;
-      UI.updateUnitCardCharge(u);
       UI.logLine(`💥 ¡${u.name} desata su ULTI: ${ev.skillName}!`);
       break;
     case 'charge':
-      if (u) { u.ultCharge = ev.value; UI.updateUnitCardCharge(u); }
+      if (u) u.ultCharge = ev.value;
       break;
     case 'enrage':
       triggerBattleAnim(u.id, 'hit-shake', 400);
