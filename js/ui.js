@@ -1071,7 +1071,8 @@ UI.fightStageRunNode = function (state) {
         saveGame(state);
         return { rewards, leveled, capturedCopy: fighterDef(level.rewardDefId), capturedIsNew: capture.outcome === 'nuevo' };
       }
-      const rewards = stageRewards(run.zoneIdx, run.stageIdx, run.isBoss);
+      const isFirstClear = run.stageIdx > highestClearedStage(state, ZONES[run.zoneIdx].id);
+      const rewards = stageRewards(run.zoneIdx, run.stageIdx, run.isBoss, isFirstClear);
       state.currencies.texel += rewards.texel;
       if (rewards.drops.pixite) state.currencies.pixite += rewards.drops.pixite;
       if (rewards.drops.voxite) state.currencies.voxite += rewards.drops.voxite;

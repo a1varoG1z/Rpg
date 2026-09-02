@@ -2044,6 +2044,43 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     verdad las cifras mostradas (ataque 53→19, vida 384→138) y marca el
     botón activo correcto.
 
+- [x] **El cristal garantizado del jefe de zona solo se da la primera vez /
+    auditoría de las tasas de invocación**. El usuario preguntó (con
+    razón) si rejugar el jefe de la zona 1 para farmear Voxite gratis sin
+    límite no rompía el juego, y por separado si las tasas de rareza de
+    los cristales eran de verdad las que decían o había algún bug (le
+    tocaron 2 legendarios en solo 6 Voxite).
+    - **Auditoría de tasas de invocación (sin bug)**: se simuló
+      `rollCrystalRarity('voxite')` 200.000 veces fuera del navegador (con
+      `vm` de Node cargando data.js/state.js tal cual) — el resultado
+      (legendario 2.95% vs 3% declarado, épico 17.02% vs 17%, el resto
+      igual de ajustado) confirma que el algoritmo de tirada pondera bien
+      y no hay ningún bug. La probabilidad real de sacar 2 o más
+      legendarios en solo 6 Voxite (p=3% cada uno) es ≈1,25% — rara, pero
+      nada indica que no fuera solo suerte.
+    - **Cristal de jefe solo garantizado la primera vez**: `stageRewards`
+      (combat.js) no distinguía primera vez de repetición — rejugar el
+      jefe de la zona 1 (un solo enemigo, trivial con Auto + velocidad 3×)
+      daba Voxite GARANTIZADO cada vez más 30% de Doxite extra, así que
+      cualquiera podía acumular cristales caros sin límite y saltarse la
+      escasez del gacha. Ahora recibe un nuevo parámetro `isFirstClear`
+      (calculado en `UI.fightStageRunNode`, ui.js, comparando contra
+      `highestClearedStage` ANTES de que `recordStageClear` actualice el
+      progreso): con `true` se mantiene el Voxite garantizado + 30% de
+      Doxite de siempre (la recompensa real es por VENCER al jefe la
+      primera vez, no por pelear contra él); con `false` (cualquier
+      repetición, incluida la etapa normal rejugada) baja a 20% de Voxite
+      y 5% de Doxite, del mismo orden que una etapa normal. El equipo
+      (70% siempre) no se tocó — no es lo que rompía la economía.
+    Verificado con Playwright: simulación de 2.000 llamadas a
+    `stageRewards` confirma 100%/28,5% (voxite/doxite) en primera vez y
+    20,1%/4,4% en repetición, ajustado a los porcentajes objetivo; y una
+    prueba de extremo a extremo con la banda a nivel 40 y energía
+    infinita, jugando el jefe de la zona 1 de verdad a través de todo el
+    flujo de combate (Auto + `pickAutoGroup`), dio exactamente 1 Voxite en
+    la primera victoria y 9 Voxite en 40 repeticiones reales posteriores
+    (22,5%, dentro de lo esperable para un 20% con esa muestra).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

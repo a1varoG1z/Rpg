@@ -188,14 +188,26 @@ function elementalDungeonRewards() {
   return { texel, fighterXp, drops };
 }
 
-function stageRewards(zoneIdx, stageIdx, isBoss) {
+// `isFirstClear` (solo importa para jefes): el Voxite garantizado + 30% de
+// Doxite extra es la recompensa de VENCER a este jefe por primera vez, no
+// de pelear contra él — sin este control, rejugar el jefe más fácil del
+// Mapa (un solo enemigo, trivial con Auto + velocidad 3×) daba cristales
+// caros gratis sin límite y rompía la escasez del gacha. Las repeticiones
+// (rejugar la etapa, o el Duelo por apuesta) usan en su lugar una
+// probabilidad baja, del mismo orden que una etapa normal.
+function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
   const globalIdx = zoneIdx * STAGES_PER_ZONE + stageIdx;
   const texel = Math.round((20 + globalIdx * 8) * (isBoss ? 3 : 1));
   const fighterXp = Math.round((15 + globalIdx * 4) * (isBoss ? 2.5 : 1));
   const drops = { pixite: 0, voxite: 0, doxite: 0, gear: null };
   if (isBoss) {
-    drops.voxite = 1;
-    if (Math.random() < 0.3) drops.doxite = 1;
+    if (isFirstClear) {
+      drops.voxite = 1;
+      if (Math.random() < 0.3) drops.doxite = 1;
+    } else {
+      if (Math.random() < 0.2) drops.voxite = 1;
+      if (Math.random() < 0.05) drops.doxite = 1;
+    }
     if (Math.random() < 0.7) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx));
   } else {
     if (Math.random() < 0.35) drops.pixite = 1;
