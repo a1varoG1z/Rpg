@@ -215,8 +215,18 @@ function elementalDungeonRewards(isFirstClear) {
 // probabilidad baja, del mismo orden que una etapa normal.
 function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
   const globalIdx = zoneIdx * STAGES_PER_ZONE + stageIdx;
-  const texel = Math.round((20 + globalIdx * 8) * (isBoss ? 3 : 1));
-  const fighterXp = Math.round((15 + globalIdx * 4) * (isBoss ? 2.5 : 1));
+  // Un jefe es UNA sola oleada, mientras que la recompensa de una etapa
+  // normal ya cubre sus 2-3 oleadas juntas — con el mismo ×3/×2.5 en
+  // cualquier repetición, el jefe pagaba de 8 a 23 veces más Texel/XP por
+  // combate individual que jugar el resto de la etapa, y era la forma más
+  // eficiente de farmear ambos con diferencia. La primera vez mantiene el
+  // premio completo (recompensa real por avanzar); las repeticiones bajan
+  // a ×1.5/×1.5 — sigue pagando algo más que una etapa normal (un jefe
+  // sigue siendo un combate más duro), pero ya no de forma desproporcionada.
+  const bossTexelMult = isBoss ? (isFirstClear ? 3 : 1.5) : 1;
+  const bossXpMult = isBoss ? (isFirstClear ? 2.5 : 1.5) : 1;
+  const texel = Math.round((20 + globalIdx * 8) * bossTexelMult);
+  const fighterXp = Math.round((15 + globalIdx * 4) * bossXpMult);
   const drops = { pixite: 0, voxite: 0, doxite: 0, gear: null };
   if (isBoss) {
     if (isFirstClear) {

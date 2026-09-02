@@ -1407,11 +1407,18 @@ UI.renderBanda = function (state) {
       if (uid) {
         const entry = rosterEntry(state, uid);
         if (entry) {
+          const def = fighterDef(entry.defId);
+          // El reborde marca también el tier del personaje (mismo color/
+          // resplandor que ya usa creatureCard en la Colección), para
+          // distinguir de un vistazo la rareza de cada hueco de la Formación.
+          const rarity = rarityInfoFor(def);
+          slot.classList.add('rarity-' + rarity.id);
+          slot.style.setProperty('--rc', rarity.color);
+          slot.style.setProperty('--rg', rarity.glow);
           const wrap = el('div', 'creature-canvas-wrap');
           wrap.appendChild(creatureCanvas(entry.defId, 46));
           slot.appendChild(wrap);
           slot.appendChild(el('div', 'formation-lvl', 'Nv.' + entry.level));
-          const def = fighterDef(entry.defId);
           if (isCenter && def.leaderSkillId) slot.appendChild(el('div', 'leader-crown', '👑'));
         }
       } else {

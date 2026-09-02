@@ -2141,6 +2141,42 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     `recordElementalClear`) que la versión de jefes de zona, ya verificada
     de extremo a extremo.
 
+- [x] **El Texel/XP del jefe también baja al repetirlo / el reborde de la
+    Formación marca el tier del personaje**. Dos pedidos del usuario en la
+    misma ronda.
+    - **Texel/XP de jefe, solo desproporcionado en repetición**: un jefe es
+      UNA sola oleada, mientras que la recompensa de una etapa normal ya
+      cubre sus 2-3 oleadas juntas en un único pago — con el mismo ×3/×2.5
+      en cualquier repetición, el jefe pagaba de 8 a 23 veces más Texel/XP
+      por combate individual que jugar el resto de la etapa (228 Texel /
+      108 XP por UNA oleada en el jefe de la zona 1, frente a ~10-23
+      Texel / ~7-13 XP por oleada en una etapa normal de esa misma zona),
+      con diferencia la forma más eficiente de farmear ambos. La primera
+      vez mantiene el premio completo (×3/×2.5, recompensa real por
+      avanzar); las repeticiones bajan a ×1.5/×1.5 en `stageRewards`
+      (combat.js) — sigue pagando algo más que una etapa normal, pero ya
+      no de forma desproporcionada. No se tocó la Mazmorra Elemental esta
+      vez (el usuario preguntó específicamente por "los jefes").
+    - **Reborde de Formación por tier**: `UI.renderBanda` (ui.js) calcula
+      ahora `rarityInfoFor(def)` para cada hueco ocupado y le pone la
+      misma clase `rarity-<id>` y las variables CSS `--rc`/`--rg` que ya
+      usa `creatureCard` en la Colección — el CSS nuevo
+      (`.formation-slot:not(.empty) { border-color: var(--rc, ...); }`)
+      hace que el borde adopte el color de la rareza, y de paso hereda
+      gratis el resplandor/animación que ya tienen las clases `.rarity-*`
+      genéricas (pulso en Legendario, flotación en Raro+). El hueco central
+      conserva su marco dorado especial SOLO mientras está vacío (para
+      seguir señalando cuál es el puesto de líder); en cuanto hay alguien
+      colocado, gana el color de su propia rareza como cualquier otro hueco.
+    Verificado con Playwright: `stageRewards` da 228/108 en la primera
+    victoria del jefe de la zona 1 y exactamente 114/65 en la repetición
+    (×1.5 preciso), sin tocar la etapa normal (20/15 igual que siempre); en
+    la Formación, un luchador Común y uno Legendario colocados en huecos
+    distintos muestran colores de borde distintos y correctos (gris vs
+    dorado/naranja), los huecos vacíos normales mantienen el marco
+    marrón-dorado de siempre y el hueco central vacío sigue en dorado
+    pleno.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

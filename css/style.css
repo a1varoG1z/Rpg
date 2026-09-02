@@ -215,7 +215,13 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
   object-fit: contain;
 }
 .formation-lvl { font-size: 0.6rem; color: var(--cream-dim); }
-.formation-slot.center { border-color: var(--gold); }
+/* El reborde marca el tier del personaje colocado (mismo --rc que ya usa
+   creatureCard en la Colección, puesto vía rarityInfoFor en renderBanda).
+   El centro conserva su marco dorado especial solo mientras está vacío,
+   para seguir señalando cuál es el hueco de líder antes de colocar a
+   nadie — en cuanto hay alguien, gana el color de su rareza. */
+.formation-slot:not(.empty) { border-color: var(--rc, var(--gold-dim)); }
+.formation-slot.center.empty { border-color: var(--gold); }
 .leader-crown { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-size: 0.9rem; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
 .leader-status-bar { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: #1f1811; border: 1px solid var(--gold-dim); font-size: 0.78rem; color: var(--cream-dim); text-align: center; line-height: 1.5; }
 .leader-status-bar.active { border-color: var(--gold); color: var(--cream); box-shadow: 0 0 10px rgba(212,175,55,0.35); }
