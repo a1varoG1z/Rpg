@@ -787,6 +787,15 @@ UI.openZoneStages = function (state, zoneIdx) {
 // primera vez (ver WAGER_BOSS_BOOST más abajo): ya se le venció una vez con
 // el nivel de esa zona, así que sin el refuerzo sería un trámite en vez de
 // un reto que justifique arriesgar el doble.
+//
+// Es repetible sin límite, así que además del ×1.3 fijo se combina con
+// bossAdaptiveMult(state, zoneIdx) — el mismo escalado del jefe normal del
+// Mapa: sin él, una vez la banda del jugador supera el ritmo de esa zona
+// (a través de equipo/estrellas/invocaciones, sin relación con "haber
+// vencido antes a ese jefe"), la apuesta deja de tener riesgo real y se
+// convierte en Texel gratis repetible sin fin — el mismo fallo de fondo
+// que hacía trivial al jefe del Mapa, pero aquí además con un exploit de
+// economía detrás.
 const WAGER_BOSS_BOOST = 1.3;
 UI.openWagerDuel = function (state, zoneIdx) {
   const zone = ZONES[zoneIdx];
@@ -794,7 +803,8 @@ UI.openWagerDuel = function (state, zoneIdx) {
   body.innerHTML = `<h3>🎲 Duelo por apuesta</h3>
     <p class="settings-info">Revancha contra ${zone.emoji} ${zone.name} · el jefe de la zona, con las
     estadísticas reforzadas — más difícil que la primera vez que lo venciste.
-    Ganas y te devuelve el doble de lo apostado; pierdes y lo pierdes.</p>`;
+    Ganas y te devuelve el doble de lo apostado; pierdes y lo pierdes.
+    Cuesta ${STAGE_ENERGY_COST} ⚡ como cualquier otro combate.</p>`;
   const wagerOptions = [100, 300, 1000].filter(amount => amount <= state.currencies.texel);
   if (wagerOptions.length === 0) {
     body.appendChild(el('div', 'empty-hint', 'No tienes suficiente Texel para apostar.'));
@@ -814,11 +824,24 @@ UI.openWagerDuel = function (state, zoneIdx) {
 UI.startWagerDuel = function (state, zoneIdx, amount) {
   if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
   if (state.currencies.texel < amount) { UI.showToast('⚠️ No tienes suficiente Texel.'); return; }
+  // Es la única actividad de combate repetible del juego que no costaba
+  // Energía (Etapas y Torre sí) — combinado con bossAdaptiveMult, que no
+  // siempre puede reforzar lo suficiente a un jefe SOLO de una zona floja
+  // frente a una banda ya de fin de partida (un jefe de zona 1 nunca puede
+  // ponerse tan tanque como uno propio de zona 30 sin volverse injusto),
+  // eso convertía la apuesta en Texel gratis repetible sin límite. El
+  // mismo coste que ya frena el resto del contenido pone un tope real a
+  // cuántas veces se puede intentar, tenga o no riesgo real esa zona en
+  // concreto.
+  if (!state.settings.infiniteEnergy) {
+    if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+    state.currencies.energy -= STAGE_ENERGY_COST;
+  }
   window.__championRun = null;
   state.currencies.texel -= amount;
   saveGame(state);
   UI.renderTopbar(state);
-  const { rows } = buildEnemyBand(zoneIdx, STAGES_PER_ZONE - 1, WAGER_BOSS_BOOST);
+  const { rows } = buildEnemyBand(zoneIdx, STAGES_PER_ZONE - 1, WAGER_BOSS_BOOST * bossAdaptiveMult(state, zoneIdx));
   const combos = buildPlayerCombinations(state);
   UI.openBattle(state, combos, [rows[0]], {
     title: '🎲 Apuesta · ' + ZONES[zoneIdx].name + ' (jefe reforzado)',
@@ -1179,7 +1202,8 @@ UI.startTorreLevel = function (state, idx) {
     UI.renderTopbar(state);
   }
   const level = TORRE_LEVELS[idx];
-  const encounters = buildTorreEncounters(level);
+  const bossExtraMult = level.kind === 'boss' ? torreBossMult(state, level) : undefined;
+  const encounters = buildTorreEncounters(level, bossExtraMult);
   window.__championRun = null;
   window.__stageRun = {
     isTorre: true, torreIdx: idx, isBoss: level.kind === 'boss',
@@ -2921,9 +2945,15 @@ UI.showBattleUnitStats = function (u) {
   const head = el('div', 'fighter-modal-head');
   head.appendChild(creatureCanvas(u.defId, 80));
   const info = el('div');
+  // El nivel mostrado es el NOMINAL (capado en XP_LEVEL_CAP) — a partir de
+  // ahí el rival puede llevar un refuerzo extra (lateZoneMult del camino en
+  // zonas avanzadas, bossAdaptiveMult del jefe...) que no cambia ese número
+  // pero sí sus estadísticas reales, así que se muestra aparte para que no
+  // parezca "un Nv.40 cualquiera" cuando en realidad pega mucho más fuerte.
+  const boostTag = u.side === 'enemy' && u.powerMult > 1.02 ? ` · 💪 Reforzado ×${u.powerMult.toFixed(2)}` : '';
   info.innerHTML = `<div class="item-modal-name" style="color:${rarity.color}">${u.name}</div>
     <div class="item-modal-rarity">${rarity.label} · ${ELEMENT_INFO[u.element].label} ${ELEMENT_INFO[u.element].icon} · ${CLASS_INFO[u.class].label} ${CLASS_INFO[u.class].icon}</div>
-    <div class="item-modal-rarity">Nv. ${u.level}${u.alive ? '' : ' · 💀 caído'}</div>`;
+    <div class="item-modal-rarity">Nv. ${u.level}${u.alive ? '' : ' · 💀 caído'}${boostTag}</div>`;
   head.appendChild(info);
   body.appendChild(head);
 

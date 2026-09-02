@@ -439,6 +439,28 @@ function bossAdaptiveMult(state, zoneIdx) {
   return Math.min(3 * lateZoneMult(zoneIdx), Math.sqrt(overpower));
 }
 
+// Jefes de la Torre Batalla: reutiliza bossAdaptiveMult referenciado a la
+// zona de ORIGEN de ese jefe (level.originZoneIdx) — así un jefe de zona
+// temprana (calibrado para un jugador muy por debajo del que ya terminó el
+// mapa entero) sube hasta su techo al medirse contra la banda real del
+// jugador, mientras uno de zona tardía (cuya referencia ya está cerca del
+// ritmo endgame) apenas cambia, porque ya era un reto real de por sí.
+// PERO cada nivel de jefe se repite level.enemyCount veces SEGUIDAS sin
+// curación (ver buildTorreEncounters) — aplicar el mismo techo que en el
+// Mapa (pensado para UN único encuentro) sin más lo volvía injugable hasta
+// para la banda mejor posible (9 legendarios Nv.40 5★ con equipo
+// legendario tope: 0/5 combates ganados contra el último nivel en
+// pruebas). Se amortigua el EXCESO sobre 1× dividiéndolo entre la raíz de
+// las veces que se repite, para que la propia repetición ya cuente como
+// parte del reto en vez de sumarse sin más al multiplicador de un solo
+// golpe — en enemyCount=1 (los primeros niveles de jefe, sin amortiguar)
+// se necesita la subida completa para dejar de ser triviales.
+function torreBossMult(state, level) {
+  const raw = bossAdaptiveMult(state, level.originZoneIdx);
+  if (raw <= 1) return raw;
+  return 1 + (raw - 1) / Math.sqrt(level.enemyCount);
+}
+
 // Habilidad de líder de banda: solo está activa si el luchador que la tiene
 // ocupa la celda central [1][1] de la Formación. Devuelve el LEADER_SKILLS
 // correspondiente (o null si no hay líder activo), para aplicarlo a TODA

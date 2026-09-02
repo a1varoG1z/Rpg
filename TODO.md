@@ -2438,6 +2438,120 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     adaptativo del jefe solo sube del 1× cuando la banda ya supera el
     nivel "a la par" de esa zona, igual que antes).
 
+- [x] **Los jefes de la Torre Batalla no suponían ningún reto** (pedido:
+    "quiero subir en general la dificultad de los bosses en la torre
+    batalla, todos tienen que ser un reto, es el final del juego"; mobs
+    dejados tal cual, a petición explícita). Diagnóstico: `buildTorreEncounters`
+    nunca pasaba ningún extraMult a `makeBossUnit` — cada jefe peleaba con
+    sus fixedStats de zona TAL CUAL, calibradas para un jugador "a la par"
+    de SU zona de origen en el Mapa, no para uno que ya terminó el mapa
+    entero (que es literalmente el único que puede llegar a la Torre). En
+    pruebas, el primer nivel de jefe (zona 0) apenas hacía 1 de daño a una
+    banda de fin de mapa normal.
+    Implementación: nueva `torreBossMult(state, level)` en state.js,
+    reutilizando `bossAdaptiveMult(state, level.originZoneIdx)` — el MISMO
+    mecanismo ya calibrado del Mapa, referenciado a la zona de ORIGEN de
+    cada jefe. Así un jefe de zona temprana, medido contra la banda real
+    (de nivel endgame) del jugador, sube hasta su techo; uno de zona
+    tardía, cuya referencia ya está cerca del ritmo endgame, apenas
+    cambia (ya era un reto real). PERO cada jefe se repite
+    `level.enemyCount` veces SEGUIDAS sin curación (hasta 5×) — aplicar el
+    techo pensado para UN único encuentro del Mapa sin más volvía el
+    último nivel IMPOSIBLE hasta para la mejor banda teóricamente
+    alcanzable (0/5 combates ganados en pruebas). Se amortigua el EXCESO
+    sobre 1× dividiéndolo entre `√level.enemyCount` — en enemyCount=1 (los
+    primeros niveles de jefe) no se amortigua nada, porque ahí es donde
+    hace falta la subida completa.
+    Verificado con Playwright (banda "recién llegada", épica Nv.40 2★
+    equipo Raro Nv.3, y banda TOPE teórico, 9 legendarios Nv.40 5★ equipo
+    legendario Nv.10): los mobs de Torre (índices 0/8/20/32) idénticos a
+    antes (0/2845/544/2973 de daño, sin cambios); los primeros niveles de
+    jefe pasan de ~1 de daño a 216-1366; el nivel final (66, jefe final
+    ×5) hace perder a la banda "recién llegada" (23470 de daño) y, tras
+    amortiguar por √5, la banda TOPE lo gana consistentemente pero con
+    daño real (5/5 victorias, 4505-7423 de daño en la ronda anterior a
+    amortiguar — 0/5; 5/5 tras amortiguar, 5116-7299 de daño) — nunca
+    matemáticamente imposible, siempre un reto real. Nivel 34 (primer
+    jefe, zona 0 de origen) se queda en unos pocos puntos de daño incluso
+    tras el ajuste — límite estructural aceptado (un jefe SOLO contra una
+    Formación de 9 nunca puede escalar tanto como uno acompañado sin
+    volverse injustamente tanque; el propio jefe de zona 0 del Mapa tiene
+    la misma limitación).
+
+- [x] **Bug: el nivel del rival mostraba siempre "Nv. 40" sin reflejar el
+    refuerzo de zona/adaptativo**. Causa: `makeUnit`/`makeBossUnit` guardan
+    `level` como el nivel NOMINAL (capado en XP_LEVEL_CAP) pasado a
+    `buildUnitStats`, pero las estadísticas reales sí llevan aplicado el
+    extraMult (lateZoneMult, bossAdaptiveMult...) — la ficha de combate
+    (`UI.showBattleUnitStats`) solo mostraba ese nivel nominal, sin ningún
+    indicio del refuerzo. Fix: nuevo campo `powerMult` en la unidad
+    (`extraMult || 1`), mostrado como "· 💪 Reforzado ×N.NN" junto al
+    nivel cuando `powerMult > 1.02` (evita marcar como "reforzado" el
+    MOB_POWER_MULT=0.72, que es un NERF, no un refuerzo) y solo en
+    rivales, nunca en el propio luchador. Verificado con Playwright: una
+    unidad de camino en zona 32 (powerMult≈2.05) muestra "Nv. 40 · 💪
+    Reforzado ×2.05"; una de zona 0 (powerMult=0.72, sin refuerzo) muestra
+    solo "Nv. 4", sin la etiqueta.
+
+- [x] **Auditoría completa de la dificultad del juego** (pedido explícito,
+    para asegurar que esta clase de fallo — dificultad que deja de
+    escalar mientras el jugador sigue mejorando sin límite — no reaparezca
+    en otro sistema). Revisados todos los puntos donde se genera un rival
+    de combate:
+    - **Mapa (camino y jefe)**: ya arreglado (ver entrada anterior de
+      `lateZoneMult`).
+    - **Torre Batalla (jefes)**: ya arreglado arriba (`torreBossMult`).
+      Torre (mobs): revisados, sin cambios a petición del usuario — su
+      única imperfección conocida (el orden no es estrictamente monótono,
+      porque el tope de rareza de cada familia es independiente de en qué
+      zona aparece primero) no afecta a los dos momentos que más importan
+      (entrada trivial a propósito, nivel final un reto real), así que se
+      deja tal cual.
+    - **Duelo por Apuesta (revancha contra un jefe ya vencido)**: BUG real
+      encontrado y arreglado. Usaba un refuerzo fijo (`WAGER_BOSS_BOOST`
+      ×1.3) sin ningún escalado adaptativo — el mismo fallo de fondo que
+      el jefe del Mapa antes de arreglarlo, pero AQUÍ además con un
+      exploit de economía detrás: es repetible sin límite (a diferencia
+      del jefe del Mapa) apostando Texel al doble. Combinado con que era
+      la ÚNICA actividad de combate repetible del juego sin coste de
+      Energía, una banda de fin de mapa normal (ni siquiera el tope
+      teórico) ganaba la apuesta de la zona más floja arriesgando solo
+      5-28 de daño — Texel gratis, sin límite de intentos. Doble fix: (1)
+      `WAGER_BOSS_BOOST * bossAdaptiveMult(state, zoneIdx)` en vez del
+      ×1.3 fijo, mismo mecanismo que el jefe del Mapa; (2) coste de
+      Energía (`STAGE_ENERGY_COST`, igual que Etapas y Torre) añadido a
+      `UI.startWagerDuel`, que antes no descontaba nada — pone un tope
+      real a cuántos intentos gratis son posibles, tenga o no riesgo real
+      esa zona en concreto (el mismo límite estructural de "jefe solo
+      contra Formación de 9" que en Torre nivel 1 hace que incluso la
+      banda tope apenas reciba daño en la zona más floja). Verificado con
+      Playwright: banda "a la par" de su zona sin cambios apreciables (mismo
+      orden de daño que antes, ~6700-9300); coste de Energía descontado
+      correctamente (100→94 con STAGE_ENERGY_COST=6) y bloqueado sin
+      gastar Texel si no hay energía suficiente.
+    - **Mazmorra Elemental (Guardián)**: revisada, sin cambios. Es
+      contenido de mitad de partida por diseño (se desbloquea mucho antes
+      que el mapa completo, ver el comentario de `ELEMENTAL_DUNGEONS` en
+      data.js) y sus recompensas ya estaban gateadas contra el mismo tipo
+      de exploit (`isFirstClear`, arreglado en una ronda anterior) — que
+      se vuelva cómoda de farmear en fin de partida es la evolución
+      esperable de contenido de mitad de partida, no un fallo.
+    - **Arena**: revisada, sin cambios. `buildArenaBand` sube de nivel
+      sin ningún tope (`rank * 1.8`, sin `Math.min(XP_LEVEL_CAP, ...)`) —
+      a primera vista el mismo patrón, pero aquí es al revés: es un
+      ranking de "sube mientras puedas" (perder no baja de rango, solo
+      no sube), sin gatear nada más del juego y con logros hasta el
+      Rango 50 — llegar a un techo natural donde ya no se puede seguir
+      subiendo es el diseño previsto de un ranking así, no un fallo de
+      progresión bloqueada.
+    - **Prueba del Campeón**: revisada, sin cambios. `buildChampionOpponent`
+      sí topa en XP_LEVEL_CAP y su rareza satura sobre el duelo ~20, pero
+      es un modo de racha (sin curación entre duelos, un solo luchador) —
+      su reto viene del desgaste acumulado duelo a duelo contra un fondo
+      de rivales fuertes y acotados, no de que cada rival individual siga
+      escalando; ese es un mecanismo de dificultad distinto y válido, no
+      el mismo bug.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

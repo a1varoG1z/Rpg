@@ -38,7 +38,13 @@ function makeUnit(side, defId, level, extraMult, sourceUid) {
   return {
     id: 'u' + (unitSeq++), side, defId, sourceUid: sourceUid || null,
     name: def.name, element: def.element, class: def.class, rarity: def.rarity,
-    level, maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
+    // powerMult: el extraMult con el que se generó (MOB_POWER_MULT/
+    // lateZoneMult del camino, bossAdaptiveMult del jefe, etc.) — level se
+    // queda en el nivel NOMINAL (capado en XP_LEVEL_CAP), así que sin este
+    // campo la ficha de combate (UI.showBattleUnitStats) mostraba "Nv. 40"
+    // sin ningún indicio del refuerzo real que ya llevan las stats.
+    level, powerMult: extraMult || 1,
+    maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
     skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], dots: [], stunTurns: 0, alive: true,
   };
 }
@@ -159,7 +165,19 @@ function buildEnemyBand(zoneIdx, stageIdx, bossExtraMult) {
 // mobs llegan en filas de hasta 3 simultáneos, como una oleada normal; los
 // jefes SIEMPRE en solitario, en oleadas sucesivas — un jefe nunca debe
 // recibir compañía (ver el comentario de makeBossUnit más arriba).
-function buildTorreEncounters(level) {
+//
+// bossExtraMult (solo para level.kind === 'boss'): sus fixedStats son las
+// mismas con las que ese jefe pelea en su zona de origen del Mapa,
+// calibradas para un jugador "a la par" de ESA zona — pero aquí, como gran
+// final de partida, los pelea un jugador que YA terminó el mapa entero, así
+// que un jefe de zona temprana (p.ej. el de la 1ª zona) se quedaba
+// trivial (~1 de daño recibido en pruebas). Se le pasa
+// bossAdaptiveMult(state, level.originZoneIdx) — el MISMO mecanismo ya
+// calibrado para el jefe de Mapa — así un jefe de zona temprana, medido
+// contra la banda real (de nivel endgame) del jugador, sube hasta su
+// techo; uno de zona tardía, cuya referencia ya está cerca del ritmo
+// endgame, apenas cambia (ya era un reto real sin tocarlo, ver TODO.md).
+function buildTorreEncounters(level, bossExtraMult) {
   const perRow = level.kind === 'boss' ? 1 : 3;
   const rows = [];
   let remaining = level.enemyCount;
@@ -167,7 +185,7 @@ function buildTorreEncounters(level) {
     const count = Math.min(perRow, remaining);
     const row = [];
     for (let i = 0; i < count; i++) {
-      row.push(level.kind === 'boss' ? makeBossUnit(level.fightDefId, level.enemyLevel) : makeUnit('enemy', level.fightDefId, level.enemyLevel));
+      row.push(level.kind === 'boss' ? makeBossUnit(level.fightDefId, level.enemyLevel, bossExtraMult) : makeUnit('enemy', level.fightDefId, level.enemyLevel));
     }
     rows.push(row);
     remaining -= count;
