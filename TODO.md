@@ -1528,6 +1528,48 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     otros 31 jefes en las 5 estadísticas; y el orden de la Torre Batalla
     (que se basa en `pool[2]` para calcular su tramo) los coloca también
     como los 2 últimos de su escalera de jefes.
+  - [x] **Rebalanceo completo de los 31 jefes de zona restantes** (todos
+    menos Balrog/Tifón, ya calibrados aparte como los 2 últimos y más
+    fuertes), a petición del usuario tras detectar que el orden de poder
+    no tenía sentido: Dracorex (zona 5, de cuando el juego solo tenía 6
+    zonas) era más fuerte que jefes 20 zonas por delante, y el tramo
+    "épico" (zonas 13-30) apenas escalaba — dos jefes 11-12 zonas después
+    (Surtr/Behemoth) eran más flojos que uno anterior (Basilisco).
+    - **Se encontró y arregló de paso un bug real**: `pool[0]` de la zona
+      `aldea_nian` apuntaba a `'chupacabras_raro'`, que no existe — la
+      familia se llama `chupacabra` (singular). Cualquier oleada normal de
+      esa zona que tocara sacar ese relleno (probabilidad 1/2 por
+      enemigo) rompía el combate entero (`fighterDef` devolvía
+      `undefined`). Corregido a `chupacabra_raro`.
+    - **Metodología**: en vez de una curva de poder teórica (que ya había
+      fallado una vez: escalarla proporcionalmente subía tanto el ATK
+      como la DEF del jefe a la vez, y como el daño real resta
+      `defVal×0.5` del atacante, subir ambos a la par podía dejar al
+      jugador haciendo 1 de daño por golpe), se AJUSTÓ CADA JEFE POR
+      SIMULACIÓN REAL: para cada una de las 31 zonas, un equipo "suelo"
+      de 3 luchadores (sin equipo ni estrellas — el peor caso real, la
+      misma rareza/nivel que ya usa el relleno de esa zona como referencia
+      del nivel de jugador esperado ahí) lucha contra el jefe con el motor
+      de combate de verdad (`UI.stepBattle` a velocidad instantánea) varias
+      veces; si gana casi siempre se le sube HP/ATK/DEF, si pierde casi
+      siempre se identifica SI el problema es que el jugador apenas hace
+      daño (DEF del jefe demasiado alta) o que el jugador muere demasiado
+      rápido (ATK/SAB del jefe demasiado altos) y se corrige ESE lado en
+      concreto — no un multiplicador ciego a los 5 stats a la vez. Se
+      repitió hasta que la tasa de victorias de ese equipo suelo cayera
+      entre 35-85% (reto real, pero factible) en cada una de las 31 zonas.
+    - Tras el rebalanceo, se revisó que Balrog/Tifón siguieran dominando
+      estrictamente las 5 estadísticas sobre los 31 (alguno, como
+      Behemoth en Defensa, había quedado por encima) y se les subió un
+      poco más para recuperar el margen.
+    Verificado con Playwright (además de la propia simulación de
+    calibración): los 33 jefes conservan `isBoss`/`fixedStats` válidos;
+    Balrog/Tifón vuelven a dominar las 5 estadísticas sobre el resto;
+    comprobación cruzada en varias zonas (0, 5, 12, 19, 25, 30) de que la
+    tasa de victorias del equipo suelo sigue en un rango de reto real
+    (no trivial, no imposible); y que una etapa normal (no de jefe) sigue
+    funcionando igual tras el cambio, sin verse afectada por la rama de
+    `fixedStats` en `buildUnitStats`.
 
 ## Notas
 
