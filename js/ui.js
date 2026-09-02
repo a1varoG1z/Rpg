@@ -54,7 +54,15 @@ function creatureCanvas(defId, sizePx) {
     img.className = 'creature-canvas creature-canvas-loading';
     img.alt = def.name;
     img.loading = 'lazy';
-    if (sizePx) { img.style.width = sizePx + 'px'; img.style.height = 'auto'; }
+    // Alto fijo (misma proporción 72×81 que la caja por defecto de
+    // .creature-canvas en style.css) en vez de "auto" según la proporción
+    // real del PNG — con "auto", un sprite recortado más alto de lo normal
+    // (poco margen, retrato de cuerpo entero) se salía de la caja fija de
+    // cualquier rejilla que lo usara (Formación, recorrido de etapa, Torre
+    // Batalla, colas de combate...) y tapaba lo que hubiera debajo. Con
+    // ancho+alto fijos, object-fit:contain (ya en la clase base) encoge la
+    // imagen para caber siempre dentro, sin deformarla.
+    if (sizePx) { img.style.width = sizePx + 'px'; img.style.height = Math.round(sizePx * 81 / 72) + 'px'; }
     img.addEventListener('load', () => img.classList.remove('creature-canvas-loading'), { once: true });
     // Si el PNG falla al cargar (red inestable en móvil, caché corrupta...)
     // se sustituye por el sprite procedural en vez de dejar un hueco vacío

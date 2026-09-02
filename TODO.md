@@ -1897,6 +1897,37 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     de la Tienda muestra los 3 lotes, comprar descuenta el Texel y suma las
     Gemas correctas, y los botones se deshabilitan sin Texel suficiente.
 
+- [x] **Sprites que se salían de su cuadro, arreglado de raíz en TODAS las
+    pantallas (no solo Formación)**. El usuario mandó una foto del
+    recorrido de etapa (la rejilla 3×3 que muestra la banda antes de
+    luchar) con varios personajes desbordando su cuadro, y pidió
+    solucionarlo en todas partes, no solo ahí.
+    - **Causa raíz**: `creatureCanvas(defId, sizePx)` (ui.js) fijaba el
+      ANCHO de la imagen real (`img.style.width`) pero dejaba el alto en
+      `"auto"` según la proporción real del PNG — cualquier rejilla de
+      tamaño fijo que la usara (recorrido de etapa, filas de la Torre
+      Batalla, colas de combate, selector de rivales...) confiaba en que
+      la imagen respetaría el alto declarado en el CSS de esa rejilla,
+      pero un `<img>` con alto inline `auto` ignora por completo esa altura
+      del CSS externo — solo Formación se había arreglado antes (con un
+      `!important` específico para ese caso).
+    - **Arreglo de raíz**: en vez de parchear cada rejilla una a una, se
+      corrigió la función compartida — ahora fija SIEMPRE ancho y alto en
+      proporción 72×81 (la misma proporción 8:9 que ya usaba por defecto
+      la clase `.creature-canvas` del CSS, y que TODAS las rejillas ya
+      declaraban sin saberlo: 40×45, 26×29 son exactamente esa proporción).
+      Con ambos fijos, `object-fit: contain` (ya presente en la clase base)
+      encoge la imagen para caber siempre dentro sin deformarla, en vez de
+      desbordar. Una sola línea de cambio arregla todos los sitios a la
+      vez, incluidos los que puedan añadirse en el futuro.
+    Verificado con Playwright: la rejilla del recorrido de etapa (la misma
+    de la foto) ya no desborda — alto exacto 45px dentro de su cuadro de
+    52×68; comprobado también en las filas de la Torre Batalla; y un
+    barrido de TODAS las imágenes `.creature-canvas` visibles en las
+    pantallas Mapa/Banda/Torre no encontró ninguna que sobrepase el cuadro
+    de su elemento padre (0 desbordamientos). Formación sigue funcionando
+    igual que antes (su `!important` específico sigue ganando).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
