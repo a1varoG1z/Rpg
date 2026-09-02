@@ -2387,6 +2387,57 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     incluye las nuevas opciones y el toggle Base/Actuales funciona
     (cambia la clase `active` correctamente tras reconstruir el panel).
 
+- [x] **La curva de dificultad se aplanaba tras el tope de nivel 40**.
+    Diagnóstico pedido: "una vez llegas por primera vez a los rivales de
+    Nv.40, subes de nivel al equipo para poder pasártelo, pero como es el
+    nivel máximo, la curva de dificultad se para ahí, tu equipo sigue
+    mejorando pero los rivales no, así que siempre ganas todo sin
+    dificultad". Confirmado: el nivel del rival (`1 + globalIdx`, capado en
+    `XP_LEVEL_CAP`=40) toca ese tope justo en el jefe de Ruinas Abisales
+    (zona índice 4 de 33) y la rareza del pool de cada zona también tope en
+    Épico desde la zona 6 (Guarida del Dragón) — ambos ejes se quedan
+    PLANOS las ~28 zonas restantes (85% del mapa), mientras el poder del
+    jugador no tiene techo (equipo, Superfusión hasta 5★, invocaciones
+    legendarias sin relación con la zona en la que esté). Solo el jefe
+    tenía algo de escalado adaptativo (`bossAdaptiveMult`, tope ×3); el
+    camino normal usaba un multiplicador fijo (`MOB_POWER_MULT`=0.72) sin
+    ninguna reacción al progreso del jugador.
+    Se plantearon 3 direcciones (quitar el tope de nivel al rival sin más,
+    escalado adaptativo también en el camino normal, o combinar una curva
+    determinista por zona con revisar el tope del jefe) — el usuario eligió
+    combinar ambas. OJO: quitar sin más el tope de nivel al rival YA se
+    había probado antes y se descartó (ver el comentario de
+    `buildEnemyBand`): sin tope, el rival llegaba a nivel 264 en la última
+    zona frente al tope 40 del jugador, más de 5× su multiplicador de stats
+    — matemáticamente imposible. Implementación: nuevo `lateZoneMult(zoneIdx)`
+    (`data.js`, junto a `XP_LEVEL_CAP`) — 1× hasta la zona del tope de nivel
+    (índice 4) y a partir de ahí `1 + √(zonas_pasado_el_tope) × 0.35`, mucho
+    más suave que la escalada lineal por nivel para no repetir esa
+    explosión (en la última zona, ×2.85). Se aplica como multiplicador
+    extra a `MOB_POWER_MULT` en los mobs del camino (`buildEnemyBand`,
+    combat.js) y al TECHO del escalado adaptativo del jefe (`3 ×
+    lateZoneMult`, antes fijo en 3, en `bossAdaptiveMult`, state.js) — así
+    el jefe conserva margen para seguir por delante de su propio camino en
+    zonas avanzadas. No toca las zonas 0-4 (nada cambia en early game) ni
+    el nivel/rareza tope en sí, solo añade una segunda curva, determinista
+    por zona (no depende de la banda actual del jugador, así que rejugar
+    zonas ya superadas sigue siendo tan farmeable como antes).
+    Verificado: simulación pura confirma la curva (mult del camino de 0.72×
+    en zona 4 a 2.05× en zona 32; techo del jefe de 3× a 8.56×), sin
+    explosión. Con Playwright, una banda de control en zona 1 sigue
+    ganando sin recibir ni un punto de daño (cero regresión en zonas
+    tempranas); una banda del TOPE teórico (9 legendarios Nv.40, 5★, equipo
+    legendario Nv.10 en Formación completa) gana en las zonas 29 y 32
+    (camino y jefe) pero ahora SÍ recibe daño real (antes, 0) — ya no es un
+    paseo garantizado; y sigue siendo matemáticamente superable (no se
+    reprodujo la explosión del bug antiguo). Una banda "a la altura de su
+    zona" (rareza nativa del pool + solo 2★ + equipo Raro Nv.3, sin
+    optimizar) pierde el camino normal en zonas tardías y el jefe de la
+    última zona — dificultad real esperable para quien no ha invertido, sin
+    afectar al jefe de una banda realmente a la par (el multiplicador
+    adaptativo del jefe solo sube del 1× cuando la banda ya supera el
+    nivel "a la par" de esa zona, igual que antes).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

@@ -432,7 +432,11 @@ function bossAdaptiveMult(state, zoneIdx) {
   if (!counted) return 1;
   const overpower = (bandTotal / counted) / refPower;
   if (overpower <= 1) return 1;
-  return Math.min(3, Math.sqrt(overpower));
+  // El techo también crece con la zona (lateZoneMult, ver data.js) para que
+  // el jefe conserve margen sobre su propio camino en zonas avanzadas, en
+  // vez de quedarse siempre en el mismo ×3 mientras el camino ya sigue
+  // subiendo con lateZoneMult.
+  return Math.min(3 * lateZoneMult(zoneIdx), Math.sqrt(overpower));
 }
 
 // Habilidad de líder de banda: solo está activa si el luchador que la tiene

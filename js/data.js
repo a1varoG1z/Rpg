@@ -720,6 +720,27 @@ function bandLineInfo(id) { return BAND_LINES.find(l => l.id === id) || BAND_LIN
 const XP_LEVEL_CAP = 40;
 function fighterXpToNext(level) { return Math.floor(20 * Math.pow(level, 1.5)); }
 
+// A partir de esta zona (índice 4 = Ruinas Abisales, la 5ª de 33) el nivel
+// del rival ya toca XP_LEVEL_CAP y deja de crecer (ver el comentario sobre
+// el tope de nivel del rival en buildEnemyBand, combat.js) — pero eso no
+// puede significar que las ~28 zonas restantes (85% del mapa) se queden
+// todas con la MISMA dificultad exacta mientras el jugador sigue subiendo
+// equipo/estrellas/rareza de invocación sin límite alguno. lateZoneMult
+// retoma la curva de dificultad más allá del tope de nivel, mucho más
+// suave que la escalada por nivel (raíz cuadrada en vez de lineal) para no
+// repetir la explosión que tenía el rival sin tope (nivel 264 en la última
+// zona frente al tope 40 del jugador — más de 5 veces su multiplicador de
+// stats). Se usa tanto para los mobs del camino (MOB_POWER_MULT, en
+// combat.js) como para el techo del escalado adaptativo del jefe
+// (bossAdaptiveMult, en state.js), así el jefe conserva margen para seguir
+// siendo más duro que su propio camino en las zonas más avanzadas.
+const LEVEL_CAP_ZONE_IDX = Math.floor((XP_LEVEL_CAP - 1) / STAGES_PER_ZONE);
+const LATE_ZONE_GROWTH_RATE = 0.35;
+function lateZoneMult(zoneIdx) {
+  const zonesPastCap = Math.max(0, zoneIdx - LEVEL_CAP_ZONE_IDX);
+  return zonesPastCap === 0 ? 1 : 1 + Math.sqrt(zonesPastCap) * LATE_ZONE_GROWTH_RATE;
+}
+
 // ---------- Torre Batalla ----------
 // Modo endgame: se desbloquea al completar el mapa entero (ver
 // mapFullyCleared en state.js), o antes con el ajuste de prueba de

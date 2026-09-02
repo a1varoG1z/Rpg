@@ -132,9 +132,11 @@ function buildEnemyBand(zoneIdx, stageIdx, bossExtraMult) {
   // imposibles por mucho que se invierta en equipo/rareza/estrellas (con
   // 33 zonas de 8 etapas, sin este tope el rival llegaba a nivel 264 frente
   // a un jugador tope 40 — más de 3 veces su multiplicador de stats en la
-  // última zona). A partir de aquí la dificultad la aporta solo la rareza
-  // creciente del pool de cada zona (ver ZONES), que ya escala de Común a
-  // Épico por su cuenta.
+  // última zona). El nivel tope se alcanza en la zona índice 4 (Ruinas
+  // Abisales) y la rareza del pool también tope en Épico desde la zona 6
+  // (Guarida del Dragón) — ambos ejes se quedan planos las ~28 zonas
+  // restantes, así que a partir de ahí la dificultad la retoma
+  // lateZoneMult (ver data.js), mucho más suave que la escalada por nivel.
   const level = Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalIdx));
   if (isBoss) {
     return { rows: [[makeBossUnit(zone.pool[2], level, bossExtraMult)]], isBoss, level };
@@ -145,7 +147,7 @@ function buildEnemyBand(zoneIdx, stageIdx, bossExtraMult) {
     const row = [];
     for (let i = 0; i < 3; i++) {
       const pick = zone.pool[Math.floor(Math.random() * Math.min(2, zone.pool.length))];
-      row.push(makeUnit('enemy', pick, level, MOB_POWER_MULT));
+      row.push(makeUnit('enemy', pick, level, MOB_POWER_MULT * lateZoneMult(zoneIdx)));
     }
     rows.push(row);
   }
