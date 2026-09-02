@@ -114,10 +114,30 @@ function gearIcon(gear, sizePx) {
   return img;
 }
 
+// Modos de ordenación por estadística: individuales + 'poder' (suma de las
+// 5, como medida "global"). variant decide qué cifras se usan para esos
+// modos: 'current' (nivel/estrellas/equipo actuales, vía fighterStats) o
+// 'base' (Nv.1 de fábrica, sin nada de eso — misma fórmula que el modo
+// "Base" de Comparar, vía baseCompareStats), para poder distinguir quién es
+// realmente mejor "de carta" de quién simplemente tiene más invertido.
+const STAT_SORT_MODES = ['poder', 'hp', 'atk', 'def', 'agi', 'wis'];
+function statsForSort(state, entry, variant) {
+  return variant === 'base' ? baseCompareStats(entry) : fighterStats(state, entry);
+}
+
 // mode: 'reciente' (orden de obtención, más nuevo primero), 'nombre',
-// 'familia', 'elemento', 'tier' (rareza, más alta primero), 'copias' (SEF).
-function sortRosterEntries(roster, mode) {
+// 'familia', 'elemento', 'tier' (rareza, más alta primero), 'copias' (SEF),
+// o uno de STAT_SORT_MODES (ver variant arriba).
+function sortRosterEntries(state, roster, mode, variant) {
   const list = [...roster];
+  if (STAT_SORT_MODES.includes(mode)) {
+    return list.sort((a, b) => {
+      const sa = statsForSort(state, a, variant), sb = statsForSort(state, b, variant);
+      const va = mode === 'poder' ? sa.hp + sa.atk + sa.def + sa.agi + sa.wis : sa[mode];
+      const vb = mode === 'poder' ? sb.hp + sb.atk + sb.def + sb.agi + sb.wis : sb[mode];
+      return vb - va;
+    });
+  }
   switch (mode) {
     case 'nombre':
       return list.sort((a, b) => fighterDef(a.defId).name.localeCompare(fighterDef(b.defId).name));
@@ -1200,16 +1220,23 @@ UI.renderChampionTrial = function (state, wrap) {
 UI.openChampionPicker = function (state) {
   const body = $('pickerModalBody');
   body.innerHTML = '<h3>⚔️ Elige tu luchador</h3><p class="settings-info">Se enfrentará solo, en duelos seguidos cada vez más difíciles.</p>';
+  const headerWrap = el('div');
   const listWrap = el('div');
-  let mode = UI.pickerSortMode;
+  let mode = UI.pickerSortMode, variant = UI.pickerStatVariant;
   const pick = (entry) => {
     state.champion.selectedUid = entry.uid;
     saveGame(state);
     $('pickerModal').classList.add('hidden');
     UI.renderTorre(state);
   };
-  const refresh = () => renderPickerCandidates(listWrap, state, state.roster, mode, pick);
-  body.appendChild(buildSortSelect(mode, (v) => { mode = v; UI.pickerSortMode = v; refresh(); }));
+  const refresh = () => renderPickerCandidates(listWrap, state, state.roster, mode, pick, variant);
+  const renderHeader = () => {
+    headerWrap.innerHTML = '';
+    headerWrap.appendChild(buildSortSelect(mode, (v) => { mode = v; UI.pickerSortMode = v; renderHeader(); refresh(); },
+      variant, (v) => { variant = v; UI.pickerStatVariant = v; renderHeader(); refresh(); }));
+  };
+  renderHeader();
+  body.appendChild(headerWrap);
   body.appendChild(listWrap);
   refresh();
   $('pickerModal').classList.remove('hidden');
@@ -1466,7 +1493,8 @@ UI.renderBanda = function (state) {
     : (filtered.length === 0 ? 'Ningún luchador coincide con el filtro.' : `Mostrando ${filtered.length} de ${state.roster.length}.`);
   const rGrid = $('rosterGrid');
   rGrid.innerHTML = '';
-  const sorted = sortRosterEntries(filtered, UI.rosterSortMode);
+  const sorted = sortRosterEntries(state, filtered, UI.rosterSortMode, UI.rosterStatVariant);
+  $('rosterStatVariantRow').classList.toggle('hidden', !STAT_SORT_MODES.includes(UI.rosterSortMode));
   const bandUids = state.band.flat().filter(Boolean);
   sorted.forEach(entry => {
     const card = creatureCard(state, entry, { inBand: bandUids.includes(entry.uid) });
@@ -1552,11 +1580,19 @@ function renderBulkActionBar(state) {
 // Usado por el picker de Formación (slot vacío) y por el panel de
 // "sustituir" dentro de la ficha de un luchador ya colocado.
 UI.pickerSortMode = 'reciente';
+UI.pickerStatVariant = 'current';
 const SORT_OPTIONS = [
   ['reciente', 'Más reciente'], ['nombre', 'Nombre'], ['familia', 'Familia'],
   ['elemento', 'Elemento'], ['tier', 'Tier'], ['copias', 'Más copias'],
+  ['poder', '⭐ Poder total'], ['hp', '❤️ Vida'], ['atk', '⚔️ Ataque'],
+  ['def', '🛡️ Defensa'], ['agi', '💨 Agilidad'], ['wis', '🧠 Sabiduría'],
 ];
-function buildSortSelect(currentMode, onChange) {
+// currentVariant/onVariantChange (opcionales): si se pasan, añade debajo el
+// toggle Actuales/Base que solo importa para los modos de STAT_SORT_MODES
+// (se muestra siempre por simplicidad, igual que en Comparar, pero no tiene
+// efecto en los demás modos de orden).
+function buildSortSelect(currentMode, onChange, currentVariant, onVariantChange) {
+  const wrap = el('div', null);
   const row = el('div', 'roster-sort-row');
   row.appendChild(el('label', null, 'Ordenar por'));
   const select = document.createElement('select');
@@ -1568,14 +1604,24 @@ function buildSortSelect(currentMode, onChange) {
   });
   select.addEventListener('change', (e) => onChange(e.target.value));
   row.appendChild(select);
-  return row;
+  wrap.appendChild(row);
+  if (onVariantChange) {
+    const variantRow = el('div', 'compare-mode-row');
+    const curBtn = el('button', 'mini-btn' + (currentVariant !== 'base' ? ' active' : ''), 'Actuales');
+    curBtn.addEventListener('click', () => onVariantChange('current'));
+    const baseBtn = el('button', 'mini-btn' + (currentVariant === 'base' ? ' active' : ''), 'Base (Nv.1, sin equipo)');
+    baseBtn.addEventListener('click', () => onVariantChange('base'));
+    variantRow.appendChild(curBtn); variantRow.appendChild(baseBtn);
+    wrap.appendChild(variantRow);
+  }
+  return wrap;
 }
-function renderPickerCandidates(container, state, candidates, mode, onPick) {
+function renderPickerCandidates(container, state, candidates, mode, onPick, variant) {
   container.innerHTML = '';
   if (candidates.length === 0) { container.appendChild(el('div', 'empty-hint', 'No hay luchadores disponibles.')); return; }
   const grid = el('div', 'picker-grid');
   const bandUids = state.band.flat().filter(Boolean);
-  sortRosterEntries(candidates, mode).forEach(entry => {
+  sortRosterEntries(state, candidates, mode, variant).forEach(entry => {
     const card = creatureCard(state, entry, { inBand: bandUids.includes(entry.uid) });
     card.addEventListener('click', () => onPick(entry));
     grid.appendChild(card);
@@ -1588,14 +1634,21 @@ UI.openFormationPicker = function (state, row, col) {
   if (uid) { UI.openFighterModal(state, uid, { row, col }); return; }
   const body = $('pickerModalBody');
   body.innerHTML = '<h3>Elegir luchador</h3>';
+  const headerWrap = el('div');
   const listWrap = el('div');
-  let mode = UI.pickerSortMode;
+  let mode = UI.pickerSortMode, variant = UI.pickerStatVariant;
   const pick = (entry) => { setBandSlot(state, row, col, entry.uid); saveGame(state); $('pickerModal').classList.add('hidden'); UI.renderBanda(state); };
   const refresh = () => {
     const placed = state.band.flat();
-    renderPickerCandidates(listWrap, state, state.roster.filter(e => !placed.includes(e.uid)), mode, pick);
+    renderPickerCandidates(listWrap, state, state.roster.filter(e => !placed.includes(e.uid)), mode, pick, variant);
   };
-  body.appendChild(buildSortSelect(mode, (v) => { mode = v; UI.pickerSortMode = v; refresh(); }));
+  const renderHeader = () => {
+    headerWrap.innerHTML = '';
+    headerWrap.appendChild(buildSortSelect(mode, (v) => { mode = v; UI.pickerSortMode = v; renderHeader(); refresh(); },
+      variant, (v) => { variant = v; UI.pickerStatVariant = v; renderHeader(); refresh(); }));
+  };
+  renderHeader();
+  body.appendChild(headerWrap);
   body.appendChild(listWrap);
   refresh();
   $('pickerModal').classList.remove('hidden');
@@ -1819,8 +1872,9 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     });
     fPanel.appendChild(removeBtn);
     fPanel.appendChild(el('p', 'settings-info', 'Sustituir por:'));
+    const subHeaderWrap = el('div');
     const subWrap = el('div');
-    let subMode = UI.pickerSortMode;
+    let subMode = UI.pickerSortMode, subVariant = UI.pickerStatVariant;
     const placed = state.band.flat();
     const candidates = () => state.roster.filter(e => e.uid !== uid && !placed.includes(e.uid));
     const subPick = (cand) => {
@@ -1829,9 +1883,17 @@ UI.openFighterModal = function (state, uid, formationCtx) {
       $('fighterModal').classList.add('hidden');
       UI.renderBanda(state);
     };
-    fPanel.appendChild(buildSortSelect(subMode, (v) => { subMode = v; UI.pickerSortMode = v; renderPickerCandidates(subWrap, state, candidates(), subMode, subPick); }));
+    const renderSubHeader = () => {
+      subHeaderWrap.innerHTML = '';
+      subHeaderWrap.appendChild(buildSortSelect(subMode,
+        (v) => { subMode = v; UI.pickerSortMode = v; renderSubHeader(); renderPickerCandidates(subWrap, state, candidates(), subMode, subPick, subVariant); },
+        subVariant,
+        (v) => { subVariant = v; UI.pickerStatVariant = v; renderSubHeader(); renderPickerCandidates(subWrap, state, candidates(), subMode, subPick, subVariant); }));
+    };
+    renderSubHeader();
+    fPanel.appendChild(subHeaderWrap);
     fPanel.appendChild(subWrap);
-    renderPickerCandidates(subWrap, state, candidates(), subMode, subPick);
+    renderPickerCandidates(subWrap, state, candidates(), subMode, subPick, subVariant);
     body.appendChild(fPanel);
   }
 
@@ -1849,11 +1911,18 @@ UI.openComparePicker = function (state, uid) {
   const body = $('pickerModalBody');
   body.innerHTML = `<h3>🆚 Comparar con...</h3>
     <p class="settings-info">Elige el segundo luchador — se compararán sus estadísticas totales (con equipo puesto) lado a lado.</p>`;
+  const headerWrap = el('div');
   const listWrap = el('div');
-  let mode = UI.pickerSortMode;
+  let mode = UI.pickerSortMode, variant = UI.pickerStatVariant;
   const pick = (entry) => UI.showCompare(state, uid, entry.uid);
-  const refresh = () => renderPickerCandidates(listWrap, state, state.roster.filter(e => e.uid !== uid), mode, pick);
-  body.appendChild(buildSortSelect(mode, (v) => { mode = v; UI.pickerSortMode = v; refresh(); }));
+  const refresh = () => renderPickerCandidates(listWrap, state, state.roster.filter(e => e.uid !== uid), mode, pick, variant);
+  const renderHeader = () => {
+    headerWrap.innerHTML = '';
+    headerWrap.appendChild(buildSortSelect(mode, (v) => { mode = v; UI.pickerSortMode = v; renderHeader(); refresh(); },
+      variant, (v) => { variant = v; UI.pickerStatVariant = v; renderHeader(); refresh(); }));
+  };
+  renderHeader();
+  body.appendChild(headerWrap);
   body.appendChild(listWrap);
   refresh();
   $('pickerModal').classList.remove('hidden');

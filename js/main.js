@@ -14,8 +14,21 @@
   document.body.classList.toggle('hide-medallion', !state.settings.showMedallion);
 
   UI.rosterSortMode = 'reciente';
+  UI.rosterStatVariant = 'current';
   $('rosterSortSelect').addEventListener('change', (e) => {
     UI.rosterSortMode = e.target.value;
+    UI.renderBanda(state);
+  });
+  $('rosterStatVariantCurrentBtn').addEventListener('click', () => {
+    UI.rosterStatVariant = 'current';
+    $('rosterStatVariantCurrentBtn').classList.add('active');
+    $('rosterStatVariantBaseBtn').classList.remove('active');
+    UI.renderBanda(state);
+  });
+  $('rosterStatVariantBaseBtn').addEventListener('click', () => {
+    UI.rosterStatVariant = 'base';
+    $('rosterStatVariantBaseBtn').classList.add('active');
+    $('rosterStatVariantCurrentBtn').classList.remove('active');
     UI.renderBanda(state);
   });
   $('rosterFilterElement').addEventListener('change', (e) => { UI.rosterFilter.element = e.target.value; UI.renderBanda(state); });

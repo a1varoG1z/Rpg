@@ -2358,6 +2358,35 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     9,98% / 2,96% / 1,03% en la repetición (ajustado a los porcentajes
     pedidos), primera vez sin cambios.
 
+- [x] **Ordenar criaturas por stats individuales y por stat global, de
+    carta base y de actual**. Pedido: poder ordenar la Colección por
+    HP/Ataque/Defensa/Agilidad/Sabiduría por separado y por un "poder"
+    global (suma de las 5), y elegir si esas cifras son las ACTUALES
+    (nivel/estrellas/equipo puestos, vía `fighterStats`) o las de BASE
+    (Nv.1 de fábrica, sin nada de eso — misma fórmula que el modo "Base" ya
+    existente en Comparar, vía `buildUnitStats`/`baseCompareStats`).
+    Implementación: `sortRosterEntries(state, roster, mode, variant)`
+    ahora acepta 6 modos nuevos (`poder`, `hp`, `atk`, `def`, `agi`, `wis`)
+    además de los 6 ya existentes, y un `variant` ('current'/'base') que
+    solo afecta a esos 6. En Colección (`#rosterSortSelect`) se añadieron
+    esas 6 opciones al desplegable, más un toggle Actuales/Base
+    (`#rosterStatVariantRow`, reutilizando el mismo patrón visual
+    `.compare-mode-row` de Comparar) que solo se muestra cuando el modo de
+    orden activo es uno de stat. La misma extensión se aplicó al selector
+    compartido de los pickers (`SORT_OPTIONS`/`buildSortSelect`, usado al
+    elegir hueco de Formación, sustituir un luchador colocado, elegir
+    campeón de Retos y elegir el segundo luchador de Comparar) para que
+    también se pueda ordenar por poder/stat ahí, con su propio toggle
+    Actuales/Base (`UI.pickerStatVariant`, independiente del de Colección).
+    Verificado con Playwright: el orden real de las tarjetas en pantalla
+    coincide exactamente con `sortRosterEntries` para 'poder' (actual y
+    base) y para 'hp'; alternar a Base cambia el orden respecto a Actuales
+    en un roster con niveles/estrellas/equipo variados; el toggle
+    Actuales/Base se oculta en modos no numéricos (p. ej. 'tier') y
+    reaparece en modos de stat; en el picker de Formación, el desplegable
+    incluye las nuevas opciones y el toggle Base/Actuales funciona
+    (cambia la clase `active` correctamente tras reconstruir el panel).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
