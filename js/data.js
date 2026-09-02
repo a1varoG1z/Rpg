@@ -974,6 +974,9 @@ const OBJECTIVES = [
   { id: 'torre_1', icon: '🗼', label: 'Supera tu primer nivel de la Torre Batalla', reward: rT(150), get: (st) => Object.values(st.torre.clears).filter(v => v > 0).length, target: 1 },
   { id: 'torre_10', icon: '🗼', label: 'Supera 10 niveles distintos de la Torre Batalla', reward: rG(35), get: (st) => Object.values(st.torre.clears).filter(v => v > 0).length, target: 10 },
   { id: 'torre_20', icon: '🗼', label: 'Supera 20 niveles distintos de la Torre Batalla', reward: rG(70), get: (st) => Object.values(st.torre.clears).filter(v => v > 0).length, target: 20 },
+  { id: 'roguelike_5', icon: '🌀', label: 'Alcanza la ronda 5 del Roguelike', reward: rT(200), get: (st) => st.roguelike.bestRound, target: 5 },
+  { id: 'roguelike_15', icon: '🌀', label: 'Alcanza la ronda 15 del Roguelike', reward: rG(40), get: (st) => st.roguelike.bestRound, target: 15 },
+  { id: 'roguelike_30', icon: '🌀', label: 'Alcanza la ronda 30 del Roguelike', reward: rG(85), get: (st) => st.roguelike.bestRound, target: 30 },
 
   // --- Homúnculos ---
   { id: 'homunculos_5', icon: '🧪', label: 'Consigue 5 Homúnculos', reward: rI('pocion_menor', 2), get: (st, s) => s.homunculosTotal, target: 5 },

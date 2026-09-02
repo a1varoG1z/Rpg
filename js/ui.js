@@ -339,7 +339,8 @@ UI.openObjectives = function (state) {
   combatPanel.innerHTML = `<h3>⚔️ Combate</h3>
     <div class="stat-row"><span>Victorias totales</span><span>${s.battlesWon}</span></div>
     <div class="stat-row"><span>Rango de Arena actual</span><span>${s.arenaRank}</span></div>
-    <div class="stat-row"><span>Mejor rango de Arena</span><span>${s.arenaBestRank}</span></div>`;
+    <div class="stat-row"><span>Mejor rango de Arena</span><span>${s.arenaBestRank}</span></div>
+    <div class="stat-row"><span>Mejor ronda de Roguelike</span><span>${s.roguelikeBestRound}</span></div>`;
   body.appendChild(combatPanel);
 
   const historyPanel = el('div', 'panel');
@@ -1160,36 +1161,43 @@ UI.renderTorre = function (state) {
       <p class="settings-info">Se desbloquea al completar el mapa entero: derrota al jefe de las
       ${ZONES.length} zonas. Progreso actual: ${cleared}/${ZONES.length} jefes de zona derrotados.</p>
       <p class="settings-info">También puedes activarla ya para probarla desde Ajustes → "Torre Batalla (modo de prueba)".</p>`));
-    return;
-  }
-  wrap.appendChild(el('h3', null, '🗼 Torre Batalla'));
-  wrap.appendChild(el('p', 'settings-info', `Un nivel por cada mob y cada jefe del juego. Enfréntate
-    a su forma más fuerte repetida varias veces — ganar da 1 copia del tier más bajo de esa familia
-    (o del jefe) para tu Colección, jugable igual que cualquier otro luchador. Los niveles son
-    rejugables para conseguir más copias.`));
+  } else {
+    wrap.appendChild(el('h3', null, '🗼 Torre Batalla'));
+    wrap.appendChild(el('p', 'settings-info', `Un nivel por cada mob y cada jefe del juego. Enfréntate
+      a su forma más fuerte repetida varias veces — ganar da 1 copia del tier más bajo de esa familia
+      (o del jefe) para tu Colección, jugable igual que cualquier otro luchador. Los niveles son
+      rejugables para conseguir más copias.`));
 
-  const renderSection = (title, kind) => {
-    wrap.appendChild(el('h3', null, title));
-    const list = el('div', 'torre-list');
-    TORRE_LEVELS.forEach((level, idx) => {
-      if (level.kind !== kind) return;
-      const unlocked = isTorreLevelUnlocked(state, idx);
-      const clears = torreClearCount(state, level);
-      const row = el('div', 'torre-row' + (unlocked ? '' : ' locked'));
-      row.appendChild(creatureCanvas(level.fightDefId, 40));
-      const info = el('div', 'torre-row-info');
-      info.appendChild(el('div', 'torre-row-name', torreLevelLabel(level)));
-      info.appendChild(el('div', 'torre-row-sub', unlocked
-        ? `Nv. ${level.enemyLevel} · ×${level.enemyCount}${clears > 0 ? ' · superado ' + clears + 'x' : ''}`
-        : '🔒 Supera el nivel anterior'));
-      row.appendChild(info);
-      if (unlocked) row.addEventListener('click', () => UI.startTorreLevel(state, idx));
-      list.appendChild(row);
-    });
-    wrap.appendChild(list);
-  };
-  renderSection('👹 Mobs', 'mob');
-  renderSection('👑 Jefes', 'boss');
+    const renderSection = (title, kind) => {
+      wrap.appendChild(el('h3', null, title));
+      const list = el('div', 'torre-list');
+      TORRE_LEVELS.forEach((level, idx) => {
+        if (level.kind !== kind) return;
+        const unlocked = isTorreLevelUnlocked(state, idx);
+        const clears = torreClearCount(state, level);
+        const row = el('div', 'torre-row' + (unlocked ? '' : ' locked'));
+        row.appendChild(creatureCanvas(level.fightDefId, 40));
+        const info = el('div', 'torre-row-info');
+        info.appendChild(el('div', 'torre-row-name', torreLevelLabel(level)));
+        info.appendChild(el('div', 'torre-row-sub', unlocked
+          ? `Nv. ${level.enemyLevel} · ×${level.enemyCount}${clears > 0 ? ' · superado ' + clears + 'x' : ''}`
+          : '🔒 Supera el nivel anterior'));
+        row.appendChild(info);
+        if (unlocked) row.addEventListener('click', () => UI.startTorreLevel(state, idx));
+        list.appendChild(row);
+      });
+      wrap.appendChild(list);
+    };
+    renderSection('👹 Mobs', 'mob');
+    renderSection('👑 Jefes', 'boss');
+  }
+
+  // Se renderiza SIEMPRE (con su propio panel de "bloqueado" si hace
+  // falta), igual que Prueba del Campeón/Mazmorra Elemental más arriba —
+  // si no, cuando la Torre Batalla en sí está bloqueada (el caso normal
+  // durante la mayor parte de la partida) esta sección entera desaparecía
+  // sin más, en vez de mostrarse como "bloqueado hasta terminar la Torre".
+  UI.renderRoguelike(state, wrap);
 };
 
 UI.startTorreLevel = function (state, idx) {
@@ -1210,6 +1218,140 @@ UI.startTorreLevel = function (state, idx) {
     encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {},
   };
   UI.renderStageRun(state);
+};
+
+// ---------- Roguelike ----------
+// Extensión de la Torre Batalla para cuando ya se ha superado del todo —
+// una única fila rival por ronda (como la Prueba del Campeón, pero con la
+// Formación entera y sus 8 líneas en vez de un solo luchador), sin curarse
+// entre rondas y con dificultad sin techo (ver buildRoguelikeEnemyRow en
+// combat.js — a propósito, como Arena: la gracia es ver hasta dónde se
+// llega). Entre ronda y ronda se elige un bono (ver ROGUELIKE_BOONS en
+// combat.js) que se queda para el resto de la run. Termina al perder (no
+// afecta a la Colección, solo a esta run) — se guarda la mejor ronda.
+UI.renderRoguelike = function (state, wrap) {
+  wrap.appendChild(el('h3', null, '🌀 Roguelike'));
+  if (!roguelikeUnlocked(state)) {
+    const cleared = Object.values(state.torre.clears).filter(v => v > 0).length;
+    wrap.appendChild(el('div', 'panel', `
+      <h3>🔒 Roguelike bloqueado</h3>
+      <p class="settings-info">Se desbloquea al superar los ${TORRE_LEVELS.length} niveles de la Torre
+      Batalla al menos una vez. Progreso actual: ${cleared}/${TORRE_LEVELS.length}.</p>
+      <p class="settings-info">También puedes activarlo ya para probarlo desde Ajustes → "Roguelike
+      (modo de prueba)".</p>`));
+    return;
+  }
+  const panel = el('div', 'panel');
+  panel.innerHTML = `<p class="settings-info">Rondas sin fin, cada vez más difíciles, sin curarte entre
+    ellas — pierdes y se acaba la run (tu Colección no se ve afectada). Entre ronda y ronda eliges un
+    bono que se queda contigo para el resto de la run.</p>
+    <div class="stat-row"><span>Mejor ronda alcanzada</span><span>${state.roguelike.bestRound}</span></div>`;
+  const startBtn = el('button', 'primary-btn', '🌀 Empezar run');
+  startBtn.addEventListener('click', () => UI.startRoguelikeRun(state));
+  panel.appendChild(startBtn);
+  wrap.appendChild(panel);
+};
+
+UI.startRoguelikeRun = function (state) {
+  if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
+  if (!state.settings.infiniteEnergy) {
+    if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+    state.currencies.energy -= STAGE_ENERGY_COST;
+    saveGame(state);
+    UI.renderTopbar(state);
+  }
+  window.__championRun = null;
+  window.__stageRun = null;
+  window.__roguelikeRun = { round: 1, hpMap: {}, chargeMap: {}, faintedSet: new Set(), buffs: {} };
+  UI.fightRoguelikeRound(state);
+};
+
+UI.fightRoguelikeRound = function (state) {
+  const run = window.__roguelikeRun;
+  const enemyRow = buildRoguelikeEnemyRow(run.round);
+  const playerCombos = buildPlayerCombinations(state);
+  // Mismo patrón de persistencia entre combates que un recorrido de etapa
+  // (ver UI.fightStageRunNode): ni la vida ni la carga de ulti se
+  // restablecen de una ronda a otra, y los bonos elegidos (run.buffs) se
+  // aplican de cero cada vez sobre las stats ya recalculadas.
+  playerCombos.forEach(row => row.forEach(u => {
+    if (!u.sourceUid) return;
+    if (run.faintedSet.has(u.sourceUid)) { u.hp = 0; u.alive = false; }
+    else if (run.hpMap[u.sourceUid] !== undefined) u.hp = Math.min(u.maxHp, run.hpMap[u.sourceUid]);
+    if (run.chargeMap[u.sourceUid] !== undefined) u.ultCharge = run.chargeMap[u.sourceUid];
+    applyRoguelikeBuffs(u, run.buffs);
+  }));
+  UI.openBattle(state, playerCombos, [enemyRow], {
+    title: '🌀 Roguelike · Ronda ' + run.round,
+    zone: { id: 'roguelike', color: '#241a33' },
+    onEnd: (result, view) => {
+      if (view) {
+        view.playerGroups.forEach(g => g.row.forEach(u => {
+          if (!u.sourceUid) return;
+          run.hpMap[u.sourceUid] = u.hp;
+          run.chargeMap[u.sourceUid] = u.ultCharge;
+          if (u.alive) run.faintedSet.delete(u.sourceUid); else run.faintedSet.add(u.sourceUid);
+        }));
+      }
+      if (result !== 'victoria') {
+        const roundsCleared = run.round - 1;
+        recordRoguelikeRun(state, roundsCleared);
+        window.__roguelikeRun = null;
+        saveGame(state);
+        return { roguelikeDefeat: true, roundsCleared, bestRound: state.roguelike.bestRound };
+      }
+      const clearedRound = run.round;
+      const rewards = roguelikeRoundRewards(clearedRound);
+      state.currencies.texel += rewards.texel;
+      const leveled = [];
+      state.band.flat().filter(Boolean).forEach(uid => {
+        const entry = rosterEntry(state, uid);
+        if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
+      });
+      recordRoguelikeRun(state, clearedRound);
+      run.pendingBoon = true;
+      saveGame(state);
+      return { rewards, leveled, roguelikeContinue: true, roundsCleared: clearedRound };
+    },
+  });
+};
+
+UI.openRoguelikeBoonPicker = function (state) {
+  const run = window.__roguelikeRun;
+  const body = $('pickerModalBody');
+  body.innerHTML = `<h3>🌀 Elige un bono — Ronda ${run.round + 1}</h3>
+    <p class="settings-info">Se queda para el resto de esta run.</p>`;
+  const options = [...ROGUELIKE_BOONS].sort(() => Math.random() - 0.5).slice(0, 3);
+  options.forEach(boon => {
+    const btn = el('button', 'primary-btn', boon.icon + ' ' + boon.label);
+    btn.style.display = 'block';
+    btn.style.width = '100%';
+    btn.style.marginBottom = '8px';
+    btn.addEventListener('click', () => {
+      if (boon.id === 'heal') {
+        state.band.flat().filter(Boolean).forEach(uid => {
+          const entry = rosterEntry(state, uid);
+          const stats = fighterStats(state, entry);
+          if (run.faintedSet.has(uid)) {
+            run.faintedSet.delete(uid);
+            run.hpMap[uid] = Math.round(stats.hp * 0.3);
+          } else {
+            const current = run.hpMap[uid] !== undefined ? run.hpMap[uid] : stats.hp;
+            run.hpMap[uid] = Math.min(stats.hp, current + Math.round(stats.hp * 0.5));
+          }
+        });
+      } else if (boon.id === 'ult') {
+        state.band.flat().filter(Boolean).forEach(uid => { if (!run.faintedSet.has(uid)) run.chargeMap[uid] = 100; });
+      } else {
+        run.buffs[boon.stat] = (run.buffs[boon.stat] || 0) + boon.pct;
+      }
+      run.round++;
+      $('pickerModal').classList.add('hidden');
+      UI.fightRoguelikeRound(state);
+    });
+    body.appendChild(btn);
+  });
+  $('pickerModal').classList.remove('hidden');
 };
 
 // ---------- Prueba del Campeón ----------
@@ -3172,6 +3314,15 @@ UI.endBattle = function (view, result) {
     }
   } else if (outcome && outcome.championDefeat) {
     html = `<h3>💀 Fin de la Prueba</h3><p class="settings-info">Caíste en el duelo ${outcome.duelsWon + 1}, tras ganar ${outcome.duelsWon}. Mejor racha: ${view.state.champion.bestStreak}.</p>`;
+  } else if (outcome && outcome.roguelikeContinue) {
+    html = `<h3>🌀 ¡Ronda ${outcome.roundsCleared} superada!</h3><p class="settings-info">Sigues sin curarte a la siguiente ronda. Elige un bono al continuar.</p>`;
+    if (outcome.rewards) {
+      html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>
+        <div class="stat-row"><span>⭐ XP</span><span>+${outcome.rewards.fighterXp}</span></div>`;
+    }
+    if (outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
+  } else if (outcome && outcome.roguelikeDefeat) {
+    html = `<h3>💀 Fin de la run</h3><p class="settings-info">Caíste en la ronda ${outcome.roundsCleared + 1}, tras superar ${outcome.roundsCleared}. Mejor ronda: ${outcome.bestRound}.</p>`;
   } else if (outcome && outcome.wagerWon !== undefined) {
     html = `<h3>🏆 ¡Apuesta ganada!</h3><div class="stat-row"><span>🪙 Texel</span><span>+${outcome.wagerWon}</span></div>`;
   } else if (outcome && outcome.wagerLost !== undefined) {

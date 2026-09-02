@@ -41,7 +41,7 @@ function createNewState() {
       totalDmgDealt: 0, totalDmgReceived: 0, totalHealDone: 0,
       totalTexelEarned: 0, totalFighterXpEarned: 0, highestSingleHit: 0,
     },
-    settings: { infiniteEnergy: false, showMedallion: true, enableTorreBatalla: false, enableElementalDungeon: false },
+    settings: { infiniteEnergy: false, showMedallion: true, enableTorreBatalla: false, enableElementalDungeon: false, enableRoguelike: false },
     // Torre Batalla: cuántas veces se ha superado cada nivel (clave =
     // level.key de TORRE_LEVELS en data.js) — 0/ausente = nivel no
     // superado todavía (y por tanto el siguiente sigue bloqueado).
@@ -54,6 +54,10 @@ function createNewState() {
     // Prueba del Campeón: luchador elegido para los duelos 1 contra 1 y la
     // mejor racha (duelos ganados seguidos) conseguida hasta ahora.
     champion: { selectedUid: null, bestStreak: 0 },
+    // Roguelike: mejor ronda alcanzada (una "run" en sí — window.__roguelikeRun,
+    // ver ui.js — vive solo en memoria, como window.__championRun, así que no
+    // sobrevive a un recargo de página; solo se guarda el récord).
+    roguelike: { bestRound: 0 },
     // Mercader Itinerante: la clave (fecha) de la última oferta ya
     // canjeada, para no poder repetirla hasta que cambie la oferta del día.
     merchant: { lastRedeemedKey: null },
@@ -546,6 +550,20 @@ function recordChampionStreak(state, duelsWon) {
   if (duelsWon > state.champion.bestStreak) state.champion.bestStreak = duelsWon;
 }
 
+// --- Roguelike (ver buildRoguelikeEnemyRow en combat.js) ---
+// Extensión de la Torre Batalla para cuando ya se ha superado del todo (66
+// niveles fijos) — un modo survival sin fin, con dificultad creciente sin
+// tope (a propósito, como Arena: la gracia es ver hasta dónde se puede
+// llegar, no que sea siempre superable — ver la auditoría de dificultad en
+// TODO.md) y bonos elegidos a mano entre ronda y ronda que sí se quedan
+// para el resto de la run.
+function roguelikeUnlocked(state) {
+  return !!state.settings.enableRoguelike || TORRE_LEVELS.every(level => torreClearCount(state, level) > 0);
+}
+function recordRoguelikeRun(state, roundsCleared) {
+  if (roundsCleared > state.roguelike.bestRound) state.roguelike.bestRound = roundsCleared;
+}
+
 // --- Mercader Itinerante (ver merchantOffer en data.js) ---
 function merchantOfferRedeemedToday(state) { return state.merchant.lastRedeemedKey === merchantOffer().key; }
 
@@ -620,6 +638,7 @@ function objectivesSummary(state) {
     totalHealDone: state.stats.totalHealDone, highestSingleHit: state.stats.highestSingleHit,
     totalTexelEarned: state.stats.totalTexelEarned, totalFighterXpEarned: state.stats.totalFighterXpEarned,
     arenaRank: state.arena.rank, arenaBestRank: state.arena.bestRank,
+    roguelikeBestRound: state.roguelike.bestRound,
     gearOwned: state.gearInventory.length, gearMax: MAX_GEAR,
     homunculosTotal: state.homunculos.homunculo_t1 + state.homunculos.homunculo_t2 + state.homunculos.homunculo_t3,
   };
@@ -683,12 +702,14 @@ function migrateState(state) {
     if (state.settings.showMedallion === undefined) state.settings.showMedallion = true;
     if (state.settings.enableTorreBatalla === undefined) state.settings.enableTorreBatalla = false;
     if (state.settings.enableElementalDungeon === undefined) state.settings.enableElementalDungeon = false;
+    if (state.settings.enableRoguelike === undefined) state.settings.enableRoguelike = false;
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     if (!state.homunculos) state.homunculos = { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 };
     if (!state.torre) state.torre = { clears: {} };
     if (!state.elementalTeams) state.elementalTeams = { fuego: [], viento: [], tierra: [], rayo: [], agua: [] };
     if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
     if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };
+    if (!state.roguelike) state.roguelike = { bestRound: 0 };
     if (!state.merchant) state.merchant = { lastRedeemedKey: null };
     if (!state.objectivesClaimed) state.objectivesClaimed = [];
     if (!state.progress.daysPlayed) state.progress.daysPlayed = [];

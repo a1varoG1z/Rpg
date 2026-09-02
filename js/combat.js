@@ -356,6 +356,61 @@ function championDuelRewards(duelIdx) {
   return { texel: Math.round(30 + duelIdx * 10), fighterXp: Math.round(20 + duelIdx * 8) };
 }
 
+// ---------- Roguelike (Retos) ----------
+// Rival de una ronda: mismo patrón de rareza creciente que buildArenaBand/
+// buildChampionOpponent (nivel y rareza sin techo — es survival, la gracia
+// es ver hasta dónde se llega), pero como fila de hasta 3 a la vez (no 1
+// contra 1 como la Prueba del Campeón) para que la Formación completa y sus
+// 8 líneas también importen aquí. El número de rivales por ronda crece
+// igual que el nº de oleadas de una etapa avanzada del Mapa.
+function buildRoguelikeEnemyRow(round) {
+  const level = Math.max(1, Math.round(round * 2));
+  const legendaryChance = Math.min(0.4, round * 0.02);
+  const epicChance = Math.min(0.3, round * 0.025);
+  const count = round < 3 ? 1 : (round < 6 ? 2 : 3);
+  const row = [];
+  for (let i = 0; i < count; i++) {
+    const roll = Math.random();
+    const pool = roll < legendaryChance
+      ? FIGHTERS.filter(f => f.rarity === 'legendario')
+      : roll < legendaryChance + epicChance
+        ? FIGHTERS.filter(f => f.rarity === 'epico')
+        : FIGHTERS.filter(f => f.rarity === 'comun' || f.rarity === 'infrecuente' || f.rarity === 'raro');
+    const def = pool[Math.floor(Math.random() * pool.length)];
+    row.push(makeUnit('enemy', def.id, level));
+  }
+  return row;
+}
+function roguelikeRoundRewards(round) {
+  return { texel: Math.round(35 + round * 9), fighterXp: Math.round(18 + round * 6) };
+}
+
+// Bonos elegidos entre ronda y ronda (ver UI.openRoguelikeBoonPicker) —
+// porcentajes ACUMULADOS de toda la run (no por ronda), aplicados de cero
+// cada vez sobre las stats ya recalculadas de ese luchador (fighterStats),
+// así que nunca se componen entre sí (dos bonos de +15% ataque dan +30%
+// total, no +32,25%). El de vida también reescala el HP actual en la misma
+// proporción para no perder ni ganar % de vida restante solo por subir el
+// bono a mitad de combate.
+const ROGUELIKE_BOONS = [
+  { id: 'atk', icon: '⚔️', label: '+15% Ataque', stat: 'atk', pct: 0.15 },
+  { id: 'def', icon: '🛡️', label: '+15% Defensa', stat: 'def', pct: 0.15 },
+  { id: 'hp', icon: '❤️', label: '+20% Vida máxima', stat: 'hp', pct: 0.20 },
+  { id: 'agi', icon: '💨', label: '+15% Agilidad', stat: 'agi', pct: 0.15 },
+  { id: 'wis', icon: '🧠', label: '+15% Sabiduría', stat: 'wis', pct: 0.15 },
+  { id: 'heal', icon: '💚', label: 'Cura al 50% a toda la banda y revive a un caído', instant: true },
+  { id: 'ult', icon: '⚡', label: 'Ulti lista para todos en la próxima ronda', instant: true },
+];
+function applyRoguelikeBuffs(u, buffs) {
+  if (!buffs) return;
+  ['atk', 'def', 'agi', 'wis'].forEach(k => { if (buffs[k]) u[k] = Math.round(u[k] * (1 + buffs[k])); });
+  if (buffs.hp) {
+    const pctLeft = u.hp / u.maxHp;
+    u.maxHp = Math.round(u.maxHp * (1 + buffs.hp));
+    u.hp = Math.round(u.maxHp * pctLeft);
+  }
+}
+
 // --- Motor de turnos ---
 function elementDamageMult(a, d) { return elementMultiplier(a, d); }
 

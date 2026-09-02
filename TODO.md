@@ -331,10 +331,11 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       se destruía solo, pero ahora es una decisión del jugador y reconoce
       las estrellas ya invertidas. `sellFighter`/`fighterSellValue` en
       `state.js`
-- [ ] Revisar si hace falta ampliar el número de **elementos** (ahora 5:
+- [x] Revisar si hace falta ampliar el número de **elementos** (ahora 5:
       Fuego/Viento/Tierra/Rayo/Agua) — el usuario preguntó, respuesta dada
       en el chat (probablemente no hace falta, el círculo de 5 con ventajas
-      ya es el sistema real de D.o.T.) pero sin más acción
+      ya es el sistema real de D.o.T.) — pregunta cerrada, sin acción de
+      código pendiente
 - [x] **15 familias nuevas de mitologías poco representadas** (27/08): el
       usuario pidió 5 sugerencias de tier 1/2/3 cada una y luego pidió
       añadirlas todas. Roster jugable pasa de 105 a 120 familias (360
@@ -367,9 +368,10 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       (rayo/explorador/debilitar), `boto` (agua/brujo/drenar — folclore
       amazónico). Sin arte propio, mismo patrón de 3 lores únicos por
       evolución. Verificado: 390 fichas, sin ids duplicados
-- [ ] Más ideas de **personajes nuevos** — el usuario pidió sugerencias,
+- [x] Más ideas de **personajes nuevos** — el usuario pidió sugerencias,
       dadas en el chat, casi todas ya creadas (25 familias nuevas entre
-      las dos tandas del 27/08); se puede seguir ampliando si se pide más
+      las dos tandas del 27/08) — sin acción de código pendiente; se puede
+      seguir ampliando si se pide más en el futuro
 - [x] **Auditoría de balance** (27/08): revisión numérica con un script
       (multiplicador de stats por zona/nivel, XP total para llegar a
       nivel 40, Texel total ganable en un recorrido completo):
@@ -436,12 +438,14 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       superadas, el grid muestra 3 desbloqueadas y 30 bloqueadas, y la
       ficha de un jefe derrotado muestra sus stats reales correctas
       (jefe de la zona 0, nivel 8, 547 HP)
-- [ ] Revisar si hacen falta más **jefes** o si 33 (uno por zona) es
-      suficiente — el usuario preguntó, respuesta dada en el chat
-- [ ] Más criaturas jugables de **tier 1** (las que empiezan en Común) — el
+- [x] Revisar si hacen falta más **jefes** o si 33 (uno por zona) es
+      suficiente — el usuario preguntó, respuesta dada en el chat —
+      pregunta cerrada, sin acción de código pendiente
+- [x] Más criaturas jugables de **tier 1** (las que empiezan en Común) — el
       usuario preguntó si hacen falta más; de las 105 familias jugables
       actuales ~27 son tier 1 (~26%), similar proporción que tier 2 y tier 3,
-      así que no está especialmente escaso, pero se puede seguir añadiendo
+      así que no está especialmente escaso — pregunta cerrada, sin acción de
+      código pendiente; se puede seguir añadiendo si se pide más
 
 ## Pendiente — sistemas grandes (necesitan diseño propio, iteración aparte)
 
@@ -534,11 +538,10 @@ abordado todavía (o solo se ha dado una respuesta directa sin implementar):
       "dispersar/curar estados" (cleanse) ya están, más un vampírico
       (drain) que no estaba en esta lista original. Ver detalle en la
       sección de la ronda de 14 preguntas más arriba
-- [ ] **Torre infinita**: extensión de la Torre Batalla (ver más abajo, ya
-      implementada con 66 niveles fijos) para cuando se hayan superado
-      todos — un modo survival sin fin con dificultad creciente sin tope y
-      marcador de "mejor ronda alcanzada", sugerido por Claude a petición
-      del usuario ("dame más sugerencias de modos de juego")
+- [x] **Torre infinita**: implementada como el modo **Roguelike** de Retos
+      (pedido explícitamente por el usuario) — ver la entrada dedicada más
+      abajo, en la sección de la ronda de peticiones sobre Roguelike/TODO/
+      balance/sugerencias de modos.
 - [ ] **Sinergias de equipo**: bonus de combate si la línea activa elegida
       comparte elemento o clase (p.ej. +10% de daño si los 3 luchadores son
       del mismo elemento) — daría sentido estratégico a cómo se monta la
@@ -2551,6 +2554,116 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       de rivales fuertes y acotados, no de que cada rival individual siga
       escalando; ese es un mecanismo de dificultad distinto y válido, no
       el mismo bug.
+
+- [x] **Modo Roguelike en Retos** (pedido explícito): "añade un modo en
+    retos que sea roguelike". Cumple además la sugerencia pendiente de
+    "Torre infinita" (ver arriba, sugerida por Claude en una ronda
+    anterior). Se desbloquea al superar los 66 niveles de la Torre Batalla
+    al menos una vez (o antes desde Ajustes → "Roguelike (modo de
+    prueba)", mismo patrón que Torre/Mazmorra Elemental). Diseño:
+    - **Rondas sin fin**: una fila rival (1-3 luchadores, crece con la
+      ronda) por ronda, generada por `buildRoguelikeEnemyRow(round)` en
+      combat.js — nivel y rareza SIN techo a propósito (como Arena: la
+      gracia es ver hasta dónde se llega, no que sea siempre superable).
+    - **Sin curarse entre rondas**: vida y carga de ulti persisten de una
+      ronda a la siguiente (mismo patrón que un recorrido de etapa/Torre/
+      Prueba del Campeón) — perder termina la run entera, sin afectar a la
+      Colección real del jugador.
+    - **Bonos entre rondas** (la pieza específicamente "roguelike" del
+      modo, ausente en Torre/Arena/Prueba del Campeón): al superar una
+      ronda se eligen 3 de 7 bonos al azar (`ROGUELIKE_BOONS` en
+      combat.js) — +15/20% a una stat (ataque/defensa/vida/agilidad/
+      sabiduría, acumulativo el resto de la run) o un efecto inmediato
+      (curar al 50% y revivir a un caído, o ulti lista para la próxima
+      ronda). Reutiliza el picker genérico (`UI.openRoguelikeBoonPicker`).
+    - Recompensas de Texel/XP por cada ronda superada (crecientes,
+      `roguelikeRoundRewards`); se guarda la mejor ronda alcanzada
+      (`state.roguelike.bestRound`, mostrada en Retos y en Objetivos) y 3
+      logros nuevos (ronda 5/15/30, sección "Retos especiales" de
+      `OBJECTIVES`).
+    - Implementación técnica: `window.__roguelikeRun` (solo en memoria,
+      como `window.__championRun` — no sobrevive a un recargo de página,
+      solo el récord se guarda), rama nueva en el `battleCloseBtn` de
+      main.js, y las salidas `roguelikeContinue`/`roguelikeDefeat` en el
+      resumen de combate de ui.js.
+    Verificado con Playwright: bloqueado sin el ajuste de prueba,
+    desbloqueado con él; coste de Energía descontado UNA vez al empezar la
+    run (no por ronda); vida persiste entre rondas (no se cura); una banda
+    épica/Nv.40/3★/equipo Raro Nv.5 superó 8 rondas seguidas acumulando
+    bonos (+30% ataque, +30% defensa, +60% vida) sin errores ni timeouts;
+    una banda deliberadamente floja (Común, Nv.1) pierde en la ronda 1 y
+    registra correctamente "Mejor ronda: 0"; los logros de ronda 5/15/30
+    evalúan `state.roguelike.bestRound` correctamente. Simulación numérica
+    del poder medio de la fila rival por ronda: sube de forma suave y
+    constante (165 en la ronda 1 a ~6800 en la ronda 40), sin picos ni
+    saltos — misma banda de prueba (épica/Nv.40) superó las primeras 8
+    rondas con margen real (recibiendo daño, no un paseo) sin llegar a
+    perder, consistente con una curva "fácil al empezar, un reto real
+    pasadas varias rondas, sin techo al final" — el objetivo del modo.
+    Corregido de paso un bug propio de esta implementación: `UI.renderTorre`
+    tenía un `return` anticipado si la Torre Batalla en sí estaba
+    bloqueada, así que la sección de Roguelike (que debía mostrarse
+    SIEMPRE, con su propio panel de "bloqueado" si hace falta, igual que
+    Prueba del Campeón/Mazmorra Elemental) desaparecía sin más durante la
+    mayor parte de la partida — arreglado convirtiendo ese `return` en un
+    `if/else` para que el resto de la función siga ejecutándose.
+
+- [x] **TODO.md: marcar como hechas las respuestas dadas solo por chat**
+    (pedido explícito). Repasados los `[ ]` de la sección "ronda de 14
+    preguntas/peticiones" — 4 puntos que eran preguntas del usuario ya
+    respondidas en el chat en su momento (sin ninguna acción de código
+    pendiente) seguían marcados `[ ]`: número de elementos, más ideas de
+    personajes, más jefes, más criaturas de tier 1. Marcados `[x]` con una
+    nota aclarando que la pregunta está cerrada. El punto "7. Curarse en el
+    recorrido del mapa" se queda `[ ]` a propósito — ahí no hubo respuesta
+    cerrada, sigue pendiente de que el usuario aclare qué le faltaba
+    exactamente. "Torre infinita" (sugerencia antigua de Claude) se marca
+    `[x]` y redirige a la entrada de Roguelike de arriba, que la cumple.
+
+- [ ] **Notas pendientes apuntadas por el usuario** (sin implementar
+    todavía, solo para no perderlas): completar la guía del juego con las
+    novedades de las últimas rondas (Roguelike, Torre Batalla, Duelo por
+    apuesta, tipos de equipo/ulti nuevos... revisar qué le falta a
+    `UI.openGuide`/el modal de guía actual); revisar el balance de las
+    ultis (¿alguna claramente floja o rota entre los 12 tipos?); revisar
+    el balance de los bonos de líder (30 Legendarios, +15% de una stat a
+    toda la banda — ¿algún reparto desigual entre los 5?).
+
+- [x] **Re-auditoría de dificultad tras el modo Roguelike** (pedido
+    explícito: "revisa de nuevo que todo esté bien balanceado... para que
+    sea un reto pero factible"). La auditoría completa de la entrada
+    anterior (Mapa/Torre/Duelo por apuesta/Arena/Mazmorra/Prueba del
+    Campeón) sigue vigente — nada de lo tocado en esta ronda la afecta.
+    Lo nuevo (Roguelike) se auditó en su propia entrada de arriba: curva
+    de dificultad suave y sin techo, verificada tanto por simulación
+    numérica como por combates reales — ni trivial al principio ni
+    imposible desde el principio, y sin techo hacia el final (a propósito,
+    mismo criterio que Arena). Sin cambios adicionales de balance en esta
+    ronda.
+
+- [x] **Sugerencias de más modos de juego para Retos** (pedido explícito).
+    Además de "Sinergias de equipo" y "Sets de equipo" (ya sugeridos por
+    Claude, ver arriba, sin implementar todavía), 4 ideas nuevas
+    (respondidas en el chat, anotadas aquí para no perderlas si se piden
+    más adelante):
+    - **Gauntlet de jefes**: los 33 jefes de zona ya vencidos, en fila
+      SEGUIDA sin curación (como el nivel final de Torre, pero con los 33
+      distintos en vez de uno repetido) — un "modo historia" condensado,
+      reutilizando bossAdaptiveMult para que siga siendo un reto aunque se
+      juegue muy tarde.
+    - **Reto Espejo**: combate contra una copia exacta de tu propia
+      Formación actual (mismos luchadores/nivel/equipo/estrellas) — un
+      test de habilidad puro (elegir bien las líneas) sin ninguna ventaja
+      de stats de ningún lado.
+    - **Mazmorra Diaria**: una semilla de rival fija por día (misma
+      semilla para cualquier partida, cambia a medianoche) con una
+      recompensa extra solo la primera vez que se supera cada día — un
+      motivo para volver a diario sin depender de energía/gacha.
+    - **Reto con restricciones**: rotación semanal de una condición fija
+      (p.ej. "solo un elemento", "sin equipo", "solo Comunes/Infrecuentes")
+      con recompensas de Gemas más altas que lo normal, para que la
+      Formación "óptima" de siempre no sirva y haya que montar un equipo
+      distinto a propósito.
 
 ## Notas
 

@@ -40,6 +40,7 @@
     $('showMedallionToggle').checked = state.settings.showMedallion;
     $('enableTorreToggle').checked = state.settings.enableTorreBatalla;
     $('enableElementalToggle').checked = state.settings.enableElementalDungeon;
+    $('enableRoguelikeToggle').checked = state.settings.enableRoguelike;
     $('settingsModal').classList.remove('hidden');
   });
   $('settingsModalClose').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
@@ -97,6 +98,12 @@
     if (activeScreen === 'torre') UI.renderTorre(state);
     UI.showToast(state.settings.enableElementalDungeon ? '🌋 Mazmorra Elemental activada (modo de prueba)' : '🌋 Mazmorra Elemental desactivada');
   });
+  $('enableRoguelikeToggle').addEventListener('change', (e) => {
+    state.settings.enableRoguelike = e.target.checked;
+    saveGame(state);
+    if (activeScreen === 'torre') UI.renderTorre(state);
+    UI.showToast(state.settings.enableRoguelike ? '🌀 Roguelike activado (modo de prueba)' : '🌀 Roguelike desactivado');
+  });
   $('cheatGemasBtn').addEventListener('click', () => {
     state.currencies.gemas += 1000;
     saveGame(state);
@@ -144,6 +151,13 @@
     // si sigue viva (ganó el duelo), el siguiente duelo empieza ya mismo; si acabó
     // (perdió), UI.fightChampionDuel ya la puso a null dentro de onEnd.
     if (window.__championRun) { UI.fightChampionDuel(state); return; }
+    if (window.__roguelikeRun) {
+      // Ronda superada (pendingBoon): elegir bono antes de la siguiente
+      // ronda. Derrota: onEnd ya puso window.__roguelikeRun a null, así que
+      // este bloque no se alcanza — cae al render normal de más abajo.
+      if (window.__roguelikeRun.pendingBoon) { window.__roguelikeRun.pendingBoon = false; UI.openRoguelikeBoonPicker(state); }
+      return;
+    }
     const run = window.__stageRun;
     if (run && !run.failed && run.nodeIdx < run.encounters.length) {
       // Encuentro intermedio superado: de vuelta al recorrido, no a la pantalla normal.
