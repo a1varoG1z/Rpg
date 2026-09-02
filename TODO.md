@@ -648,28 +648,108 @@ Ya pendientes de arte real (del roster humanizado ya existente, no del
 roster masivo): ninguna — las 4 (Marina, Gea, Brisa, Electro) tienen ya arte
 real.
 
-### Sprites que faltan por subir ahora mismo (verificado 02/09 contra `assets/creatures/`)
+### Sprites que faltan por subir en TODO el juego (verificado 02/09)
 
-De los 468 sprites que el juego espera (todas las familias jugables y de
-mobs tienen `hasImages: true`, y los 33 jefes `hasImage: true` — ya no
-queda ninguna entrada en `js/data.js` sin marcar), **465 ya están subidos**.
-Solo faltan estos 3 — todo lo demás de las listas de abajo ("Personajes
-(14.1) — 89 familias", mobs y jefes) ya está hecho y esas listas han
-quedado desactualizadas como referencia de lo pendiente:
+El juego tiene 3 sistemas de arte distintos, cada uno con su propia
+carpeta bajo `assets/` y su propio patrón de nombre de archivo — este es
+el estado real de los 3, comprobado contra lo que hay subido de verdad
+(no contra lo que dicen las listas más largas de más abajo, que se han
+quedado desactualizadas a medida que se subía arte real). Todo lo que
+falta cae en la carpeta indicada con el nombre EXACTO entre comillas —
+en cuanto el archivo exista con ese nombre, se usa solo, sin tocar código
+(cae automáticamente en la imagen real en vez del respaldo procedural o
+del color liso).
 
-- [ ] **`shenlong_legendario.png`** → carpeta `assets/creatures/`. Es la
-      3ª forma (Legendario) del dragón Shenlong (Rayo/Brujo): "Shenlong,
-      Dragón de la Lluvia". Ya están subidas sus otras 2 formas
-      (`shenlong_raro.png`, `shenlong_epico.png`).
-- [ ] **`tengu_comun.png`** → carpeta `assets/creatures/`. Es la 1ª forma
-      (Común) del mob Tengu: "Tengu Travieso". Ya están subidas sus otras 2
-      formas (`tengu_infrecuente.png`, `tengu_raro.png`).
-- [ ] **`chupacabra_comun.png`** → carpeta `assets/creatures/`. Es la 1ª
-      forma (Común) del mob Chupacabra: "Chupacabras Joven". Ojo: la
-      familia se llama "chupacabra" en singular, sin la "s" final (había un
-      bug donde una zona apuntaba mal a "chupacabras_raro", ya corregido).
-      Ya están subidas sus otras 2 formas (`chupacabra_infrecuente.png`,
+#### 1. Criaturas (`assets/creatures/`) — 465/468, solo faltan 3
+
+- [ ] **`shenlong_legendario.png`**. Es la 3ª forma (Legendario) del dragón
+      Shenlong (Rayo/Brujo): "Shenlong, Dragón de la Lluvia". Ya están
+      subidas sus otras 2 formas (`shenlong_raro.png`,
+      `shenlong_epico.png`).
+- [ ] **`tengu_comun.png`**. Es la 1ª forma (Común) del mob Tengu: "Tengu
+      Travieso". Ya están subidas sus otras 2 formas
+      (`tengu_infrecuente.png`, `tengu_raro.png`).
+- [ ] **`chupacabra_comun.png`**. Es la 1ª forma (Común) del mob
+      Chupacabra: "Chupacabras Joven". Ojo: la familia se llama
+      "chupacabra" en singular, sin la "s" final (había un bug donde una
+      zona apuntaba mal a "chupacabras_raro", ya corregido). Ya están
+      subidas sus otras 2 formas (`chupacabra_infrecuente.png`,
       `chupacabra_raro.png`).
+
+#### 2. Fondos de escenario (`assets/scenery/`) — 0/33, faltan las 33
+
+La carpeta `assets/scenery/` todavía no existe — ninguna zona tiene fondo
+real todavía, todas usan el degradado de color liso de respaldo (el color
+de cada zona en `ZONES`). Un archivo `.jpg` por zona, nombrado con el
+`id` exacto de la zona (no el nombre visible):
+
+- [ ] `bosque.jpg` — Linde del Bosque
+- [ ] `pantano.jpg` — Pantano Oscuro
+- [ ] `cuevas.jpg` — Cuevas de Cristal
+- [ ] `picos.jpg` — Picos Helados
+- [ ] `ruinas.jpg` — Ruinas Abisales
+- [ ] `guarida.jpg` — Guarida del Dragón
+- [ ] `cantera.jpg` — Cantera Devorada
+- [ ] `aldea_nian.jpg` — Aldea del Año Nuevo
+- [ ] `jardin_piedra.jpg` — Jardín de Piedra
+- [ ] `salon_juicio.jpg` — Salón del Juicio
+- [ ] `sabana.jpg` — Sabana Ardiente
+- [ ] `desfiladero_roc.jpg` — Desfiladero del Roc
+- [ ] `laberinto_creta.jpg` — Laberinto de Creta
+- [ ] `cripta_serpentina.jpg` — Cripta Serpentina
+- [ ] `paso_gigantes.jpg` — Paso de los Gigantes
+- [ ] `templo_hermanas.jpg` — Templo de las Hermanas
+- [ ] `desierto_espinas.jpg` — Desierto de Espinas
+- [ ] `circo_maldito.jpg` — Circo Maldito
+- [ ] `nido_colosal.jpg` — Nido Colosal
+- [ ] `tundra_helada.jpg` — Tundra Helada
+- [ ] `jungla_silenciosa.jpg` — Jungla Silenciosa
+- [ ] `abismo_ojos.jpg` — Abismo de los Cien Ojos
+- [ ] `cima_quimerica.jpg` — Cima Quimérica
+- [ ] `caos_primordial.jpg` — Caos Primordial
+- [ ] `forja_fin.jpg` — Forja del Fin del Mundo
+- [ ] `llanura_titan.jpg` — Llanura del Titán
+- [ ] `templo_eclipse.jpg` — Templo del Sol Eclipsado
+- [ ] `fosa_rlyeh.jpg` — Fosa de R'lyeh
+- [ ] `minas_sinfondo.jpg` — Minas Sin Fondo
+- [ ] `palacio_espejos.jpg` — Palacio de Espejos
+- [ ] `necropolis.jpg` — Necrópolis Eterna
+- [ ] `torre_prohibida.jpg` — Torre Prohibida (penúltima zona, Balrog)
+- [ ] `salon_enganos.jpg` — Salón de los Engaños (última zona, Tifón)
+
+#### 3. Iconos de equipo (`assets/gear/`) — 0/90, faltan los 90
+
+La carpeta `assets/gear/` tampoco existe todavía — todo el equipo usa el
+icono de emoji de respaldo sobre un fondo del color de su rareza. Son 18
+tipos (3 por cada uno de los 6 huecos) × 5 rarezas = 90 archivos `.png`,
+nombrados `<tipo>_<rareza>.png` (el nombre del tipo ya es único en todo
+el juego, no hace falta indicar el hueco en el nombre). Rarezas, siempre
+en el mismo orden: `comun`, `infrecuente`, `raro`, `epico`, `legendario`.
+
+- [ ] **espada** (Arma): `espada_comun.png`, `espada_infrecuente.png`, `espada_raro.png`, `espada_epico.png`, `espada_legendario.png`
+- [ ] **hacha** (Arma): `hacha_comun.png`, `hacha_infrecuente.png`, `hacha_raro.png`, `hacha_epico.png`, `hacha_legendario.png`
+- [ ] **lanza** (Arma): `lanza_comun.png`, `lanza_infrecuente.png`, `lanza_raro.png`, `lanza_epico.png`, `lanza_legendario.png`
+- [ ] **cota** (Armadura): `cota_comun.png`, `cota_infrecuente.png`, `cota_raro.png`, `cota_epico.png`, `cota_legendario.png`
+- [ ] **placas** (Armadura): `placas_comun.png`, `placas_infrecuente.png`, `placas_raro.png`, `placas_epico.png`, `placas_legendario.png`
+- [ ] **tunica** (Armadura): `tunica_comun.png`, `tunica_infrecuente.png`, `tunica_raro.png`, `tunica_epico.png`, `tunica_legendario.png`
+- [ ] **yelmo** (Casco): `yelmo_comun.png`, `yelmo_infrecuente.png`, `yelmo_raro.png`, `yelmo_epico.png`, `yelmo_legendario.png`
+- [ ] **capucha** (Casco): `capucha_comun.png`, `capucha_infrecuente.png`, `capucha_raro.png`, `capucha_epico.png`, `capucha_legendario.png`
+- [ ] **diadema** (Casco): `diadema_comun.png`, `diadema_infrecuente.png`, `diadema_raro.png`, `diadema_epico.png`, `diadema_legendario.png`
+- [ ] **guantes** (Guantes): `guantes_comun.png`, `guantes_infrecuente.png`, `guantes_raro.png`, `guantes_epico.png`, `guantes_legendario.png`
+- [ ] **garras** (Guantes): `garras_comun.png`, `garras_infrecuente.png`, `garras_raro.png`, `garras_epico.png`, `garras_legendario.png`
+- [ ] **manoplas** (Guantes): `manoplas_comun.png`, `manoplas_infrecuente.png`, `manoplas_raro.png`, `manoplas_epico.png`, `manoplas_legendario.png`
+- [ ] **botas** (Botas): `botas_comun.png`, `botas_infrecuente.png`, `botas_raro.png`, `botas_epico.png`, `botas_legendario.png`
+- [ ] **sandalias** (Botas): `sandalias_comun.png`, `sandalias_infrecuente.png`, `sandalias_raro.png`, `sandalias_epico.png`, `sandalias_legendario.png`
+- [ ] **grebas** (Botas): `grebas_comun.png`, `grebas_infrecuente.png`, `grebas_raro.png`, `grebas_epico.png`, `grebas_legendario.png`
+- [ ] **amuleto** (Amuleto): `amuleto_comun.png`, `amuleto_infrecuente.png`, `amuleto_raro.png`, `amuleto_epico.png`, `amuleto_legendario.png`
+- [ ] **anillo** (Amuleto): `anillo_comun.png`, `anillo_infrecuente.png`, `anillo_raro.png`, `anillo_epico.png`, `anillo_legendario.png`
+- [ ] **reliquia** (Amuleto): `reliquia_comun.png`, `reliquia_infrecuente.png`, `reliquia_raro.png`, `reliquia_epico.png`, `reliquia_legendario.png`
+
+No hay ningún otro sistema de arte en el juego aparte de estos 3 (se
+comprobó cada referencia a `assets/` en todo el código) — la lista
+"Sprites no-personaje pendientes de pedir (15)" de más abajo es un
+wishlist de ideas futuras (efectos, animaciones...) que todavía no están
+enganchadas a ningún código, no forma parte de este recuento.
 
 ## Progreso de sprites nuevos (técnica mejorada, en curso)
 
