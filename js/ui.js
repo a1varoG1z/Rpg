@@ -480,7 +480,10 @@ UI.openGuide = function () {
     🧠 <b>Sabiduría (WIS)</b> — potencia de las ultis "mágicas" (las de fila, como Arrasar).</p>
     <p class="settings-info">Un golpe <b>crítico</b> multiplica el daño ×1.5; el daño también varía
     de forma aleatoria un ±10% en cada golpe, así que dos ataques idénticos nunca hacen exactamente
-    lo mismo.</p>`));
+    lo mismo.</p>
+    <p class="settings-info">🆚 Desde la ficha de cualquier luchador, el botón "Comparar con otro
+    luchador" pone sus estadísticas totales (ya con el equipo puesto) lado a lado con las de otro,
+    resaltando en verde quién gana cada una — útil para decidir a cuál meter en la Formación.</p>`));
 
   body.appendChild(guideSection('⭐ Rareza y evolución', `
     <p class="settings-info">5 escalones de rareza: ⚪ Común → 🟢 Infrecuente → 🔵 Raro → 🟣 Épico →
@@ -1574,6 +1577,10 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     + statRow('💨', 'Agilidad', 'agi') + statRow('🧠', 'Sabiduría', 'wis');
   body.appendChild(statsPanel);
 
+  const compareBtn = el('button', 'mini-btn', '🆚 Comparar con otro luchador');
+  compareBtn.addEventListener('click', () => UI.openComparePicker(state, uid));
+  body.appendChild(compareBtn);
+
   const skillPanel = el('div', 'panel');
   skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p><p class="settings-info">Se carga peleando: golpea o recibe daño para llenar la barra morada y desatarla.</p>`;
   body.appendChild(skillPanel);
@@ -1731,6 +1738,75 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   $('fighterModal').classList.remove('hidden');
 };
 
+// ---------- Comparar luchadores ----------
+// Reutiliza el pickerModal genérico: primero para elegir el segundo
+// luchador (mismo patrón que elegir hueco de Formación), luego para
+// mostrar la comparación en sí — así no hace falta un modal nuevo en el
+// HTML. Compara fighterStatsBreakdown().total (con equipo ya sumado, las
+// mismas cifras que se ven en la ficha normal), resaltando en verde quién
+// gana cada estadística para decidir de un vistazo a cuál usar.
+UI.openComparePicker = function (state, uid) {
+  const body = $('pickerModalBody');
+  body.innerHTML = `<h3>🆚 Comparar con...</h3>
+    <p class="settings-info">Elige el segundo luchador — se compararán sus estadísticas totales (con equipo puesto) lado a lado.</p>`;
+  const listWrap = el('div');
+  let mode = UI.pickerSortMode;
+  const pick = (entry) => UI.showCompare(state, uid, entry.uid);
+  const refresh = () => renderPickerCandidates(listWrap, state, state.roster.filter(e => e.uid !== uid), mode, pick);
+  body.appendChild(buildSortSelect(mode, (v) => { mode = v; UI.pickerSortMode = v; refresh(); }));
+  body.appendChild(listWrap);
+  refresh();
+  $('pickerModal').classList.remove('hidden');
+};
+
+function compareStatRow(icon, label, key, statsA, statsB) {
+  const a = statsA[key], b = statsB[key];
+  const aClass = a > b ? 'compare-win' : (a < b ? 'compare-lose' : '');
+  const bClass = b > a ? 'compare-win' : (b < a ? 'compare-lose' : '');
+  return `<div class="compare-stat-row">
+    <span class="compare-label">${icon} ${label}</span>
+    <span class="compare-val ${aClass}">${a}</span>
+    <span class="compare-val ${bClass}">${b}</span>
+  </div>`;
+}
+
+UI.showCompare = function (state, uidA, uidB) {
+  const entryA = rosterEntry(state, uidA), entryB = rosterEntry(state, uidB);
+  if (!entryA || !entryB) return;
+  const defA = fighterDef(entryA.defId), defB = fighterDef(entryB.defId);
+  const rarityA = rarityInfoFor(defA), rarityB = rarityInfoFor(defB);
+  const statsA = fighterStatsBreakdown(state, entryA).total;
+  const statsB = fighterStatsBreakdown(state, entryB).total;
+  const body = $('pickerModalBody');
+  body.innerHTML = '<h3>🆚 Comparación</h3>';
+
+  const head = el('div', 'compare-head');
+  const colA = el('div', 'compare-col');
+  colA.appendChild(creatureCanvas(entryA.defId, 60));
+  colA.appendChild(el('div', 'compare-name', defA.name));
+  colA.appendChild(el('div', 'compare-sub', `${rarityA.label} · Nv.${entryA.level}`));
+  const colB = el('div', 'compare-col');
+  colB.appendChild(creatureCanvas(entryB.defId, 60));
+  colB.appendChild(el('div', 'compare-name', defB.name));
+  colB.appendChild(el('div', 'compare-sub', `${rarityB.label} · Nv.${entryB.level}`));
+  head.appendChild(colA); head.appendChild(colB);
+  body.appendChild(head);
+
+  const statsPanel = el('div', 'panel');
+  statsPanel.innerHTML = compareStatRow('❤️', 'Vida', 'hp', statsA, statsB)
+    + compareStatRow('⚔️', 'Ataque', 'atk', statsA, statsB)
+    + compareStatRow('🛡️', 'Defensa', 'def', statsA, statsB)
+    + compareStatRow('💨', 'Agilidad', 'agi', statsA, statsB)
+    + compareStatRow('🧠', 'Sabiduría', 'wis', statsA, statsB);
+  body.appendChild(statsPanel);
+
+  const swapBtn = el('button', 'mini-btn', '🔄 Elegir otro luchador para comparar');
+  swapBtn.addEventListener('click', () => UI.openComparePicker(state, uidA));
+  body.appendChild(swapBtn);
+
+  $('pickerModal').classList.remove('hidden');
+};
+
 UI.openSuperFusePicker = function (state, targetUid) {
   const body = $('pickerModalBody');
   body.innerHTML = '<h3>Sacrificar luchador (SEF 5/5)</h3><p class="settings-info">Otorga una ★ permanente al luchador objetivo.</p>';
@@ -1784,6 +1860,9 @@ UI.openGearPickerForFighter = function (state, fighterUid, slotKey) {
 UI.renderInvocar = function (state) {
   const wrap = $('summonPanels');
   wrap.innerHTML = '';
+  wrap.appendChild(el('p', 'settings-info', `💎 Las Gemas se consiguen ganando combates de Arena (unas pocas por
+    victoria, más cuanto más alto tu rango) — de momento es la única fuente. Sirven para comprar cristales sueltos
+    aquí abajo cuando te falten para invocar.`));
   Object.keys(CRYSTALS).forEach(type => {
     const c = CRYSTALS[type];
     const panel = el('div', 'panel summon-panel');

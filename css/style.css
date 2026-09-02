@@ -202,6 +202,16 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .formation-slot:not(.empty) { border-style: solid; }
 .formation-slot.filled { border-style: solid; }
 .formation-slot .creature-canvas-wrap::before { width: 44px; height: 44px; }
+/* creatureCanvas fija el ancho (46px aquí) y deja el alto en "auto" según
+   la proporción real de cada sprite — un personaje recortado muy alto
+   (retrato de cuerpo entero, poco margen) se salía del hueco de 76px y
+   tapaba el "Nv.X" de debajo. Se limita con un recuadro fijo + object-fit
+   para que encoja proporcionalmente en vez de desbordar. */
+.formation-slot .creature-canvas-wrap { width: 46px; height: 46px; overflow: hidden; }
+.formation-slot .creature-canvas-wrap img.creature-canvas {
+  max-width: 46px !important; max-height: 46px !important; width: auto !important; height: auto !important;
+  object-fit: contain;
+}
 .formation-lvl { font-size: 0.6rem; color: var(--cream-dim); }
 .formation-slot.center { border-color: var(--gold); }
 .leader-crown { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-size: 0.9rem; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
@@ -211,6 +221,18 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .formation-fill-hint.hidden { display: none; }
 
 .picker-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-height: 50vh; overflow-y: auto; margin-top: 8px; }
+
+/* ---------- Comparar luchadores ---------- */
+.compare-head { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; margin: 10px 0; }
+.compare-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.compare-name { font-weight: bold; font-size: 0.8rem; }
+.compare-sub { font-size: 0.7rem; color: var(--cream-dim); }
+.compare-stat-row { display: grid; grid-template-columns: 90px 1fr 1fr; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--panel-border); font-size: 0.8rem; }
+.compare-stat-row:last-child { border-bottom: none; }
+.compare-label { color: var(--cream-dim); }
+.compare-val { text-align: center; }
+.compare-val.compare-win { color: var(--green); font-weight: bold; }
+.compare-val.compare-lose { color: var(--cream-dim); }
 
 /* ---------- Tienda ---------- */
 .shop-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px dashed #3a2c17; }

@@ -1707,6 +1707,40 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     ahora rellenan 86-98% de su lienzo (antes 26-77%); y un combate ganado
     con drop de cristal (jefe de zona) muestra "⚪ Cristal Voxite +1" en el
     resumen de la pantalla de victoria.
+  - [x] **Comparar luchadores, de dónde salen las Gemas, y personajes que
+    se salían de su hueco en la Formación** — 3 peticiones/reportes del
+    usuario:
+    - **Comparar luchadores**: nuevo botón "🆚 Comparar con otro
+      luchador" en la ficha de cualquier luchador (`UI.openComparePicker`
+      + `UI.showCompare`, reutilizando el `pickerModal` genérico en vez de
+      un modal nuevo). Elige un segundo luchador y pone sus 5
+      estadísticas totales (con el equipo puesto ya sumado, las mismas
+      cifras de la ficha normal) lado a lado, resaltando en verde quién
+      gana cada una — para decidir de un vistazo a cuál meter en la
+      Formación. Documentado también en la Guía.
+    - **De dónde salen las Gemas**: el usuario preguntó cómo conseguir más
+      para comprar cristales — la respuesta real es que ahora mismo la
+      ÚNICA fuente son las victorias de Arena (pocas por combate, algo
+      más cuanto más alto el rango); no hay ningún otro sistema del juego
+      que dé Gemas. Se añadió un aviso en la pantalla Invocar, justo
+      encima de los paneles de cristales, explicándolo — antes no había
+      ninguna pista de dónde salían.
+    - **Personajes que se salían de su hueco en la Formación** (bug real,
+      con foto): `creatureCanvas` pone un ancho fijo (46px) a todos los
+      sprites y dejaba el alto en "auto" según la proporción real de cada
+      imagen — un personaje recortado muy alto (retrato de cuerpo entero,
+      poco margen) se salía del hueco de 76px de la Formación y tapaba el
+      "Nv.X" de debajo. Arreglado con CSS: el hueco de la imagen dentro de
+      `.formation-slot` ahora tiene un recuadro fijo de 46×46 con
+      `object-fit: contain`, así que cualquier sprite encoge
+      proporcionalmente para caber en vez de desbordar.
+    Verificado con Playwright: el flujo completo de comparar (ficha →
+    elegir segundo luchador → tabla con 5 filas de stats y clases de
+    ganador/perdedor) funciona sin errores; el aviso de Gemas aparece en
+    Invocar; y un luchador con sprite muy alto (`thor_raro`, recortado la
+    ronda anterior) ya no se sale del recuadro de 46×46 de la Formación
+    (antes se salía por completo, ahora coincide justo con el borde
+    superior del texto "Nv.X").
 
 ## Notas
 
