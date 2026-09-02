@@ -2761,7 +2761,16 @@ UI.endBattle = function (view, result) {
       html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>`;
       if (outcome.rewards.fighterXp) html += `<div class="stat-row"><span>⭐ XP por luchador</span><span>+${outcome.rewards.fighterXp}</span></div>`;
       if (outcome.gemas) html += `<div class="stat-row"><span>💎 Gemas</span><span>+${outcome.gemas}</span></div>`;
-      if (outcome.rewards.drops && outcome.rewards.drops.gear) html += `<div class="stat-row"><span>🎁 Objeto</span><span>${gearTypeInfo(outcome.rewards.drops.gear).names[outcome.rewards.drops.gear.rarity]}</span></div>`;
+      if (outcome.rewards.drops) {
+        // Los cristales de invocación (pixite/voxite/doxite) ya se sumaban a
+        // state.currencies al ganar, pero nunca se mostraban aquí — el
+        // jugador los veía subir en la topbar sin saber de dónde salían.
+        ['pixite', 'voxite', 'doxite'].forEach(type => {
+          const amount = outcome.rewards.drops[type];
+          if (amount) html += `<div class="stat-row"><span>${CRYSTALS[type].icon} ${CRYSTALS[type].label}</span><span>+${amount}</span></div>`;
+        });
+        if (outcome.rewards.drops.gear) html += `<div class="stat-row"><span>🎁 Objeto</span><span>${gearTypeInfo(outcome.rewards.drops.gear).names[outcome.rewards.drops.gear.rarity]}</span></div>`;
+      }
     }
     if (outcome && outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
     if (outcome && outcome.unlockedZone) html += `<p class="settings-info">🗺️ ¡Nueva zona desbloqueada: ${outcome.unlockedZone.name}!</p>`;

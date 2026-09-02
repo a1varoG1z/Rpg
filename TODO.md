@@ -1677,6 +1677,36 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     Verificado con Playwright los 3 estados (banda nueva con huecos vacíos
     y sin sueltos → aviso de Invocar; con un luchador suelto sin colocar →
     aviso de tocar el hueco; los 9 huecos llenos → aviso oculto).
+  - [x] **Arreglados: sprite de jefe pequeño en combate, y cristales de
+    invocación invisibles en el resumen de victoria**, a reporte del
+    usuario (captura del Guardián del Bosque muy pequeño junto a las 3
+    criaturas del jugador).
+    - **Sprites pequeños**: no era un bug de código — `creatureCanvas`
+      pone el mismo ancho fijo (76px en combate) a TODOS los sprites, así
+      que si la imagen tiene mucho margen transparente alrededor del
+      personaje, el propio personaje ocupa menos de ese ancho. Se
+      comprobó con Python/PIL el `bbox` (recuadro real del contenido no
+      transparente) de los 468 sprites de criatura: **24 tenían menos del
+      75% de relleno** en algún eje — casi todos jefes con el lienzo
+      panorámico 1408×768 sin recortar de cerca (`guardianbosque.png`
+      solo llenaba el 40% del ancho), más un puñado de personajes sueltos
+      (`chispa_raro`, `duende_epico/raro`, `ragnar_legendario`,
+      `thor_raro`). Se recortaron los 24 a su recuadro real con un margen
+      del 4% (sin regenerar ni tocar el contenido, solo recorte del
+      espacio transparente sobrante) — quedan entre 86-98% de relleno,
+      igual que el resto del roster.
+    - **Cristales invisibles en el resumen**: sí era un bug real. Los
+      cristales de invocación (pixite/voxite/doxite) que caen al ganar un
+      combate (jefe de zona, etapa normal, Mazmorra Elemental) SÍ se
+      sumaban a `state.currencies` — pero el HTML de "¡Victoria!" en
+      `UI.endBattle` solo mostraba el objeto de equipo (`🎁 Objeto`), nunca
+      los cristales, así que subían en la topbar sin que el jugador supiera
+      de dónde salían. Añadidas sus líneas al resumen
+      (`⚪/🟢/🟡 Cristal X +N`), igual que ya se hacía con el equipo.
+    Verificado con Playwright: los 24 sprites recortados abren sin error y
+    ahora rellenan 86-98% de su lienzo (antes 26-77%); y un combate ganado
+    con drop de cristal (jefe de zona) muestra "⚪ Cristal Voxite +1" en el
+    resumen de la pantalla de victoria.
 
 ## Notas
 
