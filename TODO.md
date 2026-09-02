@@ -2344,6 +2344,20 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     ficha, desaparece en cuanto se abre (sin ni siquiera cerrarla todavía),
     y sigue sin aparecer después de cerrar el modal.
 
+- [x] **Los cristales de repetir un jefe seguían siendo demasiado
+    generosos**. El usuario preguntó por el porcentaje exacto (20% Voxite
+    / 5% Doxite tras la ronda anterior) y coincidió en que seguía siendo
+    más rentable que jugar una etapa normal (35% de Pixite, el cristal más
+    flojo) — repetir el jefe más fácil del juego con Auto + velocidad 3×
+    no debía seguir siendo la mejor fuente de Voxite. Propuso los números
+    y se aplicaron tal cual: en la repetición, 10% Pixite / 3% Voxite / 1%
+    Doxite (antes 0% / 20% / 5%) — ahora apunta sobre todo al cristal más
+    flojo, con Voxite/Doxite como rareza puntual en vez de la norma. La
+    primera vez (Voxite garantizado + 30% Doxite) no cambia.
+    Verificado con una simulación de 100.000 llamadas a `stageRewards`:
+    9,98% / 2,96% / 1,03% en la repetición (ajustado a los porcentajes
+    pedidos), primera vez sin cambios.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

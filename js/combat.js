@@ -249,8 +249,13 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
       drops.voxite = 1;
       if (Math.random() < 0.3) drops.doxite = 1;
     } else {
-      if (Math.random() < 0.2) drops.voxite = 1;
-      if (Math.random() < 0.05) drops.doxite = 1;
+      // Repetir un jefe ya no debía seguir siendo mejor fuente de Voxite
+      // que jugar una etapa normal (35% de Pixite) — ahora apunta sobre
+      // todo a Pixite, el cristal más flojo, con Voxite/Doxite ya como
+      // rareza puntual en vez de la norma.
+      if (Math.random() < 0.1) drops.pixite = 1;
+      if (Math.random() < 0.03) drops.voxite = 1;
+      if (Math.random() < 0.01) drops.doxite = 1;
     }
     // Igual que el cristal: el 70% de probabilidad de equipo es el premio
     // de vencer al jefe por primera vez. Repetirlo lo bajaba a una tabla de
