@@ -2330,7 +2330,20 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     arreglo, ~323,2 de media — más de 40 veces más. La reproducción íntegra
     del caso original ahora sí recibe daño real del jefe.
 
-## Notas
+- [x] **La etiqueta "¡Nuevo!" no desaparecía al cerrar la ficha de un
+    luchador**. El usuario notó que la marca seguía en la tarjeta de la
+    Colección incluso después de cerrar el perfil, hasta cambiar de
+    pantalla y volver a Banda. Causa: `UI.openFighterModal` ya ponía
+    `entry.isNew = false` y guardaba la partida al abrir la ficha, pero
+    nunca volvía a pintar la rejilla de la Colección — la tarjeta ya
+    dibujada en pantalla no se enteraba del cambio hasta el siguiente
+    `UI.renderBanda` (al reentrar a esa pantalla). Ahora, si la pantalla
+    activa es Banda, se refresca ahí mismo al abrir la ficha, así que la
+    etiqueta desaparece al momento en vez de quedarse hasta salir y volver.
+    Verificado con Playwright: la etiqueta está presente antes de abrir la
+    ficha, desaparece en cuanto se abre (sin ni siquiera cerrarla todavía),
+    y sigue sin aparecer después de cerrar el modal.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

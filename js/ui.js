@@ -1607,7 +1607,16 @@ UI.openFormationPicker = function (state, row, col) {
 UI.openFighterModal = function (state, uid, formationCtx) {
   const entry = rosterEntry(state, uid);
   if (!entry) return;
-  if (entry.isNew) { entry.isNew = false; saveGame(state); }
+  // Quita la etiqueta "¡Nuevo!" al abrir la ficha — se refresca la
+  // Colección aquí mismo (si es la pantalla activa) para que desaparezca
+  // al momento, en vez de quedarse hasta la próxima vez que se entre a
+  // Banda (rosterEntry.isNew ya está en false, pero la tarjeta ya
+  // pintada en pantalla no se enteraba sola).
+  if (entry.isNew) {
+    entry.isNew = false;
+    saveGame(state);
+    if (activeScreen === 'banda') UI.renderBanda(state);
+  }
   const def = fighterDef(entry.defId);
   const rarity = rarityInfoFor(def);
   const { total: stats, bonus: gearBonus } = fighterStatsBreakdown(state, entry);
