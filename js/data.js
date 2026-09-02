@@ -845,3 +845,80 @@ function merchantOffer() {
   const crystalAmount = 2 + (seed % 4);
   return { key, costRarity, costCount, kind: 'crystal', crystalType, crystalAmount };
 }
+
+// ---------- Objetivos (logros con recompensa de Gemas) ----------
+// Cada uno se reduce a "alcanza N de X": `get(state, s)` calcula el valor
+// actual (reutilizando casi siempre objectivesSummary, ya calculado antes
+// de llamar aquí) y `target` el umbral — se completa en cuanto
+// get(...) >= target, y una vez reclamado (ver state.objectivesClaimed en
+// state.js) no se puede volver a cobrar. Categorías de fácil a muy tardío
+// dentro de cada bloque, para que siempre haya alguno a mano según lo
+// avanzada que vaya la partida.
+const OBJECTIVES = [
+  // --- Mapa ---
+  { id: 'zonas_3', icon: '🗺️', label: 'Desbloquea 3 zonas', gemas: 10, get: (st, s) => s.unlockedZones, target: 3 },
+  { id: 'zonas_10', icon: '🗺️', label: 'Desbloquea 10 zonas', gemas: 20, get: (st, s) => s.unlockedZones, target: 10 },
+  { id: 'zonas_20', icon: '🗺️', label: 'Desbloquea 20 zonas', gemas: 45, get: (st, s) => s.unlockedZones, target: 20 },
+  { id: 'zonas_todas', icon: '🗺️', label: 'Desbloquea todas las zonas', gemas: 100, get: (st, s) => s.unlockedZones, target: ZONES.length },
+  { id: 'etapas_10', icon: '⚔️', label: 'Supera 10 etapas', gemas: 10, get: (st, s) => s.stagesCleared, target: 10 },
+  { id: 'etapas_50', icon: '⚔️', label: 'Supera 50 etapas', gemas: 25, get: (st, s) => s.stagesCleared, target: 50 },
+  { id: 'etapas_100', icon: '⚔️', label: 'Supera 100 etapas', gemas: 50, get: (st, s) => s.stagesCleared, target: 100 },
+  { id: 'etapas_200', icon: '⚔️', label: 'Supera 200 etapas', gemas: 90, get: (st, s) => s.stagesCleared, target: 200 },
+  { id: 'jefes_3', icon: '👹', label: 'Derrota 3 jefes de zona', gemas: 15, get: (st, s) => s.bossesDefeated, target: 3 },
+  { id: 'jefes_10', icon: '👹', label: 'Derrota 10 jefes de zona', gemas: 35, get: (st, s) => s.bossesDefeated, target: 10 },
+  { id: 'jefes_todos', icon: '👹', label: 'Derrota todos los jefes de zona', gemas: 120, get: (st, s) => s.bossesDefeated, target: ZONES.length },
+
+  // --- Colección / Pokédex ---
+  { id: 'formas_10', icon: '📖', label: 'Descubre 10 formas', gemas: 10, get: (st, s) => s.formsDiscovered, target: 10 },
+  { id: 'formas_50', icon: '📖', label: 'Descubre 50 formas', gemas: 30, get: (st, s) => s.formsDiscovered, target: 50 },
+  { id: 'formas_100', icon: '📖', label: 'Descubre 100 formas', gemas: 60, get: (st, s) => s.formsDiscovered, target: 100 },
+  { id: 'formas_todas', icon: '📖', label: 'Descubre todas las formas', gemas: 150, get: (st, s) => s.formsDiscovered, target: FIGHTERS.length },
+  { id: 'familias_1', icon: '⭐', label: 'Completa 1 familia entera (3 formas)', gemas: 10, get: (st, s) => s.familiesComplete, target: 1 },
+  { id: 'familias_10', icon: '⭐', label: 'Completa 10 familias', gemas: 40, get: (st, s) => s.familiesComplete, target: 10 },
+  { id: 'familias_25', icon: '⭐', label: 'Completa 25 familias', gemas: 90, get: (st, s) => s.familiesComplete, target: 25 },
+  { id: 'roster_10', icon: '🐾', label: 'Consigue 10 luchadores en tu Colección', gemas: 10, get: (st, s) => s.rosterSize, target: 10 },
+  { id: 'roster_30', icon: '🐾', label: 'Consigue 30 luchadores en tu Colección', gemas: 25, get: (st, s) => s.rosterSize, target: 30 },
+  { id: 'roster_60', icon: '🐾', label: 'Consigue 60 luchadores en tu Colección', gemas: 50, get: (st, s) => s.rosterSize, target: 60 },
+  { id: 'elementos_todos', icon: '🌪️', label: 'Ten un luchador de cada elemento', gemas: 15, get: (st, s) => s.elementsInRoster, target: s => s.totalElements },
+  { id: 'clases_todas', icon: '🎭', label: 'Ten un luchador de cada clase', gemas: 15, get: (st, s) => s.classesInRoster, target: s => s.totalClasses },
+  { id: 'nivel_max_1', icon: '📈', label: 'Sube un luchador a nivel máximo', gemas: 15, get: (st, s) => s.maxLevelCount, target: 1 },
+  { id: 'nivel_max_5', icon: '📈', label: 'Ten 5 luchadores a nivel máximo', gemas: 35, get: (st, s) => s.maxLevelCount, target: 5 },
+  { id: 'forma_final_1', icon: '🧬', label: 'Consigue un luchador en su forma final', gemas: 10, get: (st, s) => s.finalFormCount, target: 1 },
+  { id: 'sef_estrellas_5', icon: '🌟', label: 'Acumula 5 estrellas de Superfusión', gemas: 30, get: (st, s) => s.totalSefStars, target: 5 },
+  { id: 'sef_estrellas_15', icon: '🌟', label: 'Acumula 15 estrellas de Superfusión', gemas: 70, get: (st, s) => s.totalSefStars, target: 15 },
+
+  // --- Combate ---
+  { id: 'victorias_10', icon: '🏆', label: 'Gana 10 combates', gemas: 10, get: (st, s) => s.battlesWon, target: 10 },
+  { id: 'victorias_50', icon: '🏆', label: 'Gana 50 combates', gemas: 25, get: (st, s) => s.battlesWon, target: 50 },
+  { id: 'victorias_200', icon: '🏆', label: 'Gana 200 combates', gemas: 60, get: (st, s) => s.battlesWon, target: 200 },
+  { id: 'victorias_500', icon: '🏆', label: 'Gana 500 combates', gemas: 120, get: (st, s) => s.battlesWon, target: 500 },
+  { id: 'dano_5000', icon: '💥', label: 'Haz 5.000 de daño total', gemas: 10, get: (st, s) => s.totalDmgDealt, target: 5000 },
+  { id: 'dano_50000', icon: '💥', label: 'Haz 50.000 de daño total', gemas: 40, get: (st, s) => s.totalDmgDealt, target: 50000 },
+  { id: 'golpe_500', icon: '💢', label: 'Consigue un golpe de más de 500 de daño', gemas: 20, get: (st, s) => s.highestSingleHit, target: 501 },
+  { id: 'arena_5', icon: '🥇', label: 'Alcanza el Rango 5 de Arena', gemas: 15, get: (st, s) => s.arenaBestRank, target: 5 },
+  { id: 'arena_15', icon: '🥇', label: 'Alcanza el Rango 15 de Arena', gemas: 40, get: (st, s) => s.arenaBestRank, target: 15 },
+  { id: 'arena_30', icon: '🥇', label: 'Alcanza el Rango 30 de Arena', gemas: 90, get: (st, s) => s.arenaBestRank, target: 30 },
+
+  // --- Equipo ---
+  { id: 'equipo_5', icon: '🎒', label: 'Consigue 5 piezas de equipo', gemas: 10, get: (st, s) => s.gearOwned, target: 5 },
+  { id: 'equipo_20', icon: '🎒', label: 'Consigue 20 piezas de equipo', gemas: 30, get: (st, s) => s.gearOwned, target: 20 },
+  { id: 'equipo_lleno', icon: '🎒', label: 'Llena tu inventario de equipo', gemas: 60, get: (st, s) => s.gearOwned, target: s => s.gearMax },
+
+  // --- Retos especiales ---
+  { id: 'campeon_5', icon: '⚔️', label: 'Consigue una racha de 5 en la Prueba del Campeón', gemas: 20, get: (st) => st.champion.bestStreak, target: 5 },
+  { id: 'campeon_15', icon: '⚔️', label: 'Consigue una racha de 15 en la Prueba del Campeón', gemas: 60, get: (st) => st.champion.bestStreak, target: 15 },
+  { id: 'elemental_1', icon: '🌋', label: 'Supera tu primera Mazmorra Elemental', gemas: 25, get: (st) => Object.values(st.elementalClears).reduce((a, b) => a + b, 0), target: 1 },
+  { id: 'elemental_todas', icon: '🌋', label: 'Supera las 5 Mazmorras Elementales (una vez cada una)', gemas: 80, get: (st) => Object.values(st.elementalClears).filter(v => v > 0).length, target: 5 },
+  { id: 'torre_1', icon: '🗼', label: 'Supera tu primer nivel de la Torre Batalla', gemas: 20, get: (st) => Object.values(st.torre.clears).filter(v => v > 0).length, target: 1 },
+  { id: 'torre_10', icon: '🗼', label: 'Supera 10 niveles distintos de la Torre Batalla', gemas: 60, get: (st) => Object.values(st.torre.clears).filter(v => v > 0).length, target: 10 },
+
+  // --- Homúnculos ---
+  { id: 'homunculos_5', icon: '🧪', label: 'Consigue 5 Homúnculos', gemas: 10, get: (st, s) => s.homunculosTotal, target: 5 },
+  { id: 'homunculos_20', icon: '🧪', label: 'Consigue 20 Homúnculos', gemas: 30, get: (st, s) => s.homunculosTotal, target: 20 },
+];
+// `target` puede ser un número fijo o una función (state, s) => número,
+// para los que dependen de una constante que solo se conoce en runtime
+// (número total de elementos/clases/hueco de equipo).
+function objectiveTarget(obj, state, s) { return typeof obj.target === 'function' ? obj.target(s) : obj.target; }
+function objectiveProgress(obj, state, s) { return { value: obj.get(state, s), target: objectiveTarget(obj, state, s) }; }
+function objectiveCompleted(obj, state, s) { const { value, target } = objectiveProgress(obj, state, s); return value >= target; }

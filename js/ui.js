@@ -334,8 +334,55 @@ UI.openObjectives = function (state) {
   resPanel.appendChild(el('div', 'stat-row', `<span>Homúnculos conseguidos</span><span>${s.homunculosTotal}</span>`));
   body.appendChild(resPanel);
 
+  // ---------- Logros (con recompensa de Gemas) ----------
+  const claimedCount = OBJECTIVES.filter(o => state.objectivesClaimed.includes(o.id)).length;
+  const achPanel = el('div', 'panel');
+  achPanel.innerHTML = `<h3>🏆 Logros <span class="badge">${claimedCount}/${OBJECTIVES.length}</span></h3>
+    <p class="settings-info">Cada uno da Gemas la primera vez que lo completas — tócalo para reclamarlo en
+    cuanto se desbloquee. Los que ya puedes reclamar aparecen primero.</p>`;
+  const achList = el('div', 'torre-list');
+  const rankObjective = (obj) => {
+    if (state.objectivesClaimed.includes(obj.id)) return 2;
+    const { value, target } = objectiveProgress(obj, state, s);
+    return value >= target ? 0 : 1;
+  };
+  OBJECTIVES.slice().sort((a, b) => rankObjective(a) - rankObjective(b)).forEach(obj => achList.appendChild(objectiveRow(state, s, obj)));
+  achPanel.appendChild(achList);
+  body.appendChild(achPanel);
+
   $('objectivesModal').classList.remove('hidden');
 };
+
+function objectiveRow(state, s, obj) {
+  const { value, target } = objectiveProgress(obj, state, s);
+  const claimed = state.objectivesClaimed.includes(obj.id);
+  const completed = value >= target;
+  const row = el('div', 'torre-row' + (claimed ? ' locked' : ''));
+  row.appendChild(el('div', 'torre-row-empty-icon', obj.icon));
+  const info = el('div', 'torre-row-info');
+  info.appendChild(el('div', 'torre-row-name', obj.label));
+  info.appendChild(el('div', 'torre-row-sub', `${Math.min(value, target)}/${target} · 💎 ${obj.gemas}`));
+  row.appendChild(info);
+  const btnCol = el('div', 'torre-row-btns');
+  if (claimed) {
+    btnCol.appendChild(el('div', 'torre-row-sub', '✅ Reclamado'));
+  } else {
+    const btn = el('button', 'mini-btn' + (completed ? ' active' : ''), completed ? '🎁 Reclamar' : '🔒');
+    btn.disabled = !completed;
+    btn.addEventListener('click', () => {
+      const gained = claimObjective(state, obj.id);
+      if (gained > 0) {
+        saveGame(state);
+        UI.renderTopbar(state);
+        UI.showToast(`💎 +${gained} Gemas — ${obj.label}`);
+        UI.openObjectives(state);
+      }
+    });
+    btnCol.appendChild(btn);
+  }
+  row.appendChild(btnCol);
+  return row;
+}
 
 // ---------- Jefes ----------
 // Misma idea que pokedexCard, pero para los 33 jefes de zona: los nunca
@@ -1009,9 +1056,9 @@ UI.fightStageRunNode = function (state) {
         const entry = rosterEntry(state, uid);
         if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
       });
-      const unlockedZone = recordStageClear(state, run.zoneIdx, run.stageIdx);
+      const { unlockedZone, zoneGemsBonus } = recordStageClear(state, run.zoneIdx, run.stageIdx);
       saveGame(state);
-      return { rewards, leveled, unlockedZone };
+      return { rewards, leveled, unlockedZone, zoneGemsBonus };
     },
   });
 };
@@ -2852,6 +2899,7 @@ UI.endBattle = function (view, result) {
       }
     }
     if (outcome && outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
+    if (outcome && outcome.zoneGemsBonus) html += `<div class="stat-row"><span>🎉 Zona completada</span><span>+${outcome.zoneGemsBonus} 💎</span></div>`;
     if (outcome && outcome.unlockedZone) html += `<p class="settings-info">🗺️ ¡Nueva zona desbloqueada: ${outcome.unlockedZone.name}!</p>`;
     if (outcome && outcome.capturedCopy) html += `<div class="stat-row"><span>${outcome.capturedIsNew ? '🆕' : '🔁'} ${outcome.capturedCopy.name}</span><span>+1 copia</span></div>`;
   } else {

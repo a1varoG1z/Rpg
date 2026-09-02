@@ -57,6 +57,10 @@ function createNewState() {
     // Mercader Itinerante: la clave (fecha) de la última oferta ya
     // canjeada, para no poder repetirla hasta que cambie la oferta del día.
     merchant: { lastRedeemedKey: null },
+    // Objetivos (ver OBJECTIVES en data.js) ya reclamados — lista de ids,
+    // para no poder cobrar dos veces la misma recompensa de Gemas aunque
+    // el progreso que lo desbloqueó (p.ej. nº de luchadores) siga vigente.
+    objectivesClaimed: [],
     // Objetos consumibles comprados en la Tienda (pociones, plumas fénix).
     items: { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 },
     // Homúnculos conseguidos por invocación: solo cuentan (no tienen uid
@@ -400,14 +404,27 @@ function isStageUnlocked(state, zoneId, stageIdx) {
   if (!isZoneUnlocked(state, zoneId)) return false;
   return stageIdx <= highestClearedStage(state, zoneId) + 1;
 }
+// Devuelve { unlockedZone, zoneGemsBonus }: la zona siguiente si se acaba
+// de desbloquear (null si no), y las Gemas de bonificación por completar
+// esta zona por primera vez (0 si ya se había derrotado antes a este jefe
+// — la bonificación es un premio de una sola vez, no se repite al rejugar
+// la etapa). El bono crece con la zona (15 + 3 por cada zona de distancia
+// al inicio) para que las últimas, mucho más difíciles, den bastante más.
 function recordStageClear(state, zoneIdx, stageIdx) {
   const zone = ZONES[zoneIdx];
-  if (stageIdx > highestClearedStage(state, zone.id)) state.progress.zoneStage[zone.id] = stageIdx;
+  const wasAlreadyCleared = stageIdx <= highestClearedStage(state, zone.id);
+  if (!wasAlreadyCleared) state.progress.zoneStage[zone.id] = stageIdx;
+  let unlockedZone = null;
+  let zoneGemsBonus = 0;
   if (stageIdx === STAGES_PER_ZONE - 1) {
+    if (!wasAlreadyCleared) {
+      zoneGemsBonus = 15 + zoneIdx * 3;
+      state.currencies.gemas += zoneGemsBonus;
+    }
     const next = ZONES[zoneIdx + 1];
-    if (next && !isZoneUnlocked(state, next.id)) { state.progress.unlockedZones.push(next.id); return next; }
+    if (next && !isZoneUnlocked(state, next.id)) { state.progress.unlockedZones.push(next.id); unlockedZone = next; }
   }
-  return null;
+  return { unlockedZone, zoneGemsBonus };
 }
 
 // --- Torre Batalla (ver TORRE_LEVELS en data.js) ---
@@ -450,6 +467,21 @@ function recordChampionStreak(state, duelsWon) {
 
 // --- Mercader Itinerante (ver merchantOffer en data.js) ---
 function merchantOfferRedeemedToday(state) { return state.merchant.lastRedeemedKey === merchantOffer().key; }
+
+// --- Objetivos (ver OBJECTIVES en data.js) ---
+// Reclama la recompensa de Gemas de un objetivo ya completado — devuelve
+// las Gemas dadas, o 0 si no se pudo (no completado todavía, o ya
+// reclamado antes).
+function claimObjective(state, objId) {
+  if (state.objectivesClaimed.includes(objId)) return 0;
+  const obj = OBJECTIVES.find(o => o.id === objId);
+  if (!obj) return 0;
+  const s = objectivesSummary(state);
+  if (!objectiveCompleted(obj, state, s)) return 0;
+  state.objectivesClaimed.push(objId);
+  state.currencies.gemas += obj.gemas;
+  return obj.gemas;
+}
 
 // --- Objetivos (pantalla de progreso general) ---
 // Todo de solo lectura: agrega números ya presentes en otras partes del
@@ -554,6 +586,7 @@ function migrateState(state) {
     if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
     if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };
     if (!state.merchant) state.merchant = { lastRedeemedKey: null };
+    if (!state.objectivesClaimed) state.objectivesClaimed = [];
     if (!state.stats) state.stats = { battlesWon: 0, battlesLost: 0 };
     ['totalDmgDealt', 'totalDmgReceived', 'totalHealDone', 'totalTexelEarned', 'totalFighterXpEarned', 'highestSingleHit'].forEach(key => {
       if (state.stats[key] === undefined) state.stats[key] = 0;

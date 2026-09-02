@@ -1742,6 +1742,55 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     (antes se salía por completo, ahora coincide justo con el borde
     superior del texto "Nv.X").
 
+- [x] **Recompensa de Gemas al completar objetivos y al completar zonas por
+    primera vez / ampliación grande de la lista de objetivos**. El usuario
+    pidió esto tras confirmar en la ronda anterior que las Gemas solo salían
+    de Arena — ahora hay dos fuentes nuevas, además de una lista de
+    objetivos mucho más grande para tener siempre algo a mano según lo
+    avanzada que vaya la partida.
+    - **Bonificación de Gemas por zona**: `recordStageClear` (state.js) ahora
+      da `15 + 3 × índice de zona` Gemas la primera vez que se derrota al
+      jefe de cada zona (etapa final), y no vuelve a darlas si se rejuega esa
+      etapa. Cambió la forma del valor que devuelve, de `next|null` a
+      `{ unlockedZone, zoneGemsBonus }` — el único punto de llamada
+      (`UI.fightStageRunNode`, para etapas normales del Mapa; Torre Batalla y
+      Mazmorra Elemental no pasan por aquí) se actualizó para leer ambos
+      campos. El resumen de victoria (`UI.endBattle`) muestra una línea
+      "🎉 Zona completada +N 💎" cuando corresponde, antes del aviso de zona
+      desbloqueada.
+    - **Objetivos (Logros)**: se amplió la lista de objetivos de ~20 a 49
+      entradas nuevas (`OBJECTIVES` en data.js), organizadas en 6 bloques —
+      Mapa (zonas/etapas/jefes), Colección (formas/familias/roster/
+      elementos/clases/nivel máx./forma final/estrellas de Superfusión),
+      Combate (victorias/daño/golpe crítico/rango de Arena), Equipo (piezas
+      conseguidas/inventario lleno), Retos especiales (racha de Prueba del
+      Campeón, Mazmorras Elementales, niveles de Torre Batalla) y
+      Homúnculos. Cada objetivo da una recompensa de Gemas de una sola vez
+      (10 a 150 según dificultad) al reclamarlo — se añadió
+      `state.objectivesClaimed` (lista de ids ya reclamados, con su
+      migración) y `claimObjective(state, objId)` en state.js, que valida
+      que esté completado y no reclamado antes de dar las Gemas.
+    - La pantalla de Objetivos (`UI.openObjectives`, ui.js) ganó un panel
+      nuevo "🏆 Logros" debajo del resumen de progreso existente, con badge
+      de reclamados/total y una fila por objetivo (icono, descripción,
+      progreso actual/objetivo, coste en Gemas) ordenadas para que las
+      reclamables aparezcan primero, luego las bloqueadas, y al final las ya
+      reclamadas. El botón de cada fila reclama al momento, actualiza la
+      barra superior y muestra un toast de confirmación.
+    Verificado con Playwright: las 49 entradas de `OBJECTIVES` resuelven
+    `get`/`target` sin errores (incluidos los objetivos con `target` como
+    función, como "ten un luchador de cada elemento/clase" o "llena el
+    inventario", y los que leen directamente del estado sin pasar por
+    `objectivesSummary`, como la racha de la Prueba del Campeón o las
+    Mazmorras Elementales superadas); el panel de Logros renderiza las 49
+    filas sin error, con el badge y el orden de clasificación correctos;
+    reclamar un objetivo completado (tanto llamando a `claimObjective`
+    directamente como haciendo clic en el botón real de la interfaz) da las
+    Gemas correctas, lo marca como reclamado y bloquea un segundo intento de
+    cobro; y la bonificación de zona (`recordStageClear`) da
+    `15 + 3 × índice` Gemas la primera vez que se completa una zona y 0 al
+    volver a jugar la misma etapa.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
