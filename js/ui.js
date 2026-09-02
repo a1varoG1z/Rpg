@@ -2208,22 +2208,86 @@ UI.startArenaBattle = function (state) {
 };
 
 // ---------- Equipo ----------
+// ---------- Filtro y selección múltiple de Equipo ----------
+// Mismo patrón que la selección múltiple de la Colección (ver
+// renderBulkActionBar) — pensado para cuando el inventario de equipo (tope
+// MAX_GEAR) se llena de piezas sueltas de bajo tier que nunca se van a
+// equipar, y venderlas una a una es tedioso.
+UI.gearFilterMode = 'all';
+UI.gearBulkMode = false;
+UI.gearBulkSelection = new Set();
+
 UI.renderEquipo = function (state) {
   $('gearCount').textContent = state.gearInventory.length;
   const grid = $('gearGrid');
   grid.innerHTML = '';
   $('gearEmptyHint').classList.toggle('hidden', state.gearInventory.length > 0);
-  state.gearInventory.forEach(g => {
+  const filtered = state.gearInventory.filter(g => {
+    const used = !!equippedGearOwner(state, g.uid);
+    if (UI.gearFilterMode === 'unused') return !used;
+    if (UI.gearFilterMode === 'equipped') return used;
+    return true;
+  });
+  filtered.forEach(g => {
     const rarity = rarityInfo(g.rarity);
     const owner = equippedGearOwner(state, g.uid);
-    const cell = el('div', 'item-cell');
+    const cell = el('div', 'item-cell' + (UI.gearBulkMode && UI.gearBulkSelection.has(g.uid) ? ' selected' : ''));
     cell.style.borderColor = rarity.color;
     cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div><div class="item-plus">+${g.level}</div>${owner ? '<div class="equipped-dot"></div>' : ''}`;
     cell.appendChild(gearIcon(g, 30));
-    cell.addEventListener('click', () => UI.openGearModal(state, g.uid));
+    cell.addEventListener('click', () => {
+      if (UI.gearBulkMode) {
+        if (owner) { UI.showToast('⚠️ Ese equipo está puesto — quítaselo antes de venderlo.'); return; }
+        if (UI.gearBulkSelection.has(g.uid)) UI.gearBulkSelection.delete(g.uid);
+        else UI.gearBulkSelection.add(g.uid);
+        UI.renderEquipo(state);
+        return;
+      }
+      UI.openGearModal(state, g.uid);
+    });
     grid.appendChild(cell);
   });
+
+  const bulkBtn = $('gearBulkModeBtn');
+  bulkBtn.textContent = UI.gearBulkMode ? '✕ Cancelar selección' : '☑️ Selección múltiple';
+  bulkBtn.classList.toggle('active', UI.gearBulkMode);
+  renderGearBulkActionBar(state);
 };
+
+function renderGearBulkActionBar(state) {
+  const bar = $('gearBulkActionBar');
+  if (!UI.gearBulkMode) { bar.classList.add('hidden'); bar.innerHTML = ''; return; }
+  bar.classList.remove('hidden');
+  bar.innerHTML = '';
+  // Descarta de la selección cualquier uid que ya no exista o que se haya
+  // equipado mientras seguía seleccionado.
+  const uids = [...UI.gearBulkSelection].filter(uid => gearItem(state, uid) && !equippedGearOwner(state, uid));
+  if (uids.length !== UI.gearBulkSelection.size) UI.gearBulkSelection = new Set(uids);
+  const gears = uids.map(uid => gearItem(state, uid));
+  bar.appendChild(el('p', 'settings-info', gears.length === 0
+    ? 'Toca piezas de equipo sin usar para seleccionarlas.'
+    : `${gears.length} pieza${gears.length === 1 ? '' : 's'} seleccionada${gears.length === 1 ? '' : 's'}.`));
+
+  const totalValue = gears.reduce((sum, g) => sum + gearStatValue(g) * 2, 0);
+  const sellBtn = el('button', 'danger-btn', gears.length ? `🪙 Vender seleccionadas (+${totalValue})` : '🪙 Vender seleccionadas');
+  sellBtn.disabled = gears.length === 0;
+  sellBtn.addEventListener('click', () => {
+    if (!confirm(`¿Vender ${gears.length} piezas de equipo por ${totalValue} Texel en total? No se puede deshacer.`)) return;
+    uids.forEach(uid => sellGear(state, uid));
+    UI.gearBulkSelection.clear();
+    saveGame(state);
+    UI.renderTopbar(state);
+    UI.renderEquipo(state);
+    UI.showToast(`🪙 Vendidas ${gears.length} piezas por +${totalValue} Texel`);
+  });
+  bar.appendChild(sellBtn);
+
+  if (gears.length > 0) {
+    const clearBtn = el('button', 'mini-btn', 'Vaciar selección');
+    clearBtn.addEventListener('click', () => { UI.gearBulkSelection.clear(); UI.renderEquipo(state); });
+    bar.appendChild(clearBtn);
+  }
+}
 
 // ---------- Mercader Itinerante ----------
 // Oferta diaria (ver merchantOffer en data.js): cambia copias sueltas de

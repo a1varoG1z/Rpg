@@ -2217,6 +2217,55 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     de esas mismas zonas se mantiene en 0-20% (sin cambios, dentro del
     ruido esperado de una muestra de 20 combates).
 
+- [x] **¿Por qué los jefes no matan a nadie? (análisis, sin cambios de
+    código) / filtro y venta múltiple de equipo sin usar / la probabilidad
+    misma de que un jefe repetido suelte equipo también baja mucho**. Tres
+    pedidos del usuario en la misma ronda.
+    - **Análisis de por qué los jefes se sienten inofensivos**: se simuló
+      el jefe de 5 zonas repartidas por el mapa con el mismo equipo "a la
+      altura de su zona" de la entrada anterior, probando 3 niveles de
+      inversión de equipo (multiplicador de estadísticas uniforme:
+      1.0=sin nada, 1.15=equipo ligero, 1.3=equipo decente). Con CERO
+      equipo, el jefe es un reto real: 9,3% de derrotas, 1,03 luchadores
+      caídos de media, y un combate ganado deja a la banda con solo el 51%
+      de su vida total de media — nada inofensivo. Pero con un 15% extra
+      de estadísticas (equipo ligero, nada del otro mundo) ya cae a 2,7%
+      de derrotas y 0,40 caídos; con un 30% extra (equipo decente) es
+      0% de derrotas y solo 0,12 caídos — el jefe deja de suponer ningún
+      riesgo real. **Conclusión**: los jefes SÍ son un reto de verdad para
+      un equipo sin ninguna pieza de equipo puesta (que es como se
+      calibraron), pero pierden casi todo su filo en cuanto el jugador
+      lleva encima aunque sea poco equipo — lo cual, con las mejoras
+      recientes al drop de equipo, pasa bastante rápido. No es que estén
+      "rotos", es que la curva de dificultad de los jefes es muy sensible
+      al equipo y probablemente el jugador ya iba, sin saberlo, muy por
+      encima del caso base con el que se calibraron. No se tocó ningún
+      valor de jefe esta vez — el usuario pidió opinión, no un ajuste; si
+      se quiere que los jefes sigan suponiendo reto incluso con equipo
+      puesto, haría falta volver a calibrarlos (con simulación, como la
+      ronda original) contra un caso base con algo de equipo en vez de
+      ninguno, lo cual toca los 31 jefes de nuevo.
+    - **Filtro y venta múltiple de Equipo**: la pantalla Equipo gana un
+      selector (Todo/Solo sin usar/Solo equipado, `UI.gearFilterMode`) y
+      un botón de selección múltiple (mismo patrón que ya existía en
+      Colección) — `UI.gearBulkMode`/`UI.gearBulkSelection` en ui.js,
+      `renderGearBulkActionBar` calcula el valor total en Texel
+      (`gearStatValue(g) * 2`, la misma fórmula que vender una pieza
+      suelta) y vende todas las seleccionadas de golpe tras confirmar.
+      Tocar una pieza EQUIPADA en modo selección la rechaza con un aviso
+      en vez de añadirla (hay que quitársela a su dueño primero).
+    - **Probabilidad de equipo de jefe repetido, mucho más baja**: la
+      ronda anterior ya bajó la RAREZA del equipo de jefe repetido a una
+      tabla fija, pero la probabilidad misma de que caiga algo seguía en
+      70% siempre. Ahora baja a 8% en las repeticiones (`bossGearChance`
+      en `stageRewards`, combat.js) — la primera vez no cambia.
+    Verificado con Playwright: el filtro separa correctamente sin
+    usar/equipado (3 y 1 de 4 piezas de prueba); seleccionar y vender 3
+    piezas sin usar da el Texel correcto y las quita del inventario sin
+    tocar la equipada; y `stageRewards` da equipo ~69% de las veces en la
+    primera victoria del jefe (sin cambios) y ~8% en la repetición (antes
+    70%).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

@@ -36,6 +36,12 @@
     UI.bulkSelection.clear();
     UI.renderBanda(state);
   });
+  $('gearFilterSelect').addEventListener('change', (e) => { UI.gearFilterMode = e.target.value; UI.renderEquipo(state); });
+  $('gearBulkModeBtn').addEventListener('click', () => {
+    UI.gearBulkMode = !UI.gearBulkMode;
+    UI.gearBulkSelection.clear();
+    UI.renderEquipo(state);
+  });
   $('pokedexModalClose').addEventListener('click', () => $('pokedexModal').classList.add('hidden'));
   $('pokedexEntryModalClose').addEventListener('click', () => $('pokedexEntryModal').classList.add('hidden'));
   $('objectivesBtn').addEventListener('click', () => UI.openObjectives(state));

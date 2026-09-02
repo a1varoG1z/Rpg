@@ -252,7 +252,15 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
       if (Math.random() < 0.2) drops.voxite = 1;
       if (Math.random() < 0.05) drops.doxite = 1;
     }
-    if (Math.random() < 0.7) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx, isFirstClear));
+    // Igual que el cristal: el 70% de probabilidad de equipo es el premio
+    // de vencer al jefe por primera vez. Repetirlo lo bajaba a una tabla de
+    // rareza floja (ver gearDropRarity) pero seguía dando equipo el 70% de
+    // las veces — con un jefe fácil de repetir en segundos (Auto +
+    // velocidad 3×), eso seguía siendo mucho volumen de piezas, aunque
+    // fueran de rareza baja. En la repetición baja también la probabilidad
+    // misma de que caiga algo, a un 8%.
+    const bossGearChance = isFirstClear ? 0.7 : 0.08;
+    if (Math.random() < bossGearChance) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx, isFirstClear));
   } else {
     if (Math.random() < 0.35) drops.pixite = 1;
     if (Math.random() < 0.3) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx));

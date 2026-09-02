@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260902r">
+<link rel="stylesheet" href="css/style.css?v=20260902s">
 </head>
 <body>
 <div id="app">
@@ -82,7 +82,17 @@
     </section>
 
     <section id="screen-equipo" class="screen">
-      <h2 class="screen-title">Equipo <span class="badge" id="gearCount">0</span></h2>
+      <h2 class="screen-title">Equipo <span class="badge" id="gearCount">0</span>
+        <button class="mini-btn" id="gearBulkModeBtn">☑️ Selección múltiple</button>
+      </h2>
+      <div class="roster-filter-row">
+        <select id="gearFilterSelect">
+          <option value="all">Todo el equipo</option>
+          <option value="unused">Solo sin usar</option>
+          <option value="equipped">Solo equipado</option>
+        </select>
+      </div>
+      <div id="gearBulkActionBar" class="hidden"></div>
       <div class="item-grid" id="gearGrid"></div>
       <div class="empty-hint hidden" id="gearEmptyHint">Sin objetos todavía. Consíguelos superando etapas.</div>
     </section>
@@ -281,11 +291,11 @@
 
 <div id="toastContainer"></div>
 
-<script src="js/data.js?v=20260902r"></script>
-<script src="js/sprite.js?v=20260902r"></script>
-<script src="js/state.js?v=20260902r"></script>
-<script src="js/combat.js?v=20260902r"></script>
-<script src="js/ui.js?v=20260902r"></script>
-<script src="js/main.js?v=20260902r"></script>
+<script src="js/data.js?v=20260902s"></script>
+<script src="js/sprite.js?v=20260902s"></script>
+<script src="js/state.js?v=20260902s"></script>
+<script src="js/combat.js?v=20260902s"></script>
+<script src="js/ui.js?v=20260902s"></script>
+<script src="js/main.js?v=20260902s"></script>
 </body>
 </html>
