@@ -902,6 +902,7 @@ function runFighterUids(state, run) {
 function runPseudoZone(run) {
   if (run.isElemental) return { id: 'elemental_' + run.elementId, color: ELEMENT_INFO[run.elementId].color };
   if (run.isTorre) return { id: 'torre', color: '#3a3a4a' };
+  if (run.isTierCap) return { id: 'tiercap', color: '#3a2a4a' };
   return null;
 }
 
@@ -912,19 +913,21 @@ UI.renderStageRun = function (state) {
   wrap.classList.remove('hidden');
   wrap.innerHTML = '';
   const run = window.__stageRun;
-  const zone = (run.isTorre || run.isElemental) ? null : ZONES[run.zoneIdx];
+  const zone = (run.isTorre || run.isElemental || run.isTierCap) ? null : ZONES[run.zoneIdx];
   wrap.style.background = zoneBackgroundStyle(runPseudoZone(run) || zone);
 
   const back = el('button', 'mini-btn', '« Retirarse');
   back.addEventListener('click', () => {
     window.__stageRun = null;
-    if (run.isTorre || run.isElemental) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
+    if (run.isTorre || run.isElemental || run.isTierCap) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
   });
   wrap.appendChild(back);
   wrap.appendChild(el('h3', null, run.isElemental
     ? ELEMENT_INFO[run.elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[run.elementId].label
     : run.isTorre
     ? '🗼 Torre — ' + torreLevelLabel(TORRE_LEVELS[run.torreIdx])
+    : run.isTierCap
+    ? '🎯 Tope de Tier — ' + TIER_CAP_LEVELS[run.tierCapIdx].label
     : zone.emoji + ' ' + zone.name + ' · ' + (run.isBoss ? 'Jefe de zona' : 'Etapa ' + (run.stageIdx + 1))));
 
   const path = el('div', 'stage-run-path');
@@ -1069,6 +1072,8 @@ UI.fightStageRunNode = function (state) {
       ? ELEMENT_INFO[run.elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[run.elementId].label + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length
       : run.isTorre
       ? '🗼 Torre · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length
+      : run.isTierCap
+      ? '🎯 Tope de Tier · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length
       : ZONES[run.zoneIdx].name + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length,
     zone: runPseudoZone(run) || ZONES[run.zoneIdx],
     onEnd: (result, view) => {
@@ -1120,6 +1125,18 @@ UI.fightStageRunNode = function (state) {
         saveGame(state);
         return { rewards, leveled, capturedCopy: fighterDef(level.rewardDefId), capturedIsNew: capture.outcome === 'nuevo' };
       }
+      if (run.isTierCap) {
+        const rewards = tierCapRewards(run.tierCapIdx);
+        state.currencies.texel += rewards.texel;
+        const leveled = [];
+        state.band.flat().filter(Boolean).forEach(uid => {
+          const entry = rosterEntry(state, uid);
+          if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
+        });
+        recordTierCapClear(state, run.tierCapIdx);
+        saveGame(state);
+        return { rewards, leveled };
+      }
       const isFirstClear = run.stageIdx > highestClearedStage(state, ZONES[run.zoneIdx].id);
       const rewards = stageRewards(run.zoneIdx, run.stageIdx, run.isBoss, isFirstClear);
       state.currencies.texel += rewards.texel;
@@ -1152,6 +1169,7 @@ UI.renderTorre = function (state) {
   const wrap = $('torreBody');
   wrap.innerHTML = '';
   UI.renderChampionTrial(state, wrap);
+  UI.renderTierCap(state, wrap);
   UI.renderElementalDungeons(state, wrap);
 
   if (!torreUnlocked(state)) {
@@ -1198,6 +1216,61 @@ UI.renderTorre = function (state) {
   // durante la mayor parte de la partida) esta sección entera desaparecía
   // sin más, en vez de mostrarse como "bloqueado hasta terminar la Torre".
   UI.renderRoguelike(state, wrap);
+};
+
+// ---------- Tope de Tier ----------
+// Reto de restricción de Formación (ver TIER_CAP_LEVELS en data.js): antes
+// de dejar empezar cada nivel se comprueba formationMeetsConstraint
+// (state.js) sobre TODA la Formación actual (huecos vacíos no cuentan).
+// Sin desbloqueo (disponible desde el principio, como Prueba del Campeón)
+// — no es una escalera de poder, es una restricción de montaje, así que no
+// tiene sentido gatearla detrás de otro contenido.
+UI.renderTierCap = function (state, wrap) {
+  wrap.appendChild(el('h3', null, '🎯 Tope de Tier'));
+  wrap.appendChild(el('p', 'settings-info', `Antes de cada nivel, monta tu Formación entera dentro de la
+    restricción indicada (rareza/elemento/clase) — un reto pensado para forzarte a usar luchadores
+    distintos a tu equipo habitual.`));
+  const list = el('div', 'torre-list');
+  TIER_CAP_LEVELS.forEach((level, idx) => {
+    const unlocked = isTierCapLevelUnlocked(state, idx);
+    const clears = tierCapClearCount(state, level);
+    const meetsNow = unlocked && formationMeetsConstraint(state, level.constraint);
+    const row = el('div', 'torre-row' + (unlocked ? '' : ' locked'));
+    row.appendChild(el('div', 'torre-row-empty-icon', '🎯'));
+    const info = el('div', 'torre-row-info');
+    info.appendChild(el('div', 'torre-row-name', level.label));
+    info.appendChild(el('div', 'torre-row-sub', unlocked
+      ? tierCapConstraintLabel(level.constraint) + (clears > 0 ? ' · superado ' + clears + 'x' : '') + (!meetsNow ? ' · ⚠️ tu Formación actual no cumple la restricción' : '')
+      : '🔒 Supera el nivel anterior'));
+    row.appendChild(info);
+    if (unlocked) row.addEventListener('click', () => UI.startTierCapLevel(state, idx));
+    list.appendChild(row);
+  });
+  wrap.appendChild(list);
+};
+
+UI.startTierCapLevel = function (state, idx) {
+  if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
+  if (!isTierCapLevelUnlocked(state, idx)) return;
+  const level = TIER_CAP_LEVELS[idx];
+  if (!formationMeetsConstraint(state, level.constraint)) {
+    UI.showToast('⚠️ Tu Formación no cumple la restricción: ' + tierCapConstraintLabel(level.constraint));
+    return;
+  }
+  if (!state.settings.infiniteEnergy) {
+    if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+    state.currencies.energy -= STAGE_ENERGY_COST;
+    saveGame(state);
+    UI.renderTopbar(state);
+  }
+  const encounters = buildTierCapEncounters(level, idx);
+  window.__championRun = null;
+  window.__roguelikeRun = null;
+  window.__stageRun = {
+    isTierCap: true, tierCapIdx: idx, isBoss: false,
+    encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {},
+  };
+  UI.renderStageRun(state);
 };
 
 UI.startTorreLevel = function (state, idx) {

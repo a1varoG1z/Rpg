@@ -193,6 +193,31 @@ function buildTorreEncounters(level, bossExtraMult) {
   return rows;
 }
 
+// Oleadas de un nivel de Tope de Tier (ver TIER_CAP_LEVELS en data.js): el
+// rival se saca del MISMO filtro rareza/elemento/clase que se le exige al
+// jugador (ver formationMeetsConstraint en state.js) — así el combate
+// queda "en igualdad de condiciones" dentro de esa restricción, en vez de
+// ser un muro fijo sin relación con lo que se le permite traer al
+// jugador. Nivel y nº de rivales crecen suavemente con la posición en la
+// escalera (idx), igual que el resto de escaleras de Retos.
+function buildTierCapEncounters(level, idx) {
+  const pool = FIGHTERS.filter(f => rarityIndex(f.rarity) <= rarityIndex(level.constraint.rarityMax)
+    && (!level.constraint.element || f.element === level.constraint.element)
+    && (!level.constraint.class || f.class === level.constraint.class));
+  const enemyLevel = Math.min(XP_LEVEL_CAP, 6 + idx * 3);
+  const rowCount = idx < 5 ? 1 : (idx < 10 ? 2 : 3);
+  const rows = [];
+  for (let r = 0; r < rowCount; r++) {
+    const row = [];
+    for (let i = 0; i < 3; i++) {
+      const def = pool[Math.floor(Math.random() * pool.length)];
+      row.push(makeUnit('enemy', def.id, enemyLevel));
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
 // Equipo mono-elemento elegido para una Mazmorra Elemental (ver
 // UI.openElementalTeamPicker) — hasta 3 uids, sin las 8 líneas de la
 // Formación normal porque aquí solo hay un grupo posible.

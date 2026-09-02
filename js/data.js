@@ -532,6 +532,7 @@ setLeaderSkill('odin_legendario', 'wis_boost');
 setLeaderSkill('sunwukong_legendario', 'agi_boost');
 setLeaderSkill('afrodita_legendario', 'hp_boost');
 setLeaderSkill('poseidon_legendario', 'def_boost');
+setLeaderSkill('ragnar_legendario', 'def_boost');
 
 const ZONES = [
   { id: 'bosque', name: 'Linde del Bosque', emoji: '🌲', color: '#2f4f2f', pool: ['goblin_comun', 'arana_comun', 'boss_guardianbosque'] },
@@ -810,6 +811,46 @@ function torreRewards(idx) {
   return { texel, fighterXp };
 }
 
+// ---------- Tope de Tier ----------
+// Reto de Retos (Fase 1, ver TODO.md): antes de empezar cada nivel, la
+// Formación ENTERA (todos los huecos ocupados, los vacíos no cuentan) debe
+// cumplir su `constraint` — así se fuerza a montar un equipo distinto al
+// "meter siempre a los más fuertes" de cualquier otro modo. El rival de
+// cada nivel se saca del MISMO filtro que el jugador (mismo tope de
+// rareza/elemento/clase, ver buildTierCapEncounters en combat.js) — un
+// combate "en igualdad de condiciones" dentro de esa restricción, no un
+// muro artificial. Escalera fija y secuencial, como Torre Batalla (se
+// desbloquea el siguiente al superar el anterior, rejugable después).
+// Fase 2 pendiente (ver TODO.md): niveles que fuercen el uso de una
+// familia/personaje concreto cada uno, para cubrir las ~112 familias
+// jugables y que el 100% de este modo obligue a usar casi todo el roster.
+const TIER_CAP_LEVELS = [
+  { id: 'tc_comun', label: 'Solo Común', constraint: { rarityMax: 'comun' } },
+  { id: 'tc_infrecuente', label: 'Hasta Infrecuente', constraint: { rarityMax: 'infrecuente' } },
+  { id: 'tc_raro', label: 'Hasta Raro', constraint: { rarityMax: 'raro' } },
+  { id: 'tc_epico', label: 'Hasta Épico', constraint: { rarityMax: 'epico' } },
+  { id: 'tc_raro_fuego', label: 'Hasta Raro · Solo Fuego', constraint: { rarityMax: 'raro', element: 'fuego' } },
+  { id: 'tc_raro_viento', label: 'Hasta Raro · Solo Viento', constraint: { rarityMax: 'raro', element: 'viento' } },
+  { id: 'tc_raro_tierra', label: 'Hasta Raro · Solo Tierra', constraint: { rarityMax: 'raro', element: 'tierra' } },
+  { id: 'tc_raro_rayo', label: 'Hasta Raro · Solo Rayo', constraint: { rarityMax: 'raro', element: 'rayo' } },
+  { id: 'tc_raro_agua', label: 'Hasta Raro · Solo Agua', constraint: { rarityMax: 'raro', element: 'agua' } },
+  { id: 'tc_epico_campeon', label: 'Hasta Épico · Solo Campeón', constraint: { rarityMax: 'epico', class: 'campeon' } },
+  { id: 'tc_epico_picaro', label: 'Hasta Épico · Solo Pícaro', constraint: { rarityMax: 'epico', class: 'picaro' } },
+  { id: 'tc_epico_guru', label: 'Hasta Épico · Solo Gurú', constraint: { rarityMax: 'epico', class: 'guru' } },
+  { id: 'tc_epico_brujo', label: 'Hasta Épico · Solo Brujo', constraint: { rarityMax: 'epico', class: 'brujo' } },
+  { id: 'tc_epico_explorador', label: 'Hasta Épico · Solo Explorador', constraint: { rarityMax: 'epico', class: 'explorador' } },
+  { id: 'tc_final', label: 'El Filtro Final: Raro · Fuego · Campeón', constraint: { rarityMax: 'raro', element: 'fuego', class: 'campeon' } },
+];
+function tierCapConstraintLabel(c) {
+  const parts = [rarityInfo(c.rarityMax).label + ' o menos'];
+  if (c.element) parts.push(ELEMENT_INFO[c.element].icon + ' ' + ELEMENT_INFO[c.element].label);
+  if (c.class) parts.push(CLASS_INFO[c.class].icon + ' ' + CLASS_INFO[c.class].label);
+  return parts.join(' · ');
+}
+function tierCapRewards(idx) {
+  return { texel: Math.round(50 + idx * 25), fighterXp: Math.round(30 + idx * 12) };
+}
+
 // ---------- Mazmorra Elemental ----------
 // Reto opcional de equipo mono-elemento: se desbloquea al terminar las 6
 // zonas originales del mapa (bosque..guarida, hasta desbloquear 'cantera',
@@ -977,6 +1018,9 @@ const OBJECTIVES = [
   { id: 'roguelike_5', icon: '🌀', label: 'Alcanza la ronda 5 del Roguelike', reward: rT(200), get: (st) => st.roguelike.bestRound, target: 5 },
   { id: 'roguelike_15', icon: '🌀', label: 'Alcanza la ronda 15 del Roguelike', reward: rG(40), get: (st) => st.roguelike.bestRound, target: 15 },
   { id: 'roguelike_30', icon: '🌀', label: 'Alcanza la ronda 30 del Roguelike', reward: rG(85), get: (st) => st.roguelike.bestRound, target: 30 },
+  { id: 'tiercap_1', icon: '🎯', label: 'Supera tu primer nivel de Tope de Tier', reward: rT(150), get: (st) => Object.values(st.tierCap.clears).filter(v => v > 0).length, target: 1 },
+  { id: 'tiercap_7', icon: '🎯', label: 'Supera 7 niveles de Tope de Tier', reward: rG(45), get: (st) => Object.values(st.tierCap.clears).filter(v => v > 0).length, target: 7 },
+  { id: 'tiercap_todos', icon: '🎯', label: 'Supera todos los niveles de Tope de Tier', reward: rG(90), get: (st) => Object.values(st.tierCap.clears).filter(v => v > 0).length, target: TIER_CAP_LEVELS.length },
 
   // --- Homúnculos ---
   { id: 'homunculos_5', icon: '🧪', label: 'Consigue 5 Homúnculos', reward: rI('pocion_menor', 2), get: (st, s) => s.homunculosTotal, target: 5 },

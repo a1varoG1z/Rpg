@@ -46,6 +46,9 @@ function createNewState() {
     // level.key de TORRE_LEVELS en data.js) — 0/ausente = nivel no
     // superado todavía (y por tanto el siguiente sigue bloqueado).
     torre: { clears: {} },
+    // Tope de Tier: cuántas veces se ha superado cada nivel (clave =
+    // level.id de TIER_CAP_LEVELS en data.js), igual que torre.clears.
+    tierCap: { clears: {} },
     // Mazmorra Elemental: equipo de hasta 3 uids elegido para cada
     // elemento (se recuerda entre visitas, editable en cualquier momento)
     // y cuántas veces se ha superado cada una.
@@ -529,6 +532,38 @@ function recordTorreClear(state, idx) {
   state.torre.clears[level.key] = torreClearCount(state, level) + 1;
 }
 
+// --- Tope de Tier (ver TIER_CAP_LEVELS en data.js) ---
+// Disponible desde el principio (no necesita haber terminado nada) — es
+// una restricción de CÓMO montas la Formación, no una escalera de poder,
+// así que no tiene sentido gatearla detrás de otro contenido.
+function tierCapClearCount(state, level) { return state.tierCap.clears[level.id] || 0; }
+function isTierCapLevelUnlocked(state, idx) {
+  if (idx === 0) return true;
+  return tierCapClearCount(state, TIER_CAP_LEVELS[idx - 1]) > 0;
+}
+function recordTierCapClear(state, idx) {
+  const level = TIER_CAP_LEVELS[idx];
+  state.tierCap.clears[level.id] = tierCapClearCount(state, level) + 1;
+}
+// Solo mira los huecos OCUPADOS de la Formación (los vacíos no cuentan ni
+// a favor ni en contra) — así el jugador puede optar por dejar huecos
+// libres si no tiene suficientes luchadores que cumplan la restricción, a
+// cambio de menos líneas de combate entre las que elegir, sin que eso
+// bloquee poder intentarlo. Al menos 1 hueco ocupado para poder empezar.
+function formationMeetsConstraint(state, constraint) {
+  const filled = state.band.flat().filter(Boolean);
+  if (!filled.length) return false;
+  return filled.every(uid => {
+    const entry = rosterEntry(state, uid);
+    if (!entry) return false;
+    const def = fighterDef(entry.defId);
+    if (constraint.rarityMax && rarityIndex(def.rarity) > rarityIndex(constraint.rarityMax)) return false;
+    if (constraint.element && def.element !== constraint.element) return false;
+    if (constraint.class && def.class !== constraint.class) return false;
+    return true;
+  });
+}
+
 // --- Mazmorra Elemental (ver ELEMENTAL_DUNGEONS en data.js) ---
 // Se desbloquea al completar las 6 zonas originales del mapa (contenido de
 // mitad de partida, mucho antes que Torre Batalla, que pide el mapa
@@ -706,6 +741,7 @@ function migrateState(state) {
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     if (!state.homunculos) state.homunculos = { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 };
     if (!state.torre) state.torre = { clears: {} };
+    if (!state.tierCap) state.tierCap = { clears: {} };
     if (!state.elementalTeams) state.elementalTeams = { fuego: [], viento: [], tierra: [], rayo: [], agua: [] };
     if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
     if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };

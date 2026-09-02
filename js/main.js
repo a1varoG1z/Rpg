@@ -164,7 +164,7 @@
       UI.renderStageRun(state);
     } else if (run) {
       window.__stageRun = null;
-      if (run.isTorre || run.isElemental) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
+      if (run.isTorre || run.isElemental || run.isTierCap) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
     } else {
       UI.renderScreen(activeScreen, state);
     }

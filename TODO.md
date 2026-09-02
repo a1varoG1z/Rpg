@@ -2665,6 +2665,75 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Formación "óptima" de siempre no sirva y haya que montar un equipo
       distinto a propósito.
 
+- [x] **Bug: Ragnar sin bono de líder**. El usuario preguntó — comprobado
+    con script: de los 31 Legendarios, exactamente 1 no tenía
+    `leaderSkillId` asignado (`ragnar_legendario`, el único `setLeaderSkill`
+    que faltaba de los 31). Añadido `setLeaderSkill('ragnar_legendario',
+    'def_boost')` — def_boost porque era, junto con agi_boost, el bono
+    menos repartido de los 5 (5 de 30 antes de este fix) y encaja con el
+    tema de un rey vikingo que lidera y protege a sus huestes en combate.
+
+- [x] **Pregunta: ¿Medusa tiene un mapa que no le corresponde?** (solo
+    respuesta, sin cambios de código, según lo pedido). Comprobado: NO es
+    un error. Hay dos jefes distintos relacionados con las Górgonas, cada
+    uno en la zona que encaja con su propio matiz del mito: `boss_medusa`
+    ("Medusa, la Gorgona de Mirada Pétrea") vive en **Jardín de Piedra**
+    (tema petrificación/piedra — encaja perfecto con su mirada que
+    convierte en piedra), y `boss_gorgonas` ("Las Gorgonas, Hermanas de
+    Piedra" — las 3 hermanas gorgonas del mito, de las que Medusa es una)
+    vive en **Templo de las Hermanas** (tema "hermanas" — encaja con que
+    mitológicamente las gorgonas son 3 hermanas). Son dos jefes
+    deliberadamente distintos para dos facetas distintas del mismo mito,
+    no una redundancia ni un despiste.
+
+- [ ] **Modo "Tope de Tier" en Retos — FASE 1 hecha, FASE 2 pendiente**
+    (pedido explícito, dividido en fases porque el usuario avisó de que
+    podía ser grande). Objetivo final: que completar Retos al 100% obligue
+    a usar prácticamente TODOS los ~112 familias jugables, no solo el
+    equipo favorito de siempre.
+    - **[x] Fase 1 — infraestructura + escalera curada (15 niveles)**:
+      antes de dejar empezar cada nivel se exige que la Formación ENTERA
+      (huecos ocupados, los vacíos no cuentan) cumpla una restricción de
+      rareza máxima / elemento / clase (`formationMeetsConstraint`,
+      state.js) — el aviso "⚠️ tu Formación actual no cumple la
+      restricción" se ve en la lista antes de intentarlo. El rival se saca
+      del MISMO filtro que se le exige al jugador (`buildTierCapEncounters`,
+      combat.js) — combate en igualdad de condiciones dentro de esa
+      restricción, no un muro fijo sin relación con lo permitido. 15
+      niveles fijos y secuenciales (como Torre): 4 solo de tope de rareza
+      (Común/Infrecuente/Raro/Épico), 5 de rareza+elemento, 5 de
+      rareza+clase, y un nivel final combinando los 3 ejes a la vez (Raro +
+      Fuego + Campeón, el filtro más estrecho). Sin desbloqueo previo
+      (disponible desde el principio, como Prueba del Campeón) — no es una
+      escalera de poder, es una restricción de montaje. 3 logros nuevos
+      (primer nivel, 7 niveles, todos). Verificado con Playwright: bloquea
+      empezar si la Formación no cumple (sin gastar Energía) y lo permite
+      si cumple; desbloqueo secuencial correcto; con una banda
+      "razonablemente progresada para cada nivel" (nivel/rareza escalados
+      con la posición en la escalera, algo de equipo/estrellas) se ganan
+      11 de los 15 niveles (~73%) — reto real con derrotas genuinas, no un
+      paseo ni un muro; los 3 mods (Torre/Roguelike/Tope de Tier) conviven
+      sin regresiones entre sí en la pantalla de Retos.
+    - **[ ] Fase 2 — forzar el uso de (casi) todas las 112 familias**: la
+      Fase 1 por sí sola NO cubre el objetivo final (usa un filtro
+      genérico de rareza/elemento/clase, cualquier familia que encaje
+      vale) — falta el mecanismo que específicamente OBLIGUE a usar cada
+      familia concreta al menos una vez para poder llegar al 100%. Diseño
+      pendiente de decidir con el usuario antes de implementar (varias
+      formas razonables, con distinto coste): (a) un nivel por familia
+      concreta (`requireFamily`, ~112 niveles — mucho contenido, pero
+      exhaustivo y explícito); (b) niveles que piden "incluye X de estas Y
+      familias sin usar todavía" en vez de una familia fija cada vez
+      (menos niveles, pero necesita llevar la cuenta de qué familias ya se
+      han usado en ESTE modo); (c) un contador de "familias distintas
+      usadas en Tope de Tier" con logros/recompensas escalonados en vez de
+      niveles dedicados uno a uno (mucho más barato de implementar, pero
+      no obliga nivel a nivel, solo incentiva). También pendiente: una
+      pasada de balance por simulación de la Fase 1 (como se hizo con
+      MOB_POWER_MULT) — la verificación de arriba confirma que funciona y
+      es razonable, pero no está afinada al mismo nivel de rigor que el
+      resto del combate.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
