@@ -208,7 +208,7 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
       if (Math.random() < 0.2) drops.voxite = 1;
       if (Math.random() < 0.05) drops.doxite = 1;
     }
-    if (Math.random() < 0.7) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx));
+    if (Math.random() < 0.7) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx, isFirstClear));
   } else {
     if (Math.random() < 0.35) drops.pixite = 1;
     if (Math.random() < 0.3) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx));
@@ -216,8 +216,18 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
   return { texel, fighterXp, drops };
 }
 
-function gearDropRarity(globalIdx) {
-  const roll = Math.random() + globalIdx * 0.01;
+// La rareza del equipo que sueltan los jefes sube con `globalIdx` SIN
+// TECHO — bien como recompensa de la primera vez que se vence a un jefe
+// (cuanto más avanzada la zona, mejor el premio), pero roto si se puede
+// repetir sin límite: el jefe de la zona 6 ya da ~35% de Legendario por
+// victoria, y a partir de la zona 16 es prácticamente garantizado — volver
+// a un jefe ya vencido para farmear Legendario gratis. `isFirstClear` (ver
+// stageRewards) evita esto en las repeticiones usando una tabla FIJA, la
+// misma en cualquier zona, sin el bonus de `globalIdx` — solo se pasa
+// `false` explícitamente desde jefes; el resto de llamadas (etapas
+// normales, Mazmorra Elemental) no cambia.
+function gearDropRarity(globalIdx, isFirstClear) {
+  const roll = isFirstClear === false ? Math.random() : Math.random() + globalIdx * 0.01;
   if (roll > 0.97) return 'legendario';
   if (roll > 0.85) return 'epico';
   if (roll > 0.55) return 'raro';

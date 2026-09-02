@@ -2081,6 +2081,43 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     la primera victoria y 9 Voxite en 40 repeticiones reales posteriores
     (22,5%, dentro de lo esperable para un 20% con esa muestra).
 
+- [x] **La rareza del equipo que sueltan los jefes tampoco sube sin límite
+    al repetirlos**. Continuación directa de la entrada anterior: el
+    usuario preguntó si rejugar jefes no soltaba también demasiado equipo,
+    y tenía razón — era un problema más grave todavía que el de los
+    cristales.
+    - `gearDropRarity(globalIdx)` hacía crecer la probabilidad de
+      Legendario CON `globalIdx` sin ningún techo — combinado con el 70%
+      de probabilidad de soltar equipo en cualquier jefe (frente al 30% de
+      una etapa normal), simulando 100.000 combates por caso: el jefe de
+      la ZONA 1 (el más fácil del juego) ya daba ~7% de Legendario por
+      victoria; zona 3, ~18%; zona 6, ~35%; zona 16 en adelante,
+      prácticamente el 100% garantizado. Cualquiera que desbloqueara una
+      zona avanzada podía volver a un jefe ya vencido y farmear equipo
+      Legendario casi seguro, indefinidamente.
+    - Mismo arreglo que con el Voxite: `gearDropRarity` gana un segundo
+      parámetro `isFirstClear` — con `true` (o sin pasarlo, para no tocar
+      las etapas normales ni la Mazmorra Elemental) se comporta exactamente
+      igual que antes; con `false` (solo lo pasan las repeticiones de
+      jefe, desde `stageRewards`) usa una tabla de rareza FIJA, la misma
+      en cualquier zona, sin el bonus de `globalIdx`.
+    Verificado: simulación de 100.000 combates por zona confirma que la
+    probabilidad de Legendario en primera vez no cambió (6,90%/17,99%/
+    35,20%/69,89% en zonas 1/3/6/16) mientras que en repetición queda
+    plana alrededor del 2% en las cuatro zonas; y con Playwright, 150
+    repeticiones reales del jefe de la zona 1 (banda a nivel 40, energía
+    infinita) llenaron el inventario de equipo (60/60) con solo 1
+    Legendario de 60 piezas (1,7%, coherente con la tabla fija).
+    - **Pendiente de decidir, no implementado**: la Mazmorra Elemental usa
+      la misma `gearDropRarity(globalIdx)` sin distinguir primera vez de
+      repetición, y es contenido explícitamente repetible (tiene su propio
+      contador `elementalClears`) — su `globalIdx` fijo (zona 7, "Cantera
+      Devorada") ya da ~58% de Legendario por completar, SIEMPRE, porque
+      nunca pasa `isFirstClear`. Es el mismo problema de fondo, pero no se
+      tocó porque el usuario preguntó específicamente por los jefes del
+      Mapa — queda pendiente de que confirme si quiere el mismo arreglo
+      ahí también.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
