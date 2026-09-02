@@ -107,6 +107,22 @@ function makeBossUnit(defId, level, extraMult) {
 // bajan de 2 oleadas y siempre presentan 3 rivales por oleada (aunque alguno
 // sea de relleno más débil); el jefe de zona es la única pelea contra un
 // único rival, sin oleadas previas.
+//
+// Los jefes se calibraron a fondo por simulación (ver el histórico de
+// TODO.md) para dar un reto real pero siempre superable; el relleno de las
+// etapas normales nunca pasó por ese mismo ajuste — usa la fórmula de
+// rareza×nivel tal cual, la misma que un luchador del jugador de esa misma
+// rareza/nivel. Como cada etapa encadena 2-3 oleadas SIN curación entre
+// ellas (solo se cura al empezar una etapa nueva), un enfrentamiento
+// "igualado" oleada a oleada se convertía en desgaste imposible: simulando
+// miles de combates, un equipo a la altura de su zona perdía el 100% de
+// las etapas normales en las zonas media/tardías, frente a un 0% contra el
+// jefe de esa misma zona — justo lo contrario de lo que se espera de la
+// curva de dificultad. MOB_POWER_MULT (afinado por la misma simulación,
+// probando 0.65/0.72/0.78) devuelve el camino a un reto real pero
+// superable (~26% de derrota en una muestra representativa de zonas) sin
+// tocar los jefes, que ya estaban bien calibrados.
+const MOB_POWER_MULT = 0.72;
 function buildEnemyBand(zoneIdx, stageIdx, bossExtraMult) {
   const zone = ZONES[zoneIdx];
   const isBoss = stageIdx === STAGES_PER_ZONE - 1;
@@ -129,7 +145,7 @@ function buildEnemyBand(zoneIdx, stageIdx, bossExtraMult) {
     const row = [];
     for (let i = 0; i < 3; i++) {
       const pick = zone.pool[Math.floor(Math.random() * Math.min(2, zone.pool.length))];
-      row.push(makeUnit('enemy', pick, level));
+      row.push(makeUnit('enemy', pick, level, MOB_POWER_MULT));
     }
     rows.push(row);
   }

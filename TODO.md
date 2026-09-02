@@ -2177,6 +2177,46 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     marrón-dorado de siempre y el hueco central vacío sigue en dorado
     pleno.
 
+- [x] **El camino a un jefe era más duro que el propio jefe — rebalanceo
+    del relleno de las etapas normales**. El usuario notó que los mobs del
+    camino mataban a más criaturas que el jefe al que llevan, y preguntó
+    si eso desvirtuaba la curva de dificultad.
+    - **Confirmado, y peor de lo que parecía**: los jefes se calibraron a
+      fondo por simulación en una ronda anterior de este mismo trabajo; el
+      relleno de las etapas normales nunca pasó por ese ajuste, solo usa
+      la fórmula de rareza×nivel tal cual (la misma que un luchador del
+      jugador de esa rareza/nivel). Como cada etapa encadena 2-3 oleadas
+      SIN curación entre ellas, un enfrentamiento "igualado" oleada a
+      oleada se volvía desgaste imposible: simulando miles de combates con
+      un equipo a la altura de su zona (misma rareza que el propio relleno
+      de esa zona), las etapas normales de las zonas media/tardías tenían
+      una tasa de DERROTA del 100% — mientras que el jefe de esa misma
+      zona no perdía NUNCA (0%). Justo lo contrario de lo que se espera.
+    - **Arreglo**: `MOB_POWER_MULT = 0.72` (combat.js), aplicado solo al
+      relleno de las etapas normales vía el `extraMult` de `makeUnit` (ya
+      existía para el Duelo por apuesta) — no toca ni jefes, ni Torre
+      Batalla, ni Mazmorra Elemental. El valor se afinó probando 0.65
+      (demasiado flojo, ~8% de derrota) y 0.78 (demasiado duro, ~49%) antes
+      de converger en 0.72 (~26% de derrota en una muestra de 9 zonas
+      repartidas por todo el mapa, con equipos de composición aleatoria
+      para no sesgar por clase).
+    - **Nota para el futuro, no bloqueante**: incluso con el multiplicador
+      ya aplicado, la zona 17 ("Desierto de Espinas", índice 16) sigue
+      quedando algo por encima del resto (~41-44% de derrota en las dos
+      rondas de simulación, frente a un 13-36% en el resto de zonas
+      probadas) — el mismo tipo de "pico" aislado que ya se corrigió una
+      vez en Dracorex durante el rebalanceo de jefes. No se tocó esta
+      ronda por estar fuera de lo preguntado (era sobre la relación
+      camino/jefe en general, no una zona en particular), pero merece una
+      mirada aparte si se nota especialmente dura jugando.
+    Verificado con Playwright, con las funciones REALES del juego
+    (`buildEnemyBand`, no una reimplementación aparte): el ataque de un
+    mob de muestra baja de 42 a 31 con el multiplicador aplicado; y tras el
+    arreglo, jugando de verdad zonas 1/9/17/25/31, las etapas normales caen
+    a 13,6%-41,4% de derrota (antes 100% en las tardías) mientras el jefe
+    de esas mismas zonas se mantiene en 0-20% (sin cambios, dentro del
+    ruido esperado de una muestra de 20 combates).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
