@@ -708,7 +708,26 @@ también ahí en cuanto haya imagen subida.
 - [ ] `torre_prohibida.jpg` — Torre Prohibida (penúltima zona, Balrog)
 - [ ] `salon_enganos.jpg` — Salón de los Engaños (última zona, Tifón)
 
-#### 3. Iconos de equipo (`assets/gear/`) — 0/90, faltan los 90
+#### 3. Fondos de combate de los modos sin zona propia (`assets/scenery/`) — 0/7, faltan los 7
+
+Prueba del Campeón, Mazmorra Elemental y Torre Batalla no pelean dentro de
+ninguna zona del Mapa, así que antes no tenían NINGÚN fondo, ni en su
+recorrido/duelo ni en la propia pantalla de batalla — se veían en negro
+liso siempre, tuviera o no imagen subida. Se arregló en código (mismo
+mecanismo `zoneBackgroundStyle` de siempre, vía un `runPseudoZone(run)`
+nuevo en `ui.js` para Torre/Mazmorra, y un `zone` fijo para la Prueba del
+Campeón) — en cuanto subas estos 7 archivos a `assets/scenery/` con el
+nombre exacto, se ven solos, sin tocar nada más:
+
+- [ ] `campeon.jpg` — Prueba del Campeón (un único fondo fijo, tipo arena/coliseo — no depende del duelo ni del rival)
+- [ ] `torre.jpg` — Torre Batalla (un único fondo fijo para todos los niveles — no depende de qué mob/jefe toque)
+- [ ] `elemental_fuego.jpg` — Mazmorra Elemental de Fuego
+- [ ] `elemental_viento.jpg` — Mazmorra Elemental de Viento
+- [ ] `elemental_tierra.jpg` — Mazmorra Elemental de Tierra
+- [ ] `elemental_rayo.jpg` — Mazmorra Elemental de Rayo
+- [ ] `elemental_agua.jpg` — Mazmorra Elemental de Agua
+
+#### 4. Iconos de equipo (`assets/gear/`) — 0/90, faltan los 90
 
 La carpeta `assets/gear/` tampoco existe todavía — todo el equipo usa el
 icono de emoji de respaldo sobre un fondo del color de su rareza. Son 18

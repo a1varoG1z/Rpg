@@ -770,6 +770,17 @@ function runFighterUids(state, run) {
   return run.isElemental ? elementalTeamUids(state, run.elementId) : state.band.flat().filter(Boolean);
 }
 
+// Fondo de zona "pseudo" para Torre Batalla y Mazmorra Elemental — no son
+// una zona real de ZONES, pero reutilizan el mismo mecanismo de
+// zoneBackgroundStyle (assets/scenery/<id>.jpg si existe, degradado del
+// color de respaldo si no) tanto en el recorrido de nodos como en la
+// propia batalla, en vez de quedarse sin fondo alguno.
+function runPseudoZone(run) {
+  if (run.isElemental) return { id: 'elemental_' + run.elementId, color: ELEMENT_INFO[run.elementId].color };
+  if (run.isTorre) return { id: 'torre', color: '#3a3a4a' };
+  return null;
+}
+
 UI.renderStageRun = function (state) {
   $('zoneList').classList.add('hidden');
   $('stageList').classList.add('hidden');
@@ -778,8 +789,7 @@ UI.renderStageRun = function (state) {
   wrap.innerHTML = '';
   const run = window.__stageRun;
   const zone = (run.isTorre || run.isElemental) ? null : ZONES[run.zoneIdx];
-  if (run.isElemental) wrap.style.background = zoneBackgroundStyle({ id: 'elemental_' + run.elementId, color: ELEMENT_INFO[run.elementId].color });
-  else wrap.style.background = run.isTorre ? '' : zoneBackgroundStyle(zone);
+  wrap.style.background = zoneBackgroundStyle(runPseudoZone(run) || zone);
 
   const back = el('button', 'mini-btn', '« Retirarse');
   back.addEventListener('click', () => {
@@ -936,7 +946,7 @@ UI.fightStageRunNode = function (state) {
       : run.isTorre
       ? '🗼 Torre · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length
       : ZONES[run.zoneIdx].name + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length,
-    zone: (run.isTorre || run.isElemental) ? null : ZONES[run.zoneIdx],
+    zone: runPseudoZone(run) || ZONES[run.zoneIdx],
     onEnd: (result, view) => {
       if (view) {
         view.playerGroups.forEach(g => g.row.forEach(u => {
@@ -1146,7 +1156,7 @@ UI.fightChampionDuel = function (state) {
   const opponent = buildChampionOpponent(run.duelIdx);
   UI.openBattle(state, [[playerUnit]], [[opponent]], {
     title: '⚔️ Prueba del Campeón · Duelo ' + (run.duelIdx + 1),
-    zone: null,
+    zone: { id: 'campeon', color: '#4a3524' },
     onEnd: (result, view) => {
       if (view) {
         const u = view.playerGroups[0].row[0];
