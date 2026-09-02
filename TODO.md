@@ -648,6 +648,29 @@ Ya pendientes de arte real (del roster humanizado ya existente, no del
 roster masivo): ninguna — las 4 (Marina, Gea, Brisa, Electro) tienen ya arte
 real.
 
+### Sprites que faltan por subir ahora mismo (verificado 02/09 contra `assets/creatures/`)
+
+De los 468 sprites que el juego espera (todas las familias jugables y de
+mobs tienen `hasImages: true`, y los 33 jefes `hasImage: true` — ya no
+queda ninguna entrada en `js/data.js` sin marcar), **465 ya están subidos**.
+Solo faltan estos 3 — todo lo demás de las listas de abajo ("Personajes
+(14.1) — 89 familias", mobs y jefes) ya está hecho y esas listas han
+quedado desactualizadas como referencia de lo pendiente:
+
+- [ ] **`shenlong_legendario.png`** → carpeta `assets/creatures/`. Es la
+      3ª forma (Legendario) del dragón Shenlong (Rayo/Brujo): "Shenlong,
+      Dragón de la Lluvia". Ya están subidas sus otras 2 formas
+      (`shenlong_raro.png`, `shenlong_epico.png`).
+- [ ] **`tengu_comun.png`** → carpeta `assets/creatures/`. Es la 1ª forma
+      (Común) del mob Tengu: "Tengu Travieso". Ya están subidas sus otras 2
+      formas (`tengu_infrecuente.png`, `tengu_raro.png`).
+- [ ] **`chupacabra_comun.png`** → carpeta `assets/creatures/`. Es la 1ª
+      forma (Común) del mob Chupacabra: "Chupacabras Joven". Ojo: la
+      familia se llama "chupacabra" en singular, sin la "s" final (había un
+      bug donde una zona apuntaba mal a "chupacabras_raro", ya corregido).
+      Ya están subidas sus otras 2 formas (`chupacabra_infrecuente.png`,
+      `chupacabra_raro.png`).
+
 ## Progreso de sprites nuevos (técnica mejorada, en curso)
 
 Sustituyendo el sprite procedural por PNG real, familia a familia, con la
