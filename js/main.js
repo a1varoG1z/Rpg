@@ -4,6 +4,8 @@
   const isNewGame = !loaded;
   let state = loaded || createNewState();
   window.STATE = state;
+  recordPlayDay(state);
+  saveGame(state);
 
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => UI.switchScreen(btn.dataset.screen));

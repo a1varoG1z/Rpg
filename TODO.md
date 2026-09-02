@@ -1791,6 +1791,76 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     `15 + 3 × índice` Gemas la primera vez que se completa una zona y 0 al
     volver a jugar la misma etapa.
 
+- [x] **Auditoría de balance completa + ampliación de Logros con recompensas
+    variadas**. El usuario pidió una auditoría de dificultad/progresión/
+    recompensas/objetivos, y por separado que se añadieran muchos más
+    Logros, no todos con Gemas como recompensa.
+    - **Auditoría (análisis, no solo simulación)**: con las fórmulas reales
+      del juego en vez de solo una partida de ejemplo —
+      - Dificultad de jefes: ya rebalanceada por simulación en la ronda
+        anterior de este mismo trabajo (31 jefes ajustados a una banda de
+        victoria objetivo según nivel esperado del jugador); sigue vigente.
+      - Economía de Texel: ingreso por etapa `(20 + índiceGlobal×8) ×
+        (3 si es jefe)` crece mucho más rápido que los gastos (equipo de
+        Tienda 60-2000, objetos 40/120, mejora de equipo `30×nivel^1.7×
+        multiplicador de rareza`) — el Texel es abundante casi desde el
+        principio y se vuelve trivial en las últimas zonas; es una curva de
+        recompensa habitual en este tipo de juego (el sumidero real es la
+        mejora de equipo, que escala sin techo) y no se tocó.
+      - Economía de cristales de invocación: la mayoría no sale de Gemas
+        sino de las propias etapas (35% de soltar 1 Pixite en etapa normal,
+        Voxite garantizado + 30% Doxite en cada jefe, más en Mazmorra
+        Elemental) — a lo largo de un solo mapa completo eso son ≈81
+        Pixite + ≈33 Voxite + ≈12 Doxite de caída directa, antes de contar
+        Arena ni Gemas. Las Gemas son un extra para completar huecos, no la
+        fuente principal.
+      - Economía de Gemas: antes de esta ronda, solo Arena las daba
+        (`3 + rango/3` por victoria). La ronda anterior sumó dos fuentes
+        nuevas grandes (bono de zona + 49 Logros, ≈4.100 Gemas acumulables
+        en una partida completa) — comparado con el diseño original
+        (Gemas escasas), eso es mucho de golpe. Con los cristales ya
+        cayendo con generosidad de las propias etapas, no es un problema
+        grave, pero sí motivo para no seguir sumando solo Gemas al ampliar
+        Logros — de ahí el rediseño de recompensas de abajo.
+    - **Recompensas variadas en Logros**: cada objetivo tiene ahora
+      `reward: { type, ... }` en vez de un valor fijo de Gemas —
+      `rG`/`rT`/`rI`/`rGear`/`rC` (data.js) construyen recompensas de
+      Gemas, Texel, un objeto consumible (Poción/Pluma Fénix), una pieza de
+      equipo de una rareza dada, o cristales, respectivamente.
+      `grantObjectiveReward` (state.js) reparte según el tipo; si toca
+      equipo y el inventario está lleno, se vende sola al momento (mismo
+      cálculo que vender equipo a mano) para que reclamar un logro nunca se
+      pierda por falta de hueco. Reparto pensado para no depender solo de
+      Gemas: Texel en los hitos tempranos (donde más hace falta), objetos
+      consumibles como premio de sensación inmediata, equipo como variante
+      "física", y Gemas reservadas sobre todo para los hitos más largos o
+      tardíos.
+    - **Ampliación de Logros**: de 49 a 81 entradas. Objetivos nuevos en
+      categorías ya existentes (más escalones intermedios: p.ej.
+      `jefes_1`, `roster_5`, `formas_25`, `victorias_100`, `arena_1`,
+      `equipo_10`, `campeon_30`, `torre_20`, `homunculos_50`...) y dos
+      categorías nuevas:
+      - **Formación**: llenar los 9 huecos de la Formación, y un objetivo
+        por cada elemento (5) y por cada clase (5) por tener una Formación
+        de un único elemento/clase (mínimo 3 luchadores) — un reto de
+        composición de equipo con su propia recompensa de equipo.
+      - **Constancia**: jugar en 3/7/30 días distintos — nuevo
+        `state.progress.daysPlayed` (lista de fechas, sin duplicados),
+        registrado una vez por partida cargada vía `recordPlayDay`
+        (state.js, llamado desde main.js justo al cargar el estado). No
+        necesita sesiones de 24h reales, solo días de calendario distintos.
+    Verificado con Playwright: las 81 entradas resuelven `get`/`target` y
+    `rewardLabel` sin errores, sin ids duplicados; el panel de Logros
+    renderiza las 81 filas; reclamar un objetivo de cada tipo de recompensa
+    (Gemas, Texel, objeto, equipo) aplica el cambio correcto al estado —
+    incluida la venta automática si el inventario de equipo está lleno — y
+    un segundo intento de cobro queda bloqueado; los objetivos de Formación
+    mono-elemento exigen que TODOS los huecos ocupados compartan elemento
+    (una Formación mixta con 3 luchadores de fuego pero otros huecos ya
+    ocupados de otro elemento no lo completa) y se completan correctamente
+    al vaciar la Formación y llenarla solo de un elemento; `daysPlayed`
+    registra la fecha de la sesión de prueba correctamente.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

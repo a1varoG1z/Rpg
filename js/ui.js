@@ -353,6 +353,17 @@ UI.openObjectives = function (state) {
   $('objectivesModal').classList.remove('hidden');
 };
 
+// Texto corto para la recompensa de un objetivo (ver rG/rT/rI/rGear/rC en
+// data.js) — se usa tanto en la fila de Logros como en el toast al reclamar.
+function rewardLabel(reward) {
+  if (reward.type === 'gemas') return `💎 ${reward.amount}`;
+  if (reward.type === 'texel') return `🪙 ${reward.amount}`;
+  if (reward.type === 'crystal') return `${CRYSTALS[reward.crystalType].icon} ${reward.amount} ${CRYSTALS[reward.crystalType].label}`;
+  if (reward.type === 'item') return `${CONSUMABLES[reward.itemId].icon} ${CONSUMABLES[reward.itemId].label}${reward.amount > 1 ? ' ×' + reward.amount : ''}`;
+  if (reward.type === 'gear') return `🎒 Equipo ${rarityInfo(reward.rarity).label}`;
+  return '';
+}
+
 function objectiveRow(state, s, obj) {
   const { value, target } = objectiveProgress(obj, state, s);
   const claimed = state.objectivesClaimed.includes(obj.id);
@@ -361,7 +372,7 @@ function objectiveRow(state, s, obj) {
   row.appendChild(el('div', 'torre-row-empty-icon', obj.icon));
   const info = el('div', 'torre-row-info');
   info.appendChild(el('div', 'torre-row-name', obj.label));
-  info.appendChild(el('div', 'torre-row-sub', `${Math.min(value, target)}/${target} · 💎 ${obj.gemas}`));
+  info.appendChild(el('div', 'torre-row-sub', `${Math.min(value, target)}/${target} · ${rewardLabel(obj.reward)}`));
   row.appendChild(info);
   const btnCol = el('div', 'torre-row-btns');
   if (claimed) {
@@ -371,10 +382,10 @@ function objectiveRow(state, s, obj) {
     btn.disabled = !completed;
     btn.addEventListener('click', () => {
       const gained = claimObjective(state, obj.id);
-      if (gained > 0) {
+      if (gained) {
         saveGame(state);
         UI.renderTopbar(state);
-        UI.showToast(`💎 +${gained} Gemas — ${obj.label}`);
+        UI.showToast(`${rewardLabel(gained)} — ${obj.label}`);
         UI.openObjectives(state);
       }
     });

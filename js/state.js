@@ -24,7 +24,7 @@ function createNewState() {
     [null, null, null],
     [null, null, null],
   ];
-  const progress = { unlockedZones: ['bosque'], zoneStage: {} };
+  const progress = { unlockedZones: ['bosque'], zoneStage: {}, daysPlayed: [] };
   ZONES.forEach(z => { progress.zoneStage[z.id] = -1; });
   return {
     version: 2,
@@ -468,19 +468,42 @@ function recordChampionStreak(state, duelsWon) {
 // --- Mercader Itinerante (ver merchantOffer en data.js) ---
 function merchantOfferRedeemedToday(state) { return state.merchant.lastRedeemedKey === merchantOffer().key; }
 
+// --- Constancia (objetivo "juega N días distintos") ---
+// Se llama una vez al cargar la partida; guarda la fecha (día del calendario
+// local, no necesita sesiones de 24h reales) si no estaba ya registrada.
+function recordPlayDay(state) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (!state.progress.daysPlayed.includes(today)) state.progress.daysPlayed.push(today);
+}
+
 // --- Objetivos (ver OBJECTIVES en data.js) ---
-// Reclama la recompensa de Gemas de un objetivo ya completado — devuelve
-// las Gemas dadas, o 0 si no se pudo (no completado todavía, o ya
-// reclamado antes).
+// Da la recompensa de un objetivo (ver los constructores rG/rT/rI/rGear/rC
+// en data.js) al estado. Si es una pieza de equipo y el inventario está
+// lleno, se vende sola al momento (mismo cálculo que sellGear) para que
+// reclamar un logro nunca se pierda por no tener hueco.
+function grantObjectiveReward(state, reward) {
+  if (reward.type === 'gemas') state.currencies.gemas += reward.amount;
+  else if (reward.type === 'texel') state.currencies.texel += reward.amount;
+  else if (reward.type === 'crystal') state.currencies[reward.crystalType] += reward.amount;
+  else if (reward.type === 'item') state.items[reward.itemId] = (state.items[reward.itemId] || 0) + reward.amount;
+  else if (reward.type === 'gear') {
+    const gear = generateGear(randomGearSlot(), reward.rarity);
+    if (!addGear(state, gear)) state.currencies.texel += gearStatValue(gear) * 2;
+  }
+}
+
+// Reclama la recompensa de un objetivo ya completado — devuelve el objeto
+// `reward` dado (ver grantObjectiveReward), o null si no se pudo (no
+// completado todavía, o ya reclamado antes).
 function claimObjective(state, objId) {
-  if (state.objectivesClaimed.includes(objId)) return 0;
+  if (state.objectivesClaimed.includes(objId)) return null;
   const obj = OBJECTIVES.find(o => o.id === objId);
-  if (!obj) return 0;
+  if (!obj) return null;
   const s = objectivesSummary(state);
-  if (!objectiveCompleted(obj, state, s)) return 0;
+  if (!objectiveCompleted(obj, state, s)) return null;
   state.objectivesClaimed.push(objId);
-  state.currencies.gemas += obj.gemas;
-  return obj.gemas;
+  grantObjectiveReward(state, obj.reward);
+  return obj.reward;
 }
 
 // --- Objetivos (pantalla de progreso general) ---
@@ -587,6 +610,7 @@ function migrateState(state) {
     if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };
     if (!state.merchant) state.merchant = { lastRedeemedKey: null };
     if (!state.objectivesClaimed) state.objectivesClaimed = [];
+    if (!state.progress.daysPlayed) state.progress.daysPlayed = [];
     if (!state.stats) state.stats = { battlesWon: 0, battlesLost: 0 };
     ['totalDmgDealt', 'totalDmgReceived', 'totalHealDone', 'totalTexelEarned', 'totalFighterXpEarned', 'highestSingleHit'].forEach(key => {
       if (state.stats[key] === undefined) state.stats[key] = 0;
