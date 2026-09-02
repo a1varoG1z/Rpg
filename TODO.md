@@ -1971,43 +1971,78 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     (comprobado leyendo `bandPositionOf` de ambos antes/después); no
     aparece botón si ambos o ninguno están en la Formación.
 
-- [x] **Combate automático más inteligente (daño + reparto de golpes) / se
-    eliminan las insignias ⚡N ("medallones") del combate**. El usuario
-    mandó una foto del selector de línea con las insignias ⚡N sobre cada
-    personaje y pidió quitarlas por estética, y por separado pidió mejorar
-    la IA del modo Auto.
-    - **Auto más inteligente**: antes `pickAutoGroup` (ui.js) solo miraba
-      la ventaja elemental media de la línea (`rowElementScore`, ahora
-      eliminada por no usarse ya en ningún sitio) — entre líneas del mismo
-      elemento no distinguía nada, ni el daño real ni cuántos luchadores
-      arriesgaba. Ahora usa `rowDamageScore` (combat.js, nueva): la misma
-      fórmula simplificada de `computeDamage` (ataque menos la mitad de la
-      defensa rival media, con la ventaja elemental de cada atacante ya
-      aplicada) sumada para cada superviviente de la línea — así prioriza
-      siempre la línea que más daño le haría al rival. Además, a igualdad
-      de daño aproximado, un bonus del +15% por cada superviviente extra en
-      la línea hace que gane la más numerosa: como el rival ataca a quien
-      esté en la línea activa, repartir entre más personajes evita que
-      siempre encaje los golpes el mismo único superviviente.
-    - **Medallones fuera del combate**: la insignia "⚡N" (turnos que faltan
-      para la ulti) que iba superpuesta sobre la foto de cada personaje se
-      quita tanto de las tarjetas de combate (`.battle-unit`, fila activa)
-      como del selector de línea (`.picker-cell`, la rejilla 3×3 "Desliza
-      para elegir 1 línea") — quedaba visualmente recargado con toda la
-      banda a la vista. La información sigue disponible al tocar la
-      tarjeta de un personaje en combate (se abre su ficha, que ya
-      mostraba el mismo dato con una barra). Se limpiaron también
-      `UI.updateUnitCardCharge` y las reglas CSS `.ult-turns`/
-      `.picker-cell-ult`, que ya no se usaban en ningún sitio.
+- [x] **Combate automático más inteligente (daño + reparto de golpes)**. El
+    usuario pidió mejorar la IA del modo Auto para que priorice hacer daño
+    de verdad y repartir quién recibe el golpe de vuelta.
+    - Antes `pickAutoGroup` (ui.js) solo miraba la ventaja elemental media
+      de la línea (`rowElementScore`, ahora eliminada por no usarse ya en
+      ningún sitio) — entre líneas del mismo elemento no distinguía nada,
+      ni el daño real ni cuántos luchadores arriesgaba. Ahora usa
+      `rowDamageScore` (combat.js, nueva): la misma fórmula simplificada de
+      `computeDamage` (ataque menos la mitad de la defensa rival media, con
+      la ventaja elemental de cada atacante ya aplicada) sumada para cada
+      superviviente de la línea — así prioriza siempre la línea que más
+      daño le haría al rival. Además, a igualdad de daño aproximado, un
+      bonus del +15% por cada superviviente extra en la línea hace que gane
+      la más numerosa: como el rival ataca a quien esté en la línea activa,
+      repartir entre más personajes evita que siempre encaje los golpes el
+      mismo único superviviente.
     Verificado con Playwright: entre dos líneas del mismo elemento, la de
     más daño total gana aunque tenga menos miembros (prioridad correcta), y
     entre dos líneas de daño similar gana la más numerosa (desempate
     correcto); una defensa rival más alta reduce `rowDamageScore` como se
-    espera; una batalla real ya no tiene ningún elemento `.ult-turns` ni
-    `.picker-cell-ult` en pantalla (ni en la fila activa ni en el selector
-    de línea, comprobado con los 9 huecos de la Formación visibles), y la
-    ficha de un personaje al tocarlo en combate sigue mostrando el dato de
-    ulti (texto y barra).
+    espera.
+    - **Corrección sobre este mismo cambio**: en la misma ronda se había
+      quitado también la insignia "⚡N" (turnos para la ulti) de las
+      tarjetas de combate y del selector de línea, entendiendo mal la
+      petición de "quitar los medallones" — el usuario aclaró después que
+      esa insignia NO debía tocarse, y que "el medallón" es en realidad el
+      círculo de fondo decorativo tras el retrato (`.creature-canvas-wrap
+      ::before`, el mismo que ya controla el ajuste "Mostrar medallón" de
+      Ajustes). Revertido íntegro: `.ult-turns`/`.picker-cell-ult` y
+      `UI.updateUnitCardCharge` vuelven a estar como antes. Ver la entrada
+      siguiente para el arreglo correcto.
+
+- [x] **Quitar el medallón (círculo de fondo) del selector de línea del
+    combate / bug de "undefined" al sustituir en Comparar / comparar
+    estadísticas base además de las actuales**. Tres pedidos del usuario
+    en la misma ronda, el primero una corrección directa del punto anterior.
+    - **Medallón fuera SOLO del selector de línea**: de los 6 sitios del
+      código que envuelven un retrato en `.creature-canvas-wrap` (y por
+      tanto pintan el círculo de fondo vía `::before`), el único que forma
+      parte de la pantalla de combate en sí es el selector de línea
+      (`.picker-cell`, la rejilla 3×3 "Desliza para elegir 1 línea") — las
+      tarjetas de combate activas (`.battle-unit`) usan su propia clase
+      `.battle-unit-canvas-wrap` sin medallón, así que no hacía falta
+      tocarlas. Se añadió `.picker-cell .creature-canvas-wrap::before {
+      display: none; }` en vez de tocar el ajuste global "Mostrar
+      medallón" — la Colección, la Pokédex, la ficha de jefes, etc. lo
+      siguen mostrando igual que antes.
+    - **Bug real de "undefined" al sustituir en Comparar** (de la ronda
+      anterior): el botón "Sustituir a X en la Formación por Y" leía
+      `toEntry.name` de un objeto ENTRY del roster (`{uid, defId, level,
+      ...}`, sin campo `name`) en vez del objeto DEF (`fighterDef(...)`,
+      que sí tiene `.name`) — de ahí el "undefined" tanto en el botón como
+      en el aviso posterior. Arreglado pasando también el DEF del luchador
+      que entra a la Formación (`swapInBtn(fromDef, fromPos, toEntry,
+      toDef)`), usando `toDef.name` para mostrar y `toEntry.uid` solo para
+      la operación real de `setBandSlot`.
+    - **Comparar estadísticas base**: `UI.showCompare` gana un parámetro
+      `mode` ('current', por defecto — nivel/estrellas/equipo ya sumados —
+      o 'base') con dos botones para alternar entre ambas sin cerrar la
+      comparación. "Base" reutiliza `buildUnitStats(defId, 1)` (combat.js,
+      la misma fórmula que ya usa la ficha de solo lectura de la Pokédex
+      para "Estadísticas base Nv.1") — nivel 1, sin estrellas de
+      Superfusión ni equipo puesto — para poder ver qué forma es realmente
+      mejor "de fábrica" sin que la inversión ya hecha en una de las dos
+      decida la comparación.
+    Verificado con Playwright: el medallón desaparece en el selector de
+    línea de una batalla real pero sigue mostrándose con normalidad en la
+    rejilla de Colección; el botón de sustituir y el aviso posterior ya no
+    contienen "undefined" en ningún caso; alternar entre "Actuales" y
+    "Base" con un luchador subido de nivel (Nv.15, 2 estrellas) cambia de
+    verdad las cifras mostradas (ataque 53→19, vida 384→138) y marca el
+    botón activo correcto.
 
 ## Notas
 

@@ -229,6 +229,7 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .compare-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .compare-name { font-weight: bold; font-size: 0.8rem; }
 .compare-sub { font-size: 0.7rem; color: var(--cream-dim); }
+.compare-mode-row { display: flex; gap: 6px; justify-content: center; margin: 4px 0 10px; }
 .compare-stat-row { display: grid; grid-template-columns: 90px 1fr 1fr; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--panel-border); font-size: 0.8rem; }
 .compare-stat-row:last-child { border-bottom: none; }
 .compare-label { color: var(--cream-dim); }
@@ -383,6 +384,10 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .battle-unit.fainted { opacity: 0.25; filter: grayscale(1); }
 .battle-unit .hp-bar.small { height: 7px; margin-top: 2px; }
 .battle-unit-canvas-wrap { position: relative; }
+.battle-unit-canvas-wrap .ult-turns {
+  position: absolute; top: -2px; right: 2px; z-index: 2; font-size: 0.58rem; font-weight: bold; color: #e0bb55;
+  background: rgba(10,6,3,0.75); border: 1px solid #7a5f22; border-radius: 8px; padding: 0 4px; line-height: 1.4;
+}
 .ult-bar { height: 5px; width: 100%; background: #1a1410; border: 1px solid #000; border-radius: 3px; overflow: hidden; margin-top: 2px; }
 .ult-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #c98fe8, #e8a23c); transition: width 0.25s ease-out; }
 
@@ -396,11 +401,21 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: background 60ms, border-color 60ms;
 }
 .picker-cell.empty { border-style: dashed; opacity: 0.5; }
+/* El medallón (círculo de fondo tras el retrato, ver
+   .creature-canvas-wrap::before) queda mal en el selector de línea del
+   combate — la celda ya tiene su propio recuadro, así que el círculo
+   sobra y recarga visualmente la rejilla. Se quita solo aquí. */
+.picker-cell .creature-canvas-wrap::before { display: none; }
 .picker-cell .creature-canvas { width: 40px; height: 45px; }
 .picker-cell .creature-canvas-wrap.fainted { opacity: 0.35; filter: grayscale(1); }
 .picker-cell .hp-bar.small { height: 4px; width: 40px; position: relative; z-index: 1; }
 .picker-cell.selecting { border-color: var(--gold); background: rgba(212,175,55,0.28); }
 .picker-cell.invalid { border-color: #b0392f; background: rgba(176,57,47,0.25); }
+.picker-cell-ult {
+  position: absolute; top: -6px; right: -6px; z-index: 3; font-size: 0.5rem; font-weight: bold; color: #e0bb55;
+  background: rgba(10,6,3,0.9); border: 1px solid #7a5f22; border-radius: 8px; padding: 1px 4px; line-height: 1.4;
+  white-space: nowrap; pointer-events: none;
+}
 .picker-cell-adv {
   position: absolute; bottom: -6px; left: -6px; z-index: 3; font-size: 0.6rem; font-weight: bold;
   background: rgba(10,6,3,0.9); border: 1px solid; border-radius: 8px; padding: 0 4px; line-height: 1.4; pointer-events: none;

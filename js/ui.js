@@ -1848,13 +1848,27 @@ function compareStatRow(icon, label, key, statsA, statsB) {
   </div>`;
 }
 
-UI.showCompare = function (state, uidA, uidB) {
+// Estadísticas BASE de un luchador: nivel 1, sin estrellas de Superfusión
+// ni equipo puesto — la misma fórmula que ya usa la ficha de solo lectura
+// de la Pokédex (buildUnitStats(defId, 1) en combat.js) para mostrar el
+// potencial "de fábrica" de una forma, aquí reutilizada para poder
+// comparar dos luchadores sin que el nivel/equipo actual de cada uno
+// distorsione cuál es realmente mejor.
+function baseCompareStats(entry) {
+  const s = buildUnitStats(entry.defId, 1);
+  return { hp: s.maxHp, atk: s.atk, def: s.def, agi: s.agi, wis: s.wis };
+}
+
+// mode: 'current' (por defecto, estadísticas reales con nivel/estrellas/
+// equipo ya sumados) o 'base' (nivel 1, sin nada de eso).
+UI.showCompare = function (state, uidA, uidB, mode) {
+  mode = mode === 'base' ? 'base' : 'current';
   const entryA = rosterEntry(state, uidA), entryB = rosterEntry(state, uidB);
   if (!entryA || !entryB) return;
   const defA = fighterDef(entryA.defId), defB = fighterDef(entryB.defId);
   const rarityA = rarityInfoFor(defA), rarityB = rarityInfoFor(defB);
-  const statsA = fighterStatsBreakdown(state, entryA).total;
-  const statsB = fighterStatsBreakdown(state, entryB).total;
+  const statsA = mode === 'base' ? baseCompareStats(entryA) : fighterStatsBreakdown(state, entryA).total;
+  const statsB = mode === 'base' ? baseCompareStats(entryB) : fighterStatsBreakdown(state, entryB).total;
   const body = $('pickerModalBody');
   body.innerHTML = '<h3>🆚 Comparación</h3>';
 
@@ -1874,6 +1888,18 @@ UI.showCompare = function (state, uidA, uidB) {
   head.appendChild(colA); head.appendChild(colB);
   body.appendChild(head);
 
+  // Alternar entre estadísticas actuales (con nivel/estrellas/equipo) y
+  // base (Nv.1, de fábrica) — para saber quién es realmente mejor "en
+  // igualdad de condiciones" sin que la inversión ya hecha en uno de los
+  // dos decida la comparación por sí sola.
+  const modeRow = el('div', 'compare-mode-row');
+  const curBtn = el('button', 'mini-btn' + (mode === 'current' ? ' active' : ''), 'Actuales');
+  curBtn.addEventListener('click', () => UI.showCompare(state, uidA, uidB, 'current'));
+  const baseBtn = el('button', 'mini-btn' + (mode === 'base' ? ' active' : ''), 'Base (Nv.1, sin equipo)');
+  baseBtn.addEventListener('click', () => UI.showCompare(state, uidA, uidB, 'base'));
+  modeRow.appendChild(curBtn); modeRow.appendChild(baseBtn);
+  body.appendChild(modeRow);
+
   const statsPanel = el('div', 'panel');
   statsPanel.innerHTML = compareStatRow('❤️', 'Vida', 'hp', statsA, statsB)
     + compareStatRow('⚔️', 'Ataque', 'atk', statsA, statsB)
@@ -1885,20 +1911,20 @@ UI.showCompare = function (state, uidA, uidB) {
   // Sustituir en la Formación: solo tiene sentido cuando UNO de los dos está
   // en un hueco y el otro no (si los dos están, o ninguno, no hay hueco que
   // ceder de uno a otro con un solo toque).
-  const swapInBtn = (fromEntry, fromPos, toEntry) => {
-    const btn = el('button', 'primary-btn', `🔄 Sustituir a ${fromEntry.name} en la Formación por ${toEntry.name}`);
+  const swapInBtn = (fromDef, fromPos, toEntry, toDef) => {
+    const btn = el('button', 'primary-btn', `🔄 Sustituir a ${fromDef.name} en la Formación por ${toDef.name}`);
     btn.addEventListener('click', () => {
       setBandSlot(state, fromPos.row, fromPos.col, toEntry.uid);
       saveGame(state);
       UI.renderTopbar(state);
       if (activeScreen === 'banda') UI.renderBanda(state);
-      UI.showToast(`🔄 ${toEntry.name} sustituye a ${fromEntry.name} en la Formación`);
-      UI.showCompare(state, uidA, uidB);
+      UI.showToast(`🔄 ${toDef.name} sustituye a ${fromDef.name} en la Formación`);
+      UI.showCompare(state, uidA, uidB, mode);
     });
     return btn;
   };
-  if (posA && !posB) body.appendChild(swapInBtn(defA, posA, entryB));
-  else if (posB && !posA) body.appendChild(swapInBtn(defB, posB, entryA));
+  if (posA && !posB) body.appendChild(swapInBtn(defA, posA, entryB, defB));
+  else if (posB && !posA) body.appendChild(swapInBtn(defB, posB, entryA, defA));
 
   const swapBtn = el('button', 'mini-btn', '🔄 Elegir otro luchador para comparar');
   swapBtn.addEventListener('click', () => UI.openComparePicker(state, uidA));
@@ -2568,6 +2594,7 @@ UI.showGroupPicker = function (view, remaining) {
         wrap.appendChild(creatureCanvas(unit.defId, 40));
         cellEl.appendChild(wrap);
         if (unit.alive) {
+          cellEl.appendChild(el('div', 'picker-cell-ult', ultTurnsText(unit)));
           const hpBar = el('div', 'hp-bar small');
           const fill = el('div', 'hp-fill');
           fill.style.width = Math.max(0, unit.hp / unit.maxHp * 100) + '%';
@@ -2703,12 +2730,12 @@ UI.battleUnitCard = function (u) {
   const card = el('div', 'battle-unit rarity-' + (u.isBoss ? 'jefe' : u.rarity) + (u.alive ? '' : ' fainted'));
   card.dataset.unitId = u.id;
   card.addEventListener('click', () => UI.showBattleUnitStats(u));
-  // La carga de ulti (turnos que faltan) ya no se muestra como insignia
-  // superpuesta sobre la foto — quedaba visualmente recargado en pantallas
-  // pequeñas con toda la banda a la vista. Sigue disponible al tocar la
-  // tarjeta (UI.showBattleUnitStats, ver ultTurnsText más abajo).
+  // La carga de ulti va superpuesta como insignia sobre la propia foto
+  // (esquina superior), no como barra aparte debajo — deja la tarjeta
+  // más compacta y legible.
   const canvasWrap = el('div', 'battle-unit-canvas-wrap');
   canvasWrap.appendChild(creatureCanvas(u.defId, 76));
+  canvasWrap.appendChild(el('div', 'ult-turns', ultTurnsText(u)));
   card.appendChild(canvasWrap);
   const hpBar = el('div', 'hp-bar small');
   const fill = el('div', 'hp-fill');
@@ -2770,6 +2797,13 @@ UI.updateUnitCardHp = function (u) {
   cardEl.classList.toggle('fainted', !u.alive);
 };
 
+UI.updateUnitCardCharge = function (u) {
+  const cardEl = document.querySelector(`.battle-unit[data-unit-id="${u.id}"]`);
+  if (!cardEl) return;
+  const turns = cardEl.querySelector('.ult-turns');
+  if (turns) turns.textContent = ultTurnsText(u);
+};
+
 UI.logLine = function (text) {
   const logEl = $('battleLog');
   const line = el('div', 'battle-log-line', text);
@@ -2807,10 +2841,11 @@ UI.applyBattleEvent = function (view, ev) {
   switch (ev.type) {
     case 'ult':
       u.ultCharge = 0;
+      UI.updateUnitCardCharge(u);
       UI.logLine(`💥 ¡${u.name} desata su ULTI: ${ev.skillName}!`);
       break;
     case 'charge':
-      if (u) u.ultCharge = ev.value;
+      if (u) { u.ultCharge = ev.value; UI.updateUnitCardCharge(u); }
       break;
     case 'enrage':
       triggerBattleAnim(u.id, 'hit-shake', 400);
