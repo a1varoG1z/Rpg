@@ -2108,15 +2108,38 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     repeticiones reales del jefe de la zona 1 (banda a nivel 40, energía
     infinita) llenaron el inventario de equipo (60/60) con solo 1
     Legendario de 60 piezas (1,7%, coherente con la tabla fija).
-    - **Pendiente de decidir, no implementado**: la Mazmorra Elemental usa
-      la misma `gearDropRarity(globalIdx)` sin distinguir primera vez de
-      repetición, y es contenido explícitamente repetible (tiene su propio
-      contador `elementalClears`) — su `globalIdx` fijo (zona 7, "Cantera
-      Devorada") ya da ~58% de Legendario por completar, SIEMPRE, porque
-      nunca pasa `isFirstClear`. Es el mismo problema de fondo, pero no se
-      tocó porque el usuario preguntó específicamente por los jefes del
-      Mapa — queda pendiente de que confirme si quiere el mismo arreglo
-      ahí también.
+    - El mismo problema en la Mazmorra Elemental (ver más abajo) se
+      confirmó y arregló en la siguiente entrada.
+
+- [x] **Mismo arreglo en la Mazmorra Elemental**: el usuario confirmó que
+    quería el mismo tratamiento ahí. `elementalDungeonRewards()`
+    (combat.js) tampoco distinguía primera vez de repetición — daba Voxite
+    garantizado + 40% de Doxite Y equipo con la rareza fija de su zona
+    ("Cantera Devorada", ~58% de Legendario) CADA vez que se completaba,
+    aunque es contenido explícitamente repetible (tiene su propio contador
+    `state.elementalClears`). Mismo patrón: gana un parámetro
+    `isFirstClear` (calculado en `UI.fightStageRunNode`, ui.js, como
+    `!state.elementalClears[run.elementId]` antes de que
+    `recordElementalClear` lo actualice) — con `true` se comporta
+    exactamente igual que antes (Voxite+Doxite garantizados, rareza de
+    equipo alta), con `false` el Voxite baja a 25%/Doxite a 8% y el equipo
+    (que sigue siendo 100% garantizado, eso no cambió) usa la tabla de
+    rareza fija en vez de la de la zona. Los valores de repetición son algo
+    más altos que los de un jefe de zona normal (20%/5%) porque la
+    Mazmorra es un combate más largo y exigente (varias oleadas, con
+    desventaja elemental de partida) cada vez que se repite.
+    Verificado con una simulación directa de 100.000 llamadas a
+    `elementalDungeonRewards` por caso: primera vez sin cambios
+    (100%/58,0% voxite/legendario), repetición plana (25,1%/2,94%). No se
+    forzó una victoria real de extremo a extremo con Playwright para esta
+    (el equipo de prueba pierde contra la Mazmorra por el mismo motivo que
+    contra un jefe avanzado — desventaja elemental + rivales fuertes en
+    varias oleadas, requeriría un equipo bien equipado para ganar de
+    verdad) — se confirmó en su lugar que `UI.startElementalDungeon`
+    arranca la Mazmorra correctamente y que el cálculo de `isFirstClear`
+    en el punto de llamada usa el mismo orden ya probado (antes de
+    `recordElementalClear`) que la versión de jefes de zona, ya verificada
+    de extremo a extremo.
 
 ## Notas
 

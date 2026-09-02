@@ -177,14 +177,32 @@ function buildElementalDungeonEncounters(elementId) {
   return rows;
 }
 
-function elementalDungeonRewards() {
+// `isFirstClear`: la Mazmorra Elemental es contenido pensado para
+// repetirse (tiene su propio contador state.elementalClears), pero sin
+// distinguir primera vez de repetición sufría el mismo problema que los
+// jefes del Mapa — Voxite garantizado y una rareza de equipo que crecía
+// con `globalIdx` sin techo (fija en esta zona, "Cantera Devorada", en
+// ~58% de Legendario garantizado) en cada repetición. Mismo criterio que
+// stageRewards: cristal garantizado y rareza alta solo la primera vez,
+// probabilidad baja y tabla de rareza fija en las repeticiones. El equipo
+// SIGUE siendo garantizado siempre (era así desde el principio, "equipo
+// garantizado" por la desventaja elemental de partida) — solo cambia su
+// rareza.
+function elementalDungeonRewards(isFirstClear) {
   const globalIdx = ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID) * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
   // Más generoso que una etapa normal de esa misma zona (×3.5/×3 en vez de
-  // ×3/×2.5 de un jefe de zona) y con equipo garantizado — la desventaja
-  // elemental de partida contra el Guardián hace que el reto sea mayor.
+  // ×3/×2.5 de un jefe de zona) — la desventaja elemental de partida
+  // contra el Guardián hace que el reto sea mayor.
   const texel = Math.round((20 + globalIdx * 8) * 3.5);
   const fighterXp = Math.round((15 + globalIdx * 4) * 3);
-  const drops = { voxite: 1, doxite: Math.random() < 0.4 ? 1 : 0, gear: generateGear(randomGearSlot(), gearDropRarity(globalIdx)) };
+  const drops = { voxite: 0, doxite: 0, gear: generateGear(randomGearSlot(), gearDropRarity(globalIdx, isFirstClear)) };
+  if (isFirstClear) {
+    drops.voxite = 1;
+    if (Math.random() < 0.4) drops.doxite = 1;
+  } else {
+    if (Math.random() < 0.25) drops.voxite = 1;
+    if (Math.random() < 0.08) drops.doxite = 1;
+  }
   return { texel, fighterXp, drops };
 }
 

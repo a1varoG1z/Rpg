@@ -1043,7 +1043,8 @@ UI.fightStageRunNode = function (state) {
         return { intermediate: true };
       }
       if (run.isElemental) {
-        const rewards = elementalDungeonRewards();
+        const isFirstClear = !state.elementalClears[run.elementId];
+        const rewards = elementalDungeonRewards(isFirstClear);
         state.currencies.texel += rewards.texel;
         if (rewards.drops.voxite) state.currencies.voxite += rewards.drops.voxite;
         if (rewards.drops.doxite) state.currencies.doxite += rewards.drops.doxite;
