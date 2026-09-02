@@ -677,6 +677,10 @@ UI.renderTopbar = function (state) {
   $('gemasVal').textContent = Math.floor(state.currencies.gemas).toLocaleString('es-ES');
   $('energiaVal').textContent = state.settings.infiniteEnergy ? '∞' : Math.floor(state.currencies.energy);
   $('energiaMax').textContent = state.settings.infiniteEnergy ? '∞' : MAX_ENERGY;
+  // Punto rojo en 🎯: hay al menos un Logro completado y sin reclamar.
+  const s = objectivesSummary(state);
+  const hasClaimable = OBJECTIVES.some(obj => !state.objectivesClaimed.includes(obj.id) && objectiveCompleted(obj, state, s));
+  $('objectivesBadge').classList.toggle('hidden', !hasClaimable);
 };
 
 UI.switchScreen = function (name) {
@@ -1309,8 +1313,9 @@ UI.openElementalTeamPicker = function (state, elementId) {
     body.appendChild(el('div', 'empty-hint', 'Todavía no tienes ningún luchador de este elemento.'));
   } else {
     const grid = el('div', 'picker-grid');
+    const bandUids = state.band.flat().filter(Boolean);
     candidates.forEach(entry => {
-      const card = creatureCard(state, entry, {});
+      const card = creatureCard(state, entry, { inBand: bandUids.includes(entry.uid) });
       if (selected.has(entry.uid)) card.classList.add('selected');
       card.addEventListener('click', () => {
         if (selected.has(entry.uid)) { selected.delete(entry.uid); card.classList.remove('selected'); }
@@ -1556,8 +1561,9 @@ function renderPickerCandidates(container, state, candidates, mode, onPick) {
   container.innerHTML = '';
   if (candidates.length === 0) { container.appendChild(el('div', 'empty-hint', 'No hay luchadores disponibles.')); return; }
   const grid = el('div', 'picker-grid');
+  const bandUids = state.band.flat().filter(Boolean);
   sortRosterEntries(candidates, mode).forEach(entry => {
-    const card = creatureCard(state, entry, {});
+    const card = creatureCard(state, entry, { inBand: bandUids.includes(entry.uid) });
     card.addEventListener('click', () => onPick(entry));
     grid.appendChild(card);
   });
@@ -1600,8 +1606,10 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   head.appendChild(portrait);
   const info = el('div');
   const vuln = TYPE_VULNERABILITY[def.class];
+  const bandPos = bandPositionOf(state, uid);
   info.innerHTML = `<div class="item-modal-name" style="color:${rarity.color}">${def.name}</div>
     <div class="item-modal-rarity">${rarity.label} · ${ELEMENT_INFO[def.element].label} ${ELEMENT_INFO[def.element].icon} · ${CLASS_INFO[def.class].label} ${CLASS_INFO[def.class].icon}</div>
+    ${bandPos ? `<div class="in-band-tag">🐾 En formación</div>` : ''}
     ${vuln ? `<div class="type-vuln-note">${vuln.desc}</div>` : ''}
     <div class="xp-bar" style="margin-top:6px"><div class="xp-fill" style="width:${entry.level >= XP_LEVEL_CAP ? 100 : (entry.xp / fighterXpToNext(entry.level) * 100)}%"></div></div>
     <div class="xp-text">Nv. ${entry.level}${entry.level >= XP_LEVEL_CAP ? ' (máx.)' : ' · ' + entry.xp + '/' + fighterXpToNext(entry.level)}</div>`;
@@ -1701,8 +1709,9 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     if (siblings.length === 0) {
       grid.appendChild(el('div', 'empty-hint', 'Aún no tienes más copias de ' + def.name + '. Consíguelas invocando.'));
     } else {
+      const bandUids = state.band.flat().filter(Boolean);
       siblings.forEach(sib => {
-        const card = creatureCard(state, sib, {});
+        const card = creatureCard(state, sib, { inBand: bandUids.includes(sib.uid) });
         card.addEventListener('click', () => {
           if (selected.has(sib.uid)) {
             selected.delete(sib.uid);
@@ -1849,15 +1858,19 @@ UI.showCompare = function (state, uidA, uidB) {
   const body = $('pickerModalBody');
   body.innerHTML = '<h3>🆚 Comparación</h3>';
 
+  const posA = bandPositionOf(state, uidA), posB = bandPositionOf(state, uidB);
+
   const head = el('div', 'compare-head');
   const colA = el('div', 'compare-col');
   colA.appendChild(creatureCanvas(entryA.defId, 60));
   colA.appendChild(el('div', 'compare-name', defA.name));
   colA.appendChild(el('div', 'compare-sub', `${rarityA.label} · Nv.${entryA.level}`));
+  if (posA) colA.appendChild(el('div', 'in-band-tag', '🐾 En formación'));
   const colB = el('div', 'compare-col');
   colB.appendChild(creatureCanvas(entryB.defId, 60));
   colB.appendChild(el('div', 'compare-name', defB.name));
   colB.appendChild(el('div', 'compare-sub', `${rarityB.label} · Nv.${entryB.level}`));
+  if (posB) colB.appendChild(el('div', 'in-band-tag', '🐾 En formación'));
   head.appendChild(colA); head.appendChild(colB);
   body.appendChild(head);
 
@@ -1868,6 +1881,24 @@ UI.showCompare = function (state, uidA, uidB) {
     + compareStatRow('💨', 'Agilidad', 'agi', statsA, statsB)
     + compareStatRow('🧠', 'Sabiduría', 'wis', statsA, statsB);
   body.appendChild(statsPanel);
+
+  // Sustituir en la Formación: solo tiene sentido cuando UNO de los dos está
+  // en un hueco y el otro no (si los dos están, o ninguno, no hay hueco que
+  // ceder de uno a otro con un solo toque).
+  const swapInBtn = (fromEntry, fromPos, toEntry) => {
+    const btn = el('button', 'primary-btn', `🔄 Sustituir a ${fromEntry.name} en la Formación por ${toEntry.name}`);
+    btn.addEventListener('click', () => {
+      setBandSlot(state, fromPos.row, fromPos.col, toEntry.uid);
+      saveGame(state);
+      UI.renderTopbar(state);
+      if (activeScreen === 'banda') UI.renderBanda(state);
+      UI.showToast(`🔄 ${toEntry.name} sustituye a ${fromEntry.name} en la Formación`);
+      UI.showCompare(state, uidA, uidB);
+    });
+    return btn;
+  };
+  if (posA && !posB) body.appendChild(swapInBtn(defA, posA, entryB));
+  else if (posB && !posA) body.appendChild(swapInBtn(defB, posB, entryA));
 
   const swapBtn = el('button', 'mini-btn', '🔄 Elegir otro luchador para comparar');
   swapBtn.addEventListener('click', () => UI.openComparePicker(state, uidA));
@@ -1882,8 +1913,9 @@ UI.openSuperFusePicker = function (state, targetUid) {
   const list = el('div', 'picker-grid');
   const candidates = state.roster.filter(r => r.uid !== targetUid && r.sef >= 5);
   if (candidates.length === 0) list.appendChild(el('div', 'empty-hint', 'No tienes luchadores con SEF 5/5 disponibles.'));
+  const bandUids = state.band.flat().filter(Boolean);
   candidates.forEach(entry => {
-    const card = creatureCard(state, entry, {});
+    const card = creatureCard(state, entry, { inBand: bandUids.includes(entry.uid) });
     card.addEventListener('click', () => {
       if (superFuse(state, targetUid, entry.uid)) {
         saveGame(state);
@@ -2199,8 +2231,9 @@ UI.openMerchantTrade = function (state) {
     body.appendChild(el('div', 'empty-hint', 'No tienes suficientes copias ' + rarityInfo(offer.costRarity).label + ' todavía.'));
   } else {
     const grid = el('div', 'picker-grid');
+    const bandUids = state.band.flat().filter(Boolean);
     candidates.forEach(entry => {
-      const card = creatureCard(state, entry, {});
+      const card = creatureCard(state, entry, { inBand: bandUids.includes(entry.uid) });
       card.addEventListener('click', () => {
         if (selected.has(entry.uid)) { selected.delete(entry.uid); card.classList.remove('selected'); }
         else { if (selected.size >= offer.costCount) return; selected.add(entry.uid); card.classList.add('selected'); }

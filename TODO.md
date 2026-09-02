@@ -1928,6 +1928,49 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     de su elemento padre (0 desbordamientos). Formación sigue funcionando
     igual que antes (su `!important` específico sigue ganando).
 
+- [x] **Punto rojo en 🎯 cuando hay Logros sin reclamar / indicador "En
+    formación" en todos los sitios / opción de sustituir en la Formación al
+    comparar luchadores**. Tres pedidos del usuario en la misma ronda.
+    - **Aviso de Logros pendientes**: el botón 🎯 de la barra superior gana
+      un punto rojo (`#objectivesBadge`, `.icon-btn-badge` en CSS) cuando
+      hay al menos un objetivo completado y sin reclamar — se recalcula en
+      cada `UI.renderTopbar` (que ya se llama tras cualquier acción que
+      pueda completar uno) y desaparece en cuanto no queda ninguno
+      reclamable.
+    - **"En formación" en todos los sitios**: la etiqueta ya existía
+      (`opts.inBand` en `creatureCard`, ver TODO de la ronda de Comparar)
+      pero solo se usaba en la rejilla de Colección. Ahora también aparece
+      en: la ficha de un luchador (`UI.openFighterModal`), el selector de
+      material de fusión normal, el selector de sacrificio de
+      Superfusión (aviso importante — sacrificar a alguien de la
+      Formación lo saca de su hueco sin previo aviso), el selector de la
+      Prueba del Campeón, el selector de equipo de Mazmorra Elemental, y
+      el selector de copias del Mercader Itinerante (mismo aviso que
+      Superfusión: cambiarlo también lo saca de la Formación). Como casi
+      todos estos selectores comparten `renderPickerCandidates`, bastó con
+      calcular `inBand` una vez ahí para cubrir varios sitios a la vez;
+      los 2-3 que no pasan por esa función (fusión, Superfusión, Mercader)
+      se tocaron a mano. Nuevo helper `bandPositionOf(state, uid)` en
+      state.js (hueco `{row,col}` o `null`) para no repetir la búsqueda en
+      la rejilla 3×3 en cada sitio.
+    - **Sustituir en la Formación al comparar**: `UI.showCompare` ahora
+      marca con la misma etiqueta "En formación" a cada luchador comparado
+      que esté en un hueco, y si exactamente UNO de los dos está en la
+      Formación y el otro no, muestra un botón "🔄 Sustituir a X en la
+      Formación por Y" que hace el cambio al momento (mismo hueco) y
+      refresca la comparación para ver el resultado sin cerrar el modal.
+      Si los dos están ya en la Formación, o ninguno, no tiene sentido
+      "ceder" un hueco de uno a otro, así que no aparece el botón.
+    Verificado con Playwright: el punto rojo aparece/desaparece
+    correctamente al completar y reclamar un objetivo; la etiqueta "En
+    formación" aparece en la rejilla de Colección, la ficha de un
+    luchador, el selector de sacrificio de Superfusión y el selector de la
+    Prueba del Campeón; el botón de sustituir solo aparece cuando
+    exactamente uno de los dos comparados está en la Formación, y al
+    pulsarlo el que estaba en el hueco sale y el otro entra en su lugar
+    (comprobado leyendo `bandPositionOf` de ambos antes/después); no
+    aparece botón si ambos o ninguno están en la Formación.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

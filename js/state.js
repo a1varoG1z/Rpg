@@ -388,6 +388,17 @@ function bandFighterCount(state) {
   return state.band.flat().filter(Boolean).length;
 }
 
+// Hueco {row, col} donde está colocado un uid en la Formación, o null si no
+// está en ninguno — usado para saber si un luchador concreto está en banda
+// (y en qué hueco, para poder sustituirlo) sin recorrer la rejilla a mano
+// en cada sitio que lo necesita.
+function bandPositionOf(state, uid) {
+  for (let r = 0; r < BAND_ROWS; r++) for (let c = 0; c < BAND_COLS; c++) {
+    if (state.band[r][c] === uid) return { row: r, col: c };
+  }
+  return null;
+}
+
 // Habilidad de líder de banda: solo está activa si el luchador que la tiene
 // ocupa la celda central [1][1] de la Formación. Devuelve el LEADER_SKILLS
 // correspondiente (o null si no hay líder activo), para aplicarlo a TODA
