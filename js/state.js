@@ -399,6 +399,42 @@ function bandPositionOf(state, uid) {
   return null;
 }
 
+// Los jefes de zona tienen estadísticas FIJAS calibradas para un jugador
+// "a la par" de esa zona (mismo nivel/rareza que su propio relleno, sin
+// equipo) — pero las invocaciones no están limitadas a esa rareza, así que
+// una tirada con suerte con solo un puñado de cristales de inicio puede dar
+// un luchador Raro o Épico capaz de barrer toda una zona temprana sin que
+// el jefe llegue a hacer ni un solo punto de daño real. Este multiplicador
+// (pasado como extraMult a makeBossUnit, ver buildEnemyBand en combat.js)
+// SOLO entra en juego cuando la banda del jugador supera claramente ese
+// nivel "a la par" — nunca reduce por debajo de 1×, así que un jefe ya
+// calibrado para una banda floja sigue exactamente igual de accesible que
+// siempre. El exceso se amortigua con raíz cuadrada (una banda 4× más
+// fuerte de lo esperado sube el jefe solo 2×, no 4×) y con un techo de 3×,
+// para que siga notándose el mérito de haber invocado bien sin que el jefe
+// se vuelva imposible ni deje de tener nunca ninguna oportunidad de golpear.
+function bossAdaptiveMult(state, zoneIdx) {
+  const zone = ZONES[zoneIdx];
+  const globalIdx = zoneIdx * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
+  const level = Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalIdx));
+  const powerOf = (stats) => stats.hp * 0.3 + stats.atk + stats.def + stats.agi * 0.5 + stats.wis * 0.5;
+  const refStats = buildUnitStats(zone.pool[0], level);
+  const refPower = powerOf({ hp: refStats.maxHp, atk: refStats.atk, def: refStats.def, agi: refStats.agi, wis: refStats.wis });
+  const bandUids = state.band.flat().filter(Boolean);
+  if (!bandUids.length || refPower <= 0) return 1;
+  let bandTotal = 0, counted = 0;
+  bandUids.forEach(uid => {
+    const entry = rosterEntry(state, uid);
+    if (!entry) return;
+    bandTotal += powerOf(fighterStats(state, entry));
+    counted++;
+  });
+  if (!counted) return 1;
+  const overpower = (bandTotal / counted) / refPower;
+  if (overpower <= 1) return 1;
+  return Math.min(3, Math.sqrt(overpower));
+}
+
 // Habilidad de líder de banda: solo está activa si el luchador que la tiene
 // ocupa la celda central [1][1] de la Formación. Devuelve el LEADER_SKILLS
 // correspondiente (o null si no hay líder activo), para aplicarlo a TODA

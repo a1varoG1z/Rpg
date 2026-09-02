@@ -2266,6 +2266,71 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     primera victoria del jefe (sin cambios) y ~8% en la repetición (antes
     70%).
 
+- [x] **Auditoría exhaustiva de la curva de dificultad completa, con el
+    motor de combate real jugando partidas de principio a fin / el jefe
+    nunca puede quedarse en 0 de daño real**. El usuario contó su
+    experiencia real (partida nueva, 3 iniciales + 6 invocaciones de los
+    cristales de inicio, arrasó la zona 1 entera sin que el jefe le
+    derrotara a ninguna criatura) y pidió una revisión exhaustiva de toda
+    la dificultad del juego.
+    - **Reproducido exacto**: jugando la zona 1 de verdad (motor de combate
+      real, sin atajos) con una banda de 3 iniciales + 6 invocaciones, 0
+      bajas en las 8 etapas — jefe incluido, que no llegó a hacer daño
+      relevante.
+    - **Causa raíz**: la dificultad de cada zona/jefe es una función FIJA
+      de su índice — nivel y rareza del rival no dependen en nada de lo
+      fuerte que sea la banda real del jugador. Pero las invocaciones no
+      están limitadas a la rareza de la zona en la que se está — con solo
+      6 cristales de inicio (5 Pixite + 1 Voxite) es fácil sacar algo Raro
+      o Épico, que a nivel 1 ya supera en estadísticas a cualquier rival
+      Común de la zona 1. Si toca algo así de entrada, la zona entera
+      (jefe incluido) se vuelve un paseo.
+    - **Auditoría con partidas completas simuladas** (banda de mayor
+      poder, invocando con cada cristal que cae, jugando zona a zona con
+      el motor de combate real — no una aproximación con equipos
+      sintéticos como en rondas anteriores): el patrón NO es "todo fácil"
+      ni "todo difícil" — es siempre el mismo desde el principio: zonas
+      1-2 un paseo perfecto (0 bajas) sea cual sea la suerte de invocación,
+      y sobre la zona 2-3 aparece un muro real (una partida se atascó 5
+      intentos seguidos en la etapa 3 de Cuevas de Cristal, con la banda
+      solo a nivel 7). Desde ese muro, repetir una etapa fácil ya superada
+      solo 20 veces (rápido con Auto + velocidad 3×) bastó para subir lo
+      suficiente y superarlo — el bucle de "si te atascas, grindea un
+      poco" ya funciona bien, así que no hacía falta tocarlo.
+      (Nota de método: la primera pasada de esta auditoría, con un tope de
+      3.000 pasos por combate, dio un falso "atascado" en una zona — un
+      combate real simplemente necesitaba más pasos para resolverse y el
+      tope cortaba la simulación a medias, leyendo el resultado de un
+      combate anterior por error. Subir el tope a 20.000 y distinguir
+      explícitamente "resultado real" de "tope agotado" lo confirmó: 0
+      combates realmente colgados en la auditoría final.)
+    - **Arreglo, alcance acotado a pedido del usuario ("solo el jefe")**:
+      nuevo `bossAdaptiveMult(state, zoneIdx)` en state.js — compara el
+      "poder" medio de la banda actual (misma fórmula que ya se usó en
+      esta ronda de simulaciones: hp×0.3 + atk + def + agi×0.5 + wis×0.5)
+      contra el de un luchador "a la par" de esa zona (misma rareza que su
+      propio relleno, al nivel del jefe, sin equipo — la referencia ya
+      usada para calibrar los jefes). Si la banda no supera esa
+      referencia, el multiplicador es exactamente 1× — un jefe ya
+      calibrado para una banda floja no cambia en nada. Si la supera, el
+      jefe sube (ataque/defensa/vida, vía el `extraMult` que ya tenía
+      `makeBossUnit` desde el Duelo por apuesta) según la raíz cuadrada del
+      exceso — amortiguado a propósito (una banda 4× más fuerte solo sube
+      el jefe 2×, no 4×) y con techo en 3×, para que el mérito de invocar
+      bien se siga notando sin volver al jefe imposible ni dejarlo sin
+      ninguna oportunidad real de golpear. Se aplica solo a la pelea normal
+      del jefe en el Mapa (`UI.startStageBattle`); el Duelo por apuesta
+      mantiene su propio refuerzo fijo de antes, sin cambios.
+    Verificado con Playwright: `bossAdaptiveMult` da ~1,0-1,05× (ruido de
+    variación de estadísticas, no un cambio real) para una banda "a la
+    par" en dos zonas distintas, y 1,73× para una banda de Legendarios a
+    nivel 1 contra el jefe de la zona 1; comparación A/B con la MISMA banda
+    extrema (todo Legendario/Épico a nivel 1) contra el jefe de la zona 1:
+    sin el arreglo, ~7,5 de daño recibido de media (irrelevante); con el
+    arreglo, ~323,2 de media — más de 40 veces más. La reproducción íntegra
+    del caso original ahora sí recibe daño real del jefe.
+
+## Notas
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

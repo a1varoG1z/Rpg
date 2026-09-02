@@ -828,7 +828,11 @@ UI.startStageBattle = function (state, zoneIdx, stageIdx) {
     saveGame(state);
     UI.renderTopbar(state);
   }
-  const { rows, isBoss } = buildEnemyBand(zoneIdx, stageIdx);
+  // El multiplicador adaptativo (ver bossAdaptiveMult en state.js) solo
+  // afecta a la etapa del jefe (buildEnemyBand lo ignora en el resto) y
+  // solo sube por encima de 1× si la banda ya va muy por encima de lo
+  // esperado para esta zona — nunca debilita al jefe.
+  const { rows, isBoss } = buildEnemyBand(zoneIdx, stageIdx, bossAdaptiveMult(state, zoneIdx));
   const encounters = rows.filter(r => r.length > 0);
   // hpMap/faintedSet/chargeMap llevan la cuenta de la vida, los desmayos y la
   // carga de ulti de cada luchador durante TODA la etapa (entre nodos del
