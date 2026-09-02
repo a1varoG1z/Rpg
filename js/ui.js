@@ -2816,6 +2816,10 @@ UI.openImportSave = function () {
       return;
     }
     if (!confirm('¿Seguro? Se sustituirá tu partida actual por la importada — no se puede deshacer.')) return;
+    // Mismo freno que Reiniciar partida (ver main.js): sin él, el
+    // autoguardado disparado por el propio reload reescribía la partida
+    // vieja encima de la recién importada antes de que cargara la página nueva.
+    UI.suppressAutosave = true;
     saveGame(imported);
     location.reload();
   });

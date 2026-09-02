@@ -46,6 +46,7 @@
   $('importSaveBtn').addEventListener('click', () => UI.openImportSave());
   $('resetBtn').addEventListener('click', () => {
     if (confirm('¿Seguro que quieres borrar tu progreso y empezar de nuevo?')) {
+      UI.suppressAutosave = true;
       resetGame();
       location.reload();
     }
@@ -153,7 +154,15 @@
     UI.renderTopbar(state);
   }, 1000);
 
-  setInterval(() => saveGame(state), 15000);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(state); });
-  window.addEventListener('pagehide', () => saveGame(state));
+  // UI.suppressAutosave: lo activan Reiniciar partida e Importar partida
+  // justo antes de un location.reload() que ya ha dejado el localStorage
+  // como toca (borrado o con la partida importada) — sin este freno, el
+  // reload dispara igualmente pagehide/visibilitychange (la pestaña se
+  // oculta/descarga antes de que cargue la nueva) y el autoguardado de
+  // aquí reescribía por encima la partida VIEJA (la que sigue en la
+  // variable `state` de este cierre), deshaciendo el reinicio/importación
+  // justo antes de que la página recargada llegara a leer el cambio.
+  setInterval(() => { if (!UI.suppressAutosave) saveGame(state); }, 15000);
+  document.addEventListener('visibilitychange', () => { if (document.hidden && !UI.suppressAutosave) saveGame(state); });
+  window.addEventListener('pagehide', () => { if (!UI.suppressAutosave) saveGame(state); });
 })();

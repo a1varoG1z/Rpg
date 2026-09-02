@@ -665,66 +665,24 @@ del color liso).
 - [x] `shenlong_legendario.png`, `tengu_comun.png` y `chupacabra_comun.png`
       — las 3 que faltaban, subidas el 02/09.
 
-#### 2. Fondos de escenario (`assets/scenery/`) — 1/33, faltan 32
+#### 2. Fondos de escenario (`assets/scenery/`) — 33/33, completo ✅
 
-Un archivo `.jpg` por zona, nombrado con el `id` exacto de la zona (no el
-nombre visible). Además de subir la imagen, la pantalla de "Etapas" (la
-que enseña la rejilla de 8 números por zona) no llevaba fondo de zona
-como sí lo llevan el recorrido de nodos y la propia tarjeta de la zona en
-el Mapa — se le añadió (`UI.openZoneStages` en ui.js) para que se vea
-también ahí en cuanto haya imagen subida.
+Las 33 zonas del Mapa tienen ya su `.jpg` (nombrado con el `id` de cada
+zona), subidas el 02/09. De paso se arregló que la pantalla de "Etapas"
+(la rejilla de 8 números por zona) no llevaba fondo de zona como sí lo
+llevan el recorrido de nodos y la tarjeta de zona del Mapa — se le añadió
+(`UI.openZoneStages` en ui.js) para que se vea también ahí.
 
-- [x] `bosque.jpg` — Linde del Bosque (subido el 02/09)
-- [ ] `pantano.jpg` — Pantano Oscuro
-- [ ] `cuevas.jpg` — Cuevas de Cristal
-- [ ] `picos.jpg` — Picos Helados
-- [ ] `ruinas.jpg` — Ruinas Abisales
-- [ ] `guarida.jpg` — Guarida del Dragón
-- [ ] `cantera.jpg` — Cantera Devorada
-- [ ] `aldea_nian.jpg` — Aldea del Año Nuevo
-- [ ] `jardin_piedra.jpg` — Jardín de Piedra
-- [ ] `salon_juicio.jpg` — Salón del Juicio
-- [ ] `sabana.jpg` — Sabana Ardiente
-- [ ] `desfiladero_roc.jpg` — Desfiladero del Roc
-- [ ] `laberinto_creta.jpg` — Laberinto de Creta
-- [ ] `cripta_serpentina.jpg` — Cripta Serpentina
-- [ ] `paso_gigantes.jpg` — Paso de los Gigantes
-- [ ] `templo_hermanas.jpg` — Templo de las Hermanas
-- [ ] `desierto_espinas.jpg` — Desierto de Espinas
-- [ ] `circo_maldito.jpg` — Circo Maldito
-- [ ] `nido_colosal.jpg` — Nido Colosal
-- [ ] `tundra_helada.jpg` — Tundra Helada
-- [ ] `jungla_silenciosa.jpg` — Jungla Silenciosa
-- [ ] `abismo_ojos.jpg` — Abismo de los Cien Ojos
-- [ ] `cima_quimerica.jpg` — Cima Quimérica
-- [ ] `caos_primordial.jpg` — Caos Primordial
-- [ ] `forja_fin.jpg` — Forja del Fin del Mundo
-- [ ] `llanura_titan.jpg` — Llanura del Titán
-- [ ] `templo_eclipse.jpg` — Templo del Sol Eclipsado
-- [ ] `fosa_rlyeh.jpg` — Fosa de R'lyeh
-- [ ] `minas_sinfondo.jpg` — Minas Sin Fondo
-- [ ] `palacio_espejos.jpg` — Palacio de Espejos
-- [ ] `necropolis.jpg` — Necrópolis Eterna
-- [ ] `torre_prohibida.jpg` — Torre Prohibida (penúltima zona, Balrog)
-- [ ] `salon_enganos.jpg` — Salón de los Engaños (última zona, Tifón)
-
-#### 3. Fondos de combate de los modos sin zona propia (`assets/scenery/`) — 0/7, faltan los 7
+#### 3. Fondos de combate de los modos sin zona propia (`assets/scenery/`) — 7/7, completo ✅
 
 Prueba del Campeón, Mazmorra Elemental y Torre Batalla no pelean dentro de
-ninguna zona del Mapa, así que antes no tenían NINGÚN fondo, ni en su
-recorrido/duelo ni en la propia pantalla de batalla — se veían en negro
-liso siempre, tuviera o no imagen subida. Se arregló en código (mismo
-mecanismo `zoneBackgroundStyle` de siempre, vía un `runPseudoZone(run)`
-nuevo en `ui.js` para Torre/Mazmorra, y un `zone` fijo para la Prueba del
-Campeón) — en cuanto subas estos 7 archivos a `assets/scenery/` con el
-nombre exacto, se ven solos, sin tocar nada más:
-
-- [ ] `campeon.jpg` — Prueba del Campeón (un único fondo fijo, tipo arena/coliseo — no depende del duelo ni del rival)
-- [ ] `torre.jpg` — Torre Batalla (un único fondo fijo para todos los niveles — no depende de qué mob/jefe toque)
-- [ ] `elemental_fuego.jpg` — Mazmorra Elemental de Fuego
-- [ ] `elemental_viento.jpg` — Mazmorra Elemental de Viento
-- [ ] `elemental_tierra.jpg` — Mazmorra Elemental de Tierra
-- [ ] `elemental_rayo.jpg` — Mazmorra Elemental de Rayo
+ninguna zona del Mapa, así que no tenían NINGÚN fondo (ni en su
+recorrido/duelo ni en la propia pantalla de batalla). Arreglado en código
+(mismo mecanismo `zoneBackgroundStyle` de siempre, vía un nuevo
+`runPseudoZone(run)` en `ui.js` para Torre/Mazmorra, y un `zone` fijo
+para la Prueba del Campeón) y las 7 imágenes
+(`campeon.jpg`, `torre.jpg`, `elemental_fuego/viento/tierra/rayo/agua.jpg`)
+subidas el 02/09.
 - [ ] `elemental_agua.jpg` — Mazmorra Elemental de Agua
 
 #### 4. Iconos de equipo (`assets/gear/`) — 0/90, faltan los 90
@@ -1683,6 +1641,25 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     (no trivial, no imposible); y que una etapa normal (no de jefe) sigue
     funcionando igual tras el cambio, sin verse afectada por la rama de
     `fixedStats` en `buildUnitStats`.
+  - [x] **Arreglado: "Reiniciar partida" no reiniciaba de verdad**, a
+    reporte del usuario. Causa real: `location.reload()` (tanto en
+    Reiniciar partida como en Importar partida) hace que la pestaña se
+    oculte/descargue antes de que cargue la página nueva, así que dispara
+    igual los eventos `visibilitychange`/`pagehide` — y su autoguardado
+    (en `main.js`) reescribía sin condición la partida VIEJA (la que
+    seguía en la variable `state` de ese cierre) justo por encima de la
+    recién borrada/importada, justo antes de que la página recargada
+    llegara a leer el cambio. Se arregló con un freno compartido
+    `UI.suppressAutosave`: Reiniciar partida e Importar partida lo activan
+    justo antes de su `location.reload()`, y los 3 sitios de autoguardado
+    en `main.js` (intervalo de 15s, `visibilitychange`, `pagehide`)
+    comprueban que no esté activo antes de guardar. Verificado con
+    Playwright: partida con progreso de mentira (Texel, racha del
+    Campeón) → Reiniciar partida → tras la recarga, todo vuelve
+    exactamente a los valores de `createNewState()`; y por separado,
+    Importar partida con un código exportado de otra partida distinta →
+    tras la recarga, el Texel es el de la partida importada, no el que
+    había antes de importar (mismo bug, mismo arreglo).
 
 ## Notas
 
