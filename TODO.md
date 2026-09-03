@@ -3049,26 +3049,30 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     `bossAdaptiveMult` sigue devolviendo los mismos valores que antes del
     refactor (comprobado con una banda de prueba, sin NaN/undefined).
 
-- [x] "Poder total" ahora respeta SIEMPRE la jerarquía de rareza — el
-    usuario reportó (con captura de su propio roster) que Odín seguía
-    saliendo por detrás de varias Épicas incluso con `fighterPowerScore`
-    ponderado: correcto según los números (un Gurú reparte casi todo en
-    WIS, que pesa ×0.5, frente al HP/DEF de un Campeón que pesa ×0.3/×1),
-    pero contrario a la expectativa obvia de que un Legendario nunca debe
-    quedar por debajo de un Épico en un orden llamado "Poder". Corregido
-    en `sortRosterEntries` (ui.js): el modo 'poder' compara la rareza
-    PRIMERO (nunca deja pasar a una inferior por delante de una superior,
-    por mucho que su `fighterPowerScore` puntual sea más alto) y usa el
-    poder ponderado solo como desempate DENTRO de la misma rareza — que es
-    donde de verdad hacía falta distinguir de forma justa entre clases.
-    Los demás modos de stat individual (HP/ATK/DEF/AGI/WIS) no se tocan,
-    siguen siendo comparación literal de esa stat sin más.
-    Verificado con Playwright reproduciendo el roster exacto de la
-    segunda captura del usuario (4 Legendarios + 5 Épicos, niveles
-    mixtos): en ambas variantes (Actuales y Base), los 4 Legendarios
-    (Fenrir, Devorador de Flotas, Fénix Inmortal, Odín) salen siempre por
-    delante de los 5 Épicos sin excepción, incluida una Épica a tope
-    Nv.40 (Elegidora de los Caídos) frente a un Odín sin nivelar (Nv.1).
+- [x] Revertido el intento de forzar la rareza por delante del poder
+    medido en "Poder total" (ver el punto anterior): el usuario aclaró que
+    el objetivo del orden NO es respetar la jerarquía de rareza a toda
+    costa, sino poder DETECTAR con honestidad cuándo una carta mide peor
+    de lo que su rareza sugiere, para decidir entonces si esa carta en
+    concreto necesita un ajuste manual — forzar la rareza por delante
+    escondería justo el caso que hace falta ver. `sortRosterEntries`
+    (ui.js) vuelve a comparar solo por `fighterPowerScore`, sin ningún
+    desempate de rareza por delante.
+    Confirmado con números reales (Nv.1, 0★, sin equipo, los 9
+    personajes de la captura del usuario): Odín (Legendario, Gurú) mide
+    298 de poder, por DETRÁS de 4 Épicas de clase Campeón (Guardián del
+    Abismo 308, Guardián de las Mareas 301, Elegidora de los Caídos 301,
+    Golem de Hierro Ancestral 298) — un Gurú reparte casi todo en WIS
+    (peso ×0.5 en la fórmula) mientras que un Campeón mete casi todo en
+    HP/DEF (peso ×0.3/×1), así que a la misma rareza superior Odín sigue
+    perdiendo en poder de combate bruto frente a un tanque de una rareza
+    por debajo. Es una medición real, no un artefacto del orden — el
+    usuario lo señaló porque, temáticamente, un Legendario que representa
+    a un dios debería pegar más fuerte de lo que sus stats actuales dan.
+    Pendiente de decisión del usuario: si quiere reforzar a Odín (u otros
+    casos similares) de verdad, ya existe la herramienta para hacerlo sin
+    tocar la fórmula de nadie más — `setStatMult('odin_legendario', {...})`
+    (ver el punto de "multiplicador manual opcional de stats" más arriba).
 
 ## Notas
 
