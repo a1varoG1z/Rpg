@@ -47,13 +47,62 @@ function proceduralCreatureCanvas(defId, sizePx) {
   return canvas;
 }
 
+// El atributo nativo loading="lazy" decide solo cuándo cargar cada imagen
+// según su propia heurística interna — en listas largas dentro de un
+// contenedor con scroll propio (la Pokédex, sobre todo: 336 tarjetas de
+// golpe) algunos navegadores/WebView de móvil no la disparan de forma
+// fiable, dejando la tarjeta en blanco (opacity:0, sin marcador de carga)
+// de forma indefinida en vez de solo un instante.
+//
+// Un primer intento con IntersectionObserver (root: null, el viewport del
+// documento) tenía el mismo problema: cuando el scroll ocurre dentro de un
+// contenedor anidado con overflow propio (cualquier .modal-box de este
+// juego, incluida la propia Pokédex) el observador no vuelve a evaluar la
+// intersección al hacer scroll — solo procesa la tanda inicial y se queda
+// mudo el resto del tiempo, comprobado a mano. Habría que pasarle el
+// contenedor real como `root`, pero creatureCanvas se usa en sitios muy
+// distintos (dentro de modales, dentro de pantallas normales) y no hay un
+// único contenedor válido para todos.
+//
+// getBoundingClientRect() sí es siempre relativo a la ventana real, pase
+// lo que pase por en medio (contenedores anidados, scroll del documento o
+// de un modal) — así que en vez de IntersectionObserver, un listener de
+// scroll en el documento con `capture: true` (los eventos de scroll no
+// burbujean, pero SÍ se capturan desde cualquier ancestro, así que uno
+// solo en document basta para cualquier contenedor) revisa qué imágenes
+// pendientes han entrado ya en pantalla (con margen) y les asigna el src
+// real. Limitado a una comprobación por frame con requestAnimationFrame.
+const LAZY_IMAGE_MARGIN = 400;
+const pendingLazyImages = new Set();
+let lazyCheckScheduled = false;
+function isNearViewport(elem) {
+  const r = elem.getBoundingClientRect();
+  return r.bottom > -LAZY_IMAGE_MARGIN && r.top < window.innerHeight + LAZY_IMAGE_MARGIN
+    && r.right > -LAZY_IMAGE_MARGIN && r.left < window.innerWidth + LAZY_IMAGE_MARGIN;
+}
+function resolvePendingLazyImages() {
+  lazyCheckScheduled = false;
+  pendingLazyImages.forEach(img => {
+    if (!img.isConnected) { pendingLazyImages.delete(img); return; }
+    if (!isNearViewport(img)) return;
+    pendingLazyImages.delete(img);
+    if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; }
+  });
+}
+function scheduleLazyImageCheck() {
+  if (lazyCheckScheduled) return;
+  lazyCheckScheduled = true;
+  requestAnimationFrame(resolvePendingLazyImages);
+}
+document.addEventListener('scroll', scheduleLazyImageCheck, { capture: true, passive: true });
+window.addEventListener('resize', scheduleLazyImageCheck);
+
 function creatureCanvas(defId, sizePx) {
   const def = fighterDef(defId);
   if (def && def.image) {
     const img = document.createElement('img');
     img.className = 'creature-canvas creature-canvas-loading';
     img.alt = def.name;
-    img.loading = 'lazy';
     // Alto fijo (misma proporción 72×81 que la caja por defecto de
     // .creature-canvas en style.css) en vez de "auto" según la proporción
     // real del PNG — con "auto", un sprite recortado más alto de lo normal
@@ -71,7 +120,9 @@ function creatureCanvas(defId, sizePx) {
       const fallback = proceduralCreatureCanvas(defId, sizePx);
       if (img.parentNode) img.parentNode.replaceChild(fallback, img);
     }, { once: true });
-    img.src = 'assets/creatures/' + def.image;
+    img.dataset.src = 'assets/creatures/' + def.image;
+    pendingLazyImages.add(img);
+    scheduleLazyImageCheck();
     return img;
   }
   return proceduralCreatureCanvas(defId, sizePx);

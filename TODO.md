@@ -3091,6 +3091,46 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     variantes del orden (Actuales y Base), sin necesidad de forzar la
     rareza — es una medición honesta de sus stats ya reforzadas.
 
+- [x] Arregla la Pokédex "bugeándose" (captura del usuario: una tarjeta
+    descubierta, "Baba Yaga Errante", se quedaba completamente en blanco
+    — sin arte, sin insignia de elemento/clase, sin icono de tier, solo el
+    nombre — en vez de mostrar su ilustración). No era un fallo de datos
+    (el `<img>` se construía con la rareza/elemento/clase correctos, ver
+    `pokedexCard` en ui.js) sino de carga de imagen: `creatureCanvas`
+    usaba el atributo nativo `loading="lazy"` del `<img>`, cuya heurística
+    de "¿está cerca del viewport?" no dispara de forma fiable cuando el
+    scroll ocurre dentro de un contenedor anidado con overflow propio — y
+    TODOS los modales de este juego (incluida la propia Pokédex,
+    `#pokedexModal .modal-box`) son justo eso. Un primer intento con
+    IntersectionObserver (`root: null`) tenía el MISMO problema — probado
+    a mano: solo procesaba la tanda de tarjetas visible al abrir el modal
+    y se quedaba mudo el resto del scroll, porque `root: null` no vuelve
+    a evaluar la intersección cuando quien se mueve es un contenedor
+    anidado, no el documento. `creatureCanvas` se usa en demasiados
+    contextos distintos (dentro de modales, dentro de pantallas normales)
+    como para fijar un único `root` válido para todos.
+    Arreglado con un mecanismo manual que no depende de ningún `root`:
+    `getBoundingClientRect()` siempre da la posición real en pantalla, la
+    atraviesen los contenedores anidados que la atraviesen. Un listener de
+    scroll en `document` con `capture:true` (los eventos de scroll no
+    burbujean, pero SÍ se capturan desde cualquier ancestro — uno solo
+    basta para cualquier modal o pantalla) revisa, como mucho una vez por
+    frame (`requestAnimationFrame`), qué imágenes pendientes (guardadas en
+    `pendingLazyImages`) han entrado ya en pantalla con 400px de margen, y
+    les asigna el `src` real en ese momento — antes solo se guardaba en
+    `data-src`. Mismo margen que el intento anterior, misma protección
+    contra fallos de red (el `error` handler que sustituye por el sprite
+    procedural sigue igual).
+    Verificado con Playwright (viewport de móvil 412×915, Pokédex con las
+    336 formas descubiertas): antes del arreglo, con el mismo scroll
+    dentro del modal, 321 de 336 imágenes se quedaban sin `src` para
+    siempre (incluida "Guerrero Cocodrilo", con la tarjeta claramente
+    visible en pantalla) — con el arreglo, en varios saltos de scroll
+    sucesivos, CERO tarjetas visibles se quedan sin cargar en ningún
+    punto; "Baba Yaga Errante" y "Guerrero Cocodrilo" cargan su arte real
+    correctamente. Comprobado también que la pantalla de Banda (fuera de
+    cualquier modal) sigue cargando sus tarjetas con normalidad.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
