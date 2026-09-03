@@ -2457,10 +2457,10 @@ UI.showCompare = function (state, uidA, uidB, mode) {
 
 UI.openSuperFusePicker = function (state, targetUid) {
   const body = $('pickerModalBody');
-  body.innerHTML = '<h3>Sacrificar luchador (SEF 5/5)</h3><p class="settings-info">Otorga una ★ permanente al luchador objetivo.</p>';
+  body.innerHTML = '<h3>Sacrificar luchador (SEF 5/5)</h3><p class="settings-info">Otorga una ★ permanente al luchador objetivo. Solo formas finales (sin evolución pendiente) — evoluciónalas antes si aún pueden subir.</p>';
   const list = el('div', 'picker-grid');
-  const candidates = state.roster.filter(r => r.uid !== targetUid && r.sef >= 5);
-  if (candidates.length === 0) list.appendChild(el('div', 'empty-hint', 'No tienes luchadores con SEF 5/5 disponibles.'));
+  const candidates = state.roster.filter(r => r.uid !== targetUid && r.sef >= 5 && !fighterDef(r.defId).evolvesTo);
+  if (candidates.length === 0) list.appendChild(el('div', 'empty-hint', 'No tienes luchadores con SEF 5/5 en forma final disponibles.'));
   const bandUids = state.band.flat().filter(Boolean);
   candidates.forEach(entry => {
     const card = creatureCard(state, entry, { inBand: bandUids.includes(entry.uid) });

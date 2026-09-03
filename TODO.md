@@ -3171,6 +3171,31 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     con `debilitar` no cambian de comportamiento — su golpe extra sigue
     encajando con ATK, no con WIS.
 
+- [x] Restringe el material de Superfusión a solo formas finales: el
+    usuario pidió revisarlo y, en efecto, `superFuse` (state.js) solo
+    comprobaba `sef >= 5` — una forma intermedia (con `evolvesTo`) que
+    llegara a SEF 5/5 se podía sacrificar igual, tirando a la basura una
+    evolución ya lista para completarse en su lugar (`readyToEvolve`, ver
+    `fuseMaterials`). Añadido `if (fighterDef(sac.defId).evolvesTo) return
+    false;` en `superFuse`, y el mismo filtro en el listado de candidatos
+    de `UI.openSuperFusePicker` (ui.js) para que ni siquiera aparezcan
+    como opción — doble capa, como con el resto de acciones del roster
+    (sellFighter, equipGear...), no solo un filtro de UI.
+    Verificado: sacrificar una forma NO final con SEF 5/5 devuelve
+    `false` y no toca el roster; la misma familia en su forma final SÍ
+    funciona (target sube 1★, el sacrificio desaparece); y el picker de
+    Superfusión, con las dos formas disponibles en el roster, solo
+    muestra la forma final como opción.
+
+- El bug visual de la captura en "Comparar con..." (una tarjeta en blanco
+  al hacer scroll, "Titán de las Corrientes") es el MISMO fallo de carga
+  perezosa de imágenes ya arreglado para la Pokédex (`creatureCanvas`
+  compartida — ver el punto de "tarjetas en blanco en la Pokédex" más
+  arriba), no un bug nuevo. Reproducida la misma prueba (scroll dentro de
+  `#pickerModal .modal-box`, viewport de móvil) contra el código actual:
+  cero tarjetas se quedan sin cargar. La captura del usuario es de antes
+  de que ese arreglo llegara a su dispositivo.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

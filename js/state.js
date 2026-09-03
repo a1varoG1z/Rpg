@@ -462,6 +462,12 @@ function superFuse(state, targetUid, sacrificeUid) {
   const sac = rosterEntry(state, sacrificeUid);
   if (!target || !sac) return false;
   if (sac.sef < 5) return false;
+  // El sacrificio debe estar en su forma FINAL (sin evolvesTo) — sacrificar
+  // una forma intermedia con SEF 5/5 tiraría a la basura una evolución ya
+  // lista (readyToEvolve, ver fuseMaterials) que el jugador podría haber
+  // completado en su lugar. sef>=5 por sí solo no bastaba: una forma no
+  // final con SEF lleno sigue pudiendo evolucionar antes de sacrificarse.
+  if (fighterDef(sac.defId).evolvesTo) return false;
   if (target.stars >= 3) return false;
   target.stars++;
   removeFromRoster(state, sacrificeUid);
