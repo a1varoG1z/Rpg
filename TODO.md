@@ -2929,6 +2929,31 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     varios, ahora 576-4483) — ningún nivel se ha vuelto imposible, pero
     todos suponen ya un reto genuino incluso para la mejor banda posible.
 
+- [x] Arregla "Exportar partida" sin descargar nada: el botón no estaba
+    roto (`UI.openExportSave` sí generaba el código y abría el modal con su
+    textarea + "Copiar al portapapeles"), pero `#pickerModal` y
+    `#settingsModal` comparten el mismo z-index (90, ver `.modal` en
+    style.css) y `openExportSave`/`openImportSave` nunca ocultaban Ajustes
+    al abrirse desde dentro de él — como `#settingsModal` está DESPUÉS en
+    el DOM, se quedaba apilado ENCIMA del modal de exportar/importar y lo
+    tapaba entero (fondo opaco incluido), así que al pulsar "Exportar" no
+    pasaba nada visible aunque el modal sí se hubiera abierto de verdad
+    detrás. Arreglado ocultando `#settingsModal` al principio de ambas
+    funciones (ui.js). Aprovechando el arreglo, añadido lo que de verdad
+    pedía el usuario — una descarga real de archivo (antes solo había
+    copiar/pegar el código): botón "💾 Descargar archivo" en Exportar
+    (Blob + `<a download>` temporal, nombre
+    `defensor-de-texel-partida-AAAA-MM-DD.txt`) y un `<input type="file">`
+    en Importar que rellena el textarea leyendo el archivo subido — el
+    pegado manual del código se mantiene como alternativa en ambos.
+    Verificado con Playwright: la descarga se dispara con el nombre y
+    contenido correctos (3540 bytes, empieza por el base64 esperado);
+    subir ese mismo archivo en Importar rellena el textarea con el
+    contenido exacto; y una prueba de ida y vuelta completa (fijar
+    `texel=123456`, exportar, cambiar `texel=1`, importar el archivo
+    descargado, recargar) confirma que la partida vuelve exactamente al
+    valor exportado.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

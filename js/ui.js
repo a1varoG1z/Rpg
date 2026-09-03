@@ -3649,16 +3649,39 @@ UI.showOfflineModal = function (energyGained) {
 
 // ---------- Exportar/Importar partida ----------
 UI.openExportSave = function (state) {
+  // Se abre desde dentro de Ajustes: sin ocultarlo primero, settingsModal
+  // (más tarde en el DOM, mismo z-index que cualquier .modal) se queda
+  // apilado ENCIMA de este modal y lo tapa entero — el botón "Exportar"
+  // parecía no hacer nada porque el modal real quedaba invisible detrás.
+  $('settingsModal').classList.add('hidden');
   const code = exportSaveCode(state);
   const body = $('pickerModalBody');
   body.innerHTML = `<h3>📤 Exportar partida</h3>
-    <p class="settings-info">Copia este código y guárdalo en un sitio seguro — sirve para restaurar
-    tu partida en este dispositivo o pasarla a otro, desde "📥 Importar partida".</p>`;
+    <p class="settings-info">Descarga el archivo o copia el código y guárdalo en un sitio seguro — sirve
+    para restaurar tu partida en este dispositivo o pasarla a otro, desde "📥 Importar partida".</p>`;
   const textarea = document.createElement('textarea');
   textarea.className = 'save-code-box';
   textarea.readOnly = true;
   textarea.value = code;
   body.appendChild(textarea);
+  const actions = el('div', 'modal-actions');
+  const downloadBtn = el('button', 'primary-btn', '💾 Descargar archivo');
+  downloadBtn.addEventListener('click', () => {
+    // Blob + <a download> temporal: no requiere backend, funciona igual en
+    // móvil (descarga a "Archivos"/Descargas) y escritorio.
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `defensor-de-texel-partida-${stamp}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    UI.showToast('💾 Archivo descargado');
+  });
+  actions.appendChild(downloadBtn);
   const copyBtn = el('button', 'primary-btn', '📋 Copiar al portapapeles');
   copyBtn.addEventListener('click', () => {
     textarea.select();
@@ -3670,19 +3693,36 @@ UI.openExportSave = function (state) {
       UI.showToast('El código ya está seleccionado, cópialo a mano');
     }
   });
-  body.appendChild(copyBtn);
+  actions.appendChild(copyBtn);
+  body.appendChild(actions);
   $('pickerModal').classList.remove('hidden');
 };
 
 UI.openImportSave = function () {
+  // Mismo motivo que en UI.openExportSave: sin esto, Ajustes se queda
+  // tapando este modal por encima.
+  $('settingsModal').classList.add('hidden');
   const body = $('pickerModalBody');
   body.innerHTML = `<h3>📥 Importar partida</h3>
-    <p class="settings-info">Pega aquí un código exportado antes. <b>Sustituirá tu partida actual y
-    no se puede deshacer</b> — expórtala primero si quieres conservarla por si acaso.</p>`;
+    <p class="settings-info">Sube el archivo descargado al exportar, o pega aquí el código a mano.
+    <b>Sustituirá tu partida actual y no se puede deshacer</b> — expórtala primero si quieres
+    conservarla por si acaso.</p>`;
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.txt,text/plain';
+  fileInput.className = 'save-code-file';
+  body.appendChild(fileInput);
   const textarea = document.createElement('textarea');
   textarea.className = 'save-code-box';
   textarea.placeholder = 'Pega aquí el código de la partida...';
   body.appendChild(textarea);
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { textarea.value = String(reader.result || '').trim(); };
+    reader.readAsText(file);
+  });
   const importBtn = el('button', 'danger-btn', '📥 Importar y sustituir partida');
   importBtn.addEventListener('click', () => {
     let imported;
