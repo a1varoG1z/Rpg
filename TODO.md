@@ -3024,6 +3024,31 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     (queda en 18) y el Texel sube exactamente su valor de venta conjunto
     (+40), sin tocar ninguna de las 18 piezas equipadas.
 
+- [x] Pondera "⭐ Poder total" en el orden de la Colección en vez de sumar
+    las 5 stats a pelo: el usuario preguntó por qué varias Épicas de clase
+    Campeón salían por delante de Odín (Legendario) en ese orden — la
+    causa era que una suma plana favorece SIEMPRE a las clases con más HP
+    base (Campeón: HP altísimo, todo lo demás bajo) sobre las de más
+    ATK/WIS (Gurú/Brujo: HP bajo, todo lo demás alto), porque el HP tiene
+    la escala numérica más grande con diferencia — nada que ver con la
+    rareza. Extraída `fighterPowerScore(stats)` (state.js, junto a
+    `starBonus`) con los MISMOS pesos que ya usaba `bossAdaptiveMult`
+    (hp×0.3 + atk + def + agi×0.5 + wis×0.5) para medir la banda del
+    jugador contra el rival de referencia — una única fórmula de "poder"
+    para toda la partida en vez de dos criterios distintos. Usada ahora
+    tanto en `bossAdaptiveMult` (refactor puro, sin cambio de
+    comportamiento) como en el modo 'poder' de `sortRosterEntries` (ui.js),
+    que antes sumaba las 5 stats sin ponderar.
+    Verificado: con el roster exacto de la captura del usuario (Devorador
+    de Flotas, Fenrir, Guardián del Abismo/Mareas, Elegidora de los
+    Caídos, Matriarca de las Orcas, Fénix Inmortal/Centinela, Odín) en
+    modo Base (Nv.1), Odín pasa del último puesto (con la suma plana) al
+    7º de 9 — por delante de Matriarca de las Orcas y Fénix Centinela,
+    ambas Épicas de clase Campeón — sin tocar el orden de los Legendarios
+    de clase con más ATK (Devorador de Flotas, Fenrir siguen 1º/2º).
+    `bossAdaptiveMult` sigue devolviendo los mismos valores que antes del
+    refactor (comprobado con una banda de prueba, sin NaN/undefined).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

@@ -114,6 +114,19 @@ function combinationFighterUids(state, lineId) {
 function levelGrowth(level) { return 1 + (level - 1) * 0.10; }
 function starBonus(stars) { return 1 + stars * 0.08; }
 
+// "Poder" de un conjunto de stats {hp,atk,def,agi,wis}, ponderado en vez de
+// sumado a pelo — de lo contrario cualquier comparación de poder favorece
+// SIEMPRE a las clases con más HP base (Campeón) sobre las de más
+// ATK/WIS (Brujo/Gurú), porque el HP es la stat con la escala numérica más
+// grande con diferencia, no porque de verdad pegue/aguante más en combate.
+// Mismos pesos que ya usaba bossAdaptiveMult para medir la banda del
+// jugador contra el rival de referencia — reutilizados aquí como fórmula
+// única de "poder" para toda la partida (también en el orden de la
+// Colección, ver sortRosterEntries en ui.js).
+function fighterPowerScore(stats) {
+  return stats.hp * 0.3 + stats.atk + stats.def + stats.agi * 0.5 + stats.wis * 0.5;
+}
+
 // Suma de todo lo que aporta el equipo puesto (6 huecos, ver GEAR_SLOTS) a
 // cada estadística — cada pieza reparte su valor entre una stat principal y
 // una secundaria más floja.
@@ -503,16 +516,15 @@ function bossAdaptiveMult(state, zoneIdx) {
   const zone = ZONES[zoneIdx];
   const globalIdx = zoneIdx * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
   const level = Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalIdx));
-  const powerOf = (stats) => stats.hp * 0.3 + stats.atk + stats.def + stats.agi * 0.5 + stats.wis * 0.5;
   const refStats = buildUnitStats(zone.pool[0], level);
-  const refPower = powerOf({ hp: refStats.maxHp, atk: refStats.atk, def: refStats.def, agi: refStats.agi, wis: refStats.wis });
+  const refPower = fighterPowerScore({ hp: refStats.maxHp, atk: refStats.atk, def: refStats.def, agi: refStats.agi, wis: refStats.wis });
   const bandUids = state.band.flat().filter(Boolean);
   if (!bandUids.length || refPower <= 0) return 1;
   let bandTotal = 0, counted = 0;
   bandUids.forEach(uid => {
     const entry = rosterEntry(state, uid);
     if (!entry) return;
-    bandTotal += powerOf(fighterStats(state, entry));
+    bandTotal += fighterPowerScore(fighterStats(state, entry));
     counted++;
   });
   if (!counted) return 1;

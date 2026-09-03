@@ -114,12 +114,14 @@ function gearIcon(gear, sizePx) {
   return img;
 }
 
-// Modos de ordenación por estadística: individuales + 'poder' (suma de las
-// 5, como medida "global"). variant decide qué cifras se usan para esos
-// modos: 'current' (nivel/estrellas/equipo actuales, vía fighterStats) o
-// 'base' (Nv.1 de fábrica, sin nada de eso — misma fórmula que el modo
-// "Base" de Comparar, vía baseCompareStats), para poder distinguir quién es
-// realmente mejor "de carta" de quién simplemente tiene más invertido.
+// Modos de ordenación por estadística: individuales + 'poder' (fighterPowerScore
+// de las 5 juntas, ver state.js — ponderado, no una suma a pelo, para no
+// favorecer siempre a las clases con más HP base sobre las de más ATK/WIS).
+// variant decide qué cifras se usan para esos modos: 'current' (nivel/
+// estrellas/equipo actuales, vía fighterStats) o 'base' (Nv.1 de fábrica,
+// sin nada de eso — misma fórmula que el modo "Base" de Comparar, vía
+// baseCompareStats), para poder distinguir quién es realmente mejor "de
+// carta" de quién simplemente tiene más invertido.
 const STAT_SORT_MODES = ['poder', 'hp', 'atk', 'def', 'agi', 'wis'];
 function statsForSort(state, entry, variant) {
   return variant === 'base' ? baseCompareStats(entry) : fighterStats(state, entry);
@@ -133,8 +135,8 @@ function sortRosterEntries(state, roster, mode, variant) {
   if (STAT_SORT_MODES.includes(mode)) {
     return list.sort((a, b) => {
       const sa = statsForSort(state, a, variant), sb = statsForSort(state, b, variant);
-      const va = mode === 'poder' ? sa.hp + sa.atk + sa.def + sa.agi + sa.wis : sa[mode];
-      const vb = mode === 'poder' ? sb.hp + sb.atk + sb.def + sb.agi + sb.wis : sb[mode];
+      const va = mode === 'poder' ? fighterPowerScore(sa) : sa[mode];
+      const vb = mode === 'poder' ? fighterPowerScore(sb) : sb[mode];
       return vb - va;
     });
   }
