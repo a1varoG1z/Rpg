@@ -40,7 +40,9 @@ function createNewState() {
     lastSave: Date.now(),
     currencies: { texel: 400, gemas: 20, pixite: 5, voxite: 1, doxite: 0, energy: MAX_ENERGY, energyFrac: 0 },
     roster, gearInventory: [], band, progress,
-    arena: { rank: 1, bestRank: 1 },
+    // seasonKey/seasonPeakRank: ver checkArenaSeasonReset más abajo. rank
+    // sirve de arranque también para el pico de la primera temporada.
+    arena: { rank: 1, bestRank: 1, seasonKey: arenaSeasonKey(), seasonPeakRank: 1 },
     // Estadísticas históricas de toda la partida — se acumulan en
     // UI.endBattle, el único punto por el que pasa TODO combate (etapa,
     // Torre, Mazmorra Elemental, Arena, Prueba del Campeón, Duelo por
@@ -641,6 +643,25 @@ function elementalTeamUids(state, elementId) {
   return valid;
 }
 
+// --- Arena (ver buildArenaBand en combat.js y arenaSeasonKey en data.js) ---
+// Se llama al abrir la pantalla de Arena (UI.renderArena) — si la clave de
+// temporada real ya cambió desde la última vez, aplica el reset parcial y
+// devuelve el resumen para mostrarlo (null si todavía es la misma
+// temporada, el caso normal). bestRank (récord de toda la partida) nunca
+// se toca aquí, solo rank/seasonPeakRank (el progreso "de temporada").
+function checkArenaSeasonReset(state) {
+  const currentKey = arenaSeasonKey();
+  if (state.arena.seasonKey === currentKey) return null;
+  const previousPeak = state.arena.seasonPeakRank;
+  const reward = arenaSeasonReward(previousPeak);
+  state.currencies.gemas += reward.gemas;
+  const newRank = Math.max(1, Math.round(previousPeak * ARENA_SEASON_RESET_FRACTION));
+  state.arena.rank = newRank;
+  state.arena.seasonPeakRank = newRank;
+  state.arena.seasonKey = currentKey;
+  return { previousPeak, reward, newRank };
+}
+
 // --- Prueba del Campeón (duelos 1 contra 1, ver combat.js) ---
 function recordChampionStreak(state, duelsWon) {
   if (duelsWon > state.champion.bestStreak) state.champion.bestStreak = duelsWon;
@@ -805,6 +826,14 @@ function migrateState(state) {
     if (!state.torre) state.torre = { clears: {} };
     if (!state.tierCap) state.tierCap = { clears: {}, familyTrialClears: {} };
     if (!state.tierCap.familyTrialClears) state.tierCap.familyTrialClears = {};
+    // Partidas guardadas antes de las temporadas de Arena: arrancan la
+    // primera temporada ya mismo, con el rango actual como pico (así no se
+    // resetea de golpe nada más migrar, solo a partir de la próxima
+    // semana natural).
+    if (state.arena.seasonKey === undefined) {
+      state.arena.seasonKey = arenaSeasonKey();
+      state.arena.seasonPeakRank = state.arena.rank;
+    }
     if (!state.elementalTeams) state.elementalTeams = { fuego: [], viento: [], tierra: [], rayo: [], agua: [] };
     if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
     if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };

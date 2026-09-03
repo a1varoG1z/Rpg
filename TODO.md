@@ -2805,14 +2805,8 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     batalla de Arena ahora sí lleva el degradado de fondo.
 
 - [x] **Sugerencias para mejorar la Arena** (pedido explícito, respuesta
-    dada en el chat, sin implementar salvo el fondo de arriba):
-    - **Temporadas con reset parcial de rango**: al rango solo subir nunca
-      (perder no baja), una vez se llega al techo natural del jugador ya
-      no queda ningún motivo para seguir jugando Arena — un reset
-      periódico (semanal/mensual) que baje el rango a una fracción del
-      alcanzado, con recompensa por el rango PICO de la temporada
-      anterior, daría una razón para volver a subir en vez de un único
-      progreso de usar y tirar.
+    dada en el chat; la primera implementada abajo, el resto sin
+    implementar):
     - **Elegir entre 2-3 rivales explorados en vez de 1**: "Buscar rival"
       da un único rival al azar ahora mismo — ofrecer 2-3 a elegir (como
       en varios PvP de gacha reales) añadiría una decisión estratégica
@@ -2830,6 +2824,35 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       menor (el rango nunca baja, así que no se puede volver a un rival
       fácil ya superado a farmear) pero seguiría siendo más consistente
       con el resto del juego.
+
+- [x] **Temporadas de Arena con reset parcial** (pedido explícito, primera
+    sugerencia de la lista de arriba). Reset semanal DETERMINISTA sin
+    servidor (misma idea que la oferta diaria del Mercader: se deriva de
+    la fecha real con `arenaSeasonKey`, en semanas desde una fecha fija —
+    `Math.floor(díasTranscurridos/7)` — así cambia sola cada semana natural
+    sin depender de ningún temporizador en vivo, solo de comprobarlo al
+    abrir la pantalla). Al detectar que la semana cambió
+    (`checkArenaSeasonReset`, state.js, llamado desde `UI.renderArena`):
+    - El rango cae a la MITAD de `seasonPeakRank` (el pico de LA
+      TEMPORADA que acaba de terminar, no del rango actual si ya se venía
+      perdiendo sin explorar rival nuevo) — nunca a 1, un reset parcial de
+      verdad, no un borrón y cuenta nueva.
+    - Recompensa de Gemas por ese pico (`arenaSeasonReward`,
+      `10 + pico×3`), avisada con un toast al entrar a Arena.
+    - `bestRank` (récord de TODA la partida, del que dependen los logros
+      `arena_1/5/15/30/50` ya existentes) NO se toca nunca — solo baja el
+      rango "de temporada", así que el progreso permanente nunca se
+      pierde y los logros de siempre siguen funcionando igual.
+    - Panel de Arena ampliado: pico de esta temporada, mejor rango
+      histórico, y días que faltan para el próximo reset
+      (`arenaSeasonDaysLeft`).
+    Verificado con Playwright: sin cambio de semana no resetea nada;
+    forzando el paso de una semana (pico 20 → recompensa 70 Gemas, rango
+    baja a 10, exactamente la mitad) las Gemas se acreditan y `bestRank`
+    se mantiene intacto; una segunda comprobación inmediata no vuelve a
+    resetear (misma semana ya); el panel muestra pico/histórico/días
+    correctamente; ganar un combate de Arena actualiza `seasonPeakRank`
+    a la vez que `bestRank`, como debía.
 
 ## Notas
 

@@ -2602,7 +2602,22 @@ UI.showEvolveReveal = function (oldDefId, newDefId) {
 
 // ---------- Arena ----------
 UI.renderArena = function (state) {
-  $('arenaRankPanel').innerHTML = `<h3>Rango actual: ${state.arena.rank}</h3><div class="stat-row"><span>Mejor rango</span><span>${state.arena.bestRank}</span></div>`;
+  // Temporadas: se comprueba cada vez que se abre la pantalla (sin
+  // temporizador en vivo, como la oferta diaria del Mercader) — si la
+  // semana real ya cambió desde la última vez, aplica el reset parcial y
+  // lo avisa con un toast antes de dibujar los paneles ya actualizados.
+  const seasonReset = checkArenaSeasonReset(state);
+  if (seasonReset) {
+    saveGame(state);
+    UI.renderTopbar(state);
+    UI.showToast(`🏆 Nueva temporada de Arena — tu pico fue Rango ${seasonReset.previousPeak} (+${seasonReset.reward.gemas} 💎). Rango de esta temporada: ${seasonReset.newRank}.`);
+  }
+  $('arenaRankPanel').innerHTML = `<h3>Rango actual: ${state.arena.rank}</h3>
+    <div class="stat-row"><span>Pico de esta temporada</span><span>${state.arena.seasonPeakRank}</span></div>
+    <div class="stat-row"><span>Mejor rango histórico</span><span>${state.arena.bestRank}</span></div>
+    <div class="stat-row"><span>Reset de temporada en</span><span>${arenaSeasonDaysLeft()} día${arenaSeasonDaysLeft() === 1 ? '' : 's'}</span></div>
+    <p class="settings-info">Cada semana el rango baja a la mitad de su pico (nunca a 1), con una recompensa
+    de Gemas por ese pico — para tener siempre un motivo para seguir subiendo.</p>`;
   const enemyPanel = $('arenaEnemyPanel');
   enemyPanel.innerHTML = '';
   if (!state.arena.scouted) {
@@ -2654,6 +2669,7 @@ UI.startArenaBattle = function (state) {
       if (result === 'victoria') {
         state.arena.rank++;
         state.arena.bestRank = Math.max(state.arena.bestRank, state.arena.rank);
+        state.arena.seasonPeakRank = Math.max(state.arena.seasonPeakRank, state.arena.rank);
         const texel = 40 + state.arena.rank * 6, gemas = 3 + Math.floor(state.arena.rank / 3);
         state.currencies.texel += texel; state.currencies.gemas += gemas;
         saveGame(state);

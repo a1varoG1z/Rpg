@@ -938,6 +938,33 @@ function elementalDungeonLevel() {
   return Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalStageIdx));
 }
 
+// ---------- Arena: temporadas ----------
+// El rango de Arena solo sube nunca (perder no baja) — una vez se llega al
+// techo natural del jugador ya no queda ningún motivo para seguir jugando.
+// Reset semanal determinista (sin servidor, misma idea que la oferta
+// diaria del Mercader: se deriva de la fecha real, no de un temporizador
+// en vivo — basta con comprobarlo cada vez que se abre la pantalla de
+// Arena) — el rango cae a la MITAD de su pico en la temporada que acaba
+// de terminar (no a 1: sería tirar todo el progreso, no un reset
+// "parcial"), con una recompensa de Gemas por ese pico. bestRank (el
+// récord de TODA la partida, del que dependen los logros arena_X de
+// siempre) nunca se toca — solo baja el rango JUGABLE de la temporada
+// nueva, para que siempre haya sitio al que volver a subir.
+const ARENA_SEASON_EPOCH = Date.UTC(2024, 0, 1);
+function arenaSeasonKey(date) {
+  const days = Math.floor(((date || new Date()).getTime() - ARENA_SEASON_EPOCH) / 86400000);
+  return Math.floor(days / 7);
+}
+function arenaSeasonDaysLeft(date) {
+  const days = ((date || new Date()).getTime() - ARENA_SEASON_EPOCH) / 86400000;
+  const daysIntoWeek = days - Math.floor(days / 7) * 7;
+  return Math.max(1, Math.ceil(7 - daysIntoWeek));
+}
+const ARENA_SEASON_RESET_FRACTION = 0.5;
+function arenaSeasonReward(peakRank) {
+  return { gemas: Math.round(10 + peakRank * 3) };
+}
+
 // ---------- Mercader Itinerante ----------
 // Oferta diaria determinista (misma oferta todo el día, cambia sola al día
 // siguiente, sin necesitar servidor: se deriva de la fecha real con
