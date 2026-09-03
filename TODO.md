@@ -3049,6 +3049,27 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     `bossAdaptiveMult` sigue devolviendo los mismos valores que antes del
     refactor (comprobado con una banda de prueba, sin NaN/undefined).
 
+- [x] "Poder total" ahora respeta SIEMPRE la jerarquía de rareza — el
+    usuario reportó (con captura de su propio roster) que Odín seguía
+    saliendo por detrás de varias Épicas incluso con `fighterPowerScore`
+    ponderado: correcto según los números (un Gurú reparte casi todo en
+    WIS, que pesa ×0.5, frente al HP/DEF de un Campeón que pesa ×0.3/×1),
+    pero contrario a la expectativa obvia de que un Legendario nunca debe
+    quedar por debajo de un Épico en un orden llamado "Poder". Corregido
+    en `sortRosterEntries` (ui.js): el modo 'poder' compara la rareza
+    PRIMERO (nunca deja pasar a una inferior por delante de una superior,
+    por mucho que su `fighterPowerScore` puntual sea más alto) y usa el
+    poder ponderado solo como desempate DENTRO de la misma rareza — que es
+    donde de verdad hacía falta distinguir de forma justa entre clases.
+    Los demás modos de stat individual (HP/ATK/DEF/AGI/WIS) no se tocan,
+    siguen siendo comparación literal de esa stat sin más.
+    Verificado con Playwright reproduciendo el roster exacto de la
+    segunda captura del usuario (4 Legendarios + 5 Épicos, niveles
+    mixtos): en ambas variantes (Actuales y Base), los 4 Legendarios
+    (Fenrir, Devorador de Flotas, Fénix Inmortal, Odín) salen siempre por
+    delante de los 5 Épicos sin excepción, incluida una Épica a tope
+    Nv.40 (Elegidora de los Caídos) frente a un Odín sin nivelar (Nv.1).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

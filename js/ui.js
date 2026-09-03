@@ -122,6 +122,16 @@ function gearIcon(gear, sizePx) {
 // sin nada de eso — misma fórmula que el modo "Base" de Comparar, vía
 // baseCompareStats), para poder distinguir quién es realmente mejor "de
 // carta" de quién simplemente tiene más invertido.
+//
+// 'poder' en concreto NUNCA deja que una rareza inferior adelante a una
+// superior, aunque su fighterPowerScore puntual sea más alto (p. ej. un
+// Gurú Legendario centrado en WIS frente a un Campeón Épico tanque de
+// HP/DEF — a igual nivel/estrellas, el Épico gana en la suma ponderada
+// porque su clase reparte casi todo en HP/DEF, pero seguiría siendo
+// confuso ver una rareza superior por debajo de una inferior en un orden
+// que se llama "Poder"). La rareza manda siempre primero; el poder
+// ponderado solo desempata DENTRO de la misma rareza, que es donde de
+// verdad hace falta distinguir de forma justa entre clases.
 const STAT_SORT_MODES = ['poder', 'hp', 'atk', 'def', 'agi', 'wis'];
 function statsForSort(state, entry, variant) {
   return variant === 'base' ? baseCompareStats(entry) : fighterStats(state, entry);
@@ -134,6 +144,10 @@ function sortRosterEntries(state, roster, mode, variant) {
   const list = [...roster];
   if (STAT_SORT_MODES.includes(mode)) {
     return list.sort((a, b) => {
+      if (mode === 'poder') {
+        const rarityDiff = rarityIndex(fighterDef(b.defId).rarity) - rarityIndex(fighterDef(a.defId).rarity);
+        if (rarityDiff !== 0) return rarityDiff;
+      }
       const sa = statsForSort(state, a, variant), sb = statsForSort(state, b, variant);
       const va = mode === 'poder' ? fighterPowerScore(sa) : sa[mode];
       const vb = mode === 'poder' ? fighterPowerScore(sb) : sb[mode];
