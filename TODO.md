@@ -2954,6 +2954,23 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     descargado, recargar) confirma que la partida vuelve exactamente al
     valor exportado.
 
+- [x] Sube la probabilidad de que las etapas del Mapa suelten Cristal
+    Pixite: era la única fuente de cristales al farmear el camino
+    (auditoría de la economía de cristales de la conversación anterior —
+    ver el punto sobre "cristales de invocación" más arriba), y el
+    jugador pedía explícitamente que tocaran más, sobre todo en los
+    escenarios del Mapa. Etapa normal (no jefe): 35% → 60% (combat.js,
+    `stageRewards`). Repetir el jefe de zona (que ya apuntaba a Pixite
+    como su cristal principal): 10% → 25%, para mantener la misma
+    proporción relativa entre ambas fuentes. Voxite/Doxite del jefe (3%/1%
+    en repetición, garantizado+30% la primera vez) no se tocan — siguen
+    siendo la vía "premium", no la de farmeo masivo.
+    Verificado con la misma simulación de economía de la conversación
+    anterior (farmeador "moderado", 4 sesiones/día × 14 días en zona 10):
+    Pixite acumulado sube de 202 a 328 (+62%, en línea con la subida de
+    tasa) y los "cuerpos" de 5+ copias del mismo personaje (material para
+    subir estrella o evolucionar) casi se triplican, de 6 a 17.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

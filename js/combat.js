@@ -311,10 +311,10 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
       if (Math.random() < 0.3) drops.doxite = 1;
     } else {
       // Repetir un jefe ya no debía seguir siendo mejor fuente de Voxite
-      // que jugar una etapa normal (35% de Pixite) — ahora apunta sobre
+      // que jugar una etapa normal (60% de Pixite) — ahora apunta sobre
       // todo a Pixite, el cristal más flojo, con Voxite/Doxite ya como
       // rareza puntual en vez de la norma.
-      if (Math.random() < 0.1) drops.pixite = 1;
+      if (Math.random() < 0.25) drops.pixite = 1;
       if (Math.random() < 0.03) drops.voxite = 1;
       if (Math.random() < 0.01) drops.doxite = 1;
     }
@@ -328,7 +328,10 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
     const bossGearChance = isFirstClear ? 0.7 : 0.08;
     if (Math.random() < bossGearChance) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx, isFirstClear));
   } else {
-    if (Math.random() < 0.35) drops.pixite = 1;
+    // Sube de 35% a 60%: las etapas normales del Mapa son con diferencia
+    // el combate más repetido de todo el juego (farmeo por defecto), así
+    // que es donde más debe notarse cualquier subida de la tasa de Pixite.
+    if (Math.random() < 0.6) drops.pixite = 1;
     if (Math.random() < 0.3) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx));
   }
   return { texel, fighterXp, drops };
