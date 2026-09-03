@@ -578,8 +578,18 @@ function applyUltBonusHit(log, unit, enemyRow, skill, existingTarget) {
   if (!skill.bonusHitMult) return;
   const target = (existingTarget && existingTarget.alive) ? existingTarget : pickTarget(enemyRow);
   if (!target) return;
-  const { amount, isCrit } = computeDamage(unit, target, skill.bonusHitMult, false);
+  const { amount, isCrit } = computeDamage(unit, target, skill.bonusHitMult, !!skill.usesWis);
   applyDamage(log, unit, target, amount, isCrit, skill.name);
+}
+
+// Cuánto escala la curación con el WIS de quien cura (curar/bendicion,
+// las dos únicas ultis de curación, ya marcadas usesWis en SKILL_TYPES) —
+// antes el importe curado dependía solo del maxHp de a quien se cura, así
+// que el WIS de un Gurú no tenía ningún efecto ni siquiera en su propio
+// ulti de firma. +0.1% de curación extra por punto de WIS: un Gurú tope
+// (WIS ~800) casi duplica lo que cura respecto a alguien con WIS bajo.
+function healWisMult(healer, skill) {
+  return skill.usesWis ? 1 + healer.wis * 0.001 : 1;
 }
 
 function tickTimers(unit, log) {
@@ -635,28 +645,29 @@ function performTurn(log, unit, ownRow, enemyRow) {
     case 'damage': {
       const target = pickTarget(enemyRow);
       if (!target) break;
-      const { amount, isCrit } = computeDamage(unit, target, skill.mult, false);
+      const { amount, isCrit } = computeDamage(unit, target, skill.mult, !!skill.usesWis);
       applyDamage(log, unit, target, amount, isCrit, skill.name);
       if (skill.selfBuff) { unit.buffs.push({ stat: skill.selfBuff.stat, pct: skill.selfBuff.pct, turnsLeft: skill.selfBuff.turns }); log.push({ type: 'buff', unitId: unit.id, stat: skill.selfBuff.stat, pct: skill.selfBuff.pct }); }
       break;
     }
     case 'damageRow': {
       enemyRow.filter(u => u.alive).forEach(target => {
-        const { amount, isCrit } = computeDamage(unit, target, skill.mult, true);
+        const { amount, isCrit } = computeDamage(unit, target, skill.mult, !!skill.usesWis);
         applyDamage(log, unit, target, amount, isCrit, skill.name);
       });
       break;
     }
     case 'heal': {
-      const amount = Math.round(unit.maxHp * skill.pct);
+      const amount = Math.round(unit.maxHp * skill.pct * healWisMult(unit, skill));
       unit.hp = Math.min(unit.maxHp, unit.hp + amount);
       log.push({ type: 'heal', unitId: unit.id, targetId: unit.id, amount });
       applyUltBonusHit(log, unit, enemyRow, skill);
       break;
     }
     case 'healRow': {
+      const wisMult = healWisMult(unit, skill);
       ownRow.filter(u => u.alive).forEach(ally => {
-        const amount = Math.round(ally.maxHp * skill.pct);
+        const amount = Math.round(ally.maxHp * skill.pct * wisMult);
         ally.hp = Math.min(ally.maxHp, ally.hp + amount);
         log.push({ type: 'heal', unitId: unit.id, targetId: ally.id, amount });
       });
@@ -700,7 +711,7 @@ function performTurn(log, unit, ownRow, enemyRow) {
       // o se escudan, porque el DoT ignora defensa y buffs por completo.
       const target = pickTarget(enemyRow);
       if (!target) break;
-      const { amount, isCrit } = computeDamage(unit, target, skill.mult, false);
+      const { amount, isCrit } = computeDamage(unit, target, skill.mult, !!skill.usesWis);
       applyDamage(log, unit, target, amount, isCrit, skill.name);
       if (target.alive) {
         const tick = Math.max(1, Math.round(target.maxHp * skill.dotPct));
@@ -713,7 +724,7 @@ function performTurn(log, unit, ownRow, enemyRow) {
       // la vida propia sin depender de estar ileso, bueno para aguantar.
       const target = pickTarget(enemyRow);
       if (!target) break;
-      const { amount, isCrit } = computeDamage(unit, target, skill.mult, false);
+      const { amount, isCrit } = computeDamage(unit, target, skill.mult, !!skill.usesWis);
       applyDamage(log, unit, target, amount, isCrit, skill.name);
       const healAmount = Math.round(amount * skill.drainPct);
       unit.hp = Math.min(unit.maxHp, unit.hp + healAmount);

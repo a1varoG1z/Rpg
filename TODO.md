@@ -3131,6 +3131,46 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     correctamente. Comprobado también que la pantalla de Banda (fuera de
     cualquier modal) sigue cargando sus tarjetas con normalidad.
 
+- [x] El WIS deja de ser decorativo para las ultis de Gurú: el usuario
+    notó que Odín "casi no puede hacer daño" — revisando `computeDamage`
+    (combat.js), solo el skill `arrasar` usaba WIS; los ataques normales,
+    TODAS las demás ultis de daño y hasta el "golpe extra" (bonusHitMult)
+    de las ultis de apoyo (curar, debilitar, aturdir...) usaban ATK
+    siempre, sin importar la clase — y la curación ni siquiera escalaba
+    con ninguna stat de quien cura, solo con el maxHp de a quien se cura.
+    Entre dos opciones (barajadas con el usuario): ampliar por TIPO de
+    ulti qué usa WIS (elegida) frente a que cada personaje use
+    automáticamente su stat más alta entre ATK/WIS (descartada: rompería
+    el modelo de clase/vulnerabilidad si un buff de ATK a mitad de combate
+    cambiaba de qué stat depende el daño de un turno a otro).
+    Añadido `usesWis: true` en SKILL_TYPES (data.js) a las ultis
+    EXCLUSIVAS de Gurú — curar, bendicion, purificar, revivir — más
+    arrasar (ya usaba WIS, ahora vía el flag en vez de un caso especial
+    de `kind`). `debilitar` se queda fuera a propósito aunque también la
+    lleven Brujo/Gurú: un 43% de sus usuarios (30 de 69 familias) son
+    Explorador, cuyo ATK (16) supera a su WIS (12 en CLASS_INFO) —
+    cambiarla los habría debilitado. `computeDamage`/`applyUltBonusHit`
+    (combat.js) ahora leen `skill.usesWis` en vez de tener `false`/`true`
+    fijos en cada sitio. Además, `heal`/`healRow` ahora multiplican el
+    importe curado por `healWisMult` (+0.1% de curación por punto de WIS
+    de quien cura, solo si `skill.usesWis`) — antes ni la propia curación
+    tenía en cuenta el WIS del sanador. Los ataques normales (sin ulti) se
+    quedan fuera a propósito, tal y como pidió el usuario ("ampliar ultis
+    que usan wis") — siguen con ATK para todo el mundo.
+    De paso, subido el ATK de Odín (`setStatMult`, ×1.4 → ×1.7): aunque su
+    ulti ya no dependa de su ATK, sigue atacando con él en los turnos sin
+    ulti, y el usuario seguía viéndolo flojo.
+    Verificado con Playwright/Node llamando a `performTurn` directamente:
+    la curación de Odín (WIS 832 a Nv.40/3★) sube de 0.16×maxHp "a pelo" a
+    0.16×maxHp×1.832 — 773 en sí mismo, 879 en un aliado de 3000 HP,
+    coincide exacto con la fórmula; el golpe extra de su ulti pasa de
+    basarse en su ATK (413) a su WIS (832), con un daño resultante (674)
+    muy por encima de lo que el ATK habría dado; sus ataques normales
+    (turnos sin ulti) siguen exactamente en el rango esperado por ATK
+    (275). Comprobado que Cerbero (`escudo`, sin el flag) y un Explorador
+    con `debilitar` no cambian de comportamiento — su golpe extra sigue
+    encajando con ATK, no con WIS.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

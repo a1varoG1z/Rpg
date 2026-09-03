@@ -98,25 +98,36 @@ function setStatMult(defId, mults) {
   if (d) d.statMult = mults;
 }
 
+// usesWis: true marca las ultis de cariz mágico/místico (curar, bendecir,
+// purificar, revivir, arrasar) — su golpe extra (bonusHitMult) y su daño
+// principal usan WIS en vez de ATK en computeDamage (combat.js), y las de
+// curación además escalan el propio importe curado con el WIS de quien
+// cura (ver 'heal'/'healRow' en performTurn). Son ultis EXCLUSIVAS de
+// Gurú (y arrasar, de Brujo/Gurú) — así WIS deja de ser decorativo para
+// ellos, sin tocar Campeón/Pícaro/Explorador (golpe, furia, escudo, grito,
+// aturdir, veneno, drenar siguen con ATK). "Marca Débil" (debilitar) se
+// queda a propósito fuera aunque también la lleven Brujo/Gurú: un 43% de
+// sus usuarios son Explorador (30 de 69 familias), cuyo ATK (16) supera a
+// su WIS (12, ver CLASS_INFO) — cambiarla a WIS los habría debilitado.
 const SKILL_TYPES = {
   golpe: { name: 'Golpe Certero', kind: 'damage', mult: 2.2, target: 'single', desc: 'Un golpe demoledor a un enemigo, mucho más fuerte que un golpe normal.' },
   furia: { name: 'Furia Salvaje', kind: 'damage', mult: 2.0, target: 'single', selfBuff: { stat: 'atk', pct: 0.15, turns: 2 }, desc: 'Golpea con mucha fuerza y se enardece.' },
-  arrasar: { name: 'Arrasar', kind: 'damageRow', mult: 1.5, target: 'row', desc: 'Daño mágico considerable a toda la fila enemiga.' },
+  arrasar: { name: 'Arrasar', kind: 'damageRow', mult: 1.5, target: 'row', usesWis: true, desc: 'Daño mágico considerable a toda la fila enemiga.' },
   // El resto de ultis (curar, defensivas, de estado...) no hacían daño al
   // rival, así que un turno de ulti podía no aportar nada de daño — ahora
   // TODAS golpean también a un enemigo (bonusHitMult), más flojo que un
   // ulti de daño puro pero cercano a un golpe normal, para que ningún
   // turno se quede sin hacer daño.
-  curar: { name: 'Bendición Sanadora', kind: 'heal', pct: 0.3, target: 'self', bonusHitMult: 0.85, desc: 'Recupera parte de su propia vida y golpea a un enemigo.' },
-  bendicion: { name: 'Aura Vital', kind: 'healRow', pct: 0.16, target: 'row-ally', bonusHitMult: 0.85, desc: 'Cura a toda su fila y golpea a un enemigo.' },
+  curar: { name: 'Bendición Sanadora', kind: 'heal', pct: 0.3, target: 'self', bonusHitMult: 0.85, usesWis: true, desc: 'Recupera parte de su propia vida y golpea a un enemigo.' },
+  bendicion: { name: 'Aura Vital', kind: 'healRow', pct: 0.16, target: 'row-ally', bonusHitMult: 0.85, usesWis: true, desc: 'Cura a toda su fila y golpea a un enemigo.' },
   escudo: { name: 'Muro de Escamas', kind: 'buffSelf', stat: 'def', pct: 0.35, turns: 3, bonusHitMult: 0.85, desc: 'Refuerza su propia defensa y golpea a un enemigo.' },
   grito: { name: 'Grito de Guerra', kind: 'buffRow', stat: 'atk', pct: 0.2, turns: 3, bonusHitMult: 0.85, desc: 'Aumenta el ataque de su fila y golpea a un enemigo.' },
   debilitar: { name: 'Marca Débil', kind: 'debuff', stat: 'def', pct: 0.25, turns: 3, target: 'single', bonusHitMult: 0.85, desc: 'Reduce la defensa de un enemigo y lo golpea.' },
   aturdir: { name: 'Onda de Trueno', kind: 'stun', turns: 1, chance: 0.65, target: 'single', bonusHitMult: 0.85, desc: 'Puede aturdir a un enemigo y siempre lo golpea.' },
   veneno: { name: 'Mordisco Venenoso', kind: 'dot', mult: 1.5, dotPct: 0.07, dotTurns: 3, target: 'single', desc: 'Golpea con fuerza a un enemigo y lo envenena: sigue perdiendo vida 3 turnos, ignorando su defensa.' },
   drenar: { name: 'Golpe Vampírico', kind: 'drain', mult: 1.8, drainPct: 0.5, target: 'single', desc: 'Golpea con fuerza a un enemigo y recupera la mitad del daño hecho como vida propia.' },
-  purificar: { name: 'Aura Purificadora', kind: 'cleanse', target: 'row-ally', bonusHitMult: 0.85, desc: 'Elimina los debuffs, el veneno y el aturdimiento de toda su fila, y golpea a un enemigo.' },
-  revivir: { name: 'Milagro de Vida', kind: 'revive', pct: 0.4, target: 'row-ally', bonusHitMult: 0.85, desc: 'Revive a un aliado caído de su fila con parte de su vida máxima, y golpea a un enemigo.' },
+  purificar: { name: 'Aura Purificadora', kind: 'cleanse', target: 'row-ally', bonusHitMult: 0.85, usesWis: true, desc: 'Elimina los debuffs, el veneno y el aturdimiento de toda su fila, y golpea a un enemigo.' },
+  revivir: { name: 'Milagro de Vida', kind: 'revive', pct: 0.4, target: 'row-ally', bonusHitMult: 0.85, usesWis: true, desc: 'Revive a un aliado caído de su fila con parte de su vida máxima, y golpea a un enemigo.' },
 };
 
 // Habilidad de líder de banda: una bonificación pasiva para TODA la banda
@@ -570,10 +581,11 @@ setLeaderSkill('ragnar_legendario', 'def_boost');
 // "el dios que gobierna Asgard". Sube HP/ATK/DEF/AGI para que compita de
 // verdad con el resto de Legendarios de primera fila, sin tocar su WIS
 // (137 base, el más alto del roster — sigue siendo su seña de identidad).
-// Con esto pasa de 298 a 353 de poder a Nv.1 — de por detrás de las
-// Épicas de la lista a la altura de Fenrir (351) y Devorador de Flotas
-// (362), los otros dos Legendarios más fuertes de ese mismo grupo.
-setStatMult('odin_legendario', { hp: 1.2, atk: 1.4, def: 1.3, agi: 1.1 });
+// ATK subido de nuevo (×1.4 → ×1.7): con curar/bendicion/debilitar ahora
+// usando WIS (ver SKILL_TYPES) su ulti ya no depende de su ATK, pero
+// sigue atacando con él en los turnos SIN ulti — un ATK más alto evita
+// que esos turnos se sientan flojos.
+setStatMult('odin_legendario', { hp: 1.2, atk: 1.7, def: 1.3, agi: 1.1 });
 
 const ZONES = [
   { id: 'bosque', name: 'Linde del Bosque', emoji: '🌲', color: '#2f4f2f', pool: ['goblin_comun', 'arana_comun', 'boss_guardianbosque'] },
