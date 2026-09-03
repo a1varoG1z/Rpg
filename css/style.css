@@ -108,7 +108,9 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .star-row { color: var(--gold); font-size: 0.7rem; margin-top: 3px; }
 .in-band-tag { font-size: 0.6rem; color: var(--green); margin-top: 3px; }
 
+.rarity-comun .creature-canvas-wrap { animation: floatSprite 3s ease-in-out infinite; }
 .rarity-infrecuente { box-shadow: 0 0 8px var(--rg, transparent); }
+.rarity-infrecuente .creature-canvas-wrap { animation: floatSprite 2.8s ease-in-out infinite; }
 .rarity-raro { box-shadow: 0 0 14px var(--rg, transparent); }
 .rarity-raro .creature-canvas-wrap { animation: floatSprite 2.6s ease-in-out infinite; }
 .rarity-epico { box-shadow: 0 0 18px var(--rg, transparent); }

@@ -3196,6 +3196,18 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
   cero tarjetas se quedan sin cargar. La captura del usuario es de antes
   de que ese arreglo llegara a su dispositivo.
 
+- [x] Añade la animación de flotar (`floatSprite`, un ligero sube-baja) a
+    las tarjetas Común e Infrecuente: el usuario notó que algunos
+    personajes se movían en Banda/Pokédex y otros no. Las reglas de
+    `.creature-canvas-wrap` en style.css solo cubrían Raro/Épico/
+    Legendario/Jefe — Común e Infrecuente no tenían ninguna regla de
+    animación. Añadidas con la misma progresión de velocidad que ya
+    tenían las demás (-0.2s de duración por cada rareza hacia arriba:
+    Común 3s, Infrecuente 2.8s, Raro 2.6s...).
+    Verificado con Playwright: las 5 rarezas devuelven ahora
+    `animationName: floatSprite` en `.creature-canvas-wrap`, con la
+    duración esperada cada una.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
