@@ -2994,6 +2994,22 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     ejemplo comentado (como queda en el repo), Hércules no cambia nada
     (sin campo `statMult`, stats idénticas a antes de este cambio).
 
+- [x] Añade "🎒 Desequipar banca" en Equipo: desequipa de un tirón TODO el
+    equipo de cualquier luchador del roster que no esté colocado en la
+    Formación actual, sin tener que abrir la ficha de cada uno a mano —
+    pensado para recuperar equipo bueno atrapado en luchadores ya
+    sustituidos o invocados y nunca puestos. `unequipBenchedGear(state)`
+    (state.js) recorre el roster comparando contra `state.band` aplanado;
+    el equipo no se pierde, solo vuelve al inventario sin dueño. Botón
+    junto al filtro de Equipo (index.html), con toast indicando cuántas
+    piezas se han desequipado (o avisando si nadie en la banca llevaba
+    nada puesto).
+    Verificado con Playwright: banda de 9 luchadores en Formación + 3 en
+    banca, los 12 con las 6 piezas de equipo puestas — tras pulsar el
+    botón, los 9 de Formación mantienen sus 54 piezas intactas, los 3 de
+    banca quedan a 0 (18 piezas desequipadas), y el inventario total de
+    equipo no pierde ninguna pieza.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

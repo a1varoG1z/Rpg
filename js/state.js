@@ -272,6 +272,25 @@ function unequipGear(state, fighterUid, slot) {
   return true;
 }
 
+// Desequipa TODO el equipo de cualquier luchador del roster que no esté
+// colocado en la Formación actual — pensado para recuperar de un tirón el
+// equipo bueno que se ha quedado puesto en luchadores de banca (ya
+// sustituidos, o invocados y nunca llegados a poner), sin tener que abrir
+// la ficha de cada uno a mano. El equipo no se pierde, solo vuelve al
+// inventario (sin dueño) listo para ponerlo en quien esté jugando de
+// verdad. Devuelve cuántas piezas se han desequipado.
+function unequipBenchedGear(state) {
+  const bandUids = new Set(state.band.flat().filter(Boolean));
+  let count = 0;
+  state.roster.forEach(entry => {
+    if (bandUids.has(entry.uid)) return;
+    GEAR_SLOT_IDS.forEach(slot => {
+      if (entry.gear[slot]) { entry.gear[slot] = null; count++; }
+    });
+  });
+  return count;
+}
+
 // --- Experiencia y nivel ---
 function fighterAddXp(entry, amount) {
   let leveled = false;

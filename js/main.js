@@ -56,6 +56,12 @@
     UI.gearBulkSelection.clear();
     UI.renderEquipo(state);
   });
+  $('unequipBenchBtn').addEventListener('click', () => {
+    const count = unequipBenchedGear(state);
+    saveGame(state);
+    UI.renderEquipo(state);
+    UI.showToast(count > 0 ? `🎒 ${count} pieza${count === 1 ? '' : 's'} desequipada${count === 1 ? '' : 's'} de la banca` : '🎒 Nadie en la banca llevaba equipo puesto');
+  });
   $('pokedexModalClose').addEventListener('click', () => $('pokedexModal').classList.add('hidden'));
   $('pokedexEntryModalClose').addEventListener('click', () => $('pokedexEntryModal').classList.add('hidden'));
   $('objectivesBtn').addEventListener('click', () => UI.openObjectives(state));
