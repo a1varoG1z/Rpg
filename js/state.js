@@ -42,7 +42,10 @@ function createNewState() {
     roster, gearInventory: [], band, progress,
     // seasonKey/seasonPeakRank: ver checkArenaSeasonReset más abajo. rank
     // sirve de arranque también para el pico de la primera temporada.
-    arena: { rank: 1, bestRank: 1, seasonKey: arenaSeasonKey(), seasonPeakRank: 1 },
+    // scoutedChampionLeagueId: id de ARENA_LEAGUES si el rival ya
+    // explorado (scouted) es el campeón fijo de esa liga, null si es un
+    // rival aleatorio normal (ver arenaChampionForRank en data.js).
+    arena: { rank: 1, bestRank: 1, seasonKey: arenaSeasonKey(), seasonPeakRank: 1, scoutedChampionLeagueId: null },
     // Estadísticas históricas de toda la partida — se acumulan en
     // UI.endBattle, el único punto por el que pasa TODO combate (etapa,
     // Torre, Mazmorra Elemental, Arena, Prueba del Campeón, Duelo por
@@ -834,6 +837,7 @@ function migrateState(state) {
       state.arena.seasonKey = arenaSeasonKey();
       state.arena.seasonPeakRank = state.arena.rank;
     }
+    if (state.arena.scoutedChampionLeagueId === undefined) state.arena.scoutedChampionLeagueId = null;
     if (!state.elementalTeams) state.elementalTeams = { fuego: [], viento: [], tierra: [], rayo: [], agua: [] };
     if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
     if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };

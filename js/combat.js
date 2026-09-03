@@ -376,6 +376,19 @@ function buildArenaBand(rank) {
   return { rows, level };
 }
 
+// Campeón de liga (ver ARENA_LEAGUES en data.js): al explorar rival justo
+// en el rango de entrada a una liga con campeón asignado, en vez de una
+// banda aleatoria de hasta 3 se enfrenta EN SOLITARIO a un Legendario fijo
+// y siempre el mismo para esa liga — un hito reconocible en vez de un
+// rival genérico más. Mismo nivel que tocaría por rango (buildArenaBand),
+// con un extraMult fijo para que un solo rival compense no traer compañía
+// (mismo mecanismo que WAGER_BOSS_BOOST, ver ui.js).
+const ARENA_CHAMPION_BOOST = 1.3;
+function buildArenaChampionEncounter(rank, league) {
+  const level = Math.max(1, Math.round(rank * 1.8));
+  return { rows: [[makeUnit('enemy', league.championDefId, level, ARENA_CHAMPION_BOOST)]], level };
+}
+
 // Prueba del Campeón: un único rival por duelo, cada vez más fuerte según
 // cuántos duelos seguidos se lleven ganados — mismo patrón de rareza
 // creciente que buildArenaBand, pero con un solo enemigo en vez de una

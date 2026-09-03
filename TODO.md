@@ -2854,6 +2854,54 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     correctamente; ganar un combate de Arena actualiza `seasonPeakRank`
     a la vez que `bestRank`, como debía.
 
+- [x] **Más sugerencias para la Arena, segunda ronda** (pedido explícito,
+    respuesta dada en el chat tras implementar las temporadas): rachas de
+    victorias consecutivas con bonus creciente, ligas con nombre (esta
+    ronda, implementada abajo), rival campeón fijo cada cierto rango (esta
+    ronda, implementada abajo), y poder revisar el registro del último
+    combate de Arena perdido. Rachas y revisar-combate-perdido siguen sin
+    implementar, sin acción de código pendiente salvo que se pidan.
+
+- [x] **Ligas con nombre + rival campeón por liga** (pedido explícito, las
+    2 sugerencias de la ronda anterior que el usuario eligió implementar).
+    - **Ligas** (`ARENA_LEAGUES`, data.js): Bronce(1)/Plata(5)/Oro(12)/
+      Platino(22)/Diamante(35)/Maestro(50)/Leyenda(75) — el rango de
+      entrada de cada una. `arenaLeagueForRank(rank)` sustituye el número
+      de rango a secas por un nombre+icono reconocible en el panel de
+      Arena. Cada liga añade además un multiplicador de recompensa
+      creciente por victoria (`rewardMult`, de ×1.0 en Bronce a ×2.0 en
+      Leyenda, aplicado al Texel/Gemas de cada combate ganado) — un
+      pequeño extra por escalar, no solo el nombre.
+    - **Rival campeón** (`buildArenaChampionEncounter`, combat.js): de
+      Plata en adelante, cada liga tiene asignado un Legendario FIJO y
+      siempre el mismo (Kraken/Fenrir/Quetzalcóatl/Anubis/Thor/Zeus) —
+      justo al llegar al rango de ENTRADA de esa liga (no "a partir de",
+      un combate puntual y reconocible), "Buscar rival" da ese campeón en
+      solitario en vez de una banda aleatoria de hasta 3, con un ×1.3
+      extra de stats (mismo mecanismo que WAGER_BOSS_BOOST) para
+      compensar no traer compañía — mismo nivel que tocaría por rango, así
+      que sigue escalando con la Formación real del jugador. Recompensa
+      extra de Gemas al vencerlo (`arenaChampionBonusReward`,
+      `15 + rango_entrada×1.5`), con su propio título de victoria ("👑
+      ¡Campeón de [Liga] derrotado!") y de batalla.
+    - `state.arena.scoutedChampionLeagueId` (nuevo campo) recuerda si el
+      rival ya explorado es un campeón, para poder reconstruir sus stats
+      reales al empezar el combate (con el mismo ×1.3, guardado como
+      `extraMult` en el rival explorado) y mostrar el título/recompensa
+      correctos.
+    Verificado con Playwright: los umbrales de liga son exactos (rango 4
+    sigue en Bronce, 5 ya en Plata, 11 sigue en Plata, 12 ya en Oro, 200
+    se queda en Leyenda, la última); el campeón solo aparece en el rango
+    EXACTO de entrada (rango 1 no, 5 sí con `id: 'plata'`, 6 no, 12 sí con
+    `id: 'oro'`); explorar en un rango de campeón da un encuentro de 1
+    sola fila con 1 solo rival, el defId y el `extraMult` (×1.3)
+    correctos; explorar en un rango normal sigue dando una banda aleatoria
+    normal; el combate contra el campeón muestra el título "👑 Arena ·
+    Campeón de Plata", aplica el multiplicador de liga MÁS el bonus de
+    campeón a las recompensas (+84 Texel, +29 Gemas en la prueba), y el
+    resumen muestra "👑 ¡Campeón de Plata derrotado!"; el rival explorado
+    se limpia correctamente después del combate en ambos casos.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

@@ -965,6 +965,37 @@ function arenaSeasonReward(peakRank) {
   return { gemas: Math.round(10 + peakRank * 3) };
 }
 
+// ---------- Arena: ligas con nombre ----------
+// Rango de temporada convertido en un nombre reconocible (Bronce/Plata/.../
+// Leyenda) en vez de solo un número — cada liga da además un multiplicador
+// de recompensa creciente por victoria (rewardMult), y las de Plata en
+// adelante tienen asignado un CAMPEÓN fijo (ver buildArenaChampionEncounter
+// en combat.js): al llegar exactamente al rango de entrada de esa liga, en
+// vez de un rival aleatorio más se explora un único Legendario fijo y
+// siempre el mismo — un hito reconocible al cruzar cada liga.
+const ARENA_LEAGUES = [
+  { minRank: 1, id: 'bronce', label: 'Bronce', icon: '🥉', color: '#a8721f', rewardMult: 1.0 },
+  { minRank: 5, id: 'plata', label: 'Plata', icon: '🥈', color: '#b8bfc7', rewardMult: 1.1, championDefId: 'kraken_legendario' },
+  { minRank: 12, id: 'oro', label: 'Oro', icon: '🥇', color: '#e8c23c', rewardMult: 1.2, championDefId: 'fenrir_legendario' },
+  { minRank: 22, id: 'platino', label: 'Platino', icon: '💠', color: '#7fd9c9', rewardMult: 1.35, championDefId: 'quetzalcoatl_legendario' },
+  { minRank: 35, id: 'diamante', label: 'Diamante', icon: '💎', color: '#5fb3e8', rewardMult: 1.5, championDefId: 'anubis_legendario' },
+  { minRank: 50, id: 'maestro', label: 'Maestro', icon: '👑', color: '#c95fe8', rewardMult: 1.7, championDefId: 'thor_legendario' },
+  { minRank: 75, id: 'leyenda', label: 'Leyenda', icon: '🔥', color: '#e85f5f', rewardMult: 2.0, championDefId: 'zeus_legendario' },
+];
+function arenaLeagueForRank(rank) {
+  let league = ARENA_LEAGUES[0];
+  ARENA_LEAGUES.forEach(l => { if (rank >= l.minRank) league = l; });
+  return league;
+}
+// Solo en el rango EXACTO de entrada (no "a partir de") — así es un
+// combate puntual y reconocible, no todos los combates de esa liga.
+function arenaChampionForRank(rank) {
+  return ARENA_LEAGUES.find(l => l.minRank === rank && l.championDefId) || null;
+}
+function arenaChampionBonusReward(league) {
+  return { gemas: Math.round(15 + league.minRank * 1.5) };
+}
+
 // ---------- Mercader Itinerante ----------
 // Oferta diaria determinista (misma oferta todo el día, cambia sola al día
 // siguiente, sin necesitar servidor: se deriva de la fecha real con

@@ -2612,27 +2612,34 @@ UI.renderArena = function (state) {
     UI.renderTopbar(state);
     UI.showToast(`🏆 Nueva temporada de Arena — tu pico fue Rango ${seasonReset.previousPeak} (+${seasonReset.reward.gemas} 💎). Rango de esta temporada: ${seasonReset.newRank}.`);
   }
-  $('arenaRankPanel').innerHTML = `<h3>Rango actual: ${state.arena.rank}</h3>
+  const league = arenaLeagueForRank(state.arena.rank);
+  $('arenaRankPanel').innerHTML = `<h3>${league.icon} ${league.label} — Rango ${state.arena.rank}</h3>
     <div class="stat-row"><span>Pico de esta temporada</span><span>${state.arena.seasonPeakRank}</span></div>
     <div class="stat-row"><span>Mejor rango histórico</span><span>${state.arena.bestRank}</span></div>
     <div class="stat-row"><span>Reset de temporada en</span><span>${arenaSeasonDaysLeft()} día${arenaSeasonDaysLeft() === 1 ? '' : 's'}</span></div>
+    ${league.rewardMult > 1 ? `<div class="stat-row"><span>Bonus de liga a las recompensas</span><span>+${Math.round((league.rewardMult - 1) * 100)}%</span></div>` : ''}
     <p class="settings-info">Cada semana el rango baja a la mitad de su pico (nunca a 1), con una recompensa
     de Gemas por ese pico — para tener siempre un motivo para seguir subiendo.</p>`;
   const enemyPanel = $('arenaEnemyPanel');
   enemyPanel.innerHTML = '';
   if (!state.arena.scouted) {
     enemyPanel.innerHTML = '<h3>Sin rival explorado</h3>';
+    const champion = arenaChampionForRank(state.arena.rank);
+    if (champion) enemyPanel.appendChild(el('p', 'settings-info', `👑 Estás en el rango de entrada a ${champion.label} — al buscar rival te enfrentarás a su campeón fijo, en solitario.`));
     const scoutBtn = el('button', 'primary-btn', 'Buscar rival');
     scoutBtn.addEventListener('click', () => {
-      const { rows } = buildArenaBand(state.arena.rank);
-      state.arena.scouted = rows.map(row => row.map(u => ({ defId: u.defId, level: u.level })));
+      const { rows } = champion ? buildArenaChampionEncounter(state.arena.rank, champion) : buildArenaBand(state.arena.rank);
+      state.arena.scouted = rows.map(row => row.map(u => ({ defId: u.defId, level: u.level, extraMult: u.powerMult })));
+      state.arena.scoutedChampionLeagueId = champion ? champion.id : null;
       saveGame(state);
       UI.renderArena(state);
     });
     enemyPanel.appendChild(scoutBtn);
     return;
   }
-  enemyPanel.appendChild(el('h3', null, 'Rival explorado'));
+  const scoutedLeague = state.arena.scoutedChampionLeagueId ? ARENA_LEAGUES.find(l => l.id === state.arena.scoutedChampionLeagueId) : null;
+  enemyPanel.appendChild(el('h3', null, scoutedLeague ? `👑 Campeón de ${scoutedLeague.label}` : 'Rival explorado'));
+  if (scoutedLeague) enemyPanel.appendChild(el('p', 'settings-info', `${fighterDef(state.arena.scouted[0][0].defId).name} — un rival fijo y en solitario, más duro que un rival normal de este rango.`));
   state.arena.scouted.forEach((row, i) => {
     if (row.length === 0) return;
     const rowEl = el('div', 'formation-row');
@@ -2649,16 +2656,18 @@ UI.renderArena = function (state) {
   fightBtn.addEventListener('click', () => UI.startArenaBattle(state));
   enemyPanel.appendChild(fightBtn);
   const rescout = el('button', 'mini-btn', 'Buscar otro rival');
-  rescout.addEventListener('click', () => { state.arena.scouted = null; saveGame(state); UI.renderArena(state); });
+  rescout.addEventListener('click', () => { state.arena.scouted = null; state.arena.scoutedChampionLeagueId = null; saveGame(state); UI.renderArena(state); });
   enemyPanel.appendChild(rescout);
 };
 
 UI.startArenaBattle = function (state) {
   if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
   window.__championRun = null;
-  const enemyRows = state.arena.scouted.map(row => row.map(u => makeUnit('enemy', u.defId, u.level)));
+  const scoutedLeague = state.arena.scoutedChampionLeagueId ? ARENA_LEAGUES.find(l => l.id === state.arena.scoutedChampionLeagueId) : null;
+  const enemyRows = state.arena.scouted.map(row => row.map(u => makeUnit('enemy', u.defId, u.level, u.extraMult)));
+  const league = arenaLeagueForRank(state.arena.rank);
   UI.openBattle(state, buildPlayerCombinations(state), enemyRows, {
-    title: 'Arena · Rango ' + state.arena.rank,
+    title: scoutedLeague ? `👑 Arena · Campeón de ${scoutedLeague.label}` : 'Arena · ' + league.label + ' · Rango ' + state.arena.rank,
     // Bug: era el único modo de combate del juego sin `zone`, así que el
     // overlay de batalla se quedaba sin fondo (zoneBackgroundStyle nunca se
     // llamaba). assets/scenery/arena.jpg (aún no existe, cae al degradado
@@ -2666,14 +2675,17 @@ UI.startArenaBattle = function (state) {
     zone: { id: 'arena', color: '#4a1f1f' },
     onEnd: (result) => {
       state.arena.scouted = null;
+      state.arena.scoutedChampionLeagueId = null;
       if (result === 'victoria') {
         state.arena.rank++;
         state.arena.bestRank = Math.max(state.arena.bestRank, state.arena.rank);
         state.arena.seasonPeakRank = Math.max(state.arena.seasonPeakRank, state.arena.rank);
-        const texel = 40 + state.arena.rank * 6, gemas = 3 + Math.floor(state.arena.rank / 3);
+        const texel = Math.round((40 + state.arena.rank * 6) * league.rewardMult);
+        let gemas = Math.round((3 + Math.floor(state.arena.rank / 3)) * league.rewardMult);
+        if (scoutedLeague) gemas += arenaChampionBonusReward(scoutedLeague).gemas;
         state.currencies.texel += texel; state.currencies.gemas += gemas;
         saveGame(state);
-        return { rewards: { texel, fighterXp: 0, drops: {} }, leveled: [], gemas };
+        return { rewards: { texel, fighterXp: 0, drops: {} }, leveled: [], gemas, championBeaten: scoutedLeague ? scoutedLeague.label : null };
       }
       saveGame(state);
       return null;
@@ -3593,7 +3605,7 @@ UI.endBattle = function (view, result) {
   } else if (outcome && outcome.intermediate) {
     html = `<h3>✅ Encuentro superado</h3><p class="settings-info">Continúa por el resto de la etapa.</p>`;
   } else if (result === 'victoria') {
-    html = `<h3>🏆 ¡Victoria!</h3>`;
+    html = outcome && outcome.championBeaten ? `<h3>👑 ¡Campeón de ${outcome.championBeaten} derrotado!</h3>` : `<h3>🏆 ¡Victoria!</h3>`;
     if (outcome && outcome.rewards) {
       html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>`;
       if (outcome.rewards.fighterXp) html += `<div class="stat-row"><span>⭐ XP por luchador</span><span>+${outcome.rewards.fighterXp}</span></div>`;
