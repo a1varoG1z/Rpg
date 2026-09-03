@@ -136,11 +136,11 @@ function fighterStats(state, entry) {
   const w = CLASS_INFO[def.class].weights;
   const mult = rarityInfo(def.rarity).mult * levelGrowth(entry.level) * starBonus(entry.stars);
   const stats = {
-    hp: Math.round(w.hp * mult * statVarianceMult(def.family, 'hp')),
-    atk: Math.round(w.atk * mult * statVarianceMult(def.family, 'atk')),
-    def: Math.round(w.def * mult * statVarianceMult(def.family, 'def')),
-    agi: Math.round(w.agi * mult * statVarianceMult(def.family, 'agi')),
-    wis: Math.round(w.wis * mult * statVarianceMult(def.family, 'wis')),
+    hp: Math.round(w.hp * mult * statVarianceMult(def.family, 'hp') * fighterStatMult(def, 'hp')),
+    atk: Math.round(w.atk * mult * statVarianceMult(def.family, 'atk') * fighterStatMult(def, 'atk')),
+    def: Math.round(w.def * mult * statVarianceMult(def.family, 'def') * fighterStatMult(def, 'def')),
+    agi: Math.round(w.agi * mult * statVarianceMult(def.family, 'agi') * fighterStatMult(def, 'agi')),
+    wis: Math.round(w.wis * mult * statVarianceMult(def.family, 'wis') * fighterStatMult(def, 'wis')),
   };
   const bonus = gearBonusForEntry(state, entry);
   Object.keys(bonus).forEach(k => { stats[k] += bonus[k]; });

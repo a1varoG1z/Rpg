@@ -24,11 +24,11 @@ function buildUnitStats(defId, level, extraMult) {
   const w = CLASS_INFO[def.class].weights;
   const mult = rarityInfo(def.rarity).mult * levelGrowth(level) * (extraMult || 1);
   return {
-    maxHp: Math.round(w.hp * mult * statVarianceMult(def.family, 'hp')),
-    atk: Math.round(w.atk * mult * statVarianceMult(def.family, 'atk')),
-    def: Math.round(w.def * mult * statVarianceMult(def.family, 'def')),
-    agi: Math.round(w.agi * mult * statVarianceMult(def.family, 'agi')),
-    wis: Math.round(w.wis * mult * statVarianceMult(def.family, 'wis')),
+    maxHp: Math.round(w.hp * mult * statVarianceMult(def.family, 'hp') * fighterStatMult(def, 'hp')),
+    atk: Math.round(w.atk * mult * statVarianceMult(def.family, 'atk') * fighterStatMult(def, 'atk')),
+    def: Math.round(w.def * mult * statVarianceMult(def.family, 'def') * fighterStatMult(def, 'def')),
+    agi: Math.round(w.agi * mult * statVarianceMult(def.family, 'agi') * fighterStatMult(def, 'agi')),
+    wis: Math.round(w.wis * mult * statVarianceMult(def.family, 'wis') * fighterStatMult(def, 'wis')),
   };
 }
 

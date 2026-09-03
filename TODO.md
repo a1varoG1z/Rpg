@@ -2971,6 +2971,29 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     tasa) y los "cuerpos" de 5+ copias del mismo personaje (material para
     subir estrella o evolucionar) casi se triplican, de 6 a 17.
 
+- [x] Añade `setStatMult(defId, mults)`: multiplicador manual OPCIONAL por
+    personaje, encima de la fórmula normal (rareza × nivel × clase ×
+    `statVarianceMult`) — a petición del usuario, que preguntaba cómo
+    hacer a un personaje concreto (p.ej. Hércules) más fuerte sin
+    hardcodear las stats de cero (descartado en la conversación anterior
+    por el mantenimiento que supondría en +330 luchadores: se perdería la
+    palanca de un solo número reajustable que ha permitido todos los
+    ajustes de balance de esta sesión). `fighterStatMult(def, statKey)`
+    (data.js, junto a `statVarianceMult`) se aplica tanto en
+    `fighterStats` (state.js, luchador jugable) como en `buildUnitStats`
+    (combat.js, rival del Mapa/Torre) — un personaje con `statMult` que
+    también aparezca como enemigo en el pool de alguna zona lo mantiene en
+    ambos papeles. No afecta a los jefes de zona (`fixedStats` sigue
+    siendo su propio mecanismo). Dejado un ejemplo COMENTADO junto a los
+    `setLeaderSkill(...)` (después de que `FIGHTERS` esté completo): sube
+    el ATK de Hércules ×1.2 en sus 3 formas — desactivado por defecto,
+    para que el usuario lo descomente y ajuste cuando quiera tocar algo.
+    Verificado: con el multiplicador activo, ATK sube exactamente el %
+    indicado (409→490, ×1.198 por redondeo) sin tocar HP/DEF/AGI/WIS de
+    Hércules ni las stats de ningún otro Campeón de Tierra; con el
+    ejemplo comentado (como queda en el repo), Hércules no cambia nada
+    (sin campo `statMult`, stats idénticas a antes de este cambio).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

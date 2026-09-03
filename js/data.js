@@ -79,6 +79,25 @@ function statVarianceMult(family, statKey) {
   return 0.88 + frac * 0.24; // 0.88 .. 1.12
 }
 
+// Multiplicador manual OPCIONAL por personaje, encima de todo lo anterior
+// (rareza × nivel × clase × statVarianceMult). A diferencia de hardcodear
+// las stats de cero (ver TODO.md — descartado por el mantenimiento que
+// supondría en +330 luchadores), esto es un ajuste puntual: solo lo lleva
+// el personaje al que se le asigne con setStatMult, nadie más, y sigue
+// heredando el escalado automático de rareza/nivel de la fórmula. Se
+// aplica tanto a stats de luchador jugable (fighterStats, state.js) como
+// de rival del Mapa/Torre (buildUnitStats, combat.js) — un personaje
+// jugable con statMult que además aparezca como enemigo en el pool de
+// alguna zona lo mantiene en ambos papeles. NO afecta a los jefes de zona
+// (fixedStats ya es su propio mecanismo de stats a mano, ver addBoss).
+function fighterStatMult(def, statKey) {
+  return (def.statMult && def.statMult[statKey]) || 1;
+}
+function setStatMult(defId, mults) {
+  const d = fighterDef(defId);
+  if (d) d.statMult = mults;
+}
+
 const SKILL_TYPES = {
   golpe: { name: 'Golpe Certero', kind: 'damage', mult: 2.2, target: 'single', desc: 'Un golpe demoledor a un enemigo, mucho más fuerte que un golpe normal.' },
   furia: { name: 'Furia Salvaje', kind: 'damage', mult: 2.0, target: 'single', selfBuff: { stat: 'atk', pct: 0.15, turns: 2 }, desc: 'Golpea con mucha fuerza y se enardece.' },
@@ -533,6 +552,15 @@ setLeaderSkill('sunwukong_legendario', 'agi_boost');
 setLeaderSkill('afrodita_legendario', 'hp_boost');
 setLeaderSkill('poseidon_legendario', 'def_boost');
 setLeaderSkill('ragnar_legendario', 'def_boost');
+
+// Ejemplo (desactivado) de setStatMult (ver la función más arriba, junto a
+// statVarianceMult): sube el ATK de Hércules un 20% en sus 3 formas, sin
+// tocar el resto de sus stats ni a ningún otro Campeón de Tierra. Para
+// tocar cualquier otro personaje, cambia el defId y el multiplicador —
+// las claves válidas son hp/atk/def/agi/wis, y 1 = sin cambio.
+// setStatMult('hercules_raro', { atk: 1.2 });
+// setStatMult('hercules_epico', { atk: 1.2 });
+// setStatMult('hercules_legendario', { atk: 1.2 });
 
 const ZONES = [
   { id: 'bosque', name: 'Linde del Bosque', emoji: '🌲', color: '#2f4f2f', pool: ['goblin_comun', 'arana_comun', 'boss_guardianbosque'] },
