@@ -460,7 +460,7 @@ function bandPositionOf(state, uid) {
 // nivel "a la par" — nunca reduce por debajo de 1×, así que un jefe ya
 // calibrado para una banda floja sigue exactamente igual de accesible que
 // siempre. El exceso se amortigua con raíz cuadrada (una banda 4× más
-// fuerte de lo esperado sube el jefe solo 2×, no 4×) y con un techo de 3×,
+// fuerte de lo esperado sube el jefe solo 2×, no 4×) y con un techo de 4.5×,
 // para que siga notándose el mérito de haber invocado bien sin que el jefe
 // se vuelva imposible ni deje de tener nunca ninguna oportunidad de golpear.
 function bossAdaptiveMult(state, zoneIdx) {
@@ -484,9 +484,9 @@ function bossAdaptiveMult(state, zoneIdx) {
   if (overpower <= 1) return 1;
   // El techo también crece con la zona (lateZoneMult, ver data.js) para que
   // el jefe conserve margen sobre su propio camino en zonas avanzadas, en
-  // vez de quedarse siempre en el mismo ×3 mientras el camino ya sigue
+  // vez de quedarse siempre en el mismo ×4.5 mientras el camino ya sigue
   // subiendo con lateZoneMult.
-  return Math.min(3 * lateZoneMult(zoneIdx), Math.sqrt(overpower));
+  return Math.min(4.5 * lateZoneMult(zoneIdx), Math.sqrt(overpower));
 }
 
 // Jefes de la Torre Batalla: reutiliza bossAdaptiveMult referenciado a la

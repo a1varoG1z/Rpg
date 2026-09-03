@@ -2902,6 +2902,33 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     resumen muestra "👑 ¡Campeón de Plata derrotado!"; el rival explorado
     se limpia correctamente después del combate en ambos casos.
 
+- [x] Bosses del Mapa (y de Torre Batalla, que reutiliza la misma fórmula)
+    más difíciles: auditoría con Playwright (3 perfiles de jugador × 6
+    zonas) mostró que, en las zonas medio-tardías (10, 20, 28), el stage
+    NORMAL ya perdía para las bandas "a la par" e "invertida" (13k-23k de
+    daño recibido) mientras el BOSS de esa misma zona se ganaba con
+    holgura (364-3083 de daño) — el jefe se había quedado por detrás de su
+    propio camino, justo el problema inverso al que `MOB_POWER_MULT` se
+    creó para evitar. Subido el techo de `bossAdaptiveMult` (state.js) de
+    `3 * lateZoneMult(zoneIdx)` a `4.5 * lateZoneMult(zoneIdx)`, para que
+    el jefe pueda escalar más cuando la banda del jugador ya supera
+    claramente el ritmo esperado en esa zona. Como `torreBossMult`
+    reutiliza `bossAdaptiveMult` referenciado a la zona de origen de cada
+    jefe de Torre, el cambio sube también el reto de todos los jefes de la
+    Torre Batalla.
+    Verificado con Playwright: repetida la auditoría de las 6 zonas — los
+    jefes de zonas medio-tardías ahora reciben notablemente más daño de
+    las mismas bandas "a la par"/"invertida" (zona 20: de 1490/408 a
+    3053/1163; zona 28: de ~1200/~600 a 2161/1589), sin dejar de ganarse
+    con la banda `lucky` de referencia. En Torre Batalla, la banda
+    "realista recién llegada" (épica Nv.40 2★, equipo raro Nv.3) mantiene
+    el mismo patrón de antes (gana todos los niveles salvo el jefe final
+    ×5 sin curación); la banda tope teórico (9 legendarios Nv.40 5★,
+    equipo legendario Nv.10) sigue ganando TODOS los niveles, incluido el
+    jefe final, pero ahora sufre daño real en todos ellos (antes casi 0 en
+    varios, ahora 576-4483) — ningún nivel se ha vuelto imposible, pero
+    todos suponen ya un reto genuino incluso para la mejor banda posible.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
