@@ -184,6 +184,23 @@ function sellGear(state, gearUid) {
   return true;
 }
 
+// Vende de un tirón TODO el equipo sin usar (mismo precio que sellGear,
+// ×2 gearStatValue) — la Selección múltiple ya cubre elegir piezas
+// concretas una a una, esto es para vaciar de golpe el sobrante de bajo
+// tier que se acumula farmeando (ver el filtro "Solo sin usar" de
+// Equipo). Nunca toca una pieza puesta, igual que sellGear. Devuelve
+// cuántas piezas se han vendido y el Texel total ganado.
+function sellAllUnequippedGear(state) {
+  const uids = state.gearInventory.filter(g => !equippedGearOwner(state, g.uid)).map(g => g.uid);
+  let totalValue = 0;
+  uids.forEach(uid => {
+    const gear = gearItem(state, uid);
+    totalValue += gearStatValue(gear) * 2;
+  });
+  uids.forEach(uid => sellGear(state, uid));
+  return { count: uids.length, totalValue };
+}
+
 function generateGear(slot, rarity, type) {
   return { uid: newUid('g'), slot, type: type || randomGearType(slot), rarity, level: 0 };
 }

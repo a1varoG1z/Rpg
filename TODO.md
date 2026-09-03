@@ -3010,6 +3010,20 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     banca quedan a 0 (18 piezas desequipadas), y el inventario total de
     equipo no pierde ninguna pieza.
 
+- [x] Añade "🪙 Vender sin usar" en Equipo: vende de un tirón TODO el
+    equipo sin usar (mismo precio que vender uno a uno, ×2
+    `gearStatValue`), para vaciar de golpe el sobrante de bajo tier que se
+    acumula farmeando sin tener que pasar por Selección múltiple pieza a
+    pieza. `sellAllUnequippedGear(state)` (state.js) reutiliza `sellGear`
+    por cada pieza sin dueño — nunca toca una pieza puesta, igual que la
+    venta individual. Botón junto a "Desequipar banca" (index.html), con
+    confirmación previa (irreversible, a diferencia de desequipar) y toast
+    con el Texel ganado.
+    Verificado con Playwright: inventario con 18 piezas puestas + 5 sueltas
+    sin dueño — tras confirmar, las 5 sueltas desaparecen del inventario
+    (queda en 18) y el Texel sube exactamente su valor de venta conjunto
+    (+40), sin tocar ninguna de las 18 piezas equipadas.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

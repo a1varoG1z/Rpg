@@ -62,6 +62,16 @@
     UI.renderEquipo(state);
     UI.showToast(count > 0 ? `🎒 ${count} pieza${count === 1 ? '' : 's'} desequipada${count === 1 ? '' : 's'} de la banca` : '🎒 Nadie en la banca llevaba equipo puesto');
   });
+  $('sellUnequippedBtn').addEventListener('click', () => {
+    const unequippedCount = state.gearInventory.filter(g => !equippedGearOwner(state, g.uid)).length;
+    if (unequippedCount === 0) { UI.showToast('🪙 No tienes equipo sin usar'); return; }
+    if (!confirm(`¿Vender las ${unequippedCount} piezas de equipo sin usar? No se puede deshacer.`)) return;
+    const { count, totalValue } = sellAllUnequippedGear(state);
+    saveGame(state);
+    UI.renderTopbar(state);
+    UI.renderEquipo(state);
+    UI.showToast(`🪙 Vendidas ${count} piezas por +${totalValue} Texel`);
+  });
   $('pokedexModalClose').addEventListener('click', () => $('pokedexModal').classList.add('hidden'));
   $('pokedexEntryModalClose').addEventListener('click', () => $('pokedexEntryModal').classList.add('hidden'));
   $('objectivesBtn').addEventListener('click', () => UI.openObjectives(state));
