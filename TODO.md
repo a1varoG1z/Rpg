@@ -3074,6 +3074,23 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     tocar la fórmula de nadie más — `setStatMult('odin_legendario', {...})`
     (ver el punto de "multiplicador manual opcional de stats" más arriba).
 
+- [x] Sube las stats de Odín con `setStatMult('odin_legendario', { hp:
+    1.2, atk: 1.4, def: 1.3, agi: 1.1 })` (data.js, activo — no comentado
+    como el ejemplo de Hércules) — el usuario pidió ajustarlo para que
+    fuera "realmente una carta más poderosa" tras confirmar que medía por
+    detrás de varias Épicas (punto anterior). Sube HP/ATK/DEF/AGI, sus
+    puntos flojos como Gurú; WIS (137 base, la más alta del roster) se
+    deja intacta — sigue siendo su seña de identidad, solo deja de ser su
+    única fortaleza. `odin_legendario` no aparece en el pool de enemigos
+    de ninguna zona (solo como líder/objetivo de invocación), así que el
+    ajuste no toca la dificultad del Mapa en ningún punto.
+    Verificado con Playwright, mismo roster de 9 cartas de antes: Odín
+    pasa de 298 a 353 de poder a Nv.1/0★ (por delante de las 4 Épicas que
+    antes lo superaban, a la altura de Fenrir 351 y Devorador de Flotas
+    362) y sale ahora por delante de TODAS las Épicas del grupo en ambas
+    variantes del orden (Actuales y Base), sin necesidad de forzar la
+    rareza — es una medición honesta de sus stats ya reforzadas.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

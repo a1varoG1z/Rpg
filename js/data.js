@@ -562,6 +562,19 @@ setLeaderSkill('ragnar_legendario', 'def_boost');
 // setStatMult('hercules_epico', { atk: 1.2 });
 // setStatMult('hercules_legendario', { atk: 1.2 });
 
+// Odín (a diferencia del ejemplo de arriba, este SÍ está activo): medido
+// con fighterPowerScore, su forma final (Gurú — reparte casi todo en WIS,
+// que pesa ×0.5) quedaba por detrás de varias Épicas de clase Campeón
+// (que meten casi todo en HP/DEF, con más peso) pese a ser Legendario —
+// nada mal calculado, solo un reparto de clase que no hacía justicia a
+// "el dios que gobierna Asgard". Sube HP/ATK/DEF/AGI para que compita de
+// verdad con el resto de Legendarios de primera fila, sin tocar su WIS
+// (137 base, el más alto del roster — sigue siendo su seña de identidad).
+// Con esto pasa de 298 a 353 de poder a Nv.1 — de por detrás de las
+// Épicas de la lista a la altura de Fenrir (351) y Devorador de Flotas
+// (362), los otros dos Legendarios más fuertes de ese mismo grupo.
+setStatMult('odin_legendario', { hp: 1.2, atk: 1.4, def: 1.3, agi: 1.1 });
+
 const ZONES = [
   { id: 'bosque', name: 'Linde del Bosque', emoji: '🌲', color: '#2f4f2f', pool: ['goblin_comun', 'arana_comun', 'boss_guardianbosque'] },
   { id: 'pantano', name: 'Pantano Oscuro', emoji: '🐊', color: '#3a4a2f', pool: ['sapo_infrecuente', 'babosa_infrecuente', 'boss_brujapantano'] },
