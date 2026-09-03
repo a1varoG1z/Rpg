@@ -2733,6 +2733,51 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       MOB_POWER_MULT) — la verificación de arriba confirma que funciona y
       es razonable, pero no está afinada al mismo nivel de rigor que el
       resto del combate.
+    - **Respuesta dada en el chat**: el usuario preguntó cómo recomendaba
+      terminarlo "sin pensar en optimizar el esfuerzo, solo en la mejor
+      solución". Recomendación dada (sin implementar, es una pregunta):
+      combinar (a)+(b) de arriba en vez de elegir solo una — Trials
+      ligeros de 1 sola oleada (no un recorrido completo) que solo exigen
+      tener FICHADA al menos 1 copia de esa familia en la Formación (no
+      todos los huecos), agrupados en clusters temáticos reutilizando el
+      mismo `originZoneForDefIds`/agrupación por zona de origen que ya usa
+      `buildTorreLevels` (así no hay que diseñar 112 agrupaciones a mano),
+      generados programáticamente desde FIGHTERS en vez de escritos a
+      mano, con una pantalla tipo Pokédex (grid+filtro) en vez de una
+      lista plana de 112 filas, recompensa pequeña por trial + hitos
+      grandes de Gemas al 25/50/75/100% de familias cubiertas.
+
+- [x] **Auto-equipar el mejor objeto** (pedido explícito). Botón "⚡
+    Auto-equipar mejor" en la ficha de cualquier luchador (panel Equipo):
+    revisa los 6 huecos y equipa, en cada uno, la pieza de mayor
+    `gearStatValue` disponible (libre en el inventario, o la que ya lleva
+    puesta) — `gearStatValue` solo depende de rareza+nivel, no del tipo
+    concreto (espada/hacha/lanza...), así que es una comparación justa
+    entre tipos distintos del mismo hueco. `bestGearForSlot`/
+    `autoEquipBest` en state.js. Verificado con Playwright: con una pieza
+    floja ya puesta y dos mejores sin usar en el inventario, elige y
+    equipa la correcta (1 hueco cambiado); una segunda pasada inmediata no
+    cambia nada (0, ya lleva lo mejor); el botón aparece en la ficha.
+
+- [x] **Estadísticas de combate por luchador** (pedido explícito). Nuevo
+    panel "📊 Estadísticas de combate" en la ficha de cualquier luchador:
+    combates, daño hecho, daño recibido, curación hecha, bajas y mejor
+    golpe — acumulados a lo largo de TODA la partida con ese luchador
+    (`entry.stats`, ver `newFighterStats` en state.js), no solo del
+    combate actual. Sobreviven a Fusión/Evolución porque viven en el mismo
+    roster entry (mismo uid), que solo cambia de defId. Se acumulan en
+    `UI.endBattle` — el mismo punto único por el que pasa CUALQUIER
+    combate del juego (Mapa, Torre, Roguelike, Tope de Tier, Arena,
+    Duelo...), así que cuentan de verdad todo lo jugado sin repetir la
+    lógica en cada modo. "Combates" cuenta a quien estuviera en la
+    Formación al empezar el combate (aunque no le tocara actuar en ningún
+    choque); el resto de campos solo a quien de verdad hizo algo — se
+    amplió `battleUnitRec` (antes solo trackeaba daño hecho y bajas, para
+    el MVP del resumen de UN combate) para llevar también sourceUid, daño
+    recibido, curación hecha y mejor golpe por unidad. Verificado con
+    Playwright: un luchador nuevo empieza en cero; tras un combate real
+    gana 1 combate, daño hecho/recibido, bajas y mejor golpe correctos;
+    tras evolucionar, las estadísticas acumuladas se mantienen intactas.
 
 ## Notas
 

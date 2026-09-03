@@ -2081,7 +2081,28 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     gearRow.appendChild(box);
   });
   gearPanel.appendChild(gearRow);
+  const autoEquipBtn = el('button', 'mini-btn', '⚡ Auto-equipar mejor');
+  autoEquipBtn.addEventListener('click', () => {
+    const changed = autoEquipBest(state, uid);
+    saveGame(state);
+    UI.openFighterModal(state, uid, formationCtx);
+    if (activeScreen === 'banda') UI.renderBanda(state);
+    UI.showToast(changed > 0 ? '⚡ ' + changed + ' hueco' + (changed > 1 ? 's' : '') + ' mejorado' + (changed > 1 ? 's' : '') : '⚡ Ya llevabas puesto lo mejor disponible');
+  });
+  gearPanel.appendChild(autoEquipBtn);
   body.appendChild(gearPanel);
+
+  const fs = entry.stats || newFighterStats();
+  const combatHistoryPanel = el('div', 'panel');
+  combatHistoryPanel.innerHTML = `<h3>📊 Estadísticas de combate</h3>
+    <p class="settings-info">Acumuladas a lo largo de toda la partida con este luchador (sobreviven a Fusión/Evolución).</p>
+    <div class="stat-row"><span>⚔️ Combates</span><span>${fs.battles}</span></div>
+    <div class="stat-row"><span>💥 Daño hecho</span><span>${fs.dmgDealt}</span></div>
+    <div class="stat-row"><span>🛡️ Daño recibido</span><span>${fs.dmgReceived}</span></div>
+    <div class="stat-row"><span>💚 Curación hecha</span><span>${fs.healDone}</span></div>
+    <div class="stat-row"><span>💀 Bajas</span><span>${fs.kills}</span></div>
+    <div class="stat-row"><span>💢 Mejor golpe</span><span>${fs.highestHit}</span></div>`;
+  body.appendChild(combatHistoryPanel);
 
   const sellValue = fighterSellValue(entry);
   const sellPanel = el('div', 'panel');
@@ -3234,6 +3255,17 @@ UI.onClashDone = function (view) {
   UI.promptNextClash(view);
 };
 
+// Registro por unidad DENTRO de este combate (view.battleStats.byUnit,
+// indexado por el id efímero de la unidad, u1/u2/...) — se usa tanto para
+// el MVP del resumen de combate como, con sourceUid, para acumular las
+// estadísticas PERMANENTES por luchador en UI.endBattle (ver
+// entry.stats/newFighterStats en state.js).
+function battleUnitRec(view, unit) {
+  return view.battleStats.byUnit[unit.id] || (view.battleStats.byUnit[unit.id] = {
+    sourceUid: unit.sourceUid || null, name: unit.name, dmg: 0, dmgReceived: 0, healDone: 0, kills: 0, highestHit: 0,
+  });
+}
+
 UI.applyBattleEvent = function (view, ev) {
   const u = ev.unitId ? view.unitById[ev.unitId] : null;
   const attacker = ev.attackerId ? view.unitById[ev.attackerId] : null;
@@ -3264,10 +3296,12 @@ UI.applyBattleEvent = function (view, ev) {
       if (attacker.side === 'player') {
         view.battleStats.dmgDealt += ev.amount;
         if (ev.amount > view.battleStats.maxHit) view.battleStats.maxHit = ev.amount;
-        const rec = view.battleStats.byUnit[attacker.id] || (view.battleStats.byUnit[attacker.id] = { name: attacker.name, dmg: 0, kills: 0 });
+        const rec = battleUnitRec(view, attacker);
         rec.dmg += ev.amount;
+        if (ev.amount > rec.highestHit) rec.highestHit = ev.amount;
       } else {
         view.battleStats.dmgReceived += ev.amount;
+        if (target.side === 'player') battleUnitRec(view, target).dmgReceived += ev.amount;
       }
       break;
     case 'heal':
@@ -3275,7 +3309,10 @@ UI.applyBattleEvent = function (view, ev) {
       UI.updateUnitCardHp(target);
       triggerBattleAnim(target.id, 'heal-glow', 500);
       UI.spawnBattleFloat(target.id, '+' + ev.amount, false);
-      if (u && u.side === 'player') view.battleStats.healDone += ev.amount;
+      if (u && u.side === 'player') {
+        view.battleStats.healDone += ev.amount;
+        battleUnitRec(view, u).healDone += ev.amount;
+      }
       break;
     case 'faint':
       if (u) { u.alive = false; UI.updateUnitCardHp(u); }
@@ -3369,6 +3406,27 @@ UI.endBattle = function (view, result) {
   st.totalDmgReceived += view.battleStats.dmgReceived;
   st.totalHealDone += view.battleStats.healDone;
   if (view.battleStats.maxHit > st.highestSingleHit) st.highestSingleHit = view.battleStats.maxHit;
+  // Estadísticas POR LUCHADOR (entry.stats, ver newFighterStats en
+  // state.js) — "combates" cuenta a todo el que estuviera en la Formación
+  // cuando empezó ESTE combate (aunque no le tocara actuar en ningún
+  // choque); el resto de campos solo a quien de verdad hizo algo
+  // (view.battleStats.byUnit, con sourceUid añadido en battleUnitRec).
+  const participantUids = new Set(view.playerGroups.flatMap(g => g.row.map(u => u.sourceUid).filter(Boolean)));
+  participantUids.forEach(uid => {
+    const entry = rosterEntry(view.state, uid);
+    if (entry) { if (!entry.stats) entry.stats = newFighterStats(); entry.stats.battles++; }
+  });
+  Object.values(view.battleStats.byUnit).forEach(rec => {
+    if (!rec.sourceUid) return;
+    const entry = rosterEntry(view.state, rec.sourceUid);
+    if (!entry) return;
+    if (!entry.stats) entry.stats = newFighterStats();
+    entry.stats.dmgDealt += rec.dmg;
+    entry.stats.dmgReceived += rec.dmgReceived;
+    entry.stats.healDone += rec.healDone;
+    entry.stats.kills += rec.kills;
+    if (rec.highestHit > entry.stats.highestHit) entry.stats.highestHit = rec.highestHit;
+  });
   if (outcome) {
     if (outcome.rewards) {
       st.totalTexelEarned += outcome.rewards.texel || 0;

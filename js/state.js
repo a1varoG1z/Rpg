@@ -13,11 +13,20 @@ function emptyGearSet() {
   return gear;
 }
 
+// Estadísticas de combate acumuladas POR LUCHADOR (a diferencia de
+// state.stats, que es el total de toda la partida) — sobreviven a la
+// Fusión/Evolución porque viven en el mismo roster entry (mismo uid) que
+// solo cambia de defId, nunca se recrea. Se acumulan en UI.endBattle
+// (ui.js), el mismo punto único por el que pasa cualquier combate.
+function newFighterStats() {
+  return { battles: 0, dmgDealt: 0, dmgReceived: 0, healDone: 0, kills: 0, highestHit: 0 };
+}
+
 function createNewState() {
   const roster = [
-    { uid: newUid('f'), defId: 'topo_comun', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet() },
-    { uid: newUid('f'), defId: 'heraldo_comun', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet() },
-    { uid: newUid('f'), defId: 'triton_infrecuente', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet() },
+    { uid: newUid('f'), defId: 'topo_comun', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats() },
+    { uid: newUid('f'), defId: 'heraldo_comun', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats() },
+    { uid: newUid('f'), defId: 'triton_infrecuente', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats() },
   ];
   const band = [
     [roster[0].uid, roster[1].uid, roster[2].uid],
@@ -222,6 +231,32 @@ function equipGear(state, fighterUid, gearUid) {
   return true;
 }
 
+// La mejor pieza disponible para ese hueco: entre las libres (sin dueño) más
+// la que ya lleva puesta ahí mismo (si la hay), la de mayor gearStatValue —
+// que solo depende de rareza+nivel, no del tipo concreto (espada/hacha/...),
+// así que es una comparación justa entre piezas de tipos distintos dentro
+// del mismo hueco. null si no hay ninguna opción.
+function bestGearForSlot(state, fighterUid, slotKey) {
+  const entry = rosterEntry(state, fighterUid);
+  if (!entry) return null;
+  const currentUid = entry.gear[slotKey];
+  const options = state.gearInventory.filter(g => g.slot === slotKey && (g.uid === currentUid || !equippedGearOwner(state, g.uid)));
+  if (!options.length) return null;
+  return options.reduce((best, g) => gearStatValue(g) > gearStatValue(best) ? g : best);
+}
+// Equipa la mejor pieza disponible en cada uno de los 6 huecos a la vez —
+// devuelve cuántos huecos cambiaron respecto a lo que ya llevaba puesto.
+function autoEquipBest(state, fighterUid) {
+  let changed = 0;
+  GEAR_SLOT_IDS.forEach(slotKey => {
+    const entry = rosterEntry(state, fighterUid);
+    const currentUid = entry.gear[slotKey];
+    const best = bestGearForSlot(state, fighterUid, slotKey);
+    if (best && best.uid !== currentUid) { equipGear(state, fighterUid, best.uid); changed++; }
+  });
+  return changed;
+}
+
 function unequipGear(state, fighterUid, slot) {
   const entry = rosterEntry(state, fighterUid);
   if (!entry || !entry.gear[slot]) return false;
@@ -301,7 +336,7 @@ function applySummonResult(state, defId) {
   // evolucionar) se quedan en la Colección como copias sueltas: sirven de
   // material para Superfusión (ver fuseMaterials/superFuse) o se pueden
   // vender manualmente por Texel — nunca se convierten solos.
-  const entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), isNew: !everDiscovered, readyToEvolve: false };
+  const entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats(), isNew: !everDiscovered, readyToEvolve: false };
   state.roster.push(entry);
   return { defId, outcome: everDiscovered ? 'duplicado' : 'nuevo', uid: entry.uid };
 }
@@ -733,6 +768,7 @@ function loadGame() {
 function migrateState(state) {
   try {
     if (!state || state.version !== 2 || !state.roster) return null;
+    state.roster.forEach(r => { if (!r.stats) r.stats = newFighterStats(); });
     if (!state.settings) state.settings = { infiniteEnergy: false, showMedallion: true };
     if (state.settings.showMedallion === undefined) state.settings.showMedallion = true;
     if (state.settings.enableTorreBatalla === undefined) state.settings.enableTorreBatalla = false;
