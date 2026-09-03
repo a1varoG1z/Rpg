@@ -1247,6 +1247,11 @@ UI.renderTierCap = function (state, wrap) {
     list.appendChild(row);
   });
   wrap.appendChild(list);
+
+  const trialsCleared = Object.values(state.tierCap.familyTrialClears).filter(v => v > 0).length;
+  const trialsBtn = el('button', 'primary-btn', `🧬 Trials de Familia (${trialsCleared}/${FAMILY_TRIALS.length})`);
+  trialsBtn.addEventListener('click', () => UI.openFamilyTrials(state));
+  wrap.appendChild(trialsBtn);
 };
 
 UI.startTierCapLevel = function (state, idx) {
@@ -1271,6 +1276,112 @@ UI.startTierCapLevel = function (state, idx) {
     encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {},
   };
   UI.renderStageRun(state);
+};
+
+// ---------- Tope de Tier — Fase 2: Trials de Familia ----------
+// Modal aparte (como la Pokédex) en vez de una lista dentro de Retos — 112
+// filas no caben razonablemente en la pantalla principal. Reutiliza el
+// mismo patrón visual de tarjeta que pokedexCard (bloqueada/???/con arte),
+// con dos estados añadidos propios de este Trial: superado (✅) y "no está
+// en tu Formación ahora mismo" (⚠️, se puede intentar cuando se coloque).
+UI.familyTrialFilter = 'all'; // 'all' | 'pending' | 'cleared' | 'undiscovered'
+UI.openFamilyTrials = function (state) {
+  const body = $('familyTrialsModalBody');
+  const cleared = Object.values(state.tierCap.familyTrialClears).filter(v => v > 0).length;
+  body.innerHTML = `<h3>🧬 Trials de Familia ${cleared}/${FAMILY_TRIALS.length}</h3>
+    <p class="settings-info">Un combate rápido (1 sola oleada) por cada familia jugable del juego — para
+    intentarlo necesitas tener al menos 1 copia de esa familia colocada en tu Formación ahora mismo (el resto
+    de la Formación puede ser cualquier cosa). Superarlos todos completa Retos al 100%.</p>`;
+  const filterRow = el('div', 'roster-filter-row');
+  const select = document.createElement('select');
+  [['all', 'Todas'], ['pending', 'Sin superar'], ['cleared', 'Superadas'], ['undiscovered', 'No conseguidas']].forEach(([v, label]) => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = label;
+    if (v === UI.familyTrialFilter) opt.selected = true;
+    select.appendChild(opt);
+  });
+  select.addEventListener('change', (e) => { UI.familyTrialFilter = e.target.value; UI.openFamilyTrials(state); });
+  filterRow.appendChild(select);
+  body.appendChild(filterRow);
+
+  const grid = el('div', 'creature-grid pokedex-grid');
+  FAMILY_TRIALS.forEach(trial => {
+    const discovered = familyTrialDiscovered(state, trial);
+    const clearedCount = familyTrialClearCount(state, trial);
+    if (UI.familyTrialFilter === 'pending' && (!discovered || clearedCount > 0)) return;
+    if (UI.familyTrialFilter === 'cleared' && clearedCount === 0) return;
+    if (UI.familyTrialFilter === 'undiscovered' && discovered) return;
+    grid.appendChild(familyTrialCard(state, trial));
+  });
+  if (grid.children.length === 0) grid.appendChild(el('div', 'empty-hint', 'Ninguna familia coincide con este filtro.'));
+  body.appendChild(grid);
+  $('familyTrialsModal').classList.remove('hidden');
+};
+
+function familyTrialCard(state, trial) {
+  if (!familyTrialDiscovered(state, trial)) {
+    const card = el('div', 'creature-card pokedex-locked');
+    card.appendChild(el('div', 'pokedex-lock-icon', '❔'));
+    card.appendChild(el('div', 'creature-name', '???'));
+    return card;
+  }
+  const def = fighterDef(trial.displayDefId);
+  const rarity = rarityInfo(def.rarity);
+  const cleared = familyTrialClearCount(state, trial) > 0;
+  const card = el('div', 'creature-card rarity-' + def.rarity);
+  card.style.setProperty('--rc', rarity.color);
+  card.style.setProperty('--rg', rarity.glow);
+  const wrap = el('div', 'creature-canvas-wrap');
+  wrap.appendChild(creatureCanvas(def.id));
+  card.appendChild(wrap);
+  const badge = el('div', 'creature-elclass');
+  badge.textContent = ELEMENT_INFO[def.element].icon + CLASS_INFO[def.class].icon;
+  card.appendChild(badge);
+  card.appendChild(el('div', 'creature-tier-icon', rarity.icon));
+  card.appendChild(el('div', 'creature-name', def.name));
+  if (cleared) card.appendChild(el('div', 'in-band-tag', '✅ Superado'));
+  else if (!formationHasFamily(state, trial.family)) card.appendChild(el('div', 'new-badge', '⚠️ No está en tu Formación'));
+  card.addEventListener('click', () => UI.startFamilyTrial(state, trial.id));
+  return card;
+}
+
+UI.startFamilyTrial = function (state, trialId) {
+  const trial = FAMILY_TRIALS.find(t => t.id === trialId);
+  if (!trial) return;
+  if (!familyTrialDiscovered(state, trial)) { UI.showToast('⚠️ Todavía no has conseguido ningún ' + trial.family); return; }
+  if (!formationHasFamily(state, trial.family)) {
+    UI.showToast('⚠️ Coloca a un luchador de esa familia en tu Formación para intentarlo.');
+    return;
+  }
+  if (!state.settings.infiniteEnergy) {
+    if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+    state.currencies.energy -= STAGE_ENERGY_COST;
+    saveGame(state);
+    UI.renderTopbar(state);
+  }
+  $('familyTrialsModal').classList.add('hidden');
+  window.__championRun = null;
+  window.__roguelikeRun = null;
+  window.__stageRun = null;
+  window.__familyTrialActive = true;
+  const enemyRow = buildFamilyTrialEncounter(trial);
+  const combos = buildPlayerCombinations(state);
+  UI.openBattle(state, combos, [enemyRow], {
+    title: '🧬 Trial: ' + fighterDef(trial.displayDefId).name,
+    onEnd: (result) => {
+      if (result !== 'victoria') { saveGame(state); return null; }
+      const rewards = familyTrialRewards(trial);
+      state.currencies.texel += rewards.texel;
+      const leveled = [];
+      state.band.flat().filter(Boolean).forEach(uid => {
+        const entry = rosterEntry(state, uid);
+        if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
+      });
+      recordFamilyTrialClear(state, trial);
+      saveGame(state);
+      return { rewards, leveled };
+    },
+  });
 };
 
 UI.startTorreLevel = function (state, idx) {

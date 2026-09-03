@@ -62,6 +62,7 @@
   $('objectivesModalClose').addEventListener('click', () => $('objectivesModal').classList.add('hidden'));
   $('bossesModalClose').addEventListener('click', () => $('bossesModal').classList.add('hidden'));
   $('bossEntryModalClose').addEventListener('click', () => $('bossEntryModal').classList.add('hidden'));
+  $('familyTrialsModalClose').addEventListener('click', () => $('familyTrialsModal').classList.add('hidden'));
   $('guideBtn').addEventListener('click', () => UI.openGuide());
   $('guideModalClose').addEventListener('click', () => $('guideModal').classList.add('hidden'));
   $('exportSaveBtn').addEventListener('click', () => UI.openExportSave(state));
@@ -151,6 +152,15 @@
     // si sigue viva (ganó el duelo), el siguiente duelo empieza ya mismo; si acabó
     // (perdió), UI.fightChampionDuel ya la puso a null dentro de onEnd.
     if (window.__championRun) { UI.fightChampionDuel(state); return; }
+    if (window.__familyTrialActive) {
+      // Trial de familia: combate único (sin window.__stageRun propio, ver
+      // UI.startFamilyTrial) — al cerrar el resultado, de vuelta a la
+      // rejilla de Trials en vez de la pantalla normal, para poder
+      // encadenar el siguiente sin tener que reabrir el modal a mano.
+      window.__familyTrialActive = false;
+      UI.openFamilyTrials(state);
+      return;
+    }
     if (window.__roguelikeRun) {
       // Ronda superada (pendingBoon): elegir bono antes de la siguiente
       // ronda. Derrota: onEnd ya puso window.__roguelikeRun a null, así que

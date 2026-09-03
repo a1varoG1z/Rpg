@@ -2686,7 +2686,7 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     deliberadamente distintos para dos facetas distintas del mismo mito,
     no una redundancia ni un despiste.
 
-- [ ] **Modo "Tope de Tier" en Retos — FASE 1 hecha, FASE 2 pendiente**
+- [x] **Modo "Tope de Tier" en Retos — FASE 1 y FASE 2 hechas**
     (pedido explícito, dividido en fases porque el usuario avisó de que
     podía ser grande). Objetivo final: que completar Retos al 100% obligue
     a usar prácticamente TODOS los ~112 familias jugables, no solo el
@@ -2714,38 +2714,50 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       11 de los 15 niveles (~73%) — reto real con derrotas genuinas, no un
       paseo ni un muro; los 3 mods (Torre/Roguelike/Tope de Tier) conviven
       sin regresiones entre sí en la pantalla de Retos.
-    - **[ ] Fase 2 — forzar el uso de (casi) todas las 112 familias**: la
-      Fase 1 por sí sola NO cubre el objetivo final (usa un filtro
-      genérico de rareza/elemento/clase, cualquier familia que encaje
-      vale) — falta el mecanismo que específicamente OBLIGUE a usar cada
-      familia concreta al menos una vez para poder llegar al 100%. Diseño
-      pendiente de decidir con el usuario antes de implementar (varias
-      formas razonables, con distinto coste): (a) un nivel por familia
-      concreta (`requireFamily`, ~112 niveles — mucho contenido, pero
-      exhaustivo y explícito); (b) niveles que piden "incluye X de estas Y
-      familias sin usar todavía" en vez de una familia fija cada vez
-      (menos niveles, pero necesita llevar la cuenta de qué familias ya se
-      han usado en ESTE modo); (c) un contador de "familias distintas
-      usadas en Tope de Tier" con logros/recompensas escalonados en vez de
-      niveles dedicados uno a uno (mucho más barato de implementar, pero
-      no obliga nivel a nivel, solo incentiva). También pendiente: una
-      pasada de balance por simulación de la Fase 1 (como se hizo con
-      MOB_POWER_MULT) — la verificación de arriba confirma que funciona y
-      es razonable, pero no está afinada al mismo nivel de rigor que el
-      resto del combate.
-    - **Respuesta dada en el chat**: el usuario preguntó cómo recomendaba
-      terminarlo "sin pensar en optimizar el esfuerzo, solo en la mejor
-      solución". Recomendación dada (sin implementar, es una pregunta):
-      combinar (a)+(b) de arriba en vez de elegir solo una — Trials
-      ligeros de 1 sola oleada (no un recorrido completo) que solo exigen
-      tener FICHADA al menos 1 copia de esa familia en la Formación (no
-      todos los huecos), agrupados en clusters temáticos reutilizando el
-      mismo `originZoneForDefIds`/agrupación por zona de origen que ya usa
-      `buildTorreLevels` (así no hay que diseñar 112 agrupaciones a mano),
-      generados programáticamente desde FIGHTERS en vez de escritos a
-      mano, con una pantalla tipo Pokédex (grid+filtro) en vez de una
-      lista plana de 112 filas, recompensa pequeña por trial + hitos
-      grandes de Gemas al 25/50/75/100% de familias cubiertas.
+    - **[x] Fase 2 — Trials de Familia, uno por cada una de las 112
+      familias jugables** (pedido explícito: "implementa el tope de tier
+      como has dicho", siguiendo la recomendación dada en el chat en la
+      ronda anterior). Cada Trial es un combate LIGERO de 1 sola oleada
+      (a diferencia de todo lo demás en Retos, que encadena varios) que
+      exige tener FICHADA al menos 1 copia de esa familia concreta en la
+      Formación ahora mismo (`formationHasFamily`, state.js) — el resto de
+      la Formación puede ser cualquier cosa, a diferencia de la Fase 1.
+      FIGHTERS no tiene "zona de origen" real (no aparece en ZONES.pool,
+      se consigue por invocación) así que en vez de agrupar por zona
+      (como `buildTorreLevels`) se agrupa por el TIER de cada familia —
+      techo Raro/Épico/Legendario, 36/45/31 familias respectivamente
+      (`buildFamilyTrials`, data.js) — el equivalente real más cercano a
+      una escalera de dificultad para el roster jugable. El rival de cada
+      Trial se saca de la MISMA rareza tope que esa familia
+      (`buildFamilyTrialEncounter`, combat.js), con más compañía cuanto
+      más alto el tier (1/2/3 rivales) — un "guardián a su altura", ni
+      trámite ni muro injusto. Pantalla dedicada tipo Pokédex
+      (`#familyTrialsModal`, botón "🧬 Trials de Familia" dentro de la
+      sección de Tope de Tier en Retos) con grid + filtro (Todas/Sin
+      superar/Superadas/No conseguidas) en vez de una lista plana de 112
+      filas — reutiliza el mismo patrón visual que `pokedexCard`
+      (bloqueada/???/con arte) con dos estados propios añadidos: ✅
+      superado y ⚠️ "no está en tu Formación ahora mismo" (para saber qué
+      falta colocar). Recompensa pequeña por Trial (Texel/XP crecientes) +
+      4 logros de hito (25/50/75/100% de familias superadas, con
+      recompensas de Gemas crecientes: 50/100/180/350). Sin desbloqueo
+      secuencial entre ellos (no es una escalera de poder). Verificado con
+      Playwright: 112 Trials generados con la distribución de tier
+      correcta (36/45/31); una familia nunca conseguida bloquea el intento
+      (sin gastar Energía); una familia conseguida pero no fichada en la
+      Formación también lo bloquea, con aviso claro; al fichar al
+      luchador, el combate arranca y resuelve con normalidad; con una
+      banda "razonablemente progresada para su tier" (misma familia y
+      rareza que el Trial, nivel escalado, algo de equipo/estrellas) se
+      ganan 18/18 Trials de muestra (6 por tier) con daño real y creciente
+      por tier (97-433 en tier 1, 441-2469 en tier 2, 2563-8916 en tier
+      3) — reto real, no trivial, pero consistentemente superable; el
+      modal muestra título, filtro y las 112 tarjetas correctamente; cero
+      regresiones en Torre/Roguelike/Tope de Tier Fase 1 tras el cambio.
+      Nota de balance: al ser Trials ligeros de 1 sola oleada, el reto
+      real de este sistema está más en la COLECCIÓN (conseguir las 112
+      familias por invocación) que en el combate en sí — a propósito,
+      coherente con el objetivo del pedido original.
 
 - [x] **Auto-equipar el mejor objeto** (pedido explícito). Botón "⚡
     Auto-equipar mejor" en la ficha de cualquier luchador (panel Equipo):

@@ -218,6 +218,22 @@ function buildTierCapEncounters(level, idx) {
   return rows;
 }
 
+// Trial de familia de Tope de Tier — Fase 2 (ver FAMILY_TRIALS en
+// data.js): UNA sola oleada (a diferencia de todo lo demás en Retos, que
+// encadena varias), con un "guardián" de la MISMA rareza tope que la
+// familia puesta a prueba — ni un trámite ni un muro injusto — y más
+// compañía cuanto más alto su tier (1/2/3 rivales).
+function buildFamilyTrialEncounter(trial) {
+  const pool = FIGHTERS.filter(f => f.rarity === trial.maxRarity);
+  const level = Math.min(XP_LEVEL_CAP, 8 + trial.tier * 10);
+  const row = [];
+  for (let i = 0; i < trial.tier; i++) {
+    const def = pool[Math.floor(Math.random() * pool.length)];
+    row.push(makeUnit('enemy', def.id, level));
+  }
+  return row;
+}
+
 // Equipo mono-elemento elegido para una Mazmorra Elemental (ver
 // UI.openElementalTeamPicker) — hasta 3 uids, sin las 8 líneas de la
 // Formación normal porque aquí solo hay un grupo posible.

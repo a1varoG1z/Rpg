@@ -851,6 +851,52 @@ function tierCapRewards(idx) {
   return { texel: Math.round(50 + idx * 25), fighterXp: Math.round(30 + idx * 12) };
 }
 
+// ---------- Tope de Tier — Fase 2: Trials de Familia ----------
+// Objetivo (ver TODO.md, diseño acordado con el usuario): un Trial ligero
+// por cada una de las ~112 familias JUGABLES (FIGHTERS) — a diferencia de
+// la Fase 1 (constraint genérica de rareza/elemento/clase, cualquier
+// familia que encaje vale), aquí cada Trial exige tener FICHADA al menos
+// 1 copia de ESA familia concreta en la Formación (ver
+// formationHasFamily en state.js) para poder intentarlo — un combate de
+// 1 SOLA oleada (no un recorrido completo), independiente y rejugable,
+// sin desbloqueo secuencial entre ellos (a diferencia de la Fase 1, esto
+// no es una escalera de poder). Así, completarlos todos obliga a haber
+// conseguido y usado en combate prácticamente todo el roster invocable.
+//
+// FIGHTERS no tiene una "zona de origen" real como MOBS (no aparecen en
+// ZONES.pool, se consiguen por invocación, no por avanzar el mapa), así
+// que en vez de agrupar por zona (como buildTorreLevels) se agrupa por el
+// TIER de cada familia — el equivalente real más cercano a una escalera
+// de dificultad para el roster jugable: tier1 (techo Raro, 36 familias),
+// tier2 (techo Épico, 45) y tier3 (techo Legendario, 31) — el mismo tier
+// que ya decide qué tan buena puede llegar a ser cada familia en el resto
+// del juego.
+function buildFamilyTrials() {
+  const families = {};
+  FIGHTERS.forEach(f => { (families[f.family] = families[f.family] || []).push(f); });
+  const TIER_BY_MAX_RARITY = { raro: 1, epico: 2, legendario: 3 };
+  const trials = Object.keys(families).sort().map(family => {
+    const forms = families[family].slice().sort((a, b) => rarityIndex(a.rarity) - rarityIndex(b.rarity));
+    const maxForm = forms[forms.length - 1];
+    return {
+      id: 'trial_' + family, family,
+      formIds: forms.map(f => f.id),
+      displayDefId: maxForm.id, // arte/nombre de la forma más fuerte, como el resto de la Pokédex
+      tier: TIER_BY_MAX_RARITY[maxForm.rarity] || 1,
+      maxRarity: maxForm.rarity,
+    };
+  }).sort((a, b) => a.tier - b.tier || a.family.localeCompare(b.family));
+  trials.forEach((t, i) => { t.globalIdx = i; });
+  return trials;
+}
+const FAMILY_TRIALS = buildFamilyTrials();
+// El rival se saca de la MISMA rareza tope de la familia puesta a prueba
+// (maxRarity) — un "guardián" a su altura, ni un trámite ni un muro
+// injusto — con más compañía cuanto más alto el tier (1/2/3 rivales).
+function familyTrialRewards(trial) {
+  return { texel: Math.round(40 + trial.globalIdx * 4), fighterXp: Math.round(25 + trial.globalIdx * 3) };
+}
+
 // ---------- Mazmorra Elemental ----------
 // Reto opcional de equipo mono-elemento: se desbloquea al terminar las 6
 // zonas originales del mapa (bosque..guarida, hasta desbloquear 'cantera',
@@ -1021,6 +1067,10 @@ const OBJECTIVES = [
   { id: 'tiercap_1', icon: '🎯', label: 'Supera tu primer nivel de Tope de Tier', reward: rT(150), get: (st) => Object.values(st.tierCap.clears).filter(v => v > 0).length, target: 1 },
   { id: 'tiercap_7', icon: '🎯', label: 'Supera 7 niveles de Tope de Tier', reward: rG(45), get: (st) => Object.values(st.tierCap.clears).filter(v => v > 0).length, target: 7 },
   { id: 'tiercap_todos', icon: '🎯', label: 'Supera todos los niveles de Tope de Tier', reward: rG(90), get: (st) => Object.values(st.tierCap.clears).filter(v => v > 0).length, target: TIER_CAP_LEVELS.length },
+  { id: 'familytrials_25', icon: '🧬', label: 'Supera el 25% de los Trials de Familia', reward: rG(50), get: (st) => Object.values(st.tierCap.familyTrialClears).filter(v => v > 0).length, target: Math.ceil(FAMILY_TRIALS.length * 0.25) },
+  { id: 'familytrials_50', icon: '🧬', label: 'Supera el 50% de los Trials de Familia', reward: rG(100), get: (st) => Object.values(st.tierCap.familyTrialClears).filter(v => v > 0).length, target: Math.ceil(FAMILY_TRIALS.length * 0.5) },
+  { id: 'familytrials_75', icon: '🧬', label: 'Supera el 75% de los Trials de Familia', reward: rG(180), get: (st) => Object.values(st.tierCap.familyTrialClears).filter(v => v > 0).length, target: Math.ceil(FAMILY_TRIALS.length * 0.75) },
+  { id: 'familytrials_100', icon: '🧬', label: 'Supera TODOS los Trials de Familia', reward: rG(350), get: (st) => Object.values(st.tierCap.familyTrialClears).filter(v => v > 0).length, target: FAMILY_TRIALS.length },
 
   // --- Homúnculos ---
   { id: 'homunculos_5', icon: '🧪', label: 'Consigue 5 Homúnculos', reward: rI('pocion_menor', 2), get: (st, s) => s.homunculosTotal, target: 5 },

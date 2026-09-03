@@ -57,7 +57,10 @@ function createNewState() {
     torre: { clears: {} },
     // Tope de Tier: cuántas veces se ha superado cada nivel (clave =
     // level.id de TIER_CAP_LEVELS en data.js), igual que torre.clears.
-    tierCap: { clears: {} },
+    // familyTrialClears: lo mismo pero para la Fase 2 (clave = trial.id de
+    // FAMILY_TRIALS) — objeto aparte porque son dos escaleras
+    // independientes (una secuencial, la otra no).
+    tierCap: { clears: {}, familyTrialClears: {} },
     // Mazmorra Elemental: equipo de hasta 3 uids elegido para cada
     // elemento (se recuerda entre visitas, editable en cualquier momento)
     // y cuántas veces se ha superado cada una.
@@ -599,6 +602,29 @@ function formationMeetsConstraint(state, constraint) {
   });
 }
 
+// --- Tope de Tier — Fase 2: Trials de Familia (ver FAMILY_TRIALS en
+// data.js) --- Sin desbloqueo secuencial entre ellos (no son una
+// escalera de poder): cada Trial solo depende de si esa familia se ha
+// conseguido alguna vez (para no listar 112 filas todas en "???") y, para
+// poder EMPEZARLO, de si hay al menos 1 copia fichada ahora mismo en la
+// Formación (huecos vacíos no cuentan, el resto de la Formación puede ser
+// cualquier cosa — a diferencia de la Fase 1, aquí no se restringe nada
+// más que "que esté esa familia").
+function familyTrialClearCount(state, trial) { return state.tierCap.familyTrialClears[trial.id] || 0; }
+function familyTrialDiscovered(state, trial) {
+  const discovered = new Set(state.discoveredDefIds || []);
+  return trial.formIds.some(id => discovered.has(id));
+}
+function formationHasFamily(state, family) {
+  return state.band.flat().filter(Boolean).some(uid => {
+    const entry = rosterEntry(state, uid);
+    return entry && fighterDef(entry.defId).family === family;
+  });
+}
+function recordFamilyTrialClear(state, trial) {
+  state.tierCap.familyTrialClears[trial.id] = familyTrialClearCount(state, trial) + 1;
+}
+
 // --- Mazmorra Elemental (ver ELEMENTAL_DUNGEONS en data.js) ---
 // Se desbloquea al completar las 6 zonas originales del mapa (contenido de
 // mitad de partida, mucho antes que Torre Batalla, que pide el mapa
@@ -777,7 +803,8 @@ function migrateState(state) {
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     if (!state.homunculos) state.homunculos = { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 };
     if (!state.torre) state.torre = { clears: {} };
-    if (!state.tierCap) state.tierCap = { clears: {} };
+    if (!state.tierCap) state.tierCap = { clears: {}, familyTrialClears: {} };
+    if (!state.tierCap.familyTrialClears) state.tierCap.familyTrialClears = {};
     if (!state.elementalTeams) state.elementalTeams = { fuego: [], viento: [], tierra: [], rayo: [], agua: [] };
     if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
     if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };
