@@ -2791,6 +2791,46 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     gana 1 combate, daño hecho/recibido, bajas y mejor golpe correctos;
     tras evolucionar, las estadísticas acumuladas se mantienen intactas.
 
+- [x] **Bug: la Arena no tenía fondo de batalla**. El usuario preguntó —
+    comprobado: `UI.startArenaBattle` era el ÚNICO modo de combate de todo
+    el juego que no pasaba `zone` a `UI.openBattle` (Mapa, Torre,
+    Roguelike, Tope de Tier, Mazmorra Elemental, Prueba del Campeón y
+    Duelo por apuesta sí lo hacían) — sin él, `zoneBackgroundStyle` nunca
+    se llamaba y el overlay de batalla se quedaba con el fondo por defecto
+    (negro liso) en vez del degradado temático que tiene cualquier otro
+    combate. Arreglado con `zone: { id: 'arena', color: '#4a1f1f' }`
+    (mismo patrón pseudo-zona que Torre/Roguelike/Prueba del Campeón —
+    cae al degradado de respaldo hasta que exista
+    `assets/scenery/arena.jpg`). Verificado con Playwright: el overlay de
+    batalla de Arena ahora sí lleva el degradado de fondo.
+
+- [x] **Sugerencias para mejorar la Arena** (pedido explícito, respuesta
+    dada en el chat, sin implementar salvo el fondo de arriba):
+    - **Temporadas con reset parcial de rango**: al rango solo subir nunca
+      (perder no baja), una vez se llega al techo natural del jugador ya
+      no queda ningún motivo para seguir jugando Arena — un reset
+      periódico (semanal/mensual) que baje el rango a una fracción del
+      alcanzado, con recompensa por el rango PICO de la temporada
+      anterior, daría una razón para volver a subir en vez de un único
+      progreso de usar y tirar.
+    - **Elegir entre 2-3 rivales explorados en vez de 1**: "Buscar rival"
+      da un único rival al azar ahora mismo — ofrecer 2-3 a elegir (como
+      en varios PvP de gacha reales) añadiría una decisión estratégica
+      real (elegir el que mejor ventaja elemental tenga tu Formación) en
+      vez de aceptar lo que toque o re-tirar a ciegas.
+    - **Revancha contra el mismo rival tras perder**: perder limpia
+      `state.arena.scouted` y obliga a explorar uno nuevo al azar — dejar
+      reintentar el MISMO rival ya explorado (sin volver a tirar) daría
+      la opción de ajustar solo la Formación y probar de nuevo contra el
+      matchup exacto que hizo perder, en vez de siempre cambiar de rival.
+    - **Coste de Energía**: es, junto con el propio bug del fondo, la
+      única inconsistencia menor encontrada — Arena es el único combate
+      repetible del juego sin coste de Energía (como tenía el Duelo por
+      apuesta antes de arreglarlo). Aquí el riesgo de exploit es mucho
+      menor (el rango nunca baja, así que no se puede volver a un rival
+      fácil ya superado a farmear) pero seguiría siendo más consistente
+      con el resto del juego.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

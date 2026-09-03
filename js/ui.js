@@ -2644,6 +2644,11 @@ UI.startArenaBattle = function (state) {
   const enemyRows = state.arena.scouted.map(row => row.map(u => makeUnit('enemy', u.defId, u.level)));
   UI.openBattle(state, buildPlayerCombinations(state), enemyRows, {
     title: 'Arena · Rango ' + state.arena.rank,
+    // Bug: era el único modo de combate del juego sin `zone`, así que el
+    // overlay de batalla se quedaba sin fondo (zoneBackgroundStyle nunca se
+    // llamaba). assets/scenery/arena.jpg (aún no existe, cae al degradado
+    // de respaldo) — mismo patrón que Torre/Roguelike/Prueba del Campeón.
+    zone: { id: 'arena', color: '#4a1f1f' },
     onEnd: (result) => {
       state.arena.scouted = null;
       if (result === 'victoria') {
