@@ -2648,7 +2648,14 @@ UI.renderInvocar = function (state) {
     const btn10 = el('button', 'primary-btn', 'Invocar x10');
     btn10.disabled = state.currencies[type] < 10;
     btn10.addEventListener('click', () => UI.doSummon(state, type, 10));
-    btnRow.appendChild(btn1); btnRow.appendChild(btn10);
+    // "Invocar todo": desde que las etapas dan varios cristales de golpe
+    // (ver stageRewards en combat.js) acumular decenas o cientos de un
+    // cristal concreto es habitual — sin esto, abrirlos todos exigía
+    // pulsar x10 una y otra vez a mano.
+    const btnAll = el('button', 'primary-btn', 'Invocar todo (' + state.currencies[type] + ')');
+    btnAll.disabled = state.currencies[type] < 1;
+    btnAll.addEventListener('click', () => UI.doSummon(state, type, state.currencies[type]));
+    btnRow.appendChild(btn1); btnRow.appendChild(btn10); btnRow.appendChild(btnAll);
     panel.appendChild(btnRow);
     const buyBtn = el('button', 'mini-btn', 'Comprar 1 por 💎' + crystalGemCost(type));
     buyBtn.disabled = state.currencies.gemas < crystalGemCost(type);
@@ -2715,12 +2722,18 @@ UI.showSingleReveal = function (result) {
 // notaba tosco y no daba tiempo a fijarse en cada resultado), se muestra un
 // carrusel: una criatura a la vez, a pantalla completa, con avance automático
 // o al tocar, y un botón para saltar directo al resumen final en rejilla.
+// Por encima de esta cantidad, pasar carta a carta (aunque se pueda saltar
+// a mano) deja de ser práctico — "Invocar todo" con un cristal abundante
+// (ver el botón en renderInvocar) puede juntar fácilmente 50-100+ de
+// golpe, así que directamente se enseña el resumen en cuadrícula.
+const MULTI_REVEAL_CARD_LIMIT = 20;
 UI.showMultiReveal = function (results) {
   const body = $('summonRevealBody');
   $('summonRevealClose').classList.add('hidden');
   $('summonRevealModal').classList.remove('hidden');
   let i = 0;
   let timer = null;
+  if (results.length > MULTI_REVEAL_CARD_LIMIT) { renderSummary(); return; }
 
   function renderSummary() {
     body.className = '';

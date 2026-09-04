@@ -3633,6 +3633,20 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     repetición (Pixite se queda en ~7/etapa) — siguen sintiéndose cristales
     minoritarios frente a Pixite, no se ha roto la jerarquía de rareza.
 
+- [x] Añadido botón "Invocar todo (N)" en cada panel de cristal (Invocar),
+    junto a x1/x10 — a petición del usuario: con el volumen de cristales
+    ya subido varias veces esta sesión, vaciar un cristal abundante a
+    mano (pulsando x10 repetidamente) era tedioso. Reutiliza `UI.doSummon`
+    tal cual (ya aceptaba cualquier `count`), pasando `state.currencies[type]`
+    como cantidad. De paso, `UI.showMultiReveal` (el carrusel de cartas
+    una a una al invocar en tanda) por encima de 20 resultados salta
+    directo al resumen en cuadrícula — pasar carta a carta ya no era
+    práctico invocando 50-100+ de golpe. Verificado con Playwright: con
+    47 Pixite, el botón dice "Invocar todo (47)", gasta el total, y
+    muestra el resumen en cuadrícula directamente (no el carrusel); con
+    5 Pixite (por debajo del límite) sigue mostrando el carrusel de
+    siempre, sin romper el flujo normal de tandas pequeñas.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
