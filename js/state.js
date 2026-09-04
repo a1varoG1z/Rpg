@@ -504,6 +504,33 @@ function superFuse(state, targetUid, sacrificeUid) {
   return true;
 }
 
+// Autofusión: un luchador en forma final con SEF 5/5 no ganaba nada por sí
+// mismo con ese SEF — solo quedaba "listo para ser sacrificado" en la
+// Superfusión de OTRO luchador (ver superFuse). Si el jugador quiere
+// CONSERVAR justo a ese luchador (p.ej. su Odín ya invertido), esa
+// inversión se quedaba desaprovechada a menos que sacrificara una copia
+// SEPARADA construida aparte hasta forma final + SEF 5/5 (mucho más
+// material: esa copia aparte también tiene que subir toda su propia
+// cadena de evolución). Autofusión salta ese rodeo: una copia MÁS del
+// propio luchador (ya en forma final, así que necesariamente del mismo
+// tier, sin cadena de evolución que reconstruir) le da +1★ a sí mismo
+// directamente, reiniciando su SEF a 0 para la siguiente estrella.
+function selfSuperFuse(state, targetUid, materialUid) {
+  if (targetUid === materialUid) return false;
+  const target = rosterEntry(state, targetUid);
+  const material = rosterEntry(state, materialUid);
+  if (!target || !material) return false;
+  if (material.defId !== target.defId) return false;
+  const def = fighterDef(target.defId);
+  if (def.evolvesTo) return false;
+  if (target.sef < 5) return false;
+  if (target.stars >= 3) return false;
+  target.stars++;
+  target.sef = 0;
+  removeFromRoster(state, materialUid);
+  return true;
+}
+
 function removeFromRoster(state, uid) {
   state.roster = state.roster.filter(r => r.uid !== uid);
   state.band = state.band.map(row => row.map(c => c === uid ? null : c));

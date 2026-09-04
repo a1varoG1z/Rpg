@@ -3730,6 +3730,32 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     bloqueado); con 11 zonas desbloqueadas (zona 10 incluida) el botón
     aparece y funciona — 1000 Pixite → 975 tras convertir, +1 Voxite.
 
+- [x] Añadida Autofusión, propuesta por el usuario: un luchador en forma
+    final con SEF 5/5 no ganaba nada por sí mismo con esa barra llena —
+    solo quedaba "listo para ser sacrificado" en la Superfusión de OTRO
+    luchador (`superFuse`, ya existente). Si el jugador quiere CONSERVAR
+    justo a ese luchador (p.ej. su Odín ya invertido), esa inversión se
+    quedaba desaprovechada a menos que construyera una copia SEPARADA
+    hasta forma final + SEF 5/5 para sacrificarla — mucho más material,
+    porque esa copia aparte también tendría que subir toda su propia
+    cadena de evolución desde cero si no entra ya en el tier final.
+    Nueva `selfSuperFuse(state, targetUid, materialUid)` (state.js): con
+    el propio luchador ya en forma final y SEF 5/5, una copia MÁS de sí
+    mismo (mismo defId, sin cadena de evolución que reconstruir porque ya
+    está en su tier final) le da +1★ directamente y resetea su SEF a 0.
+    Mismo tope de 3★ que la Superfusión normal. UI en la ficha del
+    luchador (ui.js): cuando `!def.evolvesTo && entry.sef>=5 &&
+    entry.stars<3`, un panel "🌟 Autofusión" con el mismo patrón de
+    selector que el material de fusión normal (elegir 1 copia, botón
+    deshabilitado hasta elegir) — convive con el botón ya existente de
+    "Superfusionar (sacrificar otro luchador)", sin sustituirlo, tal como
+    se le explicó al usuario ("no hace falta elegir entre las dos").
+    Verificado con Playwright: casos negativos (copia de otro defId,
+    SEF<5) fallan sin tocar el roster; caso positivo real vía función
+    directa (★0→1, SEF 5→0, copia consumida) y vía UI completa (abrir
+    ficha → aparece el panel → seleccionar copia → botón se habilita →
+    confirmar → ficha se refresca con el resultado correcto).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

@@ -2238,8 +2238,11 @@ UI.openFighterModal = function (state, uid, formationCtx) {
 
   const sefPanel = el('div', 'panel');
   const evoText = !def.evolvesTo
-    ? (entry.sef >= 5 ? 'Forma máxima y SEF completa: ya se puede usar como sacrificio de Superfusión (elígelo desde la ficha de otro luchador en forma máxima) para darle una ⭐ permanente.'
-      : 'Forma máxima: no evoluciona más, pero usar copias sueltas como material de fusión (abajo) hasta 5/5 lo deja listo para sacrificarlo en una Superfusión y dar una ⭐ permanente a otro luchador.')
+    ? (entry.sef >= 5
+      ? (entry.stars < 3
+        ? 'Forma máxima y SEF completa: una copia más lo Autofusiona a sí mismo dándole una ⭐ permanente (abajo), o puedes usarlo como sacrificio de la Superfusión de OTRO luchador (elígelo desde su ficha) — lo que prefieras, no hace falta elegir entre las dos.'
+        : 'Forma máxima, SEF completa y ya en el máximo de 3★ — puede seguir usándose como sacrificio de Superfusión para OTRO luchador (elígelo desde su ficha).')
+      : 'Forma máxima: no evoluciona más, pero usar copias sueltas como material de fusión (abajo) hasta 5/5 lo deja listo para Autofusionarse a sí mismo o sacrificarse en la Superfusión de otro luchador.')
     : entry.readyToEvolve ? '¡Fusión completa! Ya puedes evolucionarlo a <b>' + fighterDef(def.evolvesTo).name + '</b>.'
     : 'Usa copias sueltas de este mismo luchador como material de fusión (abajo) para llegar a 5/5 y evolucionarlo a <b>' + fighterDef(def.evolvesTo).name + '</b>.';
   sefPanel.innerHTML = `<h3>Fusión (SEF) <span class="badge">${entry.sef}/5</span></h3>
@@ -2309,6 +2312,50 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     });
     fusePanel.appendChild(fuseBtn);
     body.appendChild(fusePanel);
+  } else if (!def.evolvesTo && entry.sef >= 5 && entry.stars < 3) {
+    // Autofusión: forma final + SEF 5/5 + una copia más de sí mismo = ⭐
+    // directa, sin tener que construir una copia aparte hasta forma final
+    // para sacrificarla (ver selfSuperFuse en state.js).
+    const siblings = state.roster.filter(r => r.uid !== uid && r.defId === entry.defId);
+    const selfFusePanel = el('div', 'panel');
+    selfFusePanel.innerHTML = `<h3>🌟 Autofusión</h3><p class="settings-info">Elige una copia de ${def.name} para dársela a sí mismo y ganar una ⭐ permanente (el SEF vuelve a 0).</p>`;
+    const selfGrid = el('div', 'picker-grid');
+    let selfSelected = null;
+    let selfFuseBtn;
+    if (siblings.length === 0) {
+      selfGrid.appendChild(el('div', 'empty-hint', 'Aún no tienes más copias de ' + def.name + '. Consíguelas invocando.'));
+    } else {
+      const bandUids = state.band.flat().filter(Boolean);
+      siblings.forEach(sib => {
+        const card = creatureCard(state, sib, { inBand: bandUids.includes(sib.uid) });
+        card.addEventListener('click', () => {
+          if (selfSelected === sib.uid) {
+            selfSelected = null;
+            card.classList.remove('selected');
+          } else {
+            selfGrid.querySelectorAll('.selected').forEach(c => c.classList.remove('selected'));
+            selfSelected = sib.uid;
+            card.classList.add('selected');
+          }
+          selfFuseBtn.disabled = !selfSelected;
+        });
+        selfGrid.appendChild(card);
+      });
+    }
+    selfFusePanel.appendChild(selfGrid);
+    selfFuseBtn = el('button', 'primary-btn', 'Autofusionar');
+    selfFuseBtn.disabled = true;
+    selfFuseBtn.addEventListener('click', () => {
+      if (selfSuperFuse(state, uid, selfSelected)) {
+        saveGame(state);
+        UI.renderTopbar(state);
+        if (activeScreen === 'banda') UI.renderBanda(state);
+        UI.showToast('🌟 ¡' + def.name + ' ha ganado una estrella de Superfusión!');
+        UI.openFighterModal(state, uid, formationCtx);
+      }
+    });
+    selfFusePanel.appendChild(selfFuseBtn);
+    body.appendChild(selfFusePanel);
   }
   if (entry.stars < 3) {
     const superBtn = el('button', 'primary-btn', 'Superfusionar (sacrificar otro luchador)');
