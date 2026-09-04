@@ -792,17 +792,23 @@ const XP_LEVEL_CAP = 40;
 // cerca esta misma curva zona a zona.
 function fighterXpToNext(level) { return Math.floor(20 * Math.pow(level, 1.5)); }
 
-// Nº de etapas por zona — sube de 8 a 15 (14 de mobs + 1 jefe) a petición
-// del usuario, para repartir de forma más "orgánica" la XP/Texel/cristales
-// de cada zona entre más combates más flojos en vez de menos combates con
-// premios más gordos (ver stageRewards en combat.js). IMPORTANTE: el nivel
-// del rival (zoneEnemyLevel, justo abajo) se calcula a propósito a partir
-// de zoneIdx, NUNCA de STAGES_PER_ZONE — así, subir este número reparte
-// mejor los premios sin acelerar ni frenar la escalada de nivel (antes,
-// con el nivel calculado como 1+zoneIdx*STAGES_PER_ZONE+etapa, más etapas
-// por zona significaba automáticamente nivel más alto por zona, el efecto
-// contrario al que se buscaba).
-const STAGES_PER_ZONE = 15;
+// Nº de etapas por zona — 8 originalmente, subido a 15 y ahora a 33 (32 de
+// mobs + 1 jefe) a petición del usuario: incluso con 15 etapas, acumular
+// varias de golpe (~7 Pixite de media cada una) llevaba a "aperturas" de
+// 40-50 cristales de un tirón, gestionando un montón de personajes a la
+// vez — le quitaba la gracia a que cada tirada se sintiera especial. Con
+// 33, la media baja a ~3 Pixite por etapa (ZONE_PIXITE_TOTAL / 32, ver
+// stageRewards en combat.js) — mismo total por zona, pero llegando en
+// trocitos pequeños de verdad. IMPORTANTE: el nivel del rival
+// (zoneEnemyLevel, justo abajo) se calcula a propósito a partir de
+// zoneIdx, NUNCA de STAGES_PER_ZONE — así, subir este número reparte mejor
+// los premios sin acelerar ni frenar la escalada de nivel (antes, con el
+// nivel calculado como 1+zoneIdx*STAGES_PER_ZONE+etapa, más etapas por
+// zona significaba automáticamente nivel más alto por zona, el efecto
+// contrario al que se buscaba). El mapa entero pasa de 495 a 1.089 etapas
+// — bastante más largo, pero es justo lo que pidió el usuario ("hacer el
+// juego más lento y no tan frenético").
+const STAGES_PER_ZONE = 33;
 
 // El nivel del rival ya NO depende de STAGES_PER_ZONE ni de la etapa
 // dentro de la zona (todas las etapas de una misma zona pelean al MISMO

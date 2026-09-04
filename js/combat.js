@@ -176,10 +176,10 @@ function buildEnemyBand(zoneIdx, stageIdx, bossExtraMult) {
   if (isBoss) {
     return { rows: [[makeBossUnit(zone.pool[2], level, bossExtraMult)]], isBoss, level };
   }
-  // Rampa de nº de rivales dentro de la zona, adaptada a las 14 etapas de
-  // mobs actuales (antes 7): las primeras 5 (un tercio) traen 2 filas, el
-  // resto 3 — misma proporción que antes (3 de 7 con 3 filas).
-  const rowCount = stageIdx < 5 ? 2 : 3;
+  // Rampa de nº de rivales dentro de la zona, adaptada a las 32 etapas de
+  // mobs actuales (antes 14, antes 7): las primeras 11 (un tercio) traen 2
+  // filas, el resto 3 — misma proporción que antes.
+  const rowCount = stageIdx < 11 ? 2 : 3;
   const rows = [];
   for (let r = 0; r < rowCount; r++) {
     const row = [];
@@ -306,12 +306,15 @@ function zoneXpTotal(zoneIdx) { return 40 + zoneIdx * 190; }
 // XP) — es la "moneda de invocación", no un indicador de poder, así que
 // no hay motivo de diseño para que una zona temprana dé menos que una
 // tardía. Se mantiene igual al total medio que ya daba la ronda de
-// cambios anterior (~94/zona con 8 etapas) para no re-litigar otra vez el
-// ritmo de Superfusión ya validado, solo repartirlo en trozos más finos
-// (14 etapas de mobs en vez de 7 → ~6.8 de media por etapa en vez de
-// ~12.8, ya no "un pufo de 15-20 cristales de golpe").
+// cambios anterior (~94-95/zona) para no re-litigar otra vez el ritmo de
+// Superfusión ya validado, solo repartirlo en trozos aún más finos (32
+// etapas de mobs, antes 14, antes 7 → ~3 de media por etapa en vez de
+// ~6.8/~12.8 — ya no "un pufo de cristales", un puñado de verdad pequeño).
+// Varianza también apretada (2→1) para que nunca se aleje mucho de esa
+// media — el objetivo explícito del usuario era que cada etapa se sienta
+// una tirada pequeña, no ocasionalmente un salto grande.
 const ZONE_PIXITE_TOTAL = 95;
-const MOB_STAGE_PIXITE_VARIANCE = 2; // +-2 sobre la media, entero
+const MOB_STAGE_PIXITE_VARIANCE = 1; // +-1 sobre la media, entero
 
 function elementalDungeonRewards(isFirstClear) {
   const zoneIdx = ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID);

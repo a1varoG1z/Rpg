@@ -3647,6 +3647,38 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     5 Pixite (por debajo del límite) sigue mostrando el carrusel de
     siempre, sin romper el flujo normal de tandas pequeñas.
 
+- [x] `STAGES_PER_ZONE` sube otra vez, de 15 a 33 (32 etapas de mobs + 1
+    jefe) — el usuario, tras probar el "Invocar todo" de arriba, planteó
+    que incluso ~7 Pixite de media por etapa llevaba a "aperturas" de
+    40-50 de golpe con solo unas pocas etapas jugadas, gestionando de
+    golpe muchos personajes nuevos y quitándole la gracia a cada tirada
+    individual — propuso bajar el máximo por etapa (p.ej. a 3) y compensar
+    con más etapas todavía, manteniendo el mismo total por zona, para que
+    el ritmo de obtención sea más lento y menos "de golpe".
+    Gracias a que el rediseño anterior (ver la entrada de arriba) ya
+    desacopló el nivel del rival y los totales de recompensa de
+    `STAGES_PER_ZONE` (dependen solo de `zoneIdx`), este cambio ha sido
+    seguro y no ha requerido tocar ninguna otra constante de dificultad —
+    solo reescalar dos cosas que sí dependían del número de etapas: el
+    umbral de `rowCount` en `buildEnemyBand` (nº de rivales dentro de la
+    zona, de `stageIdx<5` a `stageIdx<11`, misma proporción ~1/3) y la
+    varianza de Pixite por etapa (`MOB_STAGE_PIXITE_VARIANCE`, de ±2 a ±1,
+    para que la media de ~3 no se aleje casi nunca de ese número).
+    Verificado con Playwright: la curva de nivel natural del jugador
+    queda EXACTAMENTE igual que antes de este cambio (confirma que el
+    desacoplo funciona); Pixite medio por etapa normal baja de ~7.0 a
+    ~2.98; 100% de victorias en mobs y jefes de las 33 zonas con banda a
+    ritmo natural y con banda maxeada (sin cambios respecto a antes,
+    como se esperaba); Superfusión mantiene la misma progresión sensata
+    sin fallos (Común ~4.994 etapas, Infrecuente ~9.441, Legendario
+    ~12.597 — más etapas en términos absolutos porque el mapa ahora tiene
+    1.089 en vez de 495, pero relativo al tamaño del mapa el ritmo de
+    grindeo es igual o algo más rápido que antes: ~4.6 vueltas al mapa
+    para Común, frente a ~5.2 antes). El mapa completo pasa de 495 a
+    1.089 etapas (264 originalmente) — bastante más largo, pero es
+    exactamente lo que pidió el usuario ("hacer el juego más lento y no
+    tan frenético").
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
