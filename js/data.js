@@ -772,7 +772,37 @@ const BAND_LINES = [
 ];
 function bandLineInfo(id) { return BAND_LINES.find(l => l.id === id) || BAND_LINES[0]; }
 const XP_LEVEL_CAP = 40;
-function fighterXpToNext(level) { return Math.floor(20 * Math.pow(level, 1.5)); }
+// Coste de subir de nivel — el ÚNICO sitio del que cuelga toda la XP del
+// juego (etapas, jefes, Torre, Mazmorra Elemental, Arena...), así que
+// tocarlo aquí equivale a subir TODAS las recompensas de XP a la vez sin
+// tener que tocar cada una por separado. Bajado ÷4 (antes 20×nivel^1.5):
+// jugando el mapa sin grindear nada, un jugador natural solo llegaba a
+// nivel 13 al terminar Ruinas Abisales (zona 4) — justo donde el rival YA
+// toca su propio tope de nivel 40 (ver el comentario sobre
+// LEVEL_CAP_ZONE_IDX más abajo) — y no alcanzaba nivel 40 hasta la zona 22,
+// dejando 18 zonas (más de la mitad del mapa) con el rival siempre a tope
+// mientras el jugador seguía muy por debajo. Verificado en combate (10
+// tiradas por zona, para quitar ruido): con la XP actual (×1), Guarida del
+// Dragón (zona 5) se perdía el 100% de las veces con cualquier inversión
+// razonable de estrellas/equipo para ese punto del juego. Se probó primero
+// ÷3 (tope natural sobre la zona 12) pero dejaba Guarida del Dragón en un
+// 50% de victorias — mejor que el muro original, pero seguía siendo
+// básicamente cara o cruz en la zona que se quería arreglar. Con ÷4 el
+// jugador natural llega a nivel 40 sobre la zona 10 (dos zonas antes que
+// con ÷3, sin ser una corrección brusca como la primera opción evaluada
+// —tope en zona 4-6— que habría dejado la sensación de subir de nivel
+// agotada casi de inmediato) y Guarida del Dragón pasa a ganarse el 100%
+// de las veces (antes 0%), Ruinas Abisales 100% (antes 60%) y Cantera
+// Devorada 100% (antes 0%) — el nivel del jugador se queda bastante por
+// debajo del rival en esas zonas (Nv.20-28 frente a Nv.40) pero ya no es
+// un abismo, y el resto de ejes de progresión (rareza, estrellas, equipo)
+// cierran la diferencia, que es el reparto de trabajo que ya tenía
+// pensado el propio diseño (ver el comentario sobre LEVEL_CAP_ZONE_IDX).
+// Cuevas de Cristal (zona 2) queda como excepción — no mejora de forma
+// limpia con más XP en ninguna prueba (20%→90%→60%, sin relación clara
+// con el multiplicador), así que probablemente tiene una causa propia
+// aparte del desfase de nivel — pendiente de investigar aparte.
+function fighterXpToNext(level) { return Math.floor(20 * Math.pow(level, 1.5) / 4); }
 
 // A partir de esta zona (índice 4 = Ruinas Abisales, la 5ª de 33) el nivel
 // del rival ya toca XP_LEVEL_CAP y deja de crecer (ver el comentario sobre

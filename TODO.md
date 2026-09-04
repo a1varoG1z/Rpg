@@ -3368,6 +3368,65 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     motivó en su día el damping adicional por repetición, así que sigue
     protegido.
 
+- [x] Detectado y corregido un desfase de nivel jugador/rival mucho más
+    grande de lo que parecía a raíz de la pregunta del usuario sobre el
+    salto de dificultad entre Ruinas Abisales y Guarida del Dragón.
+    Calculando la XP real (`fighterXpToNext`) que da jugar el mapa SIN
+    grindear nada: un jugador natural solo llega a nivel 13 al terminar
+    Ruinas Abisales (zona 4) — justo donde el rival YA toca su propio tope
+    de nivel 40 (`LEVEL_CAP_ZONE_IDX`) — y no alcanza nivel 40 hasta la
+    zona 22, dejando 18 zonas (más de la mitad del mapa) con el rival
+    siempre a nivel tope mientras el jugador va muy por detrás. Para
+    contexto de lo irreal que es cerrar ese hueco "rejugando unas cuantas
+    veces" (como sugería el usuario): hacen falta ~20 vueltas completas a
+    las zonas 0-4 solo de XP, o ~288 repeticiones seguidas del jefe de
+    Ruinas Abisales.
+    Verificado en combate (banda a nivel "natural", rareza igualada al
+    pool de cada zona, inversión razonable de 2★/equipo Nv.5): con la XP
+    actual, Guarida del Dragón (zona 5, el salto de rareza Raro→Épico justo
+    donde el rival deja de subir de nivel) se pierde el 100% de las veces
+    SEA CUAL SEA la inversión de estrellas/equipo probada (0★ hasta 3★ +
+    equipo Nv.8) — no es un problema de falta de pulido, es el desfase de
+    nivel en sí.
+    Se plantearon 3 vías: (1) subir la XP para que el jugador suba más
+    rápido, (2) retrasar `LEVEL_CAP_ZONE_IDX` (que el rival tope más
+    tarde), (3) suavizar nivel/rareza rival zona a zona. Descartada la (2)
+    por ser la más invasiva con diferencia: `LEVEL_CAP_ZONE_IDX` es el
+    ANCLA de la que cuelga `lateZoneMult` (toda la escalada de dificultad
+    de las ~28 zonas posteriores al tope) — moverla habría recalculado
+    silenciosamente todo lo ya validado hoy mismo con datos reales del
+    usuario (Llanura del Titán, Salón de los Engaños, el exponente de
+    `bossAdaptiveMult`), sin ninguna garantía de que el resultado siguiera
+    siendo el mismo. Descartada la (3) por ser un parche zona a zona sin
+    atacar la causa raíz (el desfase es sistémico, no de un par de zonas
+    sueltas). Implementada la (1), en el punto más quirúrgico posible:
+    `fighterXpToNext` (data.js) — el ÚNICO sitio del que cuelga TODA la XP
+    del juego (etapas, jefes, Torre, Mazmorra Elemental, Arena...), así
+    que bajar el coste ahí equivale a subir todas las recompensas a la vez
+    sin tocarlas una a una, y no afecta a ninguna banda ya construida a
+    nivel fijo (así que no toca nada de lo ya validado esta sesión sobre
+    bandas maxeadas a Nv.40).
+    Se descartó a propósito una corrección agresiva que adelantara el tope
+    de nivel natural a la zona 4-6 (el usuario planteó, con buen criterio,
+    que eso dejaría la sensación de "subir de nivel" agotada casi de
+    inmediato, con 27 de 33 zonas ya a nivel máximo) — se probó primero
+    ÷3 (tope natural sobre la zona 12) pero, con 10 tiradas por zona para
+    quitar ruido, dejaba Guarida del Dragón en un 50% de victorias — mejor
+    que el 0% original, pero seguía siendo básicamente cara o cruz en la
+    zona que se quería arreglar. Subido a ÷4 (tope natural sobre la zona
+    10, dos zonas antes que con ÷3): Guarida del Dragón pasa a un 80-100%
+    de victorias según la tirada, Ruinas Abisales y Cantera Devorada al
+    100% (antes 60% y 0%). El nivel del jugador se queda bastante por
+    debajo del rival en esas zonas (Nv.20-28 frente a Nv.40 del rival)
+    pero ya no es un abismo, y el resto de ejes de progresión (rareza,
+    estrellas, equipo) cierran la diferencia — el reparto de trabajo que
+    ya tenía pensado el propio diseño una vez el nivel deja de crecer.
+    Cuevas de Cristal (zona 2) queda como excepción sin explicar del todo:
+    no mejora de forma limpia con más XP en ninguna prueba (20%→80-90%→
+    60-90%, sin relación clara con el multiplicador) — probablemente tiene
+    una causa propia aparte del desfase de nivel, pendiente de investigar
+    aparte si se reporta como problema.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
