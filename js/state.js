@@ -557,10 +557,25 @@ function applyFormationPreset(state, presetId) {
 // SOLO entra en juego cuando la banda del jugador supera claramente ese
 // nivel "a la par" — nunca reduce por debajo de 1×, así que un jefe ya
 // calibrado para una banda floja sigue exactamente igual de accesible que
-// siempre. El exceso se amortigua con raíz cuadrada (una banda 4× más
-// fuerte de lo esperado sube el jefe solo 2×, no 4×) y con un techo de 4.5×,
+// siempre. El exceso se amortigua con exponente 0.85 (una banda 4× más
+// fuerte de lo esperado sube el jefe ~3.6×, no 4×) y con un techo de 4.5×,
 // para que siga notándose el mérito de haber invocado bien sin que el jefe
 // se vuelva imposible ni deje de tener nunca ninguna oportunidad de golpear.
+//
+// Antes se amortiguaba con raíz cuadrada (exponente 0.5), pensado sobre
+// todo para los jefes de la Torre Batalla (ver torreBossMult más abajo,
+// que YA divide el exceso entre la repetición sin curación — con esa
+// segunda capa de damping, un jefe de Mapa de encuentro único quedaba
+// doblemente suavizado sin necesidad). Con una banda nivel 40 TODO
+// legendario (equipo Nv.15 incluido) medí que "overpower" real ronda 2×
+// sobre el jefe de referencia, pero raíz cuadrada solo subía el jefe a
+// 1.4× — el jefe recibía de vuelta 100-1000 de daño frente a una banda con
+// ~27000 HP total, es decir apenas un rasguño en casi todas las zonas. Con
+// exponente 0.85 el jefe pasa a recibir 500-20000 de daño según la zona
+// (varias veces más), sin perder ninguna partida salvo en la zona ya más
+// dura de por sí (Salón de los Engaños), que pasa de trámite garantizado a
+// desafío real. Con una banda floja (rareza raro, equipo raro Nv.5) el
+// cambio no rompe nada: sigue ganando siempre salvo en esa misma zona.
 function bossAdaptiveMult(state, zoneIdx) {
   const zone = ZONES[zoneIdx];
   const globalIdx = zoneIdx * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
@@ -583,7 +598,7 @@ function bossAdaptiveMult(state, zoneIdx) {
   // el jefe conserve margen sobre su propio camino en zonas avanzadas, en
   // vez de quedarse siempre en el mismo ×4.5 mientras el camino ya sigue
   // subiendo con lateZoneMult.
-  return Math.min(4.5 * lateZoneMult(zoneIdx), Math.sqrt(overpower));
+  return Math.min(4.5 * lateZoneMult(zoneIdx), Math.pow(overpower, 0.85));
 }
 
 // Jefes de la Torre Batalla: reutiliza bossAdaptiveMult referenciado a la

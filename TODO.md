@@ -3303,6 +3303,71 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     profundas, el daño medio recibido baja de 23.649 a 22.182 (~6%) sin
     que ninguna zona se vuelva trivial ni se rompa nada.
 
+- [x] Confirmado y ampliado el punto anterior con la banda REAL que reportó
+    el usuario (nivel 40, TODO legendario — personajes Y equipo Nv.15),
+    en vez de la banda "invertida" (rareza raro, 3★, equipo raro Nv.5)
+    usada en la investigación previa — el usuario rebatió con datos
+    concretos que la conclusión "es solo dificultad tardía general" no
+    cuadraba: con ese equipo exacto pierde un escenario de 3 oleadas en
+    Llanura del Titán pero se pasa Templo del Sol Eclipsado (una zona más
+    profunda, pool Brujo+Gurú sin ningún Campeón) con 0 bajas.
+    Repitiendo la comparación con la banda maxeada confirma que el
+    usuario tenía razón y mi banda de prueba anterior era demasiado floja
+    para revelar el efecto ("efecto suelo": con poca inversión todo es
+    igual de duro y la diferencia por clase queda enmascarada; solo se
+    hace visible con una banda ya muy invertida). Llanura del Titán y
+    Templo del Sol Eclipsado tienen prácticamente el mismo `lateZoneMult`
+    (profundidad casi idéntica, 25 vs 26), así que es una comparación
+    limpia: con la banda maxeada, el daño medio recibido en un combate de
+    3 oleadas era ~4-6× mayor en Llanura que en Templo SIN el ajuste
+    anterior (`campeon: 0.8` ya aplicado, ese ajuste sí reduce el daño a
+    la mitad respecto a sin corregir, pero Llanura seguía siendo ~2× más
+    dura que Templo). Subido `ENEMY_CLASS_TOUGHNESS_MULT.campeon` de 0.8 a
+    0.65 (combat.js) — con la banda maxeada, Llanura pasa de 21.091 de
+    daño medio (sin corrección) a 8.304 (con 0.65), frente a los 4.858 de
+    Templo (zona sin ningún Campeón, no afectada por el cambio) — sigue
+    habiendo diferencia (Campeón sigue siendo una clase con más aguante,
+    intencionadamente) pero mucho más cerca de paridad. Verificado que
+    Salón de los Engaños (otra zona todo-Campeón, la más profunda de las
+    6) no se rompe ni se vuelve trivial: sigue ganándose 100% de las veces
+    en todos los valores probados (0.8/0.7/0.65/0.6).
+
+    De paso, el usuario repitió una queja recurrente de toda la sesión:
+    "los bosses no parecen rivales dignos". Investigado con la misma banda
+    maxeada: `bossAdaptiveMult` (state.js) amortiguaba el exceso de poder
+    del jugador sobre la referencia de zona con raíz cuadrada
+    (`Math.sqrt(overpower)`) — con la banda maxeada, el "overpower" real
+    era de solo ~2× sobre la referencia (un mob de esa zona sin equipo),
+    pero la raíz cuadrada lo dejaba en un mísero ×1.4, muy lejos del techo
+    de ×4.5 (nunca se llegaba a acercar). Resultado medido: los jefes de
+    Mapa recibían de vuelta 100-1.000 de daño frente a una banda con
+    ~27.000 HP total — un rasguño en casi todas las zonas, pase lo que
+    pase de invertido que esté el jugador. Ese damping por raíz cuadrada
+    tenía sentido para los jefes de la Torre Batalla (que YA se amortiguan
+    una segunda vez dividiendo entre la repetición sin curación, ver
+    `torreBossMult`), pero un jefe de Mapa (un único encuentro) no tenía
+    esa razón para llevar el mismo doble amortiguado. Cambiado el
+    exponente de 0.5 (raíz cuadrada) a 0.85 en `bossAdaptiveMult` — con la
+    banda maxeada, el daño recibido por los jefes de Mapa sube a un rango
+    de 600-20.535 según la zona (varias veces más en casi todas), sin
+    perder ninguna partida salvo en Salón de los Engaños (ya la zona más
+    dura de las probadas también en las etapas normales), que pasa de
+    trámite garantizado a desafío real. Verificado que no rompe el ritmo
+    normal del juego: con la banda "invertida" original (mucho más floja,
+    la que se usa para simular un jugador siguiendo el ritmo esperado) el
+    cambio no hace perder ninguna de 10 zonas de prueba repartidas por
+    todo el mapa salvo, de nuevo, Salón de los Engaños (80% de victorias
+    en vez de 100%, sigue siendo mayoritariamente ganable) — el ajuste
+    solo entra en juego cuando la banda YA supera claramente el ritmo de
+    la zona (`overpower > 1`), así que un jugador que va al ritmo normal
+    no nota el cambio. También revisado el impacto en Torre Batalla
+    (`torreBossMult`, que reutiliza `bossAdaptiveMult` como base): el
+    multiplicador final para el último nivel de jefe (el más repetido, 5
+    veces sin curación) sube de forma modesta (de ×1.18 a ×1.34 con la
+    banda maxeada) — muy lejos del escenario "0/5 combates ganados" que
+    motivó en su día el damping adicional por repetición, así que sigue
+    protegido.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

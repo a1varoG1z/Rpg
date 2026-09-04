@@ -35,24 +35,29 @@ function buildUnitStats(defId, level, extraMult) {
 // Corrección de "aguante" SOLO para rivales, por clase — Campeón pesa
 // mucho más HP/DEF en su fórmula de clase que Gurú/Brujo (CLASS_INFO:
 // hp 145/def 22 de Campeón frente a hp 85/def 10 de Gurú, más del doble
-// de DEF), y computeDamage no compensa esa diferencia. IMPORTANTE (visto
-// por simulación repetida, promediando varias tiradas para quitar ruido):
-// esto NO explica por sí solo por qué una zona de pool Campeón+Campeón
-// (Gigante+Troll) se siente un muro — zonas de la misma profundidad SIN
-// ningún Campeón en el pool resultan casi igual de duras una vez se
-// promedian varias tiradas; el factor dominante ahí es el escalado
-// general de zona tardía (lateZoneMult), no la clase. Lo que SÍ es cierto
-// y medible es que Campeón pesa de más en la fórmula — así que este ajuste
-// se queda como una corrección real pero MODESTA (una zona toda-Campeón
-// recibe algo menos de daño que sin corregir, no se vuelve fácil), sin
-// pretender ser la solución completa al pico de dificultad reportado. Se
+// de DEF), y computeDamage no compensa esa diferencia.
+//
+// La primera pasada de este ajuste (0.8) se validó con una banda
+// "invertida" de nivel medio (rareza raro, 3★, equipo raro Nv.5) y el
+// efecto medido era real pero modesto — no explicaba el muro reportado en
+// Llanura del Titán. Repitiendo la comparación con una banda como la que
+// realmente reportó el problema (nivel 40, TODO legendario — personajes Y
+// equipo Nv.15) el efecto es mucho más marcado: en una pareja de zonas de
+// profundidad casi idéntica (Llanura del Titán, pool Gigante+Troll ambos
+// Campeón, frente a Templo del Sol Eclipsado, pool Brujo+Gurú sin ningún
+// Campeón), el daño medio recibido en un combate de 3 oleadas era ~4-6×
+// mayor en Llanura sin corregir, y sigue siendo ~2× mayor incluso con el
+// 0.8 ya aplicado — de ahí subir a 0.65. Es decir: el "muro" SÍ es un
+// problema real de composición de clase, pero solo se hace evidente con
+// una banda ya muy invertida (con una banda floja, todo pesa igual de
+// duro y la diferencia por clase queda enmascarada — "efecto suelo"). Se
 // toca solo HP/DEF (no ATK/AGI/WIS) para no aplanar la identidad de cada
 // clase. Solo se usa aquí — makeUnit únicamente construye el lado 'enemy'
 // (nunca 'player', ver todas las llamadas en este archivo), así que nunca
 // toca las stats de un luchador que el jugador posea, ni las que se
 // muestran en la Pokédex o Comparar (esas usan buildUnitStats
 // directamente, no makeUnit).
-const ENEMY_CLASS_TOUGHNESS_MULT = { campeon: 0.8 };
+const ENEMY_CLASS_TOUGHNESS_MULT = { campeon: 0.65 };
 function enemyClassToughnessMult(cls) { return ENEMY_CLASS_TOUGHNESS_MULT[cls] || 1; }
 
 function makeUnit(side, defId, level, extraMult, sourceUid) {
