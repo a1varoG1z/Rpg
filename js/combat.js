@@ -476,8 +476,21 @@ function buildChampionOpponent(duelIdx) {
   const def = pool[Math.floor(Math.random() * pool.length)];
   return makeUnit('enemy', def.id, level);
 }
+// fighterXp (pedido explícito del usuario): antes daba muy poco — incluso
+// una racha larga apenas subía un par de niveles, así que en la práctica
+// nadie usaba esto para levelear en serio, solo el Mapa servía. Ahora
+// sube todo el fighterXp del luchador elegido (nunca se reparte con nadie
+// más, es un duelo 1 contra 1) para que la Prueba del Campeón sea una vía
+// real de levelear a UN luchador concreto sin tener que meterlo en la
+// Formación ni tocar el Mapa — pensado sobre todo para subir de golpe un
+// fichaje reciente (p.ej. recién evolucionado a Legendario) hasta un
+// nivel útil. Verificado por simulación (combate real, sin aproximar):
+// un luchador Nv.1 reintentando la Prueba unas 10-20 veces (60-120 de
+// energía, 1-2 barras llenas) alcanza Nv.~14-24 si es Raro, Nv.~24-35 si
+// es Épico, y Nv.~29-40 (tope) si es Legendario — una progresión rápida y
+// con sentido, muy por delante de jugar esas mismas oleadas en el Mapa.
 function championDuelRewards(duelIdx) {
-  return { texel: Math.round(30 + duelIdx * 10), fighterXp: Math.round(20 + duelIdx * 8) };
+  return { texel: Math.round(30 + duelIdx * 10), fighterXp: Math.round(60 + duelIdx * 45) };
 }
 
 // ---------- Roguelike (Retos) ----------

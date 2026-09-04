@@ -3931,6 +3931,29 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       primerísima etapa del Mapa: ganada siempre, igual que sin el
       ajuste — confirma que `MIN_BAND_FOR_BOOST` protege el arranque.
 
+- [x] Subida la XP que da la Prueba del Campeón (Retos), a petición
+    explícita del usuario: quería poder usarla como vía de levelear un
+    luchador concreto (p.ej. un fichaje recién evolucionado) sin meterlo
+    en la Formación ni tocar el Mapa, incorporándolo al equipo ya con
+    nivel útil. El mecanismo para esto YA existía (`fighterAddXp(entry,
+    rewards.fighterXp)` en `UI.fightChampionDuel`, ui.js, tras cada duelo
+    ganado — SOLO al luchador elegido, no se reparte con nadie más) pero
+    daba muy poco: `championDuelRewards` (combat.js) pasaba de
+    `20 + duelIdx*8` a `60 + duelIdx*45` — el resto del reto (rival único
+    cada vez más fuerte, sin curarse entre duelos, mejor racha guardada)
+    sin cambios. Calibrado por simulación con el combate real (motor 1
+    contra 1 en bucle, `simulateOneRound`, sin aproximar): con la fórmula
+    antigua, incluso reintentando la Prueba 20 veces seguidas (120 de
+    energía, 2 barras llenas) un luchador Nv.1 apenas llegaba a
+    Nv.9/13/19 (Raro/Épico/Legendario) — demasiado lento para ser una
+    alternativa real al Mapa. Con la fórmula nueva, esas mismas 20
+    reintentos llevan a Nv.~21 (Raro), Nv.~35 (Épico) y Nv.40/tope
+    (Legendario) — una progresión rápida y con sentido, tal como pedía el
+    usuario. Aprovechado también para aclarar en el texto de la propia
+    pantalla (`UI.renderChampionTrial`, ui.js) que cada duelo ganado da
+    XP solo a ese luchador, ya que el mecanismo existía pero no se
+    comunicaba y por eso pasaba desapercibido.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

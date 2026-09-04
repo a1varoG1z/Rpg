@@ -1608,7 +1608,8 @@ UI.renderChampionTrial = function (state, wrap) {
   wrap.appendChild(el('h3', null, '⚔️ Prueba del Campeón'));
   wrap.appendChild(el('p', 'settings-info', `Elige un único luchador para una serie de duelos 1 contra 1
     cada vez más difíciles, sin curarse entre ellos — pierde y el intento termina ahí. Se guarda tu
-    mejor racha.`));
+    mejor racha. Cada duelo ganado da XP SOLO a ese luchador (bastante XP, más con cada duelo) — buena
+    forma de subir de nivel a un fichaje reciente sin meterlo en la Formación ni tocar el Mapa.`));
   const uid = state.champion.selectedUid;
   const entry = uid ? rosterEntry(state, uid) : null;
   const row = el('div', 'torre-row');
