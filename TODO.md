@@ -3679,6 +3679,34 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     exactamente lo que pidió el usuario ("hacer el juego más lento y no
     tan frenético").
 
+- [x] Bajado Voxite/Doxite de las etapas del Mapa (normal y jefe en
+    repetición) a petición explícita del usuario: insiste en que Pixite
+    tiene que ser la fuente de cristales dominante con diferencia, y que
+    Voxite/Doxite sean "un porcentaje muy bajo". Iterado en 3 rondas hasta
+    dar con un punto que se queda claramente bajo sin volver Legendario
+    inalcanzable:
+    - 1ª ronda (18%/5% jefe, 3%/0.6% normal): 31 de 40 pruebas de
+      Superfusión Legendario sin completar ni en 30.000 etapas — muy
+      agresivo, prácticamente rompía Legendario otra vez.
+    - 2ª ronda (35%/11% jefe, 8%/1.2% normal): 15-18 de 40 sin completar
+      — mejor, pero seguía siendo un problema real para media banda.
+    - 3ª ronda y VALOR FINAL (jefe en repetición: 45% Voxite / 18% Doxite,
+      antes 65%/35%; etapa normal: 20% Voxite / 4% Doxite, antes 40%/12%):
+      repetida la prueba con un límite de simulación mucho más alto
+      (30.000→100.000 etapas, N=20) para no confundir "muy lento" con
+      "nunca" — con este límite correcto, TODAS las pruebas completan
+      (0 de 20 sin terminar), con mediana ~30.650 etapas (~28 vueltas al
+      mapa de 1.089) para la primera Superfusión Legendario — lento de
+      verdad, pero genuinamente alcanzable, no una ilusión de "nunca"
+      como sugerían las dos rondas anteriores con un límite de prueba
+      demasiado corto. Volumen final: Voxite/Doxite quedan en ~0.19/0.04
+      por etapa normal y ~0.44/0.18 por jefe en repetición, frente a los
+      ~3.0 de Pixite — claramente la fuente minoritaria, como se pedía.
+      Los caminos Común e Infrecuente no se han vuelto a medir con este
+      valor exacto (sí con la ronda anterior, ver entrada de arriba);
+      dado que ninguno de los dos depende tanto de Voxite/Doxite como
+      Legendario, no deberían haber empeorado de forma notable.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

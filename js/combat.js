@@ -360,19 +360,17 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
       drops.voxite = 1;
       if (Math.random() < 0.3) drops.doxite = 1;
     } else {
-      // Superfusión necesita ~21 copias EXACTAS del mismo personaje —
-      // Voxite/Doxite (los cristales de los que depende un duplicado de
-      // Épico/Legendario, los que de verdad importan para invertir en un
-      // luchador concreto tipo Odín) casi no existían en repetición.
-      // Subido de nuevo (25%→45% / 8%→22%) al quitarle a Pixite el
-      // Legendario y bajarle Épico/Raro (ver CRYSTALS en data.js, a
-      // petición del usuario) — antes Pixite, pese a su tasa baja,
-      // aportaba MÁS intentos a Épico/Legendario que Voxite/Doxite solo
-      // por volumen; con Pixite ya fuera de ese papel, Voxite/Doxite
-      // tienen que cargar con todo el peso solos.
+      // Voxite/Doxite en repetición de jefe: bajado (65%→45% / 35%→18%) a
+      // petición explícita del usuario — insiste en que Pixite debe ser
+      // la fuente principal de cristales con diferencia. Dos intentos más
+      // agresivos (18%/5% y 35%/11%) dejaban Legendario prácticamente
+      // inalcanzable (31 y 15 de 40 pruebas sin completar ni en 30.000
+      // etapas, ver TODO.md) — este valor mantiene Legendario en "lento
+      // pero posible sin fallos" mientras Voxite/Doxite se quedan
+      // claramente por detrás de Pixite en volumen total.
       drops.pixite = 3 + Math.floor(Math.random() * 4);
-      if (Math.random() < 0.65) drops.voxite = 1;
-      if (Math.random() < 0.35) drops.doxite = 1;
+      if (Math.random() < 0.45) drops.voxite = 1;
+      if (Math.random() < 0.18) drops.doxite = 1;
     }
     // Igual que el cristal: el 70% de probabilidad de equipo es el premio
     // de vencer al jefe por primera vez. Repetirlo lo bajaba a una tabla de
@@ -389,10 +387,11 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
     const pixiteAvg = ZONE_PIXITE_TOTAL / MOB_STAGES_PER_ZONE;
     const v = MOB_STAGE_PIXITE_VARIANCE;
     drops.pixite = Math.max(0, Math.round(pixiteAvg) - v + Math.floor(Math.random() * (2 * v + 1)));
-    // Igual que en el jefe: subido (5%→25% / 1%→6%) para compensar que
-    // Pixite ya no aporta nada a Épico/Legendario (ver CRYSTALS, data.js).
-    if (Math.random() < 0.40) drops.voxite = 1;
-    if (Math.random() < 0.12) drops.doxite = 1;
+    // Voxite/Doxite de etapa normal: bajado (40%→20% / 12%→4%) a petición
+    // explícita del usuario, mismo motivo y mismo ajuste que en el jefe
+    // (ver comentario de arriba).
+    if (Math.random() < 0.20) drops.voxite = 1;
+    if (Math.random() < 0.04) drops.doxite = 1;
     if (Math.random() < 0.3) drops.gear = generateGear(randomGearSlot(), gearDropRarity(zoneIdx));
   }
   return { texel, fighterXp, drops };
