@@ -3481,21 +3481,54 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     bonus adicional sobre la subida de tasa en combate — no es la pieza
     que arregla el problema, solo un extra por seguir jugando, tal y como
     pidió el usuario.
-    LIMITACIÓN CONOCIDA, pendiente de decisión del usuario: el cálculo
-    de arriba es para el camino MÁS FÁCIL (Común). Repetido el mismo
-    análisis para el camino que de verdad importa (Raro→Épico→Legendario,
-    p.ej. Odín) usando Doxite (el cristal que más favorece Legendario, 20%
-    de probabilidad): la mediana analítica es ~7.900 invocaciones de
-    Doxite — no está mal en sí, pero con la tasa de Doxite ya subida
-    (~0.03/etapa de media) eso son ~250.000 combates. Para bajarlo a la
-    misma franja de ~1.000 combates haría falta ~8 Doxite de media por
-    etapa, lo que dejaría de sentirse como el cristal deliberadamente
-    escaso que es (0% de probabilidad en Pixite, pensado como "el cristal
-    especial"). Es decir: para Legendario, solo subir la tasa de cristales
-    no basta sin que Doxite deje de sentirse raro — probablemente hace
-    falta o bien tocar el coste de fusión (aunque sea solo para Legendario)
-    o algún mecanismo de puntería específico para Doxite. Sin resolver
-    todavía, a la espera de que el usuario decida cómo quiere abordarlo.
+    CORRECCIÓN a lo de arriba (el análisis inicial de Legendario era
+    erróneo): el primer cálculo solo consideraba Doxite en aislado, y
+    además la simulación tenía un bug (comparaba posiciones dentro de
+    arrays de tamaño distinto entre rarezas como si identificaran la misma
+    familia, en vez de seguir la cadena real `evolvesTo`). Rehecho bien
+    (simulando las 3 rarezas de cristal a la vez — con Pixite ya tan
+    abundante, su 0.5% de Legendario aporta MÁS intentos en total que el
+    20% de Doxite — y siguiendo `evolvesTo` en vez de índices de array):
+    mediana real ~4.100 combates para Raro→Épico→Legendario (frente a
+    ~1.150 del camino Común), una curva de "cuesta más pero no imposible"
+    razonable. CONCLUSIÓN FINAL: no hacía falta ningún ajuste adicional
+    para Legendario, el error era de cálculo, no del juego.
+
+- [ ] **Pendiente, a petición del usuario:** ampliar el número de Retos
+    de Tope de Tier disponibles (relacionado con la queja de que los
+    personajes de tier bajo/medio no tienen sitio una vez se consiguen
+    tiers altos — Tope de Tier ya es el mecanismo pensado para esto, pero
+    el usuario cree que hacen falta más). Aparcado hasta resolver primero
+    el punto de abajo (curva de nivel/etapas), a petición explícita del
+    usuario ("primero solucionemos el punto 1").
+
+- [ ] **En curso, requiere re-verificación completa antes de cerrar:** el
+    usuario propuso una dirección distinta (y más de fondo) para el
+    problema de "cristales de golpe poco orgánicos" que dejó el punto
+    anterior (waveCrystalDrops seguía dando 15-20 cristales de golpe por
+    etapa): en vez de solo repartir más fino, bajar la velocidad general
+    de la curva de nivel de TODO el mapa y aumentar el número de etapas de
+    lucha contra mobs por zona — mismo total de Texel/XP/cristales de la
+    zona, repartido entre más etapas más flojas. Motivación del usuario:
+    con una curva de nivel más lenta, un personaje recién invocado no se
+    queda tan descolgado de la banda actual (se puede meter directo en el
+    equipo en vez de tener que grindearlo primero), y de paso el reparto
+    de cristales se vuelve más granular de forma orgánica (más etapas
+    pequeñas en vez de una tirada gorda por etapa).
+    Esto mueve inevitablemente `LEVEL_CAP_ZONE_IDX` (la zona donde el
+    rival toca nivel tope) a una zona más tardía — es el mismo ancla del
+    que cuelga `lateZoneMult` (toda la escalada de zonas tardías), así que
+    recalcula en cascada TODO lo validado hoy con datos reales del usuario
+    (Llanura del Titán vs Templo del Sol Eclipsado, Salón de los Engaños,
+    el exponente de `bossAdaptiveMult`) — a diferencia de la alternativa
+    de subir XP (÷4, ya implementado) que NO tocaba ese ancla. Si esto
+    sale adelante, el `÷4` de fighterXpToNext se queda redundante (mismo
+    problema resuelto desde el otro lado) y debería revertirse.
+    Pendiente de que el usuario confirme dos números concretos antes de
+    implementar: (1) cuántas etapas por zona (¿15?), (2) en qué zona debe
+    alcanzarse nivel tope del rival (¿15-20?). Una vez confirmados, hay
+    que re-verificar con Playwright TODO lo de hoy con los nuevos valores
+    de `zonesPastCap`, no solo lo nuevo.
 
 ## Notas
 
