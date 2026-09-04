@@ -161,6 +161,10 @@
   });
   $('battleAutoBtn').addEventListener('click', () => UI.toggleAutoBattle());
   $('battleSpeedBtn').addEventListener('click', () => UI.cycleBattleSpeed());
+  // Salir de la Prueba del Campeón a mitad de racha (ver
+  // UI.exitChampionTrial) — solo visible tras un duelo ganado (ver
+  // UI.endBattle), así que no hace falta comprobar aquí en qué modo se está.
+  $('battleExitChampionBtn').addEventListener('click', () => UI.exitChampionTrial(state));
   $('battleCloseBtn').addEventListener('click', () => {
     $('battleOverlay').classList.add('hidden');
     window.__battleView = null;

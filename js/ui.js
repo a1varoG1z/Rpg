@@ -1599,6 +1599,50 @@ UI.openRoguelikeBoonPicker = function (state) {
 };
 
 // ---------- Prueba del Campeón ----------
+// Panel "en tiempo real" del luchador elegido (pedido explícito del
+// usuario, para poder ver cómo va subiendo de nivel sin tener que salir a
+// consultar su ficha) — se añade tras CADA duelo (ganado o perdido, ver
+// UI.endBattle), así se ve crecer duelo a duelo mientras se juega, no solo
+// al final. entry.level/entry.xp ya están actualizados en este punto (el
+// XP del duelo se aplica en UI.fightChampionDuel, antes de llegar aquí).
+// El retrato (creatureCanvas, un <img>) no se puede meter en un string de
+// innerHTML, así que deja un hueco vacío (#championLivePortrait) que
+// UI.endBattle rellena aparte justo después de fijar el HTML.
+function championLiveCreatureHtml(state) {
+  const uid = state.champion.selectedUid;
+  const entry = uid && rosterEntry(state, uid);
+  if (!entry) return '';
+  const def = fighterDef(entry.defId);
+  const maxed = entry.level >= XP_LEVEL_CAP;
+  const pct = maxed ? 100 : Math.round(entry.xp / fighterXpToNext(entry.level) * 100);
+  return `<div class="panel champion-live-panel">
+    <div class="fighter-modal-head">
+      <div id="championLivePortrait"></div>
+      <div>
+        <div class="item-modal-name">${def.name}</div>
+        <div class="xp-bar" style="margin-top:6px"><div class="xp-fill" style="width:${pct}%"></div></div>
+        <div class="xp-text">Nv. ${entry.level}${maxed ? ' (máx.)' : ' · ' + entry.xp + '/' + fighterXpToNext(entry.level)}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Salir voluntariamente de la Prueba a mitad de racha (pedido explícito
+// del usuario: "para no levelear en exceso si no quiere el usuario") — a
+// diferencia de perder un duelo, no hay penalización de ningún tipo: el
+// nivel/XP ya ganados por el luchador y la mejor racha (ya actualizada
+// duelo a duelo en UI.fightChampionDuel, sin esperar a este punto) se
+// quedan tal cual, solo se corta la cadena automática de "gana → siguiente
+// duelo ya mismo" que si no fuerza a seguir hasta perder.
+UI.exitChampionTrial = function (state) {
+  window.__championRun = null;
+  $('battleOverlay').classList.add('hidden');
+  window.__battleView = null;
+  UI.renderTopbar(state);
+  UI.renderTorre(state);
+  UI.showToast('🚪 Has salido de la Prueba — el nivel y la XP ganados se han guardado.');
+};
+
 // Duelos 1 contra 1: un único luchador elegido se enfrenta a rivales cada
 // vez más fuertes en serie, SIN curarse entre duelos — perder termina el
 // intento. Disponible desde el principio (sin desbloqueo, a diferencia de
@@ -3842,6 +3886,12 @@ UI.endBattle = function (view, result) {
   }
   saveGame(view.state);
   const body = $('battleResultBody');
+  // Botón de salir voluntariamente de la Prueba del Campeón (ver
+  // UI.exitChampionTrial) — oculto por defecto, solo se muestra tras un
+  // duelo ganado (championContinue), que es el único momento en el que
+  // tiene sentido "salir en vez de seguir": tras una derrota la Prueba ya
+  // ha terminado sola.
+  $('battleExitChampionBtn').classList.add('hidden');
   let html;
   if (outcome && outcome.championContinue) {
     html = `<h3>🏆 ¡Duelo ganado!</h3><p class="settings-info">Duelo ${outcome.duelsWon} superado — sigues sin curarte al siguiente.</p>`;
@@ -3849,8 +3899,11 @@ UI.endBattle = function (view, result) {
       html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>
         <div class="stat-row"><span>⭐ XP</span><span>+${outcome.rewards.fighterXp}</span></div>`;
     }
+    html += championLiveCreatureHtml(view.state);
+    $('battleExitChampionBtn').classList.remove('hidden');
   } else if (outcome && outcome.championDefeat) {
     html = `<h3>💀 Fin de la Prueba</h3><p class="settings-info">Caíste en el duelo ${outcome.duelsWon + 1}, tras ganar ${outcome.duelsWon}. Mejor racha: ${view.state.champion.bestStreak}.</p>`;
+    html += championLiveCreatureHtml(view.state);
   } else if (outcome && outcome.roguelikeContinue) {
     html = `<h3>🌀 ¡Ronda ${outcome.roundsCleared} superada!</h3><p class="settings-info">Sigues sin curarte a la siguiente ronda. Elige un bono al continuar.</p>`;
     if (outcome.rewards) {
@@ -3892,6 +3945,15 @@ UI.endBattle = function (view, result) {
   }
   html += battleStatsSummaryHtml(view);
   body.innerHTML = html;
+  // Retrato del panel "en tiempo real" de la Prueba del Campeón (ver
+  // championLiveCreatureHtml) — se rellena aparte porque creatureCanvas
+  // devuelve un nodo <img>, no un string, así que no puede ir dentro del
+  // innerHTML de arriba.
+  const livePortraitSlot = document.getElementById('championLivePortrait');
+  if (livePortraitSlot) {
+    const liveEntry = rosterEntry(view.state, view.state.champion.selectedUid);
+    if (liveEntry) livePortraitSlot.appendChild(creatureCanvas(liveEntry.defId, 56));
+  }
   $('battleResult').classList.remove('hidden');
 };
 

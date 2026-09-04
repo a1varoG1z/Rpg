@@ -3954,6 +3954,40 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     XP solo a ese luchador, ya que el mecanismo existía pero no se
     comunicaba y por eso pasaba desapercibido.
 
+- [x] Añadidos a la Prueba del Campeón, a petición explícita del usuario,
+    los dos huecos que le faltaban para ser una herramienta de levelear
+    cómoda de verdad:
+    1. **Visualizador en tiempo real del luchador**: nueva
+       `championLiveCreatureHtml(state)` (ui.js) — un panel con su
+       retrato (`creatureCanvas`), nombre, barra de XP y "Nv. X" que se
+       añade a la pantalla de resultado tras CADA duelo (ganado o
+       perdido, no solo al final), reutilizando el mismo patrón visual
+       de la ficha de luchador (`.xp-bar`/`.xp-fill`/`.xp-text`) para que
+       se sienta consistente con el resto del juego. Como el retrato es
+       un `<img>` (no se puede meter en un string de innerHTML), el hueco
+       `#championLivePortrait` se rellena aparte justo después de fijar
+       el HTML del resultado, en `UI.endBattle`.
+    2. **Botón "🚪 Salir con la racha actual"**: antes, tras ganar un
+       duelo, el único botón disponible ("Continuar") encadenaba
+       automáticamente al siguiente duelo — la única forma de parar era
+       perder. Nuevo botón `battleExitChampionBtn` (index.html, oculto
+       por defecto) que solo se muestra tras un duelo ganado (nunca tras
+       una derrota, ahí la Prueba ya ha terminado sola) y nueva
+       `UI.exitChampionTrial(state)` (ui.js, enganchada en main.js): corta
+       la cadena de duelos automática SIN ninguna penalización — el
+       nivel/XP ya ganados por el luchador y la mejor racha (que ya se
+       actualiza duelo a duelo, no al salir) se quedan tal cual, solo dejas
+       de forzar el siguiente duelo. Así se puede levelear exactamente lo
+       que se quiera sin arriesgar la racha en un duelo de más.
+    Verificado con Playwright (motor de combate real): tras ganar un
+    duelo, el botón de salir pasa de oculto a visible y el panel en vivo
+    muestra el nivel/XP ya actualizados con el retrato cargado; al pulsar
+    salir, `window.__championRun` queda a `null`, el overlay se oculta y
+    el nivel/XP/mejor racha del luchador se conservan intactos (no se
+    resetea nada). Comprobado también que una victoria normal del Mapa
+    NUNCA muestra este botón (sigue oculto), para no confundirlo con
+    otros modos.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
