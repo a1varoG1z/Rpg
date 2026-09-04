@@ -32,9 +32,37 @@ function buildUnitStats(defId, level, extraMult) {
   };
 }
 
+// Corrección de "aguante" SOLO para rivales, por clase — Campeón pesa
+// mucho más HP/DEF en su fórmula de clase que Gurú/Brujo (CLASS_INFO:
+// hp 145/def 22 de Campeón frente a hp 85/def 10 de Gurú, más del doble
+// de DEF), y computeDamage no compensa esa diferencia. IMPORTANTE (visto
+// por simulación repetida, promediando varias tiradas para quitar ruido):
+// esto NO explica por sí solo por qué una zona de pool Campeón+Campeón
+// (Gigante+Troll) se siente un muro — zonas de la misma profundidad SIN
+// ningún Campeón en el pool resultan casi igual de duras una vez se
+// promedian varias tiradas; el factor dominante ahí es el escalado
+// general de zona tardía (lateZoneMult), no la clase. Lo que SÍ es cierto
+// y medible es que Campeón pesa de más en la fórmula — así que este ajuste
+// se queda como una corrección real pero MODESTA (una zona toda-Campeón
+// recibe algo menos de daño que sin corregir, no se vuelve fácil), sin
+// pretender ser la solución completa al pico de dificultad reportado. Se
+// toca solo HP/DEF (no ATK/AGI/WIS) para no aplanar la identidad de cada
+// clase. Solo se usa aquí — makeUnit únicamente construye el lado 'enemy'
+// (nunca 'player', ver todas las llamadas en este archivo), así que nunca
+// toca las stats de un luchador que el jugador posea, ni las que se
+// muestran en la Pokédex o Comparar (esas usan buildUnitStats
+// directamente, no makeUnit).
+const ENEMY_CLASS_TOUGHNESS_MULT = { campeon: 0.8 };
+function enemyClassToughnessMult(cls) { return ENEMY_CLASS_TOUGHNESS_MULT[cls] || 1; }
+
 function makeUnit(side, defId, level, extraMult, sourceUid) {
   const def = fighterDef(defId);
   const stats = buildUnitStats(defId, level, extraMult);
+  if (!def.fixedStats) {
+    const toughMult = enemyClassToughnessMult(def.class);
+    stats.maxHp = Math.round(stats.maxHp * toughMult);
+    stats.def = Math.round(stats.def * toughMult);
+  }
   return {
     id: 'u' + (unitSeq++), side, defId, sourceUid: sourceUid || null,
     name: def.name, element: def.element, class: def.class, rarity: def.rarity,

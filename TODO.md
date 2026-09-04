@@ -3268,6 +3268,41 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     funciona; y abrir directamente desde un hueco ocupado de la rejilla
     de Formación (el flujo de siempre) sigue funcionando exactamente igual.
 
+- [x] Corrección de aguante por clase para mobs rivales (`enemyClassToughnessMult`,
+    combat.js) — el usuario reportó un pico de dificultad concreto en
+    Llanura del Titán (Gigante + Gran Troll) que le obligaba a sobre-
+    invertir, dejando el resto del juego trivial después. La investigación
+    inicial (una sola tirada por zona) apuntaba a que Campeón (clase de
+    ambos mobs) pesa mucho más HP/DEF en su fórmula que Gurú/Brujo
+    (CLASS_INFO: hp 145/def 22 de Campeón frente a hp 85/def 10 de Gurú),
+    y que las 6 zonas con pool Campeón+Campeón sufrían mucho más daño que
+    zonas "vecinas" sin ningún Campeón.
+    Repetida la comparación promediando varias tiradas por zona (para
+    quitar el ruido de una sola tirada) antes de dar el ajuste por
+    cerrado: el panorama es más matizado de lo que parecía. Zonas de la
+    MISMA profundidad SIN ningún Campeón en el pool (Brujo+Brujo,
+    Brujo+Gurú) resultan casi igual de duras que las de Campeón+Campeón
+    una vez promediadas — el factor dominante ahí es el escalado general
+    de zona tardía (`lateZoneMult`), no la clase. Incluso reduciendo el
+    HP/DEF de Campeón un 60% (muy por encima de lo aplicado), 3 de 4
+    zonas todo-Campeón seguían perdiéndose limpiamente. Así que la
+    corrección de clase es real y medible (Campeón sí pesa de más en la
+    fórmula, y `computeDamage` no lo compensa) pero NO es la explicación
+    completa del pico de dificultad reportado — ni con un ajuste agresivo
+    se convierte por sí sola en el arreglo del problema descrito.
+    Implementado igualmente como corrección modesta y honesta: `campeon: 0.8`
+    en `ENEMY_CLASS_TOUGHNESS_MULT`, aplicado solo a HP/DEF (no ATK/AGI/WIS,
+    para no aplanar la identidad de la clase) y SOLO a rivales — `makeUnit`
+    únicamente construye el lado 'enemy' en todo el archivo, así que nunca
+    toca las stats de un luchador que el jugador posea (Cerbero y demás
+    Campeón jugables no cambian) ni las de un jefe de zona (`fixedStats` es
+    su propio mecanismo, sin relación con la fórmula de clase).
+    Verificado: Cerbero (jugador) y un jefe Campeón (fixedStats) no
+    cambian nada; `gigante_epico` como rival sí baja HP/DEF un 20%;
+    promediando 4 tiradas por zona en las 4 zonas todo-Campeón más
+    profundas, el daño medio recibido baja de 23.649 a 22.182 (~6%) sin
+    que ninguna zona se vuelva trivial ni se rompa nada.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
