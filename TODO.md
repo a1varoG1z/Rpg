@@ -3602,6 +3602,37 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     jugando de verdad, investigar con datos reales como se ha hecho toda
     la sesión.
 
+- [x] A petición del usuario: quitado el Legendario de Pixite del todo (era
+    0.5%) y bajados Épico/Raro/Infrecuente (2.5%→1%, 12%→6%, 30%→23%),
+    subiendo Común al resto (55%→70%) — objetivo explícito: diferenciar
+    mejor el rol de cada cristal (Pixite = combustible barato de Común/
+    Infrecuente para fusionar hacia arriba; Voxite = tramo medio Raro/
+    Épico; Doxite = el único camino realista a Épico/Legendario por tirada
+    directa) y que la fusión (evolucionar duplicados hacia arriba en vez
+    de esperar suerte con la tirada) pese más en la progresión.
+    Verificado el impacto real con la misma simulación de Superfusión de
+    la ronda anterior (siguiendo `evolvesTo`, consumiendo los cristales
+    reales de `stageRewards`): el camino Raro→Legendario, que antes de
+    este cambio recibía sin querer MÁS intentos de Pixite que de Doxite
+    (por puro volumen, pese a la tasa de Pixite de solo 0.5%), se disparó
+    a una mediana de ~17.200 etapas con casi la mitad de las pruebas (19
+    de 40) sin completarse ni en 30.000 etapas — el mismo tipo de "casi
+    imposible" que ya se había corregido antes en la sesión, esta vez
+    causado a propósito por el cambio de tasa. Compensado subiendo
+    Voxite/Doxite de las etapas normales (5%→25%→40% / 1%→6%→12%, dos
+    rondas de ajuste) y de los jefes en repetición (25%→45%→65% /
+    8%→22%→35%) hasta que el camino Legendario volvió a una mediana
+    razonable sin fallos: **~8.620 etapas, 0 de 40 pruebas sin completar**
+    (frente a ~7.690 etapas equivalentes antes de este cambio — algo más
+    lento a propósito, coherente con que ahora cueste más por tirada
+    directa y haga más falta invertir en fusión). Progresión final
+    verificada por camino: Común ~2.585 etapas, Infrecuente ~6.083,
+    Raro→Legendario ~8.620 — una escalera sensata, cada tramo más caro que
+    el anterior sin que ninguno se vuelva inalcanzable. Volumen de Voxite/
+    Doxite final: ~0.4/0.12 por etapa normal, ~0.65/0.34 por jefe en
+    repetición (Pixite se queda en ~7/etapa) — siguen sintiéndose cristales
+    minoritarios frente a Pixite, no se ha roto la jerarquía de rareza.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

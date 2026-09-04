@@ -360,13 +360,16 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
       // Superfusión necesita ~21 copias EXACTAS del mismo personaje —
       // Voxite/Doxite (los cristales de los que depende un duplicado de
       // Épico/Legendario, los que de verdad importan para invertir en un
-      // luchador concreto tipo Odín) casi no existían en repetición
-      // (3%/1%) — un jugador podía terminar el mapa entero sin conseguir
-      // NINGUNA superfusión real (reportado directamente: llegar a la
-      // zona 22 con 0). Subido a Pixite garantizado (3-6) + 25%/8%.
+      // luchador concreto tipo Odín) casi no existían en repetición.
+      // Subido de nuevo (25%→45% / 8%→22%) al quitarle a Pixite el
+      // Legendario y bajarle Épico/Raro (ver CRYSTALS en data.js, a
+      // petición del usuario) — antes Pixite, pese a su tasa baja,
+      // aportaba MÁS intentos a Épico/Legendario que Voxite/Doxite solo
+      // por volumen; con Pixite ya fuera de ese papel, Voxite/Doxite
+      // tienen que cargar con todo el peso solos.
       drops.pixite = 3 + Math.floor(Math.random() * 4);
-      if (Math.random() < 0.25) drops.voxite = 1;
-      if (Math.random() < 0.08) drops.doxite = 1;
+      if (Math.random() < 0.65) drops.voxite = 1;
+      if (Math.random() < 0.35) drops.doxite = 1;
     }
     // Igual que el cristal: el 70% de probabilidad de equipo es el premio
     // de vencer al jefe por primera vez. Repetirlo lo bajaba a una tabla de
@@ -383,8 +386,10 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
     const pixiteAvg = ZONE_PIXITE_TOTAL / MOB_STAGES_PER_ZONE;
     const v = MOB_STAGE_PIXITE_VARIANCE;
     drops.pixite = Math.max(0, Math.round(pixiteAvg) - v + Math.floor(Math.random() * (2 * v + 1)));
-    if (Math.random() < 0.05) drops.voxite = 1;
-    if (Math.random() < 0.01) drops.doxite = 1;
+    // Igual que en el jefe: subido (5%→25% / 1%→6%) para compensar que
+    // Pixite ya no aporta nada a Épico/Legendario (ver CRYSTALS, data.js).
+    if (Math.random() < 0.40) drops.voxite = 1;
+    if (Math.random() < 0.12) drops.doxite = 1;
     if (Math.random() < 0.3) drops.gear = generateGear(randomGearSlot(), gearDropRarity(zoneIdx));
   }
   return { texel, fighterXp, drops };

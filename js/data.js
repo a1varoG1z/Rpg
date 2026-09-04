@@ -631,8 +631,18 @@ const ZONES = [
 ];
 const STAGE_ENERGY_COST = 6;
 
+// Pixite (el cristal barato y abundante, ver stageRewards en combat.js)
+// ya NO da Legendario en absoluto (antes 0.5%) y da bastante menos Épico/
+// Raro/Infrecuente (a petición del usuario, para diferenciar mejor a los 3
+// cristales por rol: Pixite es "combustible" de Común/Infrecuente para
+// fusionar hacia arriba, Voxite cubre el tramo medio Raro/Épico, Doxite es
+// el único camino realista a un Épico/Legendario por tirada directa en vez
+// de por fusión). El camino a Legendario sigue existiendo vía Doxite (y en
+// menor medida Voxite) y vía fusión ascendiendo desde una semilla Raro
+// conseguida con cualquier cristal — ver TODO.md para los números
+// verificados de cuánto tarda cada camino con esta tasa.
 const CRYSTALS = {
-  pixite: { label: 'Cristal Pixite', color: '#a8815a', icon: '🟤', rates: { comun: 0.55, infrecuente: 0.30, raro: 0.12, epico: 0.025, legendario: 0.005 } },
+  pixite: { label: 'Cristal Pixite', color: '#a8815a', icon: '🟤', rates: { comun: 0.70, infrecuente: 0.23, raro: 0.06, epico: 0.01, legendario: 0 } },
   voxite: { label: 'Cristal Voxite', color: '#c9c9d9', icon: '⚪', rates: { comun: 0.10, infrecuente: 0.30, raro: 0.40, epico: 0.17, legendario: 0.03 } },
   doxite: { label: 'Cristal Doxite', color: '#e8c23c', icon: '🟡', rates: { comun: 0, infrecuente: 0.05, raro: 0.30, epico: 0.45, legendario: 0.20 } },
 };
