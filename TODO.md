@@ -3707,6 +3707,29 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       dado que ninguno de los dos depende tanto de Voxite/Doxite como
       Legendario, no deberían haber empeorado de forma notable.
 
+- [x] Añadida conversión de cristales (Invocar) a petición del usuario:
+    una válvula de escape para la mala suerte puntual con Voxite/Doxite
+    (que se acaban de dejar deliberadamente escasos, ver la entrada de
+    arriba) sin pisar esa escasez. Siempre en dos pasos (Pixite→Voxite,
+    Voxite→Doxite — nunca un salto directo Pixite→Doxite), a un ratio a
+    propósito peor que la caída natural media (25 Pixite = 1 Voxite, 8
+    Voxite = 1 Doxite, frente a ~16:1 y ~5:1 de la caída media actual)
+    para que convertir nunca sea mejor que jugar con suerte normal, solo
+    un seguro caro. Bloqueada hasta llegar a la zona 10 (`Sabana Ardiente`,
+    `CRYSTAL_CONVERT_UNLOCK_ZONES` en state.js) — antes de eso ni Voxite ni
+    Doxite hacen falta de verdad, así que no tenía sentido ofrecer un
+    atajo gratis tan pronto; ambos números (ratio y zona de desbloqueo)
+    son constantes sueltas fáciles de re-tocar si el usuario quiere
+    "regularlo" más adelante, tal como pidió.
+    Implementado: `convertCrystals`/`crystalConvertUnlocked` (state.js) +
+    botón por panel en `UI.renderInvocar` (ui.js) — bloqueado muestra un
+    aviso con el nombre de la zona necesaria en vez del botón; desbloqueado
+    muestra "Convertir N → 1 [cristal]", deshabilitado si no hay
+    suficiente del cristal de origen. Verificado con Playwright: con 1
+    sola zona desbloqueada no aparece el botón (solo el aviso de
+    bloqueado); con 11 zonas desbloqueadas (zona 10 incluida) el botón
+    aparece y funciona — 1000 Pixite → 975 tras convertir, +1 Voxite.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

@@ -2664,6 +2664,25 @@ UI.renderInvocar = function (state) {
       if (state.currencies.gemas >= cost) { state.currencies.gemas -= cost; state.currencies[type]++; saveGame(state); UI.renderInvocar(state); UI.renderTopbar(state); }
     });
     panel.appendChild(buyBtn);
+    // Convertir hacia el siguiente cristal — válvula de escape cara y
+    // bloqueada al principio (ver convertCrystals en state.js) para no
+    // pisar la escasez de Voxite/Doxite, solo cubrir la mala suerte
+    // puntual de quien ya está bien avanzado.
+    const rate = CRYSTAL_CONVERT_RATES[type];
+    if (rate) {
+      const toInfo = CRYSTALS[rate.to];
+      if (!crystalConvertUnlocked(state)) {
+        const unlockZoneName = ZONES[CRYSTAL_CONVERT_UNLOCK_ZONES - 1].name;
+        panel.appendChild(el('p', 'settings-info', `🔒 Convertir en ${toInfo.icon} ${toInfo.label} se desbloquea al llegar a ${unlockZoneName}.`));
+      } else {
+        const convBtn = el('button', 'mini-btn', `Convertir ${rate.cost} → 1 ${toInfo.icon} ${toInfo.label}`);
+        convBtn.disabled = state.currencies[type] < rate.cost;
+        convBtn.addEventListener('click', () => {
+          if (convertCrystals(state, type)) { saveGame(state); UI.renderInvocar(state); UI.renderTopbar(state); }
+        });
+        panel.appendChild(convBtn);
+      }
+    }
     wrap.appendChild(panel);
   });
 };

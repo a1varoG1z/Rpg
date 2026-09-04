@@ -362,6 +362,35 @@ function summonOne(state, crystalType) {
   return applySummonResult(state, def.id);
 }
 
+// --- Conversión de cristales ---
+// Pixite tiene que ser con diferencia la fuente principal de cristales
+// (ver CRYSTALS y stageRewards) — Voxite/Doxite se dejaron deliberadamente
+// escasos para que Legendario siga costando de verdad. Esto deja al
+// jugador sin ninguna válvula de escape si tiene mala suerte concreta con
+// Voxite/Doxite aunque le sobre Pixite: esta conversión (Pixite→Voxite→
+// Doxite, siempre en dos pasos, nunca un salto directo) es esa válvula —
+// cara a propósito (peor ratio que la caída natural media de cristales,
+// ver comentario de CRYSTAL_CONVERT_RATES) y bloqueada hasta bien entrado
+// el mapa (CRYSTAL_CONVERT_UNLOCK_ZONES), para que no sirva de atajo
+// gratis en las primeras zonas donde ni falta hacen los cristales altos.
+const CRYSTAL_CONVERT_UNLOCK_ZONES = 11; // desbloqueada al llegar a la zona 10 (11 zonas desbloqueadas)
+// Ratio peor que la media de caída natural (~16:1 Pixite:Voxite, ~5:1
+// Voxite:Doxite con las tasas actuales de stageRewards) para que convertir
+// nunca sea mejor que jugar con suerte normal, solo un seguro caro contra
+// la mala suerte puntual.
+const CRYSTAL_CONVERT_RATES = { pixite: { to: 'voxite', cost: 25 }, voxite: { to: 'doxite', cost: 8 } };
+function crystalConvertUnlocked(state) {
+  return state.progress.unlockedZones.length >= CRYSTAL_CONVERT_UNLOCK_ZONES;
+}
+function convertCrystals(state, fromType) {
+  if (!crystalConvertUnlocked(state)) return false;
+  const rate = CRYSTAL_CONVERT_RATES[fromType];
+  if (!rate || state.currencies[fromType] < rate.cost) return false;
+  state.currencies[fromType] -= rate.cost;
+  state.currencies[rate.to]++;
+  return true;
+}
+
 function applyHomunculoResult(state, tier) {
   const id = 'homunculo_t' + tier;
   state.homunculos[id] = (state.homunculos[id] || 0) + 1;
