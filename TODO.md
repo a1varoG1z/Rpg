@@ -3502,33 +3502,105 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     el punto de abajo (curva de nivel/etapas), a petición explícita del
     usuario ("primero solucionemos el punto 1").
 
-- [ ] **En curso, requiere re-verificación completa antes de cerrar:** el
-    usuario propuso una dirección distinta (y más de fondo) para el
-    problema de "cristales de golpe poco orgánicos" que dejó el punto
-    anterior (waveCrystalDrops seguía dando 15-20 cristales de golpe por
-    etapa): en vez de solo repartir más fino, bajar la velocidad general
-    de la curva de nivel de TODO el mapa y aumentar el número de etapas de
-    lucha contra mobs por zona — mismo total de Texel/XP/cristales de la
-    zona, repartido entre más etapas más flojas. Motivación del usuario:
-    con una curva de nivel más lenta, un personaje recién invocado no se
-    queda tan descolgado de la banda actual (se puede meter directo en el
-    equipo en vez de tener que grindearlo primero), y de paso el reparto
-    de cristales se vuelve más granular de forma orgánica (más etapas
-    pequeñas en vez de una tirada gorda por etapa).
-    Esto mueve inevitablemente `LEVEL_CAP_ZONE_IDX` (la zona donde el
-    rival toca nivel tope) a una zona más tardía — es el mismo ancla del
-    que cuelga `lateZoneMult` (toda la escalada de zonas tardías), así que
-    recalcula en cascada TODO lo validado hoy con datos reales del usuario
-    (Llanura del Titán vs Templo del Sol Eclipsado, Salón de los Engaños,
-    el exponente de `bossAdaptiveMult`) — a diferencia de la alternativa
-    de subir XP (÷4, ya implementado) que NO tocaba ese ancla. Si esto
-    sale adelante, el `÷4` de fighterXpToNext se queda redundante (mismo
-    problema resuelto desde el otro lado) y debería revertirse.
-    Pendiente de que el usuario confirme dos números concretos antes de
-    implementar: (1) cuántas etapas por zona (¿15?), (2) en qué zona debe
-    alcanzarse nivel tope del rival (¿15-20?). Una vez confirmados, hay
-    que re-verificar con Playwright TODO lo de hoy con los nuevos valores
-    de `zonesPastCap`, no solo lo nuevo.
+- [x] **Rediseño completo de la curva de nivel/etapas/recompensas del Mapa**
+    — sustituye y deja obsoleto TODO lo anterior sobre XP/nivel de esta
+    sesión (el `÷4` de `fighterXpToNext`, `LEVEL_CAP_ZONE_IDX` derivado de
+    `STAGES_PER_ZONE`). El usuario, en vez de aprobar el reparto "por
+    oleada" (que seguía dando 15-20 cristales de golpe por etapa), pidió
+    ir a la raíz: bajar la velocidad general de la curva de nivel de todo
+    el mapa Y aumentar el número de etapas de mobs por zona a la vez,
+    dejando el número de etapas a mi criterio y sin importar en qué zona
+    se alcance el nivel tope, con una lista de objetivos de diseño (lógica
+    orgánica etapas/cristales; buena relación cristales/XP/monedas/equipo
+    vs. dificultad, jefes siempre más duros que mobs por ser 1 contra 9;
+    pasable sin rejugar todos los mapas muchas veces; llegar preparado a
+    Torre Batalla; buen balance progresión/dificultad; priorizar que sea
+    divertido sobre preservar la lógica ya hecha; calibrar con escenarios
+    realistas, no de suerte extrema).
+    Implementado:
+    - `STAGES_PER_ZONE`: 8 → 15 (14 etapas de mobs + 1 jefe). La rampa de
+      nº de rivales dentro de la zona (`rowCount` en `buildEnemyBand`,
+      combat.js) se reescala proporcional (antes `stageIdx<3`, ahora
+      `stageIdx<5`, misma proporción ~43%).
+    - `fighterXpToNext` (data.js): REVERTIDO a la fórmula original
+      (`20×nivel^1.5`, sin el `÷4`) — el ajuste de ritmo ya no vive en el
+      coste de subir de nivel.
+    - Nivel del rival totalmente desacoplado de `STAGES_PER_ZONE` y de la
+      etapa dentro de la zona: nueva `zoneEnemyLevel(zoneIdx)` (data.js)
+      depende SOLO de la zona, con una rampa deliberadamente lenta —
+      `LEVEL_CAP_ZONE_IDX` pasa de derivarse de `STAGES_PER_ZONE` (antes
+      efectivamente zona 4) a una constante manual = 28 (de 33), así que
+      el rival no toca nivel tope hasta prácticamente el final del mapa.
+      Todas las etapas de una misma zona pelean ahora al MISMO nivel (lo
+      que varía dentro de la zona es solo cuántos rivales trae cada
+      oleada). Actualizados todos los puntos que antes calculaban el nivel
+      a mano vía `1+globalIdx` (buildEnemyBand y gearDropRarity en
+      combat.js; bossAdaptiveMult y bossesOverview en state.js;
+      elementalDungeonLevel y el nivel de jefe de Torre en data.js) para
+      usar `zoneEnemyLevel` de forma consistente.
+    - Recompensas (Texel/XP/Pixite) de `stageRewards` (combat.js)
+      reescritas de cero: ya NO dependen de `globalIdx` (posición global
+      en el mapa) sino de `zoneIdx` — `zoneTexelTotal(zoneIdx)` y
+      `zoneXpTotal(zoneIdx)` fijan el total de limpiar una zona entera una
+      vez, repartido a partes iguales entre las 14 etapas de mobs (65%/
+      70% del total) + una porción para el jefe (35%/30%, con su propio
+      bonus de primera vez vs. repetición). `zoneXpTotal` calibrado
+      (`40+zoneIdx×190`) para que la XP acumulada de un jugador NATURAL
+      (una sola pasada, sin grindear) llegue a Nv.40 justo sobre la zona
+      28 — verificado con Playwright usando `fighterAddXp` real: el nivel
+      natural del jugador queda SIEMPRE muy cerca del nivel del rival en
+      las 33 zonas (nunca más de 2-3 niveles por detrás, a veces por
+      delante), algo que nunca se había conseguido en toda la sesión.
+      `ZONE_PIXITE_TOTAL` fijo en 95 (NO escala con la zona, es "moneda de
+      invocación" no un indicador de poder) — mismo total medio por zona
+      que la ronda de cambios anterior, pero repartido entre 14 etapas en
+      vez de 7: Pixite medio por etapa baja de ~12.8 a ~7.0, verificado —
+      ya no es "un pufo de cristales", es un puñado modesto por combate.
+      `gearDropRarity` (combat.js) pasa a tomar `zoneIdx` en vez de
+      `globalIdx` (coeficiente reescalado de 0.01→0.08 para el mismo
+      máximo relativo).
+    - **Bug encontrado y corregido durante la verificación**: los jefes de
+      zona usan `fixedStats` fijos escritos a mano por zona (`addBoss`),
+      que NUNCA dependieron de la fórmula de nivel — estaban calibrados a
+      ojo para el ritmo ANTIGUO (rápido). Con la curva nueva mucho más
+      lenta, un jugador natural en la zona 4 es ahora Nv.9 en vez del
+      Nv.33 de antes, pero el jefe de esa zona seguía esperando al
+      jugador viejo: verificado en combate, los jefes de las primeras ~12
+      zonas se perdían el 100% de las veces con una banda a ritmo
+      natural, mientras las oleadas de mobs de esas mismas zonas se
+      ganaban sin problema (los mobs SÍ escalan con `zoneEnemyLevel`).
+      Corregido con `bossLevelCorrectionMult(zoneIdx)` (data.js): reescala
+      `fixedStats` por la proporción entre `levelGrowth` del nivel NUEVO y
+      del nivel ANTIGUO en esa zona (converge a ×1 en las últimas zonas,
+      donde ambas curvas ya tocan Nv.40) — aplicado como suelo siempre
+      activo dentro de `bossAdaptiveMult` (state.js), multiplicado por el
+      escalado adaptativo existente cuando el jugador va sobrado.
+      Re-verificado tras el arreglo: 100% de victorias en las 33 zonas,
+      tanto oleadas como jefes, con banda a ritmo natural (0-3★ según la
+      zona, equipo creciendo poco a poco) Y con banda maxeada — antes del
+      arreglo, la banda natural perdía el 100% de las veces en zonas 0-10.
+    - Torre Batalla comprobada con una banda "recién terminado el mapa"
+      (Nv.40, mezcla épico/legendario, 3★, equipo Nv.18): el nivel más
+      duro tanto de mobs (15 rivales seguidos sin curar) como de jefes (el
+      último, ×5 repeticiones) se gana 3/3 en la prueba — llega preparado,
+      sin ser trivial (multiplicadores de jefe entre ×1.25 y ×2.65 según
+      la profundidad de origen).
+    - Superfusión re-verificada con el sistema nuevo: mediana de ~2.076
+      ETAPAS (no invocaciones) para la primera del camino Común — con el
+      mapa ahora en 495 etapas totales (antes 264), la proporción relativa
+      de grindeo es prácticamente idéntica a la de la ronda anterior
+      (~4.2 vueltas al mapa en ambos casos), así que el ritmo de
+      Superfusión ya validado no se ha visto alterado, solo repartido en
+      pasos más pequeños.
+    LIMITACIÓN CONOCIDA: no se ha re-verificado exhaustivamente cada zona
+    específica que se ajustó a mano en rondas anteriores de hoy (Salón de
+    los Engaños sigue destacando como la más dura incluso con banda
+    maxeada — jefe con ~21.450 de daño medio recibido frente a un rango de
+    250-4.600 en el resto de zonas tardías — pero sigue ganándose siempre;
+    no se ha repetido la comparación exacta Llanura vs. Templo con estos
+    valores nuevos). Si el usuario reporta algún punto concreto raro
+    jugando de verdad, investigar con datos reales como se ha hecho toda
+    la sesión.
 
 ## Notas
 

@@ -829,7 +829,7 @@ UI.openZoneStages = function (state, zoneIdx) {
     grid.appendChild(btn);
   }
   wrap.appendChild(grid);
-  wrap.appendChild(el('p', 'settings-info', 'Cada etapa cuesta ' + STAGE_ENERGY_COST + ' ⚡ y se recorre nodo a nodo, con varios encuentros antes de la recompensa. La etapa 8 es el jefe de zona: un único combate, solo contra él.'));
+  wrap.appendChild(el('p', 'settings-info', 'Cada etapa cuesta ' + STAGE_ENERGY_COST + ' ⚡ y se recorre nodo a nodo, con varios encuentros antes de la recompensa. La etapa ' + STAGES_PER_ZONE + ' es el jefe de zona: un único combate, solo contra él.'));
 
   // Duelo por apuesta: solo si ya se derrotó al jefe de esta zona — una
   // revancha contra ÉL (con las estadísticas reforzadas, ver

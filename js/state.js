@@ -578,12 +578,17 @@ function applyFormationPreset(state, presetId) {
 // cambio no rompe nada: sigue ganando siempre salvo en esa misma zona.
 function bossAdaptiveMult(state, zoneIdx) {
   const zone = ZONES[zoneIdx];
-  const globalIdx = zoneIdx * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
-  const level = Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalIdx));
+  const level = zoneEnemyLevel(zoneIdx);
+  // Corrige el desfase de fixedStats frente a la nueva curva de nivel (ver
+  // el comentario de bossLevelCorrectionMult en data.js) — se aplica
+  // SIEMPRE, incluso sin overpower, porque el problema que corrige existe
+  // ya en la base (fixedStats calibrado para el ritmo antiguo), no algo
+  // que dependa de cómo de bien vaya el jugador.
+  const baseline = bossLevelCorrectionMult(zoneIdx);
   const refStats = buildUnitStats(zone.pool[0], level);
   const refPower = fighterPowerScore({ hp: refStats.maxHp, atk: refStats.atk, def: refStats.def, agi: refStats.agi, wis: refStats.wis });
   const bandUids = state.band.flat().filter(Boolean);
-  if (!bandUids.length || refPower <= 0) return 1;
+  if (!bandUids.length || refPower <= 0) return baseline;
   let bandTotal = 0, counted = 0;
   bandUids.forEach(uid => {
     const entry = rosterEntry(state, uid);
@@ -591,14 +596,14 @@ function bossAdaptiveMult(state, zoneIdx) {
     bandTotal += fighterPowerScore(fighterStats(state, entry));
     counted++;
   });
-  if (!counted) return 1;
+  if (!counted) return baseline;
   const overpower = (bandTotal / counted) / refPower;
-  if (overpower <= 1) return 1;
+  if (overpower <= 1) return baseline;
   // El techo también crece con la zona (lateZoneMult, ver data.js) para que
   // el jefe conserve margen sobre su propio camino en zonas avanzadas, en
   // vez de quedarse siempre en el mismo ×4.5 mientras el camino ya sigue
   // subiendo con lateZoneMult.
-  return Math.min(4.5 * lateZoneMult(zoneIdx), Math.pow(overpower, 0.85));
+  return baseline * Math.min(4.5 * lateZoneMult(zoneIdx), Math.pow(overpower, 0.85));
 }
 
 // Jefes de la Torre Batalla: reutiliza bossAdaptiveMult referenciado a la
@@ -882,14 +887,11 @@ function objectivesSummary(state) {
 // jefe (mismo tope de XP_LEVEL_CAP que buildEnemyBand en combat.js), para
 // poder mostrar sus estadísticas de combate reales en la ficha.
 function bossesOverview(state) {
-  return ZONES.map((zone, zoneIdx) => {
-    const globalIdx = zoneIdx * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
-    return {
-      zoneIdx, zone, def: bossDef(zone.pool[2]),
-      defeated: highestClearedStage(state, zone.id) >= STAGES_PER_ZONE - 1,
-      level: Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalIdx)),
-    };
-  });
+  return ZONES.map((zone, zoneIdx) => ({
+    zoneIdx, zone, def: bossDef(zone.pool[2]),
+    defeated: highestClearedStage(state, zone.id) >= STAGES_PER_ZONE - 1,
+    level: zoneEnemyLevel(zoneIdx),
+  }));
 }
 
 // --- Energía ---

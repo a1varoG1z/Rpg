@@ -165,22 +165,21 @@ const MOB_POWER_MULT = 0.72;
 function buildEnemyBand(zoneIdx, stageIdx, bossExtraMult) {
   const zone = ZONES[zoneIdx];
   const isBoss = stageIdx === STAGES_PER_ZONE - 1;
-  const globalIdx = zoneIdx * STAGES_PER_ZONE + stageIdx;
-  // El jugador tiene un tope de nivel (XP_LEVEL_CAP); el rival no debe
-  // superarlo nunca, o las últimas zonas se vuelven matemáticamente
-  // imposibles por mucho que se invierta en equipo/rareza/estrellas (con
-  // 33 zonas de 8 etapas, sin este tope el rival llegaba a nivel 264 frente
-  // a un jugador tope 40 — más de 3 veces su multiplicador de stats en la
-  // última zona). El nivel tope se alcanza en la zona índice 4 (Ruinas
-  // Abisales) y la rareza del pool también tope en Épico desde la zona 6
-  // (Guarida del Dragón) — ambos ejes se quedan planos las ~28 zonas
-  // restantes, así que a partir de ahí la dificultad la retoma
-  // lateZoneMult (ver data.js), mucho más suave que la escalada por nivel.
-  const level = Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalIdx));
+  // El nivel del rival depende SOLO de la zona (zoneEnemyLevel, data.js) —
+  // todas las etapas de una misma zona pelean al mismo nivel, suba lo que
+  // suba STAGES_PER_ZONE. La escalada es deliberadamente lenta (tope 40 no
+  // se alcanza hasta la zona 28 de 33, ver el comentario de
+  // LEVEL_CAP_ZONE_IDX en data.js) — lo que sí cambia según se avanza
+  // DENTRO de una zona es cuántos rivales trae cada oleada (rowCount, más
+  // abajo), no su nivel.
+  const level = zoneEnemyLevel(zoneIdx);
   if (isBoss) {
     return { rows: [[makeBossUnit(zone.pool[2], level, bossExtraMult)]], isBoss, level };
   }
-  const rowCount = stageIdx < 3 ? 2 : 3;
+  // Rampa de nº de rivales dentro de la zona, adaptada a las 14 etapas de
+  // mobs actuales (antes 7): las primeras 5 (un tercio) traen 2 filas, el
+  // resto 3 — misma proporción que antes (3 de 7 con 3 filas).
+  const rowCount = stageIdx < 5 ? 2 : 3;
   const rows = [];
   for (let r = 0; r < rowCount; r++) {
     const row = [];
@@ -287,42 +286,41 @@ function buildElementalDungeonEncounters(elementId) {
   return rows;
 }
 
-// Cristales de una oleada de MOBS de una etapa normal (2-3 por etapa, ver
-// stageRewards) — antes era una sola tirada al terminar la etapa entera;
-// ahora se reparte en una tirada POR OLEADA para que caigan "orgánicamente"
-// según se avanza en vez de todo de golpe al final (mismo total esperado,
-// solo repartido). Ver el comentario de stageRewards para el porqué del
-// volumen: sube ~20× sobre lo que había antes de esta ronda de cambios.
-const WAVE_PIXITE_RANGE = [3, 7]; // entero uniforme en [3,7], media 5
-const WAVE_VOXITE_CHANCE = 0.05;
-const WAVE_DOXITE_CHANCE = 0.01;
-function waveCrystalDrops() {
-  const [lo, hi] = WAVE_PIXITE_RANGE;
-  const drops = { pixite: lo + Math.floor(Math.random() * (hi - lo + 1)), voxite: 0, doxite: 0 };
-  if (Math.random() < WAVE_VOXITE_CHANCE) drops.voxite = 1;
-  if (Math.random() < WAVE_DOXITE_CHANCE) drops.doxite = 1;
-  return drops;
-}
+// --- Recompensas del Mapa: escaladas por ZONA, no por etapa ---
+// Texel/XP/Pixite de limpiar una zona entera una vez (todas sus etapas de
+// mobs + el jefe) se fijan aquí en función de zoneIdx SOLO — stageRewards
+// reparte ese total entre las MOB_STAGES_PER_ZONE etapas de mobs (a partes
+// iguales, todas "flojas") + una porción aparte para el jefe. Así, subir
+// STAGES_PER_ZONE reparte el mismo total en trozos más finos sin cambiar
+// cuánto da limpiar la zona, ni acelerar la escalada de nivel (que ya no
+// depende de esto en absoluto, ver zoneEnemyLevel en data.js).
+const MOB_STAGES_PER_ZONE = STAGES_PER_ZONE - 1;
+// Calibrado (ver TODO.md) para que la XP acumulada de un jugador NATURAL
+// (sin grindear, una sola pasada) alcance el total necesario para Nv.40
+// justo sobre LEVEL_CAP_ZONE_IDX (zona 28) — el mismo objetivo que antes
+// se perseguía bajando fighterXpToNext, ahora conseguido por el lado de
+// la recompensa en vez del coste.
+function zoneTexelTotal(zoneIdx) { return 540 + zoneIdx * 640; }
+function zoneXpTotal(zoneIdx) { return 40 + zoneIdx * 190; }
+// Pixite total de una zona NO escala con zoneIdx (a diferencia de Texel/
+// XP) — es la "moneda de invocación", no un indicador de poder, así que
+// no hay motivo de diseño para que una zona temprana dé menos que una
+// tardía. Se mantiene igual al total medio que ya daba la ronda de
+// cambios anterior (~94/zona con 8 etapas) para no re-litigar otra vez el
+// ritmo de Superfusión ya validado, solo repartirlo en trozos más finos
+// (14 etapas de mobs en vez de 7 → ~6.8 de media por etapa en vez de
+// ~12.8, ya no "un pufo de 15-20 cristales de golpe").
+const ZONE_PIXITE_TOTAL = 95;
+const MOB_STAGE_PIXITE_VARIANCE = 2; // +-2 sobre la media, entero
 
-// `isFirstClear`: la Mazmorra Elemental es contenido pensado para
-// repetirse (tiene su propio contador state.elementalClears), pero sin
-// distinguir primera vez de repetición sufría el mismo problema que los
-// jefes del Mapa — Voxite garantizado y una rareza de equipo que crecía
-// con `globalIdx` sin techo (fija en esta zona, "Cantera Devorada", en
-// ~58% de Legendario garantizado) en cada repetición. Mismo criterio que
-// stageRewards: cristal garantizado y rareza alta solo la primera vez,
-// probabilidad baja y tabla de rareza fija en las repeticiones. El equipo
-// SIGUE siendo garantizado siempre (era así desde el principio, "equipo
-// garantizado" por la desventaja elemental de partida) — solo cambia su
-// rareza.
 function elementalDungeonRewards(isFirstClear) {
-  const globalIdx = ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID) * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
-  // Más generoso que una etapa normal de esa misma zona (×3.5/×3 en vez de
-  // ×3/×2.5 de un jefe de zona) — la desventaja elemental de partida
-  // contra el Guardián hace que el reto sea mayor.
-  const texel = Math.round((20 + globalIdx * 8) * 3.5);
-  const fighterXp = Math.round((15 + globalIdx * 4) * 3);
-  const drops = { voxite: 0, doxite: 0, gear: generateGear(randomGearSlot(), gearDropRarity(globalIdx, isFirstClear)) };
+  const zoneIdx = ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID);
+  // Más generoso que el jefe de esa misma zona (×3.5/×3 en vez de la
+  // porción normal de jefe) — la desventaja elemental de partida contra
+  // el Guardián hace que el reto sea mayor.
+  const texel = Math.round(zoneTexelTotal(zoneIdx) * 0.35 * 3.5);
+  const fighterXp = Math.round(zoneXpTotal(zoneIdx) * 0.30 * 3);
+  const drops = { voxite: 0, doxite: 0, gear: generateGear(randomGearSlot(), gearDropRarity(zoneIdx, isFirstClear)) };
   if (isFirstClear) {
     drops.voxite = 1;
     if (Math.random() < 0.4) drops.doxite = 1;
@@ -341,33 +339,31 @@ function elementalDungeonRewards(isFirstClear) {
 // (rejugar la etapa, o el Duelo por apuesta) usan en su lugar una
 // probabilidad baja, del mismo orden que una etapa normal.
 function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
-  const globalIdx = zoneIdx * STAGES_PER_ZONE + stageIdx;
-  // Un jefe es UNA sola oleada, mientras que la recompensa de una etapa
-  // normal ya cubre sus 2-3 oleadas juntas — con el mismo ×3/×2.5 en
-  // cualquier repetición, el jefe pagaba de 8 a 23 veces más Texel/XP por
-  // combate individual que jugar el resto de la etapa, y era la forma más
-  // eficiente de farmear ambos con diferencia. La primera vez mantiene el
-  // premio completo (recompensa real por avanzar); las repeticiones bajan
-  // a ×1.5/×1.5 — sigue pagando algo más que una etapa normal (un jefe
-  // sigue siendo un combate más duro), pero ya no de forma desproporcionada.
-  const bossTexelMult = isBoss ? (isFirstClear ? 3 : 1.5) : 1;
-  const bossXpMult = isBoss ? (isFirstClear ? 2.5 : 1.5) : 1;
-  const texel = Math.round((20 + globalIdx * 8) * bossTexelMult);
-  const fighterXp = Math.round((15 + globalIdx * 4) * bossXpMult);
+  const zTexel = zoneTexelTotal(zoneIdx), zXp = zoneXpTotal(zoneIdx);
+  // El jefe (una sola oleada) se lleva una porción fija del total de la
+  // zona (35% Texel / 30% XP) — el resto se reparte a partes iguales
+  // entre las MOB_STAGES_PER_ZONE etapas de mobs. En repetición el jefe
+  // baja a ~0.5-0.6× ese reparto (sigue pagando algo más que una etapa
+  // normal, un jefe sigue siendo un combate más duro, pero ya no de forma
+  // desproporcionada — mismo criterio que antes de esta ronda de cambios).
   const drops = { pixite: 0, voxite: 0, doxite: 0, gear: null };
+  let texel, fighterXp;
   if (isBoss) {
+    const texelMult = isFirstClear ? 1 : 0.5;
+    const xpMult = isFirstClear ? 1 : 0.6;
+    texel = Math.round(zTexel * 0.35 * texelMult);
+    fighterXp = Math.round(zXp * 0.30 * xpMult);
     if (isFirstClear) {
       drops.voxite = 1;
       if (Math.random() < 0.3) drops.doxite = 1;
     } else {
       // Superfusión necesita ~21 copias EXACTAS del mismo personaje —
-      // incluso con el volumen de Pixite ya subido en las etapas normales,
       // Voxite/Doxite (los cristales de los que depende un duplicado de
       // Épico/Legendario, los que de verdad importan para invertir en un
-      // luchador concreto tipo Odín) seguían casi inexistentes en
-      // repetición (3%/1%) — un jugador podía terminar el mapa entero sin
-      // conseguir NINGUNA superfusión real (reportado directamente:
-      // llegar a la zona 22 con 0). Subido a 6/25%/8%.
+      // luchador concreto tipo Odín) casi no existían en repetición
+      // (3%/1%) — un jugador podía terminar el mapa entero sin conseguir
+      // NINGUNA superfusión real (reportado directamente: llegar a la
+      // zona 22 con 0). Subido a Pixite garantizado (3-6) + 25%/8%.
       drops.pixite = 3 + Math.floor(Math.random() * 4);
       if (Math.random() < 0.25) drops.voxite = 1;
       if (Math.random() < 0.08) drops.doxite = 1;
@@ -380,45 +376,31 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
     // fueran de rareza baja. En la repetición baja también la probabilidad
     // misma de que caiga algo, a un 8%.
     const bossGearChance = isFirstClear ? 0.7 : 0.08;
-    if (Math.random() < bossGearChance) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx, isFirstClear));
+    if (Math.random() < bossGearChance) drops.gear = generateGear(randomGearSlot(), gearDropRarity(zoneIdx, isFirstClear));
   } else {
-    // Antes: una sola tirada de 60% de 1 Pixite al terminar la etapa
-    // entera. La Superfusión necesita ~21 copias EXACTAS del mismo
-    // personaje para dar UNA sola estrella (elegido al azar entre 31-112
-    // posibles según rareza, sin ningún sistema de puntería) — simulado
-    // por Monte Carlo, la mediana real era ~14.000 invocaciones incluso en
-    // el mejor caso posible, frente a las ~100 que da jugarse el mapa
-    // entero una vez a la tasa anterior. Repartido en una tirada POR
-    // OLEADA (waveCrystalDrops, ~20× más volumen que antes) en vez de una
-    // sola al final de la etapa: mismo principio que ya tenía el juego
-    // (más frecuente y repartido se siente mejor que un único golpe de
-    // suerte), apuntado a que la primera Superfusión esté al alcance de un
-    // jugador que rejuega de forma moderada (unos cuantos cientos de
-    // combates, no miles) en vez de prácticamente nunca.
-    const rowCount = stageIdx < 3 ? 2 : 3;
-    for (let w = 0; w < rowCount; w++) {
-      const wd = waveCrystalDrops();
-      drops.pixite += wd.pixite;
-      drops.voxite += wd.voxite;
-      drops.doxite += wd.doxite;
-    }
-    if (Math.random() < 0.3) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx));
+    texel = Math.round(zTexel * 0.65 / MOB_STAGES_PER_ZONE);
+    fighterXp = Math.round(zXp * 0.70 / MOB_STAGES_PER_ZONE);
+    const pixiteAvg = ZONE_PIXITE_TOTAL / MOB_STAGES_PER_ZONE;
+    const v = MOB_STAGE_PIXITE_VARIANCE;
+    drops.pixite = Math.max(0, Math.round(pixiteAvg) - v + Math.floor(Math.random() * (2 * v + 1)));
+    if (Math.random() < 0.05) drops.voxite = 1;
+    if (Math.random() < 0.01) drops.doxite = 1;
+    if (Math.random() < 0.3) drops.gear = generateGear(randomGearSlot(), gearDropRarity(zoneIdx));
   }
   return { texel, fighterXp, drops };
 }
 
-// La rareza del equipo que sueltan los jefes sube con `globalIdx` SIN
-// TECHO — bien como recompensa de la primera vez que se vence a un jefe
-// (cuanto más avanzada la zona, mejor el premio), pero roto si se puede
-// repetir sin límite: el jefe de la zona 6 ya da ~35% de Legendario por
-// victoria, y a partir de la zona 16 es prácticamente garantizado — volver
-// a un jefe ya vencido para farmear Legendario gratis. `isFirstClear` (ver
-// stageRewards) evita esto en las repeticiones usando una tabla FIJA, la
-// misma en cualquier zona, sin el bonus de `globalIdx` — solo se pasa
-// `false` explícitamente desde jefes; el resto de llamadas (etapas
-// normales, Mazmorra Elemental) no cambia.
-function gearDropRarity(globalIdx, isFirstClear) {
-  const roll = isFirstClear === false ? Math.random() : Math.random() + globalIdx * 0.01;
+// La rareza del equipo que sueltan los jefes sube con `zoneIdx` SIN TECHO
+// — bien como recompensa de la primera vez que se vence a un jefe (cuanto
+// más avanzada la zona, mejor el premio), pero roto si se puede repetir
+// sin límite. `isFirstClear` (ver stageRewards) evita esto en las
+// repeticiones usando una tabla FIJA, la misma en cualquier zona, sin el
+// bonus de `zoneIdx` — solo se pasa `false` explícitamente desde jefes; el
+// resto de llamadas (etapas normales, Mazmorra Elemental) no cambia.
+// Coeficiente 0.08 (antes 0.01 sobre globalIdx 0-263, máximo ~2.63) para
+// dar un máximo similar sobre zoneIdx 0-32 (máx. ~2.56).
+function gearDropRarity(zoneIdx, isFirstClear) {
+  const roll = isFirstClear === false ? Math.random() : Math.random() + zoneIdx * 0.08;
   if (roll > 0.97) return 'legendario';
   if (roll > 0.85) return 'epico';
   if (roll > 0.55) return 'raro';

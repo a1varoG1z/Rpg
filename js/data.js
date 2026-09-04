@@ -629,7 +629,6 @@ const ZONES = [
   { id: 'torre_prohibida', name: 'Torre Prohibida', emoji: '🏰', color: '#2a1f3a', pool: ['gargola_epico', 'dementor_epico', 'boss_balrog'] },
   { id: 'salon_enganos', name: 'Salón de los Engaños', emoji: '🎭', color: '#3a2424', pool: ['troll_epico', 'gigante_epico', 'boss_tifon'] },
 ];
-const STAGES_PER_ZONE = 8;
 const STAGE_ENERGY_COST = 6;
 
 const CRYSTALS = {
@@ -773,52 +772,75 @@ const BAND_LINES = [
 function bandLineInfo(id) { return BAND_LINES.find(l => l.id === id) || BAND_LINES[0]; }
 const XP_LEVEL_CAP = 40;
 // Coste de subir de nivel — el ÚNICO sitio del que cuelga toda la XP del
-// juego (etapas, jefes, Torre, Mazmorra Elemental, Arena...), así que
-// tocarlo aquí equivale a subir TODAS las recompensas de XP a la vez sin
-// tener que tocar cada una por separado. Bajado ÷4 (antes 20×nivel^1.5):
-// jugando el mapa sin grindear nada, un jugador natural solo llegaba a
-// nivel 13 al terminar Ruinas Abisales (zona 4) — justo donde el rival YA
-// toca su propio tope de nivel 40 (ver el comentario sobre
-// LEVEL_CAP_ZONE_IDX más abajo) — y no alcanzaba nivel 40 hasta la zona 22,
-// dejando 18 zonas (más de la mitad del mapa) con el rival siempre a tope
-// mientras el jugador seguía muy por debajo. Verificado en combate (10
-// tiradas por zona, para quitar ruido): con la XP actual (×1), Guarida del
-// Dragón (zona 5) se perdía el 100% de las veces con cualquier inversión
-// razonable de estrellas/equipo para ese punto del juego. Se probó primero
-// ÷3 (tope natural sobre la zona 12) pero dejaba Guarida del Dragón en un
-// 50% de victorias — mejor que el muro original, pero seguía siendo
-// básicamente cara o cruz en la zona que se quería arreglar. Con ÷4 el
-// jugador natural llega a nivel 40 sobre la zona 10 (dos zonas antes que
-// con ÷3, sin ser una corrección brusca como la primera opción evaluada
-// —tope en zona 4-6— que habría dejado la sensación de subir de nivel
-// agotada casi de inmediato) y Guarida del Dragón pasa a ganarse el 100%
-// de las veces (antes 0%), Ruinas Abisales 100% (antes 60%) y Cantera
-// Devorada 100% (antes 0%) — el nivel del jugador se queda bastante por
-// debajo del rival en esas zonas (Nv.20-28 frente a Nv.40) pero ya no es
-// un abismo, y el resto de ejes de progresión (rareza, estrellas, equipo)
-// cierran la diferencia, que es el reparto de trabajo que ya tenía
-// pensado el propio diseño (ver el comentario sobre LEVEL_CAP_ZONE_IDX).
-// Cuevas de Cristal (zona 2) queda como excepción — no mejora de forma
-// limpia con más XP en ninguna prueba (20%→90%→60%, sin relación clara
-// con el multiplicador), así que probablemente tiene una causa propia
-// aparte del desfase de nivel — pendiente de investigar aparte.
-function fighterXpToNext(level) { return Math.floor(20 * Math.pow(level, 1.5) / 4); }
+// juego (etapas, jefes, Torre, Mazmorra Elemental, Arena...). Fórmula
+// original sin tocar — el ajuste de ritmo de nivel ya no vive aquí (se
+// intentó primero bajando este coste, ver historial en TODO.md) sino en
+// zoneEnemyLevel() de abajo: el nivel del rival ahora depende SOLO de la
+// zona, no de cuántas etapas tenga por dentro (ver STAGES_PER_ZONE), así
+// que las recompensas de XP (ver stageRewards en combat.js) son las que se
+// calibran para que el ritmo NATURAL de un jugador (sin grindear) siga de
+// cerca esta misma curva zona a zona.
+function fighterXpToNext(level) { return Math.floor(20 * Math.pow(level, 1.5)); }
 
-// A partir de esta zona (índice 4 = Ruinas Abisales, la 5ª de 33) el nivel
-// del rival ya toca XP_LEVEL_CAP y deja de crecer (ver el comentario sobre
-// el tope de nivel del rival en buildEnemyBand, combat.js) — pero eso no
-// puede significar que las ~28 zonas restantes (85% del mapa) se queden
-// todas con la MISMA dificultad exacta mientras el jugador sigue subiendo
-// equipo/estrellas/rareza de invocación sin límite alguno. lateZoneMult
-// retoma la curva de dificultad más allá del tope de nivel, mucho más
-// suave que la escalada por nivel (raíz cuadrada en vez de lineal) para no
-// repetir la explosión que tenía el rival sin tope (nivel 264 en la última
-// zona frente al tope 40 del jugador — más de 5 veces su multiplicador de
-// stats). Se usa tanto para los mobs del camino (MOB_POWER_MULT, en
-// combat.js) como para el techo del escalado adaptativo del jefe
-// (bossAdaptiveMult, en state.js), así el jefe conserva margen para seguir
-// siendo más duro que su propio camino en las zonas más avanzadas.
-const LEVEL_CAP_ZONE_IDX = Math.floor((XP_LEVEL_CAP - 1) / STAGES_PER_ZONE);
+// Nº de etapas por zona — sube de 8 a 15 (14 de mobs + 1 jefe) a petición
+// del usuario, para repartir de forma más "orgánica" la XP/Texel/cristales
+// de cada zona entre más combates más flojos en vez de menos combates con
+// premios más gordos (ver stageRewards en combat.js). IMPORTANTE: el nivel
+// del rival (zoneEnemyLevel, justo abajo) se calcula a propósito a partir
+// de zoneIdx, NUNCA de STAGES_PER_ZONE — así, subir este número reparte
+// mejor los premios sin acelerar ni frenar la escalada de nivel (antes,
+// con el nivel calculado como 1+zoneIdx*STAGES_PER_ZONE+etapa, más etapas
+// por zona significaba automáticamente nivel más alto por zona, el efecto
+// contrario al que se buscaba).
+const STAGES_PER_ZONE = 15;
+
+// El nivel del rival ya NO depende de STAGES_PER_ZONE ni de la etapa
+// dentro de la zona (todas las etapas de una misma zona pelean al MISMO
+// nivel; lo que cambia según se avanza dentro de la zona es la cantidad de
+// rivales por oleada, ver buildEnemyBand en combat.js) — depende solo de
+// zoneIdx, con una subida deliberadamente MUY gradual: nivel tope 40 no se
+// alcanza hasta la zona 28 (de 33), dejando solo las últimas zonas ya a
+// tope. Motivo (pedido explícito del usuario, con la vieja fórmula —nivel
+// tope en la zona 4, sea cual sea STAGES_PER_ZONE— ya se había demostrado
+// dos veces que se necesitaba parchear la XP del jugador para no perderla
+// de vista, ver TODO.md): con una escalada tan lenta, un personaje recién
+// invocado con suerte no se queda tan descolgado del nivel de la banda
+// actual como para no poder meterlo directamente a pelear.
+const LEVEL_CAP_ZONE_IDX = 28;
+function zoneEnemyLevel(zoneIdx) {
+  return Math.min(XP_LEVEL_CAP, 1 + Math.round(zoneIdx * (XP_LEVEL_CAP - 1) / LEVEL_CAP_ZONE_IDX));
+}
+
+// Los jefes de zona pelean con estadísticas FIJAS escritas a mano por zona
+// (def.fixedStats, ver addBoss) — a diferencia de los mobs del camino, NO
+// dependen de zoneEnemyLevel para nada, así que al ralentizar la curva de
+// nivel (antes tope en zona 4, ahora zona 28) se quedaron calibrados para
+// un jugador que ya no existe: uno que en la zona 4 sería nivel 33 (ritmo
+// ANTIGUO, 8 etapas por zona, 1+zona×8+7) en vez del nivel 9 real de ahora
+// — verificado en combate, los jefes de las primeras ~12 zonas se perdían
+// el 100% de las veces con una banda a ritmo natural, mientras que las
+// oleadas de mobs de esas mismas zonas se ganaban sin problema (los mobs
+// SÍ escalan con zoneEnemyLevel, por eso no les afectaba). Este factor
+// reescala fixedStats a la potencia que tendría un jugador a ritmo natural
+// bajo la curva NUEVA en vez de la antigua, multiplicando el propio
+// multiplicador adaptativo del jefe (bossAdaptiveMult, state.js) — así se
+// corrige el desfase sin tocar ninguno de los ~33 jefes a mano, y
+// converge a ×1 (sin cambio) en las últimas zonas, donde ambas curvas ya
+// tocan el mismo tope de nivel 40.
+function bossLevelCorrectionMult(zoneIdx) {
+  const oldLevel = Math.min(XP_LEVEL_CAP, 1 + zoneIdx * 8 + 7);
+  return levelGrowth(zoneEnemyLevel(zoneIdx)) / levelGrowth(oldLevel);
+}
+
+// Más allá de LEVEL_CAP_ZONE_IDX el nivel del rival ya no sube — pero con
+// el tope ahora tan cerca del final del mapa (zona 28 de 33) apenas quedan
+// zonas donde esto entre en juego (antes, con el tope en zona 4, eran 28
+// de 33 zonas — el 85% del mapa — las que dependían de esto; ahora son
+// solo las últimas ~5, un colofón final en vez del motor principal de
+// dificultad tardía). Se mantiene igual para esas últimas zonas y para
+// Torre Batalla (donde SÍ hace falta un margen de dificultad más allá del
+// nivel tope, al ser contenido pensado para jugarse tras terminar el mapa
+// entero).
 const LATE_ZONE_GROWTH_RATE = 0.35;
 function lateZoneMult(zoneIdx) {
   const zonesPastCap = Math.max(0, zoneIdx - LEVEL_CAP_ZONE_IDX);
@@ -867,11 +889,10 @@ function buildTorreLevels() {
   [mobLevels, bossLevels].forEach(section => {
     section.forEach((level, sectionIdx) => {
       level.sectionIdx = sectionIdx;
-      // Potencia del rival: se reutiliza el mismo tramo de dificultad que
-      // ya tiene calibrado su zona de origen (el de su última etapa, la
-      // del jefe), con el mismo tope que el resto del juego.
-      const globalStageIdx = level.originZoneIdx * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
-      level.enemyLevel = Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalStageIdx));
+      // Potencia del rival: se reutiliza el mismo nivel que ya tiene
+      // calibrado su zona de origen en el Mapa (zoneEnemyLevel, mismo tope
+      // que el resto del juego).
+      level.enemyLevel = zoneEnemyLevel(level.originZoneIdx);
       // Nº de rivales: crece cada 8 niveles de su propia escalera. Los
       // mobs llegan en filas de hasta 3 simultáneos, como una oleada
       // normal; los jefes SIEMPRE en solitario, en oleadas sucesivas — un
@@ -1016,9 +1037,7 @@ function buildElementalDungeons() {
 }
 const ELEMENTAL_DUNGEONS = buildElementalDungeons();
 function elementalDungeonLevel() {
-  const zoneIdx = ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID);
-  const globalStageIdx = zoneIdx * STAGES_PER_ZONE + (STAGES_PER_ZONE - 1);
-  return Math.min(XP_LEVEL_CAP, Math.max(1, 1 + globalStageIdx));
+  return zoneEnemyLevel(ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID));
 }
 
 // ---------- Arena: temporadas ----------
@@ -1170,9 +1189,9 @@ const OBJECTIVES = [
   { id: 'sef_estrellas_30', icon: '🌟', label: 'Acumula 30 estrellas de Superfusión', reward: rG(80), get: (st, s) => s.totalSefStars, target: 30 },
 
   // --- Cristales --- (bonus adicional sobre la subida de tasa en combate,
-  // ver waveCrystalDrops en combat.js — no es la pieza principal que
-  // arregla la escasez de Superfusión, solo un extra de hitos por seguir
-  // jugando, como pidió el usuario)
+  // ver stageRewards en combat.js — no es la pieza principal que arregla
+  // la escasez de Superfusión, solo un extra de hitos por seguir jugando,
+  // como pidió el usuario)
   { id: 'cristales_victorias_25', icon: '🔮', label: 'Gana 25 combates', reward: rC('pixite', 15), get: (st, s) => s.battlesWon, target: 25 },
   { id: 'cristales_victorias_150', icon: '🔮', label: 'Gana 150 combates', reward: rC('pixite', 40), get: (st, s) => s.battlesWon, target: 150 },
   { id: 'cristales_victorias_350', icon: '🔮', label: 'Gana 350 combates', reward: rC('voxite', 15), get: (st, s) => s.battlesWon, target: 350 },
