@@ -3769,6 +3769,73 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     directo), con el botón "Saltar »" disponible para quien sí quiera
     saltárselo manualmente.
 
+- [x] Ampliada la escalera de "Tope de Tier" (Fase 1, Retos) de 15 a 28
+    niveles, retomando la tarea que se había dejado pendiente. Mismo
+    patrón que los 15 originales pero un escalón más duro: se añade
+    `tc_legendario` (techo de rareza Legendario sin restricción de
+    elemento/clase), los 5 elementos ahora también en Épico (antes solo
+    llegaban hasta Raro: `tc_epico_fuego/viento/tierra/rayo/agua`), las 5
+    clases ahora en Legendario (antes solo hasta Épico:
+    `tc_legendario_campeon/picaro/guru/brujo/explorador`), y dos nuevos
+    filtros combinados de los tres ejes a la vez (rareza+elemento+clase)
+    con distinta combinación que "El Filtro Final" original para que ese
+    no sea el único: `tc_final2` (Épico · Agua · Gurú) y `tc_final3`
+    (Legendario · Rayo · Pícaro). No hizo falta tocar ni
+    `buildTierCapEncounters` (combat.js) ni `tierCapRewards` (data.js) —
+    ambas ya escalaban genéricamente con `idx`/`TIER_CAP_LEVELS.length`
+    sin ningún límite hardcodeado a 15, así que la ampliación fue pura
+    adición de datos. Verificado con Playwright: los 28 niveles tienen un
+    pool de `FIGHTERS` no vacío para su restricción (ninguna combinación
+    rareza+elemento+clase se queda sin candidatos, incluidos los dos
+    filtros triples nuevos); `buildTierCapEncounters` genera oleadas
+    correctas y de nivel de enemigo correctamente escalado para índices
+    de muestra a lo largo de toda la escalera (0, 14, 15, 20, 27);
+    `tierCapRewards` crece linealmente sin saltos en los mismos índices;
+    la pantalla de Retos renderiza las 28 filas con las etiquetas
+    correctas y respeta el desbloqueo secuencial (los niveles nuevos
+    siguen bloqueados hasta superar el anterior).
+
+- [x] Añadidos más Logros ("de todos los tipos", a petición del usuario),
+    de 106 a 133 en total, con nuevos escalones en casi todas las
+    categorías existentes y una categoría nueva:
+    - Mapa: `etapas_500` (500 etapas superadas), `jefes_20` (20 jefes de
+      zona).
+    - Colección: `roster_100`, `nivel_max_30`, `forma_final_25`,
+      `legendarios_1/5/15` (nº de Legendarios en el roster, nuevo stat
+      `legendarioCount` en `objectivesSummary`), `sef_estrellas_50`,
+      `estrellas_max_1/5` (nº de luchadores con las 3★ de Superfusión al
+      máximo, nuevo stat `starredCount`).
+    - Cristales: `cristales_victorias_700`, `cristales_jefes_todos`
+      (superar todos los jefes de zona al menos una vez),
+      `cristales_convertir_1/10` (usar la conversión de cristales
+      añadida antes en esta misma sesión, nuevo stat
+      `state.stats.crystalsConverted` — ya existía el contador, faltaba
+      usarlo en un Logro).
+    - Combate: `victorias_1000`, `dano_500000`, `curacion_10000/100000`
+      (curación total, stat `totalHealDone` que ya existía sin usar),
+      `arena_75`.
+    - Equipo: `equipo_80`, `equipo_nivel_20`, `equipo_legendario_1`
+      (nueva pieza Legendaria en inventario, nuevo stat
+      `gearLegendarioCount`).
+    - Retos especiales: `campeon_50`, `torre_40`, `torre_todos` (target
+      dinámico `TORRE_LEVELS.length`), `roguelike_50`, `tiercap_15`,
+      `tiercap_22` (sobre la escalera de Tope de Tier ya ampliada arriba
+      a 28 niveles — `tiercap_todos` sigue con target dinámico
+      `TIER_CAP_LEVELS.length`, así que automáticamente pasó a pedir 28
+      sin tocar ese Logro).
+    - Homúnculos: `homunculos_100`.
+    - Constancia: `dias_jugados_60`.
+    - Riqueza (categoría nueva, usando `totalTexelEarned` y
+      `totalFighterXpEarned`, dos stats acumulados históricos que ya
+      existían en `state.stats`/`objectivesSummary` pero no los usaba
+      ningún Logro): `texel_10000/100000/500000`,
+      `xp_10000/100000/500000`.
+    Verificado con Playwright: los 133 Logros calculan `get`/`target` sin
+    lanzar excepciones ni devolver `NaN`/valores no numéricos sobre una
+    partida nueva; la pantalla de Objetivos (`UI.openObjectives`)
+    renderiza las 133 filas correctamente con el contador "0/133" en la
+    cabecera.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

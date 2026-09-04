@@ -53,6 +53,7 @@ function createNewState() {
       battlesWon: 0, battlesLost: 0,
       totalDmgDealt: 0, totalDmgReceived: 0, totalHealDone: 0,
       totalTexelEarned: 0, totalFighterXpEarned: 0, highestSingleHit: 0,
+      crystalsConverted: 0,
     },
     settings: { infiniteEnergy: false, showMedallion: true, enableTorreBatalla: false, enableElementalDungeon: false, enableRoguelike: false },
     // Torre Batalla: cuántas veces se ha superado cada nivel (clave =
@@ -388,6 +389,7 @@ function convertCrystals(state, fromType) {
   if (!rate || state.currencies[fromType] < rate.cost) return false;
   state.currencies[fromType] -= rate.cost;
   state.currencies[rate.to]++;
+  state.stats.crystalsConverted++;
   return true;
 }
 
@@ -923,7 +925,9 @@ function objectivesSummary(state) {
     rosterSize: state.roster.length,
     maxLevelCount: state.roster.filter(r => r.level >= XP_LEVEL_CAP).length,
     finalFormCount: rosterDefs.filter(d => d && !d.evolvesTo).length,
+    legendarioCount: rosterDefs.filter(d => d && d.rarity === 'legendario').length,
     totalSefStars: state.roster.reduce((sum, r) => sum + r.stars, 0),
+    starredCount: state.roster.filter(r => r.stars >= 3).length,
     elementsInRoster: new Set(rosterDefs.map(d => d && d.element)).size, totalElements: ELEMENT_ORDER.length,
     classesInRoster: new Set(rosterDefs.map(d => d && d.class)).size, totalClasses: Object.keys(CLASS_INFO).length,
     battlesWon: state.stats.battlesWon, battlesLost: state.stats.battlesLost,
@@ -933,7 +937,9 @@ function objectivesSummary(state) {
     arenaRank: state.arena.rank, arenaBestRank: state.arena.bestRank,
     roguelikeBestRound: state.roguelike.bestRound,
     gearOwned: state.gearInventory.length,
+    gearLegendarioCount: state.gearInventory.filter(g => g.rarity === 'legendario').length,
     homunculosTotal: state.homunculos.homunculo_t1 + state.homunculos.homunculo_t2 + state.homunculos.homunculo_t3,
+    crystalsConverted: state.stats.crystalsConverted,
   };
 }
 
@@ -1017,7 +1023,7 @@ function migrateState(state) {
     if (!state.formationPresets) state.formationPresets = [];
     if (!state.progress.daysPlayed) state.progress.daysPlayed = [];
     if (!state.stats) state.stats = { battlesWon: 0, battlesLost: 0 };
-    ['totalDmgDealt', 'totalDmgReceived', 'totalHealDone', 'totalTexelEarned', 'totalFighterXpEarned', 'highestSingleHit'].forEach(key => {
+    ['totalDmgDealt', 'totalDmgReceived', 'totalHealDone', 'totalTexelEarned', 'totalFighterXpEarned', 'highestSingleHit', 'crystalsConverted'].forEach(key => {
       if (state.stats[key] === undefined) state.stats[key] = 0;
     });
     // Partidas guardadas antes de que existiera este registro: se
