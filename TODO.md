@@ -3756,6 +3756,19 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     ficha → aparece el panel → seleccionar copia → botón se habilita →
     confirmar → ficha se refresca con el resultado correcto).
 
+- [x] Quitado el auto-salto del carrusel de revelado (Invocar) que se había
+    añadido junto con "Invocar todo" — por encima de 20 resultados saltaba
+    solo al resumen en cuadrícula sin pasar por el carrusel carta a carta.
+    El usuario pidió explícitamente que nunca se salte automáticamente,
+    aunque sean tandas grandes — el botón "Saltar »" (ya existente) se
+    queda como la única forma de saltar, siempre a mano. Quitada la
+    constante `MULTI_REVEAL_CARD_LIMIT` y el `if` que la usaba en
+    `UI.showMultiReveal` (ui.js); ahora siempre entra por `renderCard()`
+    sea cual sea `results.length`. Verificado con Playwright: invocando 60
+    Pixite de golpe, se muestra el carrusel carta a carta (no el resumen
+    directo), con el botón "Saltar »" disponible para quien sí quiera
+    saltárselo manualmente.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

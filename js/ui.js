@@ -2787,19 +2787,18 @@ UI.showSingleReveal = function (result) {
 // Revelado x10: en vez del antiguo "pop" simultáneo de una rejilla (que se
 // notaba tosco y no daba tiempo a fijarse en cada resultado), se muestra un
 // carrusel: una criatura a la vez, a pantalla completa, con avance automático
-// o al tocar, y un botón para saltar directo al resumen final en rejilla.
-// Por encima de esta cantidad, pasar carta a carta (aunque se pueda saltar
-// a mano) deja de ser práctico — "Invocar todo" con un cristal abundante
-// (ver el botón en renderInvocar) puede juntar fácilmente 50-100+ de
-// golpe, así que directamente se enseña el resumen en cuadrícula.
-const MULTI_REVEAL_CARD_LIMIT = 20;
+// o al tocar, y un botón "Saltar »" para ir directo al resumen final en
+// rejilla. SIEMPRE carta a carta, sea cual sea la cantidad — se probó a
+// saltar el carrusel automáticamente por encima de cierto tamaño (con
+// "Invocar todo" acumulando 50-100+ de golpe), pero el usuario pidió
+// explícitamente que nunca se salte solo: el salto sigue disponible, solo
+// que a mano, tocando "Saltar »" o el propio cuerpo de la carta.
 UI.showMultiReveal = function (results) {
   const body = $('summonRevealBody');
   $('summonRevealClose').classList.add('hidden');
   $('summonRevealModal').classList.remove('hidden');
   let i = 0;
   let timer = null;
-  if (results.length > MULTI_REVEAL_CARD_LIMIT) { renderSummary(); return; }
 
   function renderSummary() {
     body.className = '';
