@@ -25,6 +25,7 @@ body { background-image: radial-gradient(circle at 20% 10%, #2a2013 0%, transpar
 h2, h3 { font-family: 'Press Start 2P', monospace; color: var(--gold); }
 h2.screen-title { font-size: 0.85rem; margin: 12px 12px 10px; display: flex; align-items: center; gap: 8px; }
 h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
+h3.panel-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 #topbar { display: flex; align-items: center; gap: 6px; padding: calc(var(--safe-top) + 8px) 10px 8px; background: linear-gradient(#1c140b, #171009); border-bottom: 2px solid var(--panel-border); flex-shrink: 0; }
 .resource { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; padding: 4px 8px; font-weight: bold; font-size: 0.82rem; color: var(--gold); white-space: nowrap; }
@@ -62,6 +63,20 @@ h3 { font-size: 0.68rem; margin: 0 0 10px; line-height: 1.6; }
   color: var(--cream); font-family: monospace; font-size: 0.72rem; word-break: break-all; resize: vertical;
 }
 .save-code-file { width: 100%; margin-top: 10px; color: var(--cream); font-size: 0.75rem; }
+.text-input {
+  width: 100%; padding: 8px; box-sizing: border-box;
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px;
+  color: var(--cream); font-size: 0.8rem;
+}
+.formation-preset-save-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.formation-preset-list { display: flex; flex-direction: column; gap: 8px; }
+.formation-preset-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; padding: 8px 10px;
+}
+.formation-preset-name { font-size: 0.78rem; flex: 1; min-width: 0; }
+.formation-preset-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.formation-preset-actions .mini-btn { margin: 0; padding: 6px 8px; }
 .mini-btn { padding: 6px 12px; background: var(--panel); border: 1px solid var(--gold-dim); border-radius: 8px; color: var(--gold); font-size: 0.75rem; margin: 6px 12px; }
 .pokedex-open-btn { margin: 0 0 0 auto; font-size: 0.68rem; padding: 5px 10px; white-space: nowrap; }
 .mini-btn:disabled { opacity: 0.4; }

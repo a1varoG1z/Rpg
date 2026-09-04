@@ -45,6 +45,7 @@
   });
   $('settingsModalClose').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
   $('pokedexBtn').addEventListener('click', () => UI.openPokedex(state));
+  $('formationPresetsBtn').addEventListener('click', () => UI.openFormationPresets(state));
   $('bulkModeBtn').addEventListener('click', () => {
     UI.bulkMode = !UI.bulkMode;
     UI.bulkSelection.clear();

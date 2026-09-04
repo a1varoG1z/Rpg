@@ -3208,6 +3208,44 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     `animationName: floatSprite` en `.creature-canvas-wrap`, con la
     duración esperada cada una.
 
+- [x] Quita el tope de 60 piezas del inventario de Equipo (`MAX_GEAR`,
+    state.js): a petición del usuario. Quitado el bloqueo en `addGear` y
+    en `buyShopGear` (ambos devolvían false/null al llegar al tope); el
+    botón de comprar en la Tienda ya no se desactiva por esto (ui.js). El
+    logro "Llena tu inventario de equipo" (que apuntaba al propio tope
+    como objetivo, `target: s => s.gearMax`) pasa a un hito fijo de
+    colección — "Consigue 40 piezas de equipo" — para no perder el logro
+    ni dejarlo con un target roto al desaparecer `gearMax`. La fila
+    "Equipo en inventario" de Estadísticas pasa de barra de progreso
+    (implicaba un máximo) a cifra simple.
+    Verificado con Playwright: se pueden añadir 80+ piezas sin que
+    `addGear` las rechace, comprar en la Tienda sigue funcionando muy por
+    encima del antiguo tope, y el logro migrado calcula bien su progreso
+    (81/40 → completado).
+
+- [x] Añade Formaciones guardadas: hasta ahora solo existía una Formación
+    activa (`state.band`), sin forma de guardar varias combinaciones y
+    alternar entre ellas. `state.formationPresets` (array, sin tope de
+    cuántas se pueden guardar) con `saveFormationPreset`/
+    `applyFormationPreset`/`renameFormationPreset`/`deleteFormationPreset`
+    (state.js) — cada preset es una copia independiente de `state.band` en
+    el momento de guardarlo, no una referencia viva. `applyFormationPreset`
+    salta (deja el hueco vacío) cualquier uid del preset que ya no exista
+    en el roster en vez de romper, ya que un preset puede aplicarse mucho
+    después de guardarlo, tras vender/perder luchadores por el medio.
+    Botón "📋 Formaciones guardadas" junto al título de Formación (Banda),
+    abre `pickerModal` con un campo de texto + "Guardar formación actual"
+    arriba, y debajo la lista de presets ya guardados, cada uno con
+    Aplicar/✏️ Renombrar (edición en línea)/🗑️ Eliminar (con
+    confirmación). Migración para partidas antiguas
+    (`formationPresets: []` si falta).
+    Verificado con Playwright de punta a punta: guardar la Formación
+    actual (3 miembros) como preset conserva exactamente esas 3 posiciones;
+    cambiar la Formación a otra cosa y luego "Aplicar" el preset restaura
+    la guardada tal cual; renombrar y eliminar funcionan correctamente; y
+    aplicar un preset que referencia a un luchador ya vendido del roster
+    coloca al resto con normalidad y deja ese hueco vacío en vez de fallar.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

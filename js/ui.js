@@ -419,7 +419,7 @@ UI.openObjectives = function (state) {
 
   const resPanel = el('div', 'panel');
   resPanel.innerHTML = '<h3>🎒 Recursos</h3>';
-  resPanel.appendChild(objRow('Equipo en inventario', s.gearOwned, s.gearMax));
+  resPanel.appendChild(el('div', 'stat-row', `<span>Equipo en inventario</span><span>${s.gearOwned}</span>`));
   resPanel.appendChild(el('div', 'stat-row', `<span>Homúnculos conseguidos</span><span>${s.homunculosTotal}</span>`));
   body.appendChild(resPanel);
 
@@ -1927,6 +1927,88 @@ UI.renderBanda = function (state) {
   renderBulkActionBar(state);
 };
 
+// ---------- Formaciones guardadas ----------
+// Reutiliza pickerModal (mismo patrón que Comparar/Superfusión) — guardar
+// la Formación actual como preset nuevo, y listar los ya guardados con
+// opción de aplicar/renombrar/eliminar cada uno.
+UI.openFormationPresets = function (state) {
+  const body = $('pickerModalBody');
+  body.innerHTML = '<h3>📋 Formaciones guardadas</h3>';
+
+  const saveRow = el('div', 'formation-preset-save-row');
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'text-input';
+  nameInput.placeholder = 'Nombre de la formación...';
+  nameInput.maxLength = 40;
+  saveRow.appendChild(nameInput);
+  const saveBtn = el('button', 'primary-btn', '💾 Guardar formación actual');
+  saveBtn.addEventListener('click', () => {
+    const placedCount = state.band.flat().filter(Boolean).length;
+    if (placedCount === 0) { UI.showToast('⚠️ La Formación actual está vacía.'); return; }
+    saveFormationPreset(state, nameInput.value || `Formación ${state.formationPresets.length + 1}`);
+    saveGame(state);
+    UI.openFormationPresets(state);
+  });
+  saveRow.appendChild(saveBtn);
+  body.appendChild(saveRow);
+
+  const list = el('div', 'formation-preset-list');
+  if (state.formationPresets.length === 0) {
+    list.appendChild(el('div', 'empty-hint', 'Todavía no has guardado ninguna formación.'));
+  }
+  state.formationPresets.forEach(preset => {
+    const row = el('div', 'formation-preset-row');
+    const memberCount = preset.band.flat().filter(Boolean).length;
+    const nameEl = el('div', 'formation-preset-name', `${preset.name} <span class="settings-info">(${memberCount}/9)</span>`);
+    row.appendChild(nameEl);
+    const actions = el('div', 'formation-preset-actions');
+
+    const applyBtn = el('button', 'mini-btn', '▶️ Aplicar');
+    applyBtn.addEventListener('click', () => {
+      applyFormationPreset(state, preset.id);
+      saveGame(state);
+      $('pickerModal').classList.add('hidden');
+      UI.renderBanda(state);
+      UI.showToast(`📋 Formación "${preset.name}" aplicada`);
+    });
+    actions.appendChild(applyBtn);
+
+    const renameBtn = el('button', 'mini-btn', '✏️');
+    renameBtn.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'text-input';
+      input.value = preset.name;
+      input.maxLength = 40;
+      nameEl.replaceWith(input);
+      input.focus();
+      const commit = () => {
+        if (renameFormationPreset(state, preset.id, input.value)) saveGame(state);
+        UI.openFormationPresets(state);
+      };
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+      input.addEventListener('blur', commit);
+    });
+    actions.appendChild(renameBtn);
+
+    const delBtn = el('button', 'mini-btn', '🗑️');
+    delBtn.addEventListener('click', () => {
+      if (!confirm(`¿Eliminar la formación "${preset.name}"? No se puede deshacer.`)) return;
+      deleteFormationPreset(state, preset.id);
+      saveGame(state);
+      UI.openFormationPresets(state);
+    });
+    actions.appendChild(delBtn);
+
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
+  body.appendChild(list);
+
+  $('pickerModal').classList.remove('hidden');
+};
+
 // ---------- Acciones en lote sobre la Colección ----------
 // Selección múltiple de copias sueltas del roster para venderlas o
 // fusionarlas todas de golpe, en vez de una a una desde la ficha — pensado
@@ -2756,9 +2838,9 @@ UI.startArenaBattle = function (state) {
 // ---------- Equipo ----------
 // ---------- Filtro y selección múltiple de Equipo ----------
 // Mismo patrón que la selección múltiple de la Colección (ver
-// renderBulkActionBar) — pensado para cuando el inventario de equipo (tope
-// MAX_GEAR) se llena de piezas sueltas de bajo tier que nunca se van a
-// equipar, y venderlas una a una es tedioso.
+// renderBulkActionBar) — pensado para cuando el inventario de equipo (sin
+// tope, ver addGear en state.js) se llena de piezas sueltas de bajo tier
+// que nunca se van a equipar, y venderlas una a una es tedioso.
 UI.gearFilterMode = 'all';
 UI.gearBulkMode = false;
 UI.gearBulkSelection = new Set();
@@ -2951,7 +3033,7 @@ UI.renderTienda = function (state) {
       btn.style.borderColor = rarity.color;
       btn.appendChild(gearIcon({ slot, type: repType, rarity: rarity.id }, 30));
       btn.appendChild(el('div', 'shop-buy-price', '🪙' + price));
-      btn.disabled = state.currencies.texel < price || state.gearInventory.length >= MAX_GEAR;
+      btn.disabled = state.currencies.texel < price;
       btn.addEventListener('click', () => {
         const gear = buyShopGear(state, slot, rarity.id);
         if (gear) {

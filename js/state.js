@@ -1,7 +1,6 @@
 // Estado del jugador: roster de luchadores, banda, monedas, energía, invocación,
 // fusión/evolución, equipo y persistencia.
 const SAVE_KEY = 'dot_texel_save_v2';
-const MAX_GEAR = 60;
 
 let uidCounter = 1;
 function newUid(prefix) { return prefix + (uidCounter++) + '_' + Date.now().toString(36); }
@@ -95,6 +94,10 @@ function createNewState() {
     // roster actual, esto no "olvida" un luchador si se vendiera/evolucionara
     // y ya no quedara ninguna copia suelta con ese defId exacto.
     discoveredDefIds: [roster[0].defId, roster[1].defId, roster[2].defId],
+    // Formaciones guardadas: hasta poder alternar entre varias sin tener
+    // que rehacerlas a mano cada vez — cada una es una copia independiente
+    // de state.band en el momento de guardarla (ver saveFormationPreset).
+    formationPresets: [],
   };
 }
 
@@ -219,7 +222,6 @@ function generateGear(slot, rarity, type) {
 }
 
 function addGear(state, gear) {
-  if (state.gearInventory.length >= MAX_GEAR) return false;
   state.gearInventory.push(gear);
   return true;
 }
@@ -230,7 +232,6 @@ function addGear(state, gear) {
 function buyShopGear(state, slot, rarity) {
   const price = GEAR_SHOP_PRICES[rarity];
   if (state.currencies.texel < price) return null;
-  if (state.gearInventory.length >= MAX_GEAR) return null;
   state.currencies.texel -= price;
   const gear = generateGear(slot, rarity);
   addGear(state, gear);
@@ -502,6 +503,38 @@ function bandPositionOf(state, uid) {
     if (state.band[r][c] === uid) return { row: r, col: c };
   }
   return null;
+}
+
+// --- Formaciones guardadas ---
+// Cada preset es una copia independiente de state.band en el momento de
+// guardarlo — cambiar la Formación actual después no afecta a los presets
+// ya guardados, ni al revés. Sin tope de cuántos se pueden guardar.
+function saveFormationPreset(state, name) {
+  const preset = { id: newUid('fp'), name: name.trim() || 'Formación', band: state.band.map(row => row.slice()) };
+  state.formationPresets.push(preset);
+  return preset;
+}
+function renameFormationPreset(state, presetId, name) {
+  const preset = state.formationPresets.find(p => p.id === presetId);
+  if (!preset || !name.trim()) return false;
+  preset.name = name.trim();
+  return true;
+}
+function deleteFormationPreset(state, presetId) {
+  const before = state.formationPresets.length;
+  state.formationPresets = state.formationPresets.filter(p => p.id !== presetId);
+  return state.formationPresets.length < before;
+}
+// Aplica un preset guardado como Formación actual — sustituye state.band
+// entero. Cualquier uid del preset que ya no exista en el roster (vendido,
+// o la familia se retiró de FIGHTERS) se salta en vez de romper la
+// Formación resultante, ya que un preset puede guardarse mucho antes de
+// aplicarse y el roster puede haber cambiado por el medio.
+function applyFormationPreset(state, presetId) {
+  const preset = state.formationPresets.find(p => p.id === presetId);
+  if (!preset) return false;
+  state.band = preset.band.map(row => row.map(uid => (uid && rosterEntry(state, uid)) ? uid : null));
+  return true;
 }
 
 // Los jefes de zona tienen estadísticas FIJAS calibradas para un jugador
@@ -813,7 +846,7 @@ function objectivesSummary(state) {
     totalTexelEarned: state.stats.totalTexelEarned, totalFighterXpEarned: state.stats.totalFighterXpEarned,
     arenaRank: state.arena.rank, arenaBestRank: state.arena.bestRank,
     roguelikeBestRound: state.roguelike.bestRound,
-    gearOwned: state.gearInventory.length, gearMax: MAX_GEAR,
+    gearOwned: state.gearInventory.length,
     homunculosTotal: state.homunculos.homunculo_t1 + state.homunculos.homunculo_t2 + state.homunculos.homunculo_t3,
   };
 }
@@ -898,6 +931,7 @@ function migrateState(state) {
     if (!state.roguelike) state.roguelike = { bestRound: 0 };
     if (!state.merchant) state.merchant = { lastRedeemedKey: null };
     if (!state.objectivesClaimed) state.objectivesClaimed = [];
+    if (!state.formationPresets) state.formationPresets = [];
     if (!state.progress.daysPlayed) state.progress.daysPlayed = [];
     if (!state.stats) state.stats = { battlesWon: 0, battlesLost: 0 };
     ['totalDmgDealt', 'totalDmgReceived', 'totalHealDone', 'totalTexelEarned', 'totalFighterXpEarned', 'highestSingleHit'].forEach(key => {

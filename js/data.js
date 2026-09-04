@@ -1160,7 +1160,7 @@ const OBJECTIVES = [
   { id: 'equipo_5', icon: '🎒', label: 'Consigue 5 piezas de equipo', reward: rI('pocion_menor', 2), get: (st, s) => s.gearOwned, target: 5 },
   { id: 'equipo_10', icon: '🎒', label: 'Consigue 10 piezas de equipo', reward: rT(150), get: (st, s) => s.gearOwned, target: 10 },
   { id: 'equipo_20', icon: '🎒', label: 'Consigue 20 piezas de equipo', reward: rG(20), get: (st, s) => s.gearOwned, target: 20 },
-  { id: 'equipo_lleno', icon: '🎒', label: 'Llena tu inventario de equipo', reward: rG(50), get: (st, s) => s.gearOwned, target: s => s.gearMax },
+  { id: 'equipo_lleno', icon: '🎒', label: 'Consigue 40 piezas de equipo', reward: rG(50), get: (st, s) => s.gearOwned, target: 40 },
   { id: 'equipo_nivel_10', icon: '🔧', label: 'Sube una pieza de equipo a nivel 10', reward: rG(40), get: (st) => st.gearInventory.reduce((max, g) => Math.max(max, g.level), 0), target: 10 },
 
   // --- Retos especiales ---
