@@ -634,6 +634,33 @@ function applyFormationPreset(state, presetId) {
 // dura de por sí (Salón de los Engaños), que pasa de trámite garantizado a
 // desafío real. Con una banda floja (rareza raro, equipo raro Nv.5) el
 // cambio no rompe nada: sigue ganando siempre salvo en esa misma zona.
+//
+// BOSS_EARLY_BOOST (ver earlyGameBoostMult en data.js): capa añadida
+// después, sin tocar nada de lo anterior — el jugador reportó cero bajas y
+// apenas daño recibido jugando en serio (sin grindear ni equipar nada)
+// hasta la zona 7, con una banda que ya iba de sobra en Épicos/Legendarios
+// por la Fusión normal. El "overpower" de arriba ya lo detecta, pero
+// bandaba fuerte solo si superaba 1× — con baseline aún bajo en zonas
+// tempranas (ver bossLevelCorrectionMult), el jefe salía blando incluso
+// con overpower real. BOSS_EARLY_BOOST multiplica baseline ANTES del
+// overpower, hasta ×1.6 en la zona 0, desvaneciéndose a ×1 según
+// bossLevelCorrectionMult se acerca a 1 — es decir, se apaga solo justo
+// donde ya no hace falta (zonas tardías, la calibración de arriba ya
+// probada con banda TODO Legendario incluida, ver TODO.md: con esta
+// nueva capa esa banda sigue sacando el mismo ~69% de daño recibido en
+// Salón de los Engaños que sin ella, porque ahí baseline ya vale ~1).
+//
+// MIN_BAND_FOR_BOOST: ni este refuerzo ni el "overpower" de más abajo se
+// aplican con una banda todavía muy pequeña (menos de 6 huecos ocupados,
+// como la banda inicial de solo 3) — verificado por simulación: la
+// primerísima etapa del juego (banda inicial de 3, 2 oleadas SEGUIDAS sin
+// curación) ya está ajustada de por sí con solo la fórmula original, y
+// cualquier refuerzo encima (incluso uno modesto) la convertía en derrota
+// garantizada. El "overpower" medido con solo 2-3 luchadores tampoco es
+// una señal fiable — la propia banda inicial (1 Infrecuente entre 2
+// Comunes) ya sale ligeramente "sobrada" sin que eso signifique que el
+// jugador esté invocando con más suerte de la cuenta.
+const BOSS_EARLY_BOOST = 1.6, MIN_BAND_FOR_BOOST = 6;
 function bossAdaptiveMult(state, zoneIdx) {
   const zone = ZONES[zoneIdx];
   const level = zoneEnemyLevel(zoneIdx);
@@ -642,11 +669,13 @@ function bossAdaptiveMult(state, zoneIdx) {
   // SIEMPRE, incluso sin overpower, porque el problema que corrige existe
   // ya en la base (fixedStats calibrado para el ritmo antiguo), no algo
   // que dependa de cómo de bien vaya el jugador.
-  const baseline = bossLevelCorrectionMult(zoneIdx);
+  const rawBaseline = bossLevelCorrectionMult(zoneIdx);
+  const bandUids = state.band.flat().filter(Boolean);
+  const baseline = bandUids.length >= MIN_BAND_FOR_BOOST ? rawBaseline * earlyGameBoostMult(rawBaseline, BOSS_EARLY_BOOST) : rawBaseline;
+  if (bandUids.length < MIN_BAND_FOR_BOOST) return baseline;
   const refStats = buildUnitStats(zone.pool[0], level);
   const refPower = fighterPowerScore({ hp: refStats.maxHp, atk: refStats.atk, def: refStats.def, agi: refStats.agi, wis: refStats.wis });
-  const bandUids = state.band.flat().filter(Boolean);
-  if (!bandUids.length || refPower <= 0) return baseline;
+  if (refPower <= 0) return baseline;
   let bandTotal = 0, counted = 0;
   bandUids.forEach(uid => {
     const entry = rosterEntry(state, uid);
@@ -662,6 +691,42 @@ function bossAdaptiveMult(state, zoneIdx) {
   // vez de quedarse siempre en el mismo ×4.5 mientras el camino ya sigue
   // subiendo con lateZoneMult.
   return baseline * Math.min(4.5 * lateZoneMult(zoneIdx), Math.pow(overpower, 0.85));
+}
+
+// Mismo concepto que bossAdaptiveMult pero para los MOBS de una etapa
+// normal — antes de este cambio los mobs solo escalaban con
+// MOB_POWER_MULT×lateZoneMult (ver buildEnemyBand en combat.js), sin
+// ningún ajuste por banda real ni por zona: siempre igual de blandos,
+// jugara como jugara el jugador. Reutiliza el mismo "overpower" (banda
+// real vs. zone.pool[0] como referencia), el mismo earlyGameBoostMult y el
+// mismo guardarraíl MIN_BAND_FOR_BOOST que el jefe (ver su comentario más
+// arriba — imprescindible aquí también: las etapas normales encadenan 2-3
+// oleadas SEGUIDAS sin curación, así que una banda diminuta es todavía
+// MÁS frágil frente a cualquier refuerzo que un jefe de un único
+// encuentro), pero con exponente y techo más suaves (0.7/×3 frente a
+// 0.85/×4.5) — el mismo exceso de stats pesa más acumulado a lo largo de
+// varias oleadas que en un jefe de un único encuentro.
+const MOB_EARLY_BOOST = 1.6, MOB_OVERPOWER_EXP = 0.7, MOB_OVERPOWER_CAP = 3;
+function mobAdaptiveMult(state, zoneIdx) {
+  const zone = ZONES[zoneIdx];
+  const level = zoneEnemyLevel(zoneIdx);
+  const bandUids = state.band.flat().filter(Boolean);
+  if (bandUids.length < MIN_BAND_FOR_BOOST) return 1;
+  const boosted = earlyGameBoostMult(bossLevelCorrectionMult(zoneIdx), MOB_EARLY_BOOST);
+  const refStats = buildUnitStats(zone.pool[0], level);
+  const refPower = fighterPowerScore({ hp: refStats.maxHp, atk: refStats.atk, def: refStats.def, agi: refStats.agi, wis: refStats.wis });
+  if (refPower <= 0) return boosted;
+  let bandTotal = 0, counted = 0;
+  bandUids.forEach(uid => {
+    const entry = rosterEntry(state, uid);
+    if (!entry) return;
+    bandTotal += fighterPowerScore(fighterStats(state, entry));
+    counted++;
+  });
+  if (!counted) return boosted;
+  const overpower = (bandTotal / counted) / refPower;
+  if (overpower <= 1) return boosted;
+  return boosted * Math.min(MOB_OVERPOWER_CAP * lateZoneMult(zoneIdx), Math.pow(overpower, MOB_OVERPOWER_EXP));
 }
 
 // Jefes de la Torre Batalla: reutiliza bossAdaptiveMult referenciado a la

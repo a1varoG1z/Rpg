@@ -162,7 +162,14 @@ function makeBossUnit(defId, level, extraMult) {
 // superable (~26% de derrota en una muestra representativa de zonas) sin
 // tocar los jefes, que ya estaban bien calibrados.
 const MOB_POWER_MULT = 0.72;
-function buildEnemyBand(zoneIdx, stageIdx, bossExtraMult) {
+// `state` (nuevo parámetro): hace falta para mobAdaptiveMult (state.js),
+// que mide cómo de overpowered va la banda REAL del jugador frente al
+// relleno nominal de la zona — antes los mobs no recibían ningún ajuste
+// por esto (a diferencia del jefe, ver bossAdaptiveMult), así que una
+// banda que ya iba sobrada de Épicos/Legendarios por Fusión normal (sin
+// grindear ni equipar nada) los arrasaba sin recibir apenas daño incluso
+// en las primeras zonas — ver TODO.md para la simulación completa.
+function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
   const zone = ZONES[zoneIdx];
   const isBoss = stageIdx === STAGES_PER_ZONE - 1;
   // El nivel del rival depende SOLO de la zona (zoneEnemyLevel, data.js) —
@@ -181,11 +188,12 @@ function buildEnemyBand(zoneIdx, stageIdx, bossExtraMult) {
   // filas, el resto 3 — misma proporción que antes.
   const rowCount = stageIdx < 11 ? 2 : 3;
   const rows = [];
+  const mobMult = MOB_POWER_MULT * lateZoneMult(zoneIdx) * mobAdaptiveMult(state, zoneIdx);
   for (let r = 0; r < rowCount; r++) {
     const row = [];
     for (let i = 0; i < 3; i++) {
       const pick = zone.pool[Math.floor(Math.random() * Math.min(2, zone.pool.length))];
-      row.push(makeUnit('enemy', pick, level, MOB_POWER_MULT * lateZoneMult(zoneIdx)));
+      row.push(makeUnit('enemy', pick, level, mobMult));
     }
     rows.push(row);
   }

@@ -3836,6 +3836,101 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     renderiza las 133 filas correctamente con el contador "0/133" en la
     cabecera.
 
+- [x] Refuerzo de dificultad temprana/media de mobs y jefes del Mapa (a
+    petición explícita del usuario, con datos reales de su propia
+    partida): tras empezar de cero con todos los cambios de esta sesión y
+    jugar en serio hasta Cantera Devorada (zona 6) sin releear/farmear
+    nada, sin equipar ni una pieza de equipo y solo abriendo cristales +
+    fusionando lo que se podía, el usuario reportó CERO bajas y apenas
+    daño recibido en absolutamente ningún combate, mobs y jefes incluidos
+    — pidió explícitamente NO tocar el nivel de los rivales, solo sus
+    stats, y "simular todo lo que necesites para encontrar un buen punto
+    de dificultad".
+
+    **Simulación real (no aproximada), en dos partes:**
+    1. Un simulador de "partida natural" nuevo (funciones reales del
+       juego, sin atajos): recorre zona a zona/etapa a etapa aplicando
+       `stageRewards` (asumiendo victoria, igual que reportó el usuario),
+       abre cada cristal que cae con `summonOne` en el momento en que
+       llega, funde codiciosamente en cuanto hay 6 copias del mismo
+       `defId` con evolución pendiente (`fuseMaterials` + `evolveFighter`
+       — refleja "fusiono lo que puedo"), y rehace la Formación con los 9
+       luchadores de mayor `fighterPowerScore` tras cada etapa (refleja
+       "uso mis mejores luchadores" sin build específico). Sin equipo en
+       ningún momento, tal como jugó el usuario.
+    2. El motor de combate REAL (`UI.openBattle`/`UI.stepBattle`/
+       `UI.commitGroup`, el mismo patrón ya usado en sesiones anteriores
+       para el ajuste de Llanura del Titán), no una aproximación.
+
+    **Diagnóstico:** con esa banda "natural" (sin grindear ni equipar
+    nada) el jugador llega ya sobrado de Épicos/Legendarios por Fusión
+    incluso en las primeras zonas — el "overpower" real medido (banda del
+    jugador frente al relleno nominal `zone.pool[0]` de su propia zona,
+    misma referencia que ya usaba `bossAdaptiveMult`) ronda 1.5-3× en las
+    zonas 0-15, bajando a ~1× solo hacia la zona 20+ (donde el jefe ya
+    estaba bien calibrado desde antes). Los MOBS de las etapas normales no
+    tenían NINGÚN ajuste por esto (solo `MOB_POWER_MULT` fijo), y el jefe
+    (`bossAdaptiveMult`) solo reacciona cuando el overpower ya supera 1×,
+    pero con `bossLevelCorrectionMult` (el baseline del jefe) todavía muy
+    bajo en zonas tempranas, el resultado seguía siendo blando incluso con
+    overpower real. Con la banda natural simulada del propio jugador
+    contra Aldea del Año Nuevo (zona 7, donde está ahora): daño recibido
+    medio de solo el 8.9% del HP total de la banda en mobs y 21.9% en el
+    jefe, sin perder NUNCA — coincide exactamente con lo reportado.
+
+    **Arreglo — `earlyGameBoostMult(baseline, maxBoost)` (data.js), nueva
+    capa compartida:** multiplica el baseline de cada rival hasta
+    `maxBoost×` cuando `bossLevelCorrectionMult(zoneIdx)` (ya existente)
+    está lejos de 1, desvaneciéndose a exactamente 1× (sin ningún efecto)
+    según esa baseline se acerca a 1 — es decir, se concentra en las zonas
+    tempranas/medias (donde hay mucho margen antes del techo) y se apaga
+    solo justo donde ya no hace falta, protegiendo por construcción la
+    calibración tardía ya validada a fondo en sesiones anteriores (banda
+    TODO Legendario 3★ equipo Nv.15 en Salón de los Engaños, la zona más
+    dura del Mapa). Aplicado en dos sitios:
+    - `bossAdaptiveMult` (state.js): nueva constante `BOSS_EARLY_BOOST =
+      1.6`, multiplicando el baseline ANTES del término de overpower ya
+      existente (que sigue igual: exponente 0.85, techo ×4.5).
+    - `mobAdaptiveMult` (state.js, función NUEVA): mismo mecanismo que el
+      jefe (mismo "overpower" contra `zone.pool[0]`, mismo
+      `earlyGameBoostMult`) pero con exponente/techo más suaves para el
+      término de overpower (`MOB_OVERPOWER_EXP = 0.7`, `MOB_OVERPOWER_CAP
+      = 3` frente al 0.85/×4.5 del jefe) — una etapa encadena 2-3 oleadas
+      SEGUIDAS sin curación, así que el mismo exceso de stats pesa más
+      acumulado que en un jefe de un único encuentro.
+      `buildEnemyBand` (combat.js) pasó a recibir `state` como primer
+      parámetro (antes `zoneIdx, stageIdx, bossExtraMult`) para poder
+      llamar a `mobAdaptiveMult`; los 2 puntos donde se invoca (Duelo por
+      apuesta y el recorrido normal de etapa, ambos en ui.js) actualizados
+      para pasarlo.
+    - `MIN_BAND_FOR_BOOST = 6` (guardarraíl compartido por ambas
+      funciones): NINGÚN refuerzo (ni el de arriba ni el overpower) se
+      aplica con una banda todavía muy pequeña (menos de 6 huecos
+      ocupados, como la banda inicial de solo 3). Descubierto por
+      simulación: sin este guardarraíl, la primerísima etapa del juego
+      (banda inicial de 3 luchadores, 2 oleadas SEGUIDAS sin curación)
+      pasaba de ganarse siempre a perderse siempre — un refuerzo que
+      parece modesto en aislado (~+25-47%) ya bastaba para tumbar una
+      banda tan diminuta y sin margen. Con el guardarraíl, una banda
+      menor de 6 usa exactamente la fórmula original sin ningún cambio.
+
+    **Verificado con Playwright (motor de combate real, no aproximado),
+    con la fórmula YA aplicada (no simulada aparte):**
+    - Banda "natural" simulada, zonas 0/7/10/15 (mobs y jefe): 18.9%-35%
+      de daño recibido en mobs, 21.2%-40.9% en jefes, todas ganadas en la
+      muestra — de "prácticamente sin daño, 0 bajas nunca" a un reto real
+      y sentido, sin volverse una pared.
+    - Banda "maxed" (TODO Legendario 3★ equipo Nv.15, la misma usada para
+      validar el ajuste de Llanura del Titán en sesiones anteriores),
+      zonas 25/28/32 (la más dura del Mapa): SIN cambios significativos
+      frente a antes de este ajuste (Salón de los Engaños: 68.1% de daño
+      recibido, ganada siempre — prácticamente igual al ~69.1% de
+      referencia sin ningún refuerzo) — confirma que `earlyGameBoostMult`
+      se desvanece correctamente en la zona ya calibrada a fondo.
+    - Banda inicial de 3 (recién empezada la partida) contra la
+      primerísima etapa del Mapa: ganada siempre, igual que sin el
+      ajuste — confirma que `MIN_BAND_FOR_BOOST` protege el arranque.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

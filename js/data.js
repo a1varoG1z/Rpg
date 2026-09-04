@@ -848,6 +848,24 @@ function bossLevelCorrectionMult(zoneIdx) {
   return levelGrowth(zoneEnemyLevel(zoneIdx)) / levelGrowth(oldLevel);
 }
 
+// Refuerzo de dificultad temprana/media (pedido explícito del usuario tras
+// jugar en serio hasta la Aldea del Año Nuevo sin recibir NUNCA una baja ni
+// daño real, ni de mobs ni del jefe, con una banda "natural" que ya iba
+// sobrada de Épicos/Legendarios por Fusión pese a llevar solo 7 zonas —
+// ver TODO.md para la simulación completa) — se desvanece a 1× según
+// bossLevelCorrectionMult(zoneIdx) se acerca a 1, es decir, según la zona
+// se acerca a donde la curva de nivel NUEVA ya alcanza a la ANTIGUA
+// (zona ~28 en adelante). Con baseline≈1 (zonas tardías, YA calibradas a
+// fondo con una banda TODO Legendario 3★ máx. equipo — ver el comentario
+// de bossAdaptiveMult en state.js, especialmente Salón de los Engaños) da
+// exactamente 1×, sin tocar ni un poco ese ajuste ya validado; con
+// baseline bajo (zonas tempranas, mucho margen antes de ese techo) da
+// hasta maxBoost×. Compartido por bossAdaptiveMult y mobAdaptiveMult
+// (state.js) para que ambos se refuercen con el mismo criterio.
+function earlyGameBoostMult(baseline, maxBoost) {
+  return 1 + (maxBoost - 1) * (1 - baseline);
+}
+
 // Más allá de LEVEL_CAP_ZONE_IDX el nivel del rival ya no sube — pero con
 // el tope ahora tan cerca del final del mapa (zona 28 de 33) apenas quedan
 // zonas donde esto entre en juego (antes, con el tope en zona 4, eran 28

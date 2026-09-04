@@ -902,7 +902,7 @@ UI.startWagerDuel = function (state, zoneIdx, amount) {
   state.currencies.texel -= amount;
   saveGame(state);
   UI.renderTopbar(state);
-  const { rows } = buildEnemyBand(zoneIdx, STAGES_PER_ZONE - 1, WAGER_BOSS_BOOST * bossAdaptiveMult(state, zoneIdx));
+  const { rows } = buildEnemyBand(state, zoneIdx, STAGES_PER_ZONE - 1, WAGER_BOSS_BOOST * bossAdaptiveMult(state, zoneIdx));
   const combos = buildPlayerCombinations(state);
   UI.openBattle(state, combos, [rows[0]], {
     title: '🎲 Apuesta · ' + ZONES[zoneIdx].name + ' (jefe reforzado)',
@@ -936,7 +936,7 @@ UI.startStageBattle = function (state, zoneIdx, stageIdx) {
   // afecta a la etapa del jefe (buildEnemyBand lo ignora en el resto) y
   // solo sube por encima de 1× si la banda ya va muy por encima de lo
   // esperado para esta zona — nunca debilita al jefe.
-  const { rows, isBoss } = buildEnemyBand(zoneIdx, stageIdx, bossAdaptiveMult(state, zoneIdx));
+  const { rows, isBoss } = buildEnemyBand(state, zoneIdx, stageIdx, bossAdaptiveMult(state, zoneIdx));
   const encounters = rows.filter(r => r.length > 0);
   // hpMap/faintedSet/chargeMap llevan la cuenta de la vida, los desmayos y la
   // carga de ulti de cada luchador durante TODA la etapa (entre nodos del
