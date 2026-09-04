@@ -385,6 +385,19 @@ UI.openObjectives = function (state) {
   dexPanel.appendChild(pokedexShortcut);
   body.appendChild(dexPanel);
 
+  // ---------- Colección por tier (rareza) ----------
+  const tierPanel = el('div', 'panel');
+  tierPanel.innerHTML = '<h3>🎚️ Colección por tier</h3>';
+  rarityCollectionStats(state).forEach((r, i) => {
+    const label = el('div', 'torre-row-name', `${r.icon} ${r.label}`);
+    if (i > 0) label.style.marginTop = '10px';
+    tierPanel.appendChild(label);
+    tierPanel.appendChild(el('div', 'settings-info', `${r.missing} por descubrir todavía`));
+    tierPanel.appendChild(objRow('Descubiertos', r.found, r.total));
+    tierPanel.appendChild(objRow('Maxeados (3★)', r.maxed, r.total));
+  });
+  body.appendChild(tierPanel);
+
   const rosterPanel = el('div', 'panel');
   rosterPanel.innerHTML = `<h3>⭐ Progresión de luchadores</h3>
     <div class="stat-row"><span>Luchadores en tu banda</span><span>${s.rosterSize}</span></div>

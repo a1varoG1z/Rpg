@@ -3988,6 +3988,50 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     NUNCA muestra este botón (sigue oculto), para no confundirlo con
     otros modos.
 
+- [x] Arreglado un bug de la Pokédex reportado por el usuario:
+    `evolveFighter` (state.js) cambiaba `entry.defId` a la forma
+    evolucionada pero nunca la añadía a `state.discoveredDefIds` (el
+    registro permanente de la Pokédex, que solo se actualizaba en
+    `applySummonResult` al invocar). Consecuencia real: al evolucionar un
+    luchador por primera vez, esa forma NO quedaba marcada como "ya
+    vista" — si más tarde tocaba esa misma forma por invocación,
+    `applySummonResult` la trataba como `outcome: 'nuevo'` (con el
+    distintivo "¡Nuevo!" y el aviso de descubrimiento) en vez de
+    `'duplicado'`, pese a que el jugador ya la tenía desde la evolución.
+    Arreglado añadiendo el mismo registro dentro de `evolveFighter`.
+    También se añadió un backfill retroactivo en `migrateState` (unión,
+    no sustituye nada) que añade a `discoveredDefIds` todo defId presente
+    AHORA MISMO en el roster de cualquier partida guardada — para que las
+    partidas que ya sufrieron el bug antes de este arreglo también
+    queden corregidas al cargar, no solo las evoluciones futuras.
+    Verificado con Playwright: evolucionar un luchador añade su nueva
+    forma a `discoveredDefIds`; invocar esa misma forma justo después la
+    reconoce como `'duplicado'` (no `'nuevo'`); una partida de prueba con
+    el bug ya sufrido (roster con una forma evolucionada que
+    `discoveredDefIds` no reconocía) queda corregida tras pasar por
+    `migrateState`.
+
+- [x] Añadido a la pantalla de Objetivos (la que reúne todas las
+    estadísticas de la partida) un desglose de la Colección por tier
+    (rareza), a petición explícita del usuario: nueva
+    `rarityCollectionStats(state)` (state.js) — para cada una de las 5
+    rarezas, cuántos personajes de esa rareza se han descubierto ALGUNA
+    VEZ (`discoveredDefIds`, la Pokédex permanente) sobre el total de esa
+    rareza en `FIGHTERS`, cuántos faltan por descubrir, y cuántos están
+    ya MAXEADOS (3★ de Superfusión, el tope — mismo criterio que
+    `starredCount`, ya usado en un Logro) sobre ese mismo total; un
+    personaje cuenta como maxeado si CUALQUIER copia suya en el roster
+    actual llegó a 3★. Nuevo panel "🎚️ Colección por tier" en
+    `UI.openObjectives` (ui.js, justo debajo del panel de Colección ya
+    existente), con una barra de progreso por rareza para "Descubiertos"
+    y otra para "Maxeados (3★)", reutilizando `objRow` (el mismo
+    componente de barra ya usado en el resto de esta pantalla) para que
+    se sienta consistente. Verificado con Playwright: los totales de las
+    5 rarezas suman exactamente `FIGHTERS.length`; los conteos de
+    descubiertos/maxeados de una partida de prueba con datos concretos
+    coinciden con lo esperado a mano; la pantalla de Objetivos renderiza
+    el nuevo panel con las 5 rarezas y las dos barras de cada una.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

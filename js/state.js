@@ -466,6 +466,14 @@ function evolveFighter(state, uid) {
   entry.sef = 0;
   entry.readyToEvolve = false;
   entry.isNew = true;
+  // Registro permanente de la Pokédex (state.discoveredDefIds, ver
+  // applySummonResult más arriba) — faltaba aquí, así que la forma
+  // evolucionada nunca se marcaba como "ya vista": si más tarde tocaba
+  // por invocación, applySummonResult la trataba otra vez como
+  // "everDiscovered = false" (nueva de verdad) en vez de duplicado, pese
+  // a que el jugador ya la tenía desde que evolucionó por primera vez.
+  if (!state.discoveredDefIds) state.discoveredDefIds = [];
+  if (!state.discoveredDefIds.includes(entry.defId)) state.discoveredDefIds.push(entry.defId);
   return entry.defId;
 }
 
@@ -1008,6 +1016,27 @@ function objectivesSummary(state) {
   };
 }
 
+// Desglose de la Colección por tier (rareza) — pedido explícito del
+// usuario, para la pantalla de Objetivos/Estadísticas: cuántos personajes
+// de cada rareza ha descubierto ALGUNA VEZ (discoveredDefIds, la Pokédex
+// permanente — igual que formsDiscovered en objectivesSummary, pero
+// desglosado por tier en vez de un único total) sobre el total de esa
+// rareza, cuántos le faltan, y cuántos tiene ya MAXEADOS (3★ de
+// Superfusión, el tope — mismo criterio que starredCount) sobre ese mismo
+// total. Un personaje cuenta como maxeado si CUALQUIER copia suya en el
+// roster actual llegó a 3★, no hace falta que sea la única copia que se
+// tenga ni que sea el resto de copias también las máximas.
+function rarityCollectionStats(state) {
+  const discovered = new Set(state.discoveredDefIds || []);
+  const maxedDefIds = new Set(state.roster.filter(r => r.stars >= 3).map(r => r.defId));
+  return RARITIES.map(r => {
+    const ids = FIGHTERS.filter(f => f.rarity === r.id).map(f => f.id);
+    const found = ids.filter(id => discovered.has(id)).length;
+    const maxed = ids.filter(id => maxedDefIds.has(id)).length;
+    return { id: r.id, label: r.label, icon: r.icon, total: ids.length, found, missing: ids.length - found, maxed };
+  });
+}
+
 // Una entrada por zona con su jefe y si ya se ha derrotado alguna vez (misma
 // condición que bossesDefeated en objectivesSummary: haber superado la
 // última etapa de esa zona). `level` es el nivel real al que se combate ese
@@ -1096,6 +1125,13 @@ function migrateState(state) {
     // perfecto — no recuerda luchadores vendidos/evolucionados antes de
     // esta versión — pero es lo mejor que se puede inferir retroactivamente).
     if (!state.discoveredDefIds) state.discoveredDefIds = [...new Set(state.roster.map(r => r.defId))];
+    // Arreglo retroactivo de un bug: evolveFighter no añadía la forma
+    // evolucionada a discoveredDefIds, así que una partida que evolucionó a
+    // un luchador ANTES de este arreglo puede tener en el roster una forma
+    // que la Pokédex no reconoce como "ya vista" — se completa (unión, no
+    // sustituye nada) con TODO defId presente ahora mismo en el roster, sea
+    // cual sea el motivo por el que discoveredDefIds ya existiera.
+    state.roster.forEach(r => { if (!state.discoveredDefIds.includes(r.defId)) state.discoveredDefIds.push(r.defId); });
     // Migración de equipo: antes cada luchador guardaba el arma/armadura en
     // dos campos sueltos (gearArma/gearArmadura); ahora todo vive en un
     // único entry.gear{} con un hueco por cada tipo de equipo (6 ahora,
