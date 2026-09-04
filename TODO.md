@@ -3427,6 +3427,76 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     una causa propia aparte del desfase de nivel, pendiente de investigar
     aparte si se reporta como problema.
 
+- [x] Investigados dos "zonas flojas" que había detectado la comprobación
+    exhaustiva anterior (Cuevas de Cristal y Aldea del Año Nuevo, ambas con
+    un mob Campeón en el pool) — resultaron ser un falso positivo del
+    propio perfil de prueba, no del juego: Cuevas de Cristal mezcla dos
+    rarezas en su pool (Gárgola Infrecuente + Insecto Gigante Raro) y el
+    test igualaba al jugador con la más floja de las dos; con rareza Raro
+    (la del miembro más fuerte) sube de 42% a 100% de victorias. Aldea del
+    Año Nuevo no tenía nada que ver con Campeón — con 1★ (lo que daba el
+    perfil de prueba en esa zona) gana un 8%, con 3★ un 92%; quitar del
+    todo la corrección de Campeón apenas cambia nada (8%→0%). No se ha
+    tocado ningún código por esto — el perfil de prueba estaba mal
+    calibrado, no el balance del juego. Pero esto llevó a la siguiente
+    investigación:
+
+- [x] Descubierto y corregido un problema mucho más grave: la Superfusión
+    (dar +1★ a un personaje) es, tal y como estaban las tasas de cristal,
+    prácticamente inalcanzable jugando con normalidad — reportado
+    directamente por el usuario (zona 22 del mapa, 0 superfusiones
+    conseguidas). Cada +1★ necesita ~21 copias EXACTAS del mismo
+    personaje en forma final (el propio objetivo + un sacrificio también
+    en forma final + 5 copias más para llenarle el SEF al sacrificio), y
+    cada invocación elige el personaje al AZAR entre todos los de esa
+    rareza (31 a 112 según el tier), sin ningún sistema de puntería ni
+    pity. Simulado por Monte Carlo (300 tiradas): la mediana real para la
+    PRIMERA superfusión, incluso por el camino más favorable posible
+    (cadena Común→Infrecuente→Raro, invocando con Pixite), era de
+    ~14.000 invocaciones — frente a las ~100 Pixite que da jugarse el
+    mapa entero una vez a la tasa anterior (0.6/etapa). Se descartó tocar
+    el propio coste de fusión (decisión explícita del usuario: prefiere
+    más cristales/copias, no una fusión más barata) y también se descartó
+    la alternativa de alargar STAGES_PER_ZONE para repartir más tiradas
+    de forma "orgánica" — ese número está metido en 22 sitios del código,
+    entre ellos LEVEL_CAP_ZONE_IDX (la fórmula de la que cuelga TODA la
+    escalada de zonas tardías, lateZoneMult, ya recalibrada hoy mismo
+    con datos reales del usuario) — el mismo riesgo de recalcular en
+    cascada todo lo ya validado que se descartó antes para no tocar
+    LEVEL_CAP_ZONE_IDX directamente.
+    Implementado en su lugar (combat.js): nueva waveCrystalDrops() — en
+    vez de una sola tirada de 60% de 1 Pixite al terminar la etapa entera,
+    una tirada POR OLEADA (2-3 según la etapa, mismo reparto que ya usa
+    buildEnemyBand) de 3-7 Pixite (+5%/1% de Voxite/Doxite por oleada,
+    antes inexistente en etapas normales). Además, jefes en repetición
+    suben de 25%/3%/1% a Pixite garantizado (3-6) + 25%/8% de Voxite/
+    Doxite. Verificado con Playwright: Pixite medio por etapa normal sube
+    de 0.6 a ~12.8 (x21); con esa tasa, la mediana de ~14.000
+    invocaciones se alcanza en ~1.100 combates — dentro de la franja
+    de "grindeo moderado" que se acordó con el usuario (bastante más
+    accesible que antes, sin ser instantáneo).
+    Añadidos también 5 logros nuevos con recompensa en cristales
+    (rC('pixite'|'voxite'|'doxite', N), helper ya existente en data.js
+    pero sin usar hasta ahora) ligados a victorias/jefes derrotados, como
+    bonus adicional sobre la subida de tasa en combate — no es la pieza
+    que arregla el problema, solo un extra por seguir jugando, tal y como
+    pidió el usuario.
+    LIMITACIÓN CONOCIDA, pendiente de decisión del usuario: el cálculo
+    de arriba es para el camino MÁS FÁCIL (Común). Repetido el mismo
+    análisis para el camino que de verdad importa (Raro→Épico→Legendario,
+    p.ej. Odín) usando Doxite (el cristal que más favorece Legendario, 20%
+    de probabilidad): la mediana analítica es ~7.900 invocaciones de
+    Doxite — no está mal en sí, pero con la tasa de Doxite ya subida
+    (~0.03/etapa de media) eso son ~250.000 combates. Para bajarlo a la
+    misma franja de ~1.000 combates haría falta ~8 Doxite de media por
+    etapa, lo que dejaría de sentirse como el cristal deliberadamente
+    escaso que es (0% de probabilidad en Pixite, pensado como "el cristal
+    especial"). Es decir: para Legendario, solo subir la tasa de cristales
+    no basta sin que Doxite deje de sentirse raro — probablemente hace
+    falta o bien tocar el coste de fusión (aunque sea solo para Legendario)
+    o algún mecanismo de puntería específico para Doxite. Sin resolver
+    todavía, a la espera de que el usuario decida cómo quiere abordarlo.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

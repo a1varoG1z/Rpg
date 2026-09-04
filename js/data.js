@@ -1169,6 +1169,16 @@ const OBJECTIVES = [
   { id: 'sef_estrellas_15', icon: '🌟', label: 'Acumula 15 estrellas de Superfusión', reward: rG(35), get: (st, s) => s.totalSefStars, target: 15 },
   { id: 'sef_estrellas_30', icon: '🌟', label: 'Acumula 30 estrellas de Superfusión', reward: rG(80), get: (st, s) => s.totalSefStars, target: 30 },
 
+  // --- Cristales --- (bonus adicional sobre la subida de tasa en combate,
+  // ver waveCrystalDrops en combat.js — no es la pieza principal que
+  // arregla la escasez de Superfusión, solo un extra de hitos por seguir
+  // jugando, como pidió el usuario)
+  { id: 'cristales_victorias_25', icon: '🔮', label: 'Gana 25 combates', reward: rC('pixite', 15), get: (st, s) => s.battlesWon, target: 25 },
+  { id: 'cristales_victorias_150', icon: '🔮', label: 'Gana 150 combates', reward: rC('pixite', 40), get: (st, s) => s.battlesWon, target: 150 },
+  { id: 'cristales_victorias_350', icon: '🔮', label: 'Gana 350 combates', reward: rC('voxite', 15), get: (st, s) => s.battlesWon, target: 350 },
+  { id: 'cristales_jefes_5', icon: '🔮', label: 'Derrota 5 jefes de zona', reward: rC('voxite', 10), get: (st, s) => s.bossesDefeated, target: 5 },
+  { id: 'cristales_jefes_20', icon: '🔮', label: 'Derrota 20 jefes de zona', reward: rC('doxite', 8), get: (st, s) => s.bossesDefeated, target: 20 },
+
   // --- Combate ---
   { id: 'victorias_10', icon: '🏆', label: 'Gana 10 combates', reward: rI('pocion_menor', 2), get: (st, s) => s.battlesWon, target: 10 },
   { id: 'victorias_50', icon: '🏆', label: 'Gana 50 combates', reward: rT(200), get: (st, s) => s.battlesWon, target: 50 },

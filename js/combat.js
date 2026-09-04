@@ -287,6 +287,23 @@ function buildElementalDungeonEncounters(elementId) {
   return rows;
 }
 
+// Cristales de una oleada de MOBS de una etapa normal (2-3 por etapa, ver
+// stageRewards) — antes era una sola tirada al terminar la etapa entera;
+// ahora se reparte en una tirada POR OLEADA para que caigan "orgánicamente"
+// según se avanza en vez de todo de golpe al final (mismo total esperado,
+// solo repartido). Ver el comentario de stageRewards para el porqué del
+// volumen: sube ~20× sobre lo que había antes de esta ronda de cambios.
+const WAVE_PIXITE_RANGE = [3, 7]; // entero uniforme en [3,7], media 5
+const WAVE_VOXITE_CHANCE = 0.05;
+const WAVE_DOXITE_CHANCE = 0.01;
+function waveCrystalDrops() {
+  const [lo, hi] = WAVE_PIXITE_RANGE;
+  const drops = { pixite: lo + Math.floor(Math.random() * (hi - lo + 1)), voxite: 0, doxite: 0 };
+  if (Math.random() < WAVE_VOXITE_CHANCE) drops.voxite = 1;
+  if (Math.random() < WAVE_DOXITE_CHANCE) drops.doxite = 1;
+  return drops;
+}
+
 // `isFirstClear`: la Mazmorra Elemental es contenido pensado para
 // repetirse (tiene su propio contador state.elementalClears), pero sin
 // distinguir primera vez de repetición sufría el mismo problema que los
@@ -343,13 +360,17 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
       drops.voxite = 1;
       if (Math.random() < 0.3) drops.doxite = 1;
     } else {
-      // Repetir un jefe ya no debía seguir siendo mejor fuente de Voxite
-      // que jugar una etapa normal (60% de Pixite) — ahora apunta sobre
-      // todo a Pixite, el cristal más flojo, con Voxite/Doxite ya como
-      // rareza puntual en vez de la norma.
-      if (Math.random() < 0.25) drops.pixite = 1;
-      if (Math.random() < 0.03) drops.voxite = 1;
-      if (Math.random() < 0.01) drops.doxite = 1;
+      // Superfusión necesita ~21 copias EXACTAS del mismo personaje —
+      // incluso con el volumen de Pixite ya subido en las etapas normales,
+      // Voxite/Doxite (los cristales de los que depende un duplicado de
+      // Épico/Legendario, los que de verdad importan para invertir en un
+      // luchador concreto tipo Odín) seguían casi inexistentes en
+      // repetición (3%/1%) — un jugador podía terminar el mapa entero sin
+      // conseguir NINGUNA superfusión real (reportado directamente:
+      // llegar a la zona 22 con 0). Subido a 6/25%/8%.
+      drops.pixite = 3 + Math.floor(Math.random() * 4);
+      if (Math.random() < 0.25) drops.voxite = 1;
+      if (Math.random() < 0.08) drops.doxite = 1;
     }
     // Igual que el cristal: el 70% de probabilidad de equipo es el premio
     // de vencer al jefe por primera vez. Repetirlo lo bajaba a una tabla de
@@ -361,10 +382,26 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
     const bossGearChance = isFirstClear ? 0.7 : 0.08;
     if (Math.random() < bossGearChance) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx, isFirstClear));
   } else {
-    // Sube de 35% a 60%: las etapas normales del Mapa son con diferencia
-    // el combate más repetido de todo el juego (farmeo por defecto), así
-    // que es donde más debe notarse cualquier subida de la tasa de Pixite.
-    if (Math.random() < 0.6) drops.pixite = 1;
+    // Antes: una sola tirada de 60% de 1 Pixite al terminar la etapa
+    // entera. La Superfusión necesita ~21 copias EXACTAS del mismo
+    // personaje para dar UNA sola estrella (elegido al azar entre 31-112
+    // posibles según rareza, sin ningún sistema de puntería) — simulado
+    // por Monte Carlo, la mediana real era ~14.000 invocaciones incluso en
+    // el mejor caso posible, frente a las ~100 que da jugarse el mapa
+    // entero una vez a la tasa anterior. Repartido en una tirada POR
+    // OLEADA (waveCrystalDrops, ~20× más volumen que antes) en vez de una
+    // sola al final de la etapa: mismo principio que ya tenía el juego
+    // (más frecuente y repartido se siente mejor que un único golpe de
+    // suerte), apuntado a que la primera Superfusión esté al alcance de un
+    // jugador que rejuega de forma moderada (unos cuantos cientos de
+    // combates, no miles) en vez de prácticamente nunca.
+    const rowCount = stageIdx < 3 ? 2 : 3;
+    for (let w = 0; w < rowCount; w++) {
+      const wd = waveCrystalDrops();
+      drops.pixite += wd.pixite;
+      drops.voxite += wd.voxite;
+      drops.doxite += wd.doxite;
+    }
     if (Math.random() < 0.3) drops.gear = generateGear(randomGearSlot(), gearDropRarity(globalIdx));
   }
   return { texel, fighterXp, drops };
