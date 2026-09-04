@@ -505,6 +505,16 @@ function bandPositionOf(state, uid) {
   return null;
 }
 
+// Primer hueco libre de la Formación (fila a fila), o null si está
+// completa — para poder añadir un luchador de un toque desde su ficha sin
+// que el jugador tenga que elegir hueco a mano cuando cualquiera vale.
+function firstEmptyBandSlot(state) {
+  for (let r = 0; r < BAND_ROWS; r++) for (let c = 0; c < BAND_COLS; c++) {
+    if (!state.band[r][c]) return { row: r, col: c };
+  }
+  return null;
+}
+
 // --- Formaciones guardadas ---
 // Cada preset es una copia independiente de state.band en el momento de
 // guardarlo — cambiar la Formación actual después no afecta a los presets

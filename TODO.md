@@ -3246,6 +3246,28 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     aplicar un preset que referencia a un luchador ya vendido del roster
     coloca al resto con normalidad y deja ese hueco vacío en vez de fallar.
 
+- [x] Añade "Añadir a la Formación" desde la ficha de un luchador de la
+    Colección: antes solo se podía colocar en la banda desde el propio
+    hueco vacío de la rejilla de Formación — el usuario pidió poder
+    hacerlo también desde la ficha normal. `firstEmptyBandSlot(state)`
+    (state.js) devuelve el primer hueco libre (o null si está completa).
+    En `UI.openFighterModal` (ui.js), el panel "🐾 Formación" ahora decide
+    qué mostrar según `bandPos` (dónde está YA colocado, si lo está) en
+    vez de solo `formationCtx` (que solo llegaba al abrir desde el propio
+    hueco) — mismo cambio, unifica dos casos que antes eran uno solo: con
+    hueco libre, un botón "➕ Añadir a la Formación" lo coloca directo; con
+    la Formación completa (9/9), una rejilla con los 9 colocados para
+    elegir a quién sustituir. De paso, esto también arregla que abrir
+    desde la Colección a alguien YA colocado en la banda (en un hueco
+    distinto al que se tocó) no ofrecía "Quitar de la formación" — ahora
+    sí, por el mismo cambio de `formationCtx` a `bandPos`.
+    Verificado con Playwright: hueco libre → un toque coloca al luchador
+    exactamente donde tocaba; abrir a alguien ya colocado desde la
+    Colección (sin formationCtx) ofrece quitarlo; Formación llena (9/9) →
+    la rejilla de sustitución muestra los 9 colocados y sustituir
+    funciona; y abrir directamente desde un hueco ocupado de la rejilla
+    de Formación (el flujo de siempre) sigue funcionando exactamente igual.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

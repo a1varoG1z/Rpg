@@ -2373,12 +2373,16 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   sellPanel.appendChild(sellBtn);
   body.appendChild(sellPanel);
 
-  if (formationCtx) {
+  // bandPos (no formationCtx) decide qué panel mostrar — así funciona
+  // igual de bien si la ficha se abre desde el propio hueco de la
+  // Formación (formationCtx) o desde la Colección de un luchador que YA
+  // está colocado en algún otro punto de la banda.
+  if (bandPos) {
     const fPanel = el('div', 'panel');
     fPanel.innerHTML = '<h3>🐾 Formación</h3>';
     const removeBtn = el('button', 'danger-btn', 'Quitar de la formación');
     removeBtn.addEventListener('click', () => {
-      setBandSlot(state, formationCtx.row, formationCtx.col, null);
+      setBandSlot(state, bandPos.row, bandPos.col, null);
       saveGame(state);
       $('fighterModal').classList.add('hidden');
       UI.renderBanda(state);
@@ -2391,7 +2395,7 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     const placed = state.band.flat();
     const candidates = () => state.roster.filter(e => e.uid !== uid && !placed.includes(e.uid));
     const subPick = (cand) => {
-      setBandSlot(state, formationCtx.row, formationCtx.col, cand.uid);
+      setBandSlot(state, bandPos.row, bandPos.col, cand.uid);
       saveGame(state);
       $('fighterModal').classList.add('hidden');
       UI.renderBanda(state);
@@ -2407,6 +2411,43 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     fPanel.appendChild(subHeaderWrap);
     fPanel.appendChild(subWrap);
     renderPickerCandidates(subWrap, state, candidates(), subMode, subPick, subVariant);
+    body.appendChild(fPanel);
+  } else {
+    // No está en la Formación todavía: hueco libre → un toque y listo; llena
+    // → elegir a quién sustituir (misma tarjeta que ya usa el resto de
+    // selectores de luchador, para reconocer de un vistazo a cada uno).
+    const fPanel = el('div', 'panel');
+    fPanel.innerHTML = '<h3>🐾 Formación</h3>';
+    const emptyPos = firstEmptyBandSlot(state);
+    if (emptyPos) {
+      const addBtn = el('button', 'primary-btn', '➕ Añadir a la Formación');
+      addBtn.addEventListener('click', () => {
+        setBandSlot(state, emptyPos.row, emptyPos.col, uid);
+        saveGame(state);
+        $('fighterModal').classList.add('hidden');
+        UI.renderBanda(state);
+        UI.showToast(`🐾 ${def.name} añadido a la Formación`);
+      });
+      fPanel.appendChild(addBtn);
+    } else {
+      fPanel.appendChild(el('p', 'settings-info', 'La Formación está completa (9/9) — elige a quién sustituir:'));
+      const swapWrap = el('div', 'picker-grid');
+      state.band.flat().filter(Boolean).forEach(bUid => {
+        const bEntry = rosterEntry(state, bUid);
+        if (!bEntry) return;
+        const card = creatureCard(state, bEntry, { inBand: true });
+        card.addEventListener('click', () => {
+          const pos = bandPositionOf(state, bUid);
+          setBandSlot(state, pos.row, pos.col, uid);
+          saveGame(state);
+          $('fighterModal').classList.add('hidden');
+          UI.renderBanda(state);
+          UI.showToast(`🐾 ${def.name} sustituye a ${fighterDef(bEntry.defId).name} en la Formación`);
+        });
+        swapWrap.appendChild(card);
+      });
+      fPanel.appendChild(swapWrap);
+    }
     body.appendChild(fPanel);
   }
 
