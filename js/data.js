@@ -1252,6 +1252,20 @@ const OBJECTIVES = [
   { id: 'sef_estrellas_50', icon: '🌟', label: 'Acumula 50 estrellas de Superfusión', reward: rG(140), get: (st, s) => s.totalSefStars, target: 50 },
   { id: 'estrellas_max_1', icon: '💫', label: 'Lleva un luchador al máximo de 3★ de Superfusión', reward: rG(50), get: (st, s) => s.starredCount, target: 1 },
   { id: 'estrellas_max_5', icon: '💫', label: 'Lleva 5 luchadores al máximo de 3★', reward: rG(160), get: (st, s) => s.starredCount, target: 5 },
+  // fusiones_X/evoluciones_X (pedido explícito del usuario: "no hay logros
+  // por fusionar y evolucionar") — a diferencia de forma_final_X/
+  // sef_estrellas_X de arriba (una foto del roster ACTUAL), estos usan
+  // totalFusionsMade/totalEvolutions (state.js), contadores DE POR VIDA que
+  // nunca bajan aunque luego se venda o se pierda el luchador — premian la
+  // ACCIÓN de fusionar/evolucionar en sí, no solo lo que se tenga ahora.
+  { id: 'fusiones_20', icon: '⚗️', label: 'Fusiona 20 copias como material', reward: rI('pocion_menor', 2), get: (st, s) => s.totalFusionsMade, target: 20 },
+  { id: 'fusiones_75', icon: '⚗️', label: 'Fusiona 75 copias como material', reward: rG(30), get: (st, s) => s.totalFusionsMade, target: 75 },
+  { id: 'fusiones_200', icon: '⚗️', label: 'Fusiona 200 copias como material', reward: rG(75), get: (st, s) => s.totalFusionsMade, target: 200 },
+  { id: 'fusiones_500', icon: '⚗️', label: 'Fusiona 500 copias como material', reward: rG(150), get: (st, s) => s.totalFusionsMade, target: 500 },
+  { id: 'evoluciones_5', icon: '🧬', label: 'Evoluciona 5 veces', reward: rT(180), get: (st, s) => s.totalEvolutions, target: 5 },
+  { id: 'evoluciones_20', icon: '🧬', label: 'Evoluciona 20 veces', reward: rG(40), get: (st, s) => s.totalEvolutions, target: 20 },
+  { id: 'evoluciones_50', icon: '🧬', label: 'Evoluciona 50 veces', reward: rG(90), get: (st, s) => s.totalEvolutions, target: 50 },
+  { id: 'evoluciones_120', icon: '🧬', label: 'Evoluciona 120 veces', reward: rG(160), get: (st, s) => s.totalEvolutions, target: 120 },
 
   // --- Cristales --- (bonus adicional sobre la subida de tasa en combate,
   // ver stageRewards en combat.js — no es la pieza principal que arregla

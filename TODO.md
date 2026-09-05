@@ -4071,6 +4071,28 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     una final; la pantalla de Objetivos ahora solo muestra la fila
     "Maxeados (3★)" en Raro/Épico/Legendario (antes en las 5 rarezas).
 
+- [x] Añadidos Logros por fusionar y evolucionar (a petición explícita del
+    usuario: "veo que no hay logros por fusionar y evolucionar"). Los
+    únicos Logros relacionados que ya existían (`forma_final_X`,
+    `sef_estrellas_X`) miden una FOTO del roster actual (cuántos
+    luchadores tienes ahora mismo en forma final / cuántas ★ acumuladas
+    ahora mismo) — si luego vendes o pierdes ese luchador, esa cuenta
+    baja. Nuevos contadores DE POR VIDA en `state.stats` (nunca bajan,
+    igual que `battlesWon` o `totalDmgDealt`): `totalFusionsMade`
+    (incrementado en `fuseMaterials`, state.js, por cada copia consumida
+    como material) y `totalEvolutions` (incrementado en `evolveFighter`
+    por cada evolución completada) — con su migración correspondiente
+    para partidas ya guardadas (por defecto a 0, mismo patrón que el
+    resto de stats). Añadidos 8 Logros nuevos en la sección Colección de
+    `OBJECTIVES` (data.js): `fusiones_20/75/200/500` (sobre
+    `totalFusionsMade`) y `evoluciones_5/20/50/120` (sobre
+    `totalEvolutions`). Verificado con Playwright: `fuseMaterials`
+    incrementa el contador exactamente en el nº de copias consumidas;
+    `evolveFighter` lo incrementa en 1 por evolución; una partida vieja
+    sin estos campos los recibe a 0 al migrar; los 141 Logros totales (133
+    + 8) calculan `get`/`target` sin errores y la pantalla de Objetivos
+    renderiza correctamente.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
