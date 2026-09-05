@@ -4093,6 +4093,43 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     + 8) calculan `get`/`target` sin errores y la pantalla de Objetivos
     renderiza correctamente.
 
+- [x] Subido BOSS_EARLY_BOOST de 1.6 a 1.9 (state.js), a petición explícita
+    del usuario tras revisar capturas reales de su propia partida (Salón
+    del Juicio/Sabana Ardiente, banda "natural" sin grindear/equipar
+    nada): con 1.6, el jefe ya dolía de verdad (34-49% de daño recibido
+    en zonas tempranas/medias) pero se ganaba SIEMPRE — 0 derrotas en
+    varias decenas de simulaciones con banda natural. El usuario, tras
+    comparar sus propias cifras (jefe de Salón del Juicio: 5458 de daño
+    recibido en un solo encuentro) confirmó que quería riesgo real de
+    perder específicamente contra el JEFE, dejando los MOBS del camino
+    exactamente igual (los descartó explícitamente: "en mobs no me
+    preocupa tanto").
+    Calibrado por simulación (banda "natural" real + motor de combate
+    real, igual que el ajuste anterior): sondeado 1.6→3.5, con un salto
+    muy brusco entre 1.75 (siempre se gana) y 2.2+ (prácticamente
+    siempre se pierde) — aterrizado en 1.9 como punto intermedio con
+    riesgo real pero no una pared (25-50% de derrotas según la zona en
+    la muestra, en vez de 0% o ~100%). La capa `earlyGameBoostMult` que
+    ya envolvía a `BOSS_EARLY_BOOST` (ver commit anterior) protege por
+    construcción la calibración tardía sea cual sea este valor, ya
+    verificado de nuevo aquí: la banda "maxed" de referencia (TODO
+    Legendario 3★ equipo Nv.15) sigue ganando siempre en Llanura del
+    Titán/Salón de los Engaños (3.9-8.6% / 75.1% de daño recibido,
+    prácticamente sin cambio frente al valor anterior), y la banda
+    inicial de 3 sigue ganando siempre la primera etapa (protegida por
+    `MIN_BAND_FOR_BOOST`, sin tocar). Mobs sin ningún cambio (misma
+    `MOB_EARLY_BOOST`/`MOB_OVERPOWER_EXP`/`MOB_OVERPOWER_CAP` de antes).
+    Verificado con Playwright (banda natural real, zonas 0/9/10/15): el
+    jefe de Sabana Ardiente pasa de ganarse siempre a un 75% de victorias
+    (25% de derrotas reales) en la muestra, el de Salón del Juicio sube a
+    ~72% de daño recibido manteniendo el 100% en esa muestra concreta
+    (la varianza entre partidas natural-aleatorias es alta cerca de este
+    punto, así que el % de derrota real oscilará algo partida a
+    partida — es justo el "riesgo real, no garantizado" que pedía el
+    usuario), y zonas más alejadas (0, 15) se quedan sin apenas cambio
+    (47%/19% de daño, sin ninguna derrota) para no crear un muro fuera de
+    la zona donde el usuario reportó el problema.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

@@ -671,12 +671,27 @@ function applyFormationPreset(state, presetId) {
 // bandaba fuerte solo si superaba 1× — con baseline aún bajo en zonas
 // tempranas (ver bossLevelCorrectionMult), el jefe salía blando incluso
 // con overpower real. BOSS_EARLY_BOOST multiplica baseline ANTES del
-// overpower, hasta ×1.6 en la zona 0, desvaneciéndose a ×1 según
-// bossLevelCorrectionMult se acerca a 1 — es decir, se apaga solo justo
-// donde ya no hace falta (zonas tardías, la calibración de arriba ya
-// probada con banda TODO Legendario incluida, ver TODO.md: con esta
-// nueva capa esa banda sigue sacando el mismo ~69% de daño recibido en
-// Salón de los Engaños que sin ella, porque ahí baseline ya vale ~1).
+// overpower, desvaneciéndose a ×1 según bossLevelCorrectionMult se acerca
+// a 1 — es decir, se apaga solo justo donde ya no hace falta (zonas
+// tardías, la calibración de arriba ya probada con banda TODO Legendario
+// incluida, ver TODO.md: con esta capa esa banda sigue sacando el mismo
+// ~70% de daño recibido en Salón de los Engaños que sin ella, porque ahí
+// baseline ya vale ~1).
+//
+// 1.6→1.9 (pedido explícito del usuario tras revisar capturas reales de
+// su propia partida en Salón del Juicio/Sabana Ardiente): con 1.6 el
+// jefe ya dolía de verdad pero se ganaba SIEMPRE con una banda natural
+// (0 derrotas en 10-12 simulaciones en varias zonas tempranas/medias) —
+// el usuario pidió específicamente que exista riesgo real de perder
+// contra el jefe (no solo los mobs, que dejó explícitamente igual).
+// Verificado por simulación (banda "natural" real, motor de combate
+// real): con 1.9 aparecen derrotas reales en zonas tempranas/medias
+// (p.ej. ~40-50% de derrotas en Salón del Juicio/Sabana Ardiente en una
+// muestra), mientras que la banda maxed de referencia (TODO Legendario)
+// sigue ganando siempre en Llanura del Titán/Salón de los Engaños
+// (72-73% de daño recibido, sin cambio significativo) — la propia
+// tapered de arriba protege esa calibración tardía sea cual sea este
+// valor, porque ahí bossLevelCorrectionMult ya vale ~1.
 //
 // MIN_BAND_FOR_BOOST: ni este refuerzo ni el "overpower" de más abajo se
 // aplican con una banda todavía muy pequeña (menos de 6 huecos ocupados,
@@ -688,7 +703,7 @@ function applyFormationPreset(state, presetId) {
 // una señal fiable — la propia banda inicial (1 Infrecuente entre 2
 // Comunes) ya sale ligeramente "sobrada" sin que eso signifique que el
 // jugador esté invocando con más suerte de la cuenta.
-const BOSS_EARLY_BOOST = 1.6, MIN_BAND_FOR_BOOST = 6;
+const BOSS_EARLY_BOOST = 1.9, MIN_BAND_FOR_BOOST = 6;
 function bossAdaptiveMult(state, zoneIdx) {
   const zone = ZONES[zoneIdx];
   const level = zoneEnemyLevel(zoneIdx);
