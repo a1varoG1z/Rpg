@@ -848,16 +848,23 @@ UI.openZoneStages = function (state, zoneIdx) {
   wrap.appendChild(grid);
   wrap.appendChild(el('p', 'settings-info', 'Cada etapa cuesta ' + STAGE_ENERGY_COST + ' ⚡ y se recorre nodo a nodo, con varios encuentros antes de la recompensa. La etapa ' + STAGES_PER_ZONE + ' es el jefe de zona: un único combate, solo contra él.'));
 
-  // "⏩⏩ Simular mapa": encadena "Simular etapa" (ver
-  // driveStageRunToCompletion) etapa tras etapa, empezando por la
-  // siguiente sin superar, hasta agotar toda la zona — jefe de zona
-  // incluido, no se puede saltar de otra forma. Se detiene sola en
-  // cuanto la banda pierde un recorrido (deja la pantalla de derrota a
-  // la vista, igual que "Simular etapa") o si falta Energía, en vez de
-  // seguir intentándolo sin parar.
-  if (highestClearedStage(state, zone.id) < STAGES_PER_ZONE - 1) {
-    const simMapBtn = el('button', 'mini-btn', '⏩⏩ Simular mapa');
-    simMapBtn.addEventListener('click', () => UI.simulateZoneMap(state, zoneIdx));
+  // "⏩⏩ Simular todo" / "⏩ Simular todo sin jefe": encadenan "Simular
+  // etapa" (ver driveStageRunToCompletion) etapa tras etapa, empezando por
+  // la siguiente sin superar. La primera llega hasta el jefe de zona
+  // incluido (no se puede saltar de otra forma); la segunda se detiene
+  // justo antes, dejando el jefe para jugarlo a mano. Ambas se detienen
+  // solas en cuanto la banda pierde un recorrido (deja la pantalla de
+  // derrota a la vista, igual que "Simular etapa") o si falta Energía, en
+  // vez de seguir intentándolo sin parar.
+  const bestStage = highestClearedStage(state, zone.id);
+  if (bestStage < STAGES_PER_ZONE - 2) {
+    const simNoBossBtn = el('button', 'mini-btn', '⏩ Simular todo sin jefe');
+    simNoBossBtn.addEventListener('click', () => UI.simulateZoneMap(state, zoneIdx, false));
+    wrap.appendChild(simNoBossBtn);
+  }
+  if (bestStage < STAGES_PER_ZONE - 1) {
+    const simMapBtn = el('button', 'mini-btn', '⏩⏩ Simular todo');
+    simMapBtn.addEventListener('click', () => UI.simulateZoneMap(state, zoneIdx, true));
     wrap.appendChild(simMapBtn);
   }
 
@@ -977,20 +984,24 @@ UI.startStageBattle = function (state, zoneIdx, stageIdx) {
   UI.renderStageRun(state);
 };
 
-// "⏩⏩ Simular mapa": arranca (UI.startStageBattle) y completa
-// (driveStageRunToCompletion, la misma función de "Simular etapa") una
-// etapa tras otra a partir de la siguiente sin superar de esta zona,
-// jefe de zona incluido — no hay forma de saltárselo, así que también
-// se simula. Se detiene en cuanto falta banda/Energía o una etapa se
-// pierde, dejando la pantalla de derrota real a la vista en vez de
-// tragársela: el jugador decide si mejora equipo, usa objetos o
-// simplemente vuelve a intentarlo.
-UI.simulateZoneMap = function (state, zoneIdx) {
+// "⏩⏩ Simular todo" / "⏩ Simular todo sin jefe": arranca
+// (UI.startStageBattle) y completa (driveStageRunToCompletion, la misma
+// función de "Simular etapa") una etapa tras otra a partir de la
+// siguiente sin superar de esta zona. Con `includeBoss` (true = "Simular
+// todo") llega hasta el jefe de zona inclusive — no hay forma de
+// saltárselo de otra manera. Con `includeBoss` a false ("Simular todo sin
+// jefe") se detiene justo antes, dejando el jefe sin tocar para que el
+// jugador lo juegue a mano. Se detiene también en cuanto falta
+// banda/Energía o una etapa se pierde, dejando la pantalla de derrota
+// real a la vista en vez de tragársela: el jugador decide si mejora
+// equipo, usa objetos o simplemente vuelve a intentarlo.
+UI.simulateZoneMap = function (state, zoneIdx, includeBoss) {
   const zone = ZONES[zoneIdx];
+  const limitStage = includeBoss ? STAGES_PER_ZONE : STAGES_PER_ZONE - 1;
   let cleared = 0;
   for (;;) {
     const nextStage = highestClearedStage(state, zone.id) + 1;
-    if (nextStage >= STAGES_PER_ZONE) break;
+    if (nextStage >= limitStage) break;
     if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); break; }
     if (!state.settings.infiniteEnergy && state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía para seguir simulando.'); break; }
     UI.startStageBattle(state, zoneIdx, nextStage);
@@ -1007,6 +1018,14 @@ UI.simulateZoneMap = function (state, zoneIdx) {
     if (highestClearedStage(state, zone.id) + 1 >= STAGES_PER_ZONE) return;
     window.__stageRun = null;
   }
+  // Se llega aquí sin derrota (por Energía/banda insuficiente, o porque
+  // "sin jefe" ya paró justo antes del jefe): la última etapa superada
+  // dejó su pantalla de victoria abierta en #battleOverlay (nunca se
+  // "cierra" a mano entre etapas encadenadas) — hay que cerrarla también
+  // aquí o se quedaría flotando por encima de la lista de etapas recién
+  // redibujada.
+  $('battleOverlay').classList.add('hidden');
+  window.__battleView = null;
   UI.renderTopbar(state);
   UI.openZoneStages(state, zoneIdx);
   if (cleared > 0) UI.showToast('⏩⏩ ' + cleared + ' etapa' + (cleared > 1 ? 's' : '') + ' simulada' + (cleared > 1 ? 's' : ''));

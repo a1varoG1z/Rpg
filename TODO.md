@@ -4353,6 +4353,51 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       - Comprobado visualmente (capturas) que ambos botones encajan en su
         pantalla sin romper el layout existente.
 
+- [x] "Simular mapa" se separa en dos botones — pedido explícito: "quiero
+      que en el mapa estén dos opciones, simular todo y simular todo sin
+      boss, para poder jugar el boss manual". Ahora la lista de etapas de
+      una zona ofrece:
+      - "⏩⏩ Simular todo" (antes "Simular mapa"): igual que antes, jefe de
+        zona incluido.
+      - "⏩ Simular todo sin jefe": la misma cadena de `UI.startStageBattle`
+        + `driveStageRunToCompletion`, pero se detiene justo antes de la
+        última etapa (el jefe) en vez de incluirla — así el jugador puede
+        simular todo el relleno de la zona y quedarse el combate contra el
+        jefe para jugarlo él mismo. Solo se muestra si a la zona le queda
+        alguna etapa NORMAL por delante (si solo falta el jefe, no tiene
+        sentido y desaparece, dejando solo "Simular todo").
+      Implementación (ui.js): `UI.simulateZoneMap(state, zoneIdx,
+      includeBoss)` recibe el nuevo parámetro `includeBoss` — el límite de
+      etapas del bucle pasa a ser `STAGES_PER_ZONE` (incluye jefe) o
+      `STAGES_PER_ZONE - 1` (se detiene justo antes) según su valor; el resto
+      de la lógica (parar en banda/Energía insuficiente o al perder una
+      etapa, dejando la pantalla de derrota real a la vista) no cambia.
+      De paso se corrigió un fallo real descubierto al probar "sin jefe":
+      cuando la cadena termina SIN pasar por una derrota (por agotar
+      Energía, quedarse sin banda, o —el caso nuevo y ahora habitual— llegar
+      al límite de "sin jefe"), la pantalla de resultado de la última etapa
+      superada se quedaba abierta por encima de la lista de etapas recién
+      redibujada (nunca se pulsa "Cerrar" entre etapas encadenadas). Ahora
+      `UI.simulateZoneMap` oculta `#battleOverlay` y limpia
+      `window.__battleView` explícitamente en ese caso, antes de volver a
+      `UI.openZoneStages`.
+      Verificado con Playwright (banda nivel 60/3★, zona con 9 etapas
+      normales + jefe por delante):
+      - Ambos botones presentes cuando quedan etapas normales antes del
+        jefe.
+      - "Simular todo sin jefe" avanza `zoneStage` de 15 a 23
+        (`STAGES_PER_ZONE - 2`, el jefe en el 24 queda intacto) y deja la
+        pantalla limpia (`battleOverlay` oculto, sin superposición) sobre la
+        lista de etapas de la zona — el fallo del overlay colgado, antes de
+        la corrección, se confirmó primero (`battleOverlayVisible: true`
+        indebido) y luego se verificó resuelto (`false`).
+      - Tras eso, en la lista de etapas solo queda "⏩⏩ Simular todo" (ya no
+        "sin jefe", solo falta el jefe) — al pulsarlo vence al jefe
+        (`zoneStage` a 24) y muestra su pantalla de victoria real.
+      - Repetida también la batería anterior (etapa suelta con "Simular
+        etapa", zona completa con "Simular todo" desde cero): mismos
+        resultados que antes de este cambio, sin regresiones.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
