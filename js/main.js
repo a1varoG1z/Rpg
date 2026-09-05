@@ -1,4 +1,9 @@
 // Arranque del juego, bucle principal y manejadores de eventos de la interfaz.
+// Rango del ajuste de dificultad de Ajustes (ver playerDifficultyMult en
+// state.js) — 50%-200% en pasos de 10%, con 100% (sin cambio) como punto
+// de partida ya calibrado.
+const DIFFICULTY_MULT_MIN = 0.5, DIFFICULTY_MULT_MAX = 2.0, DIFFICULTY_MULT_STEP = 0.1;
+function difficultyLabelText(mult) { return Math.round(mult * 100) + '%'; }
 (function () {
   let loaded = loadGame();
   const isNewGame = !loaded;
@@ -41,6 +46,7 @@
     $('enableTorreToggle').checked = state.settings.enableTorreBatalla;
     $('enableElementalToggle').checked = state.settings.enableElementalDungeon;
     $('enableRoguelikeToggle').checked = state.settings.enableRoguelike;
+    $('difficultyValueLabel').textContent = difficultyLabelText(state.settings.difficultyMult);
     $('settingsModal').classList.remove('hidden');
   });
   $('settingsModalClose').addEventListener('click', () => $('settingsModal').classList.add('hidden'));
@@ -98,6 +104,17 @@
     UI.renderTopbar(state);
     UI.showToast(state.settings.infiniteEnergy ? '⚡ Energía infinita activada' : '⚡ Energía infinita desactivada');
   });
+  function adjustDifficulty(delta) {
+    const next = Math.round((state.settings.difficultyMult + delta) * 100) / 100;
+    const clamped = Math.min(DIFFICULTY_MULT_MAX, Math.max(DIFFICULTY_MULT_MIN, next));
+    if (clamped === state.settings.difficultyMult) return;
+    state.settings.difficultyMult = clamped;
+    saveGame(state);
+    $('difficultyValueLabel').textContent = difficultyLabelText(clamped);
+    UI.showToast('🎚️ Dificultad: ' + difficultyLabelText(clamped));
+  }
+  $('difficultyDownBtn').addEventListener('click', () => adjustDifficulty(-DIFFICULTY_MULT_STEP));
+  $('difficultyUpBtn').addEventListener('click', () => adjustDifficulty(DIFFICULTY_MULT_STEP));
   $('showMedallionToggle').addEventListener('change', (e) => {
     state.settings.showMedallion = e.target.checked;
     saveGame(state);

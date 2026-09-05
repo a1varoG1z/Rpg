@@ -62,7 +62,11 @@ function createNewState() {
       // fusionar/evolucionar en sí, no solo por lo que se tenga ahora mismo.
       totalFusionsMade: 0, totalEvolutions: 0,
     },
-    settings: { infiniteEnergy: false, showMedallion: true, enableTorreBatalla: false, enableElementalDungeon: false, enableRoguelike: false },
+    // difficultyMult: multiplicador global de dificultad ajustable en
+    // Ajustes (ver playerDifficultyMult en state.js) — 1 = sin cambio
+    // (la dificultad ya calibrada), gradual en pasos de 10% hacia arriba o
+    // abajo.
+    settings: { infiniteEnergy: false, showMedallion: true, enableTorreBatalla: false, enableElementalDungeon: false, enableRoguelike: false, difficultyMult: 1 },
     // Torre Batalla: cuántas veces se ha superado cada nivel (clave =
     // level.key de TORRE_LEVELS en data.js) — 0/ausente = nivel no
     // superado todavía (y por tanto el siguiente sigue bloqueado).
@@ -704,6 +708,17 @@ function applyFormationPreset(state, presetId) {
 // Comunes) ya sale ligeramente "sobrada" sin que eso signifique que el
 // jugador esté invocando con más suerte de la cuenta.
 const BOSS_EARLY_BOOST = 1.9, MIN_BAND_FOR_BOOST = 6;
+// Ajuste de dificultad general de Ajustes (pedido explícito del usuario:
+// "una opción de subir o bajar dificultad, que sea gradual") —
+// state.settings.difficultyMult (por defecto 1, sin efecto) multiplica el
+// resultado ENTERO de bossAdaptiveMult/mobAdaptiveMult, encima de todo lo
+// demás (baseline, refuerzo temprano, adaptación a overpower). Al ser un
+// único multiplicador final, sube o baja la dificultad calibrada de este
+// TODO.md sin desmontar ninguno de sus ajustes — 100% dificultad sigue
+// siendo exactamente el punto ya validado (natural/maxed/banda inicial),
+// y cada paso de ±10% (ver DIFFICULTY_MULT_MIN/MAX/STEP en main.js) se
+// aleja gradualmente de ahí en cualquiera de las dos direcciones.
+function playerDifficultyMult(state) { return (state.settings && state.settings.difficultyMult) || 1; }
 function bossAdaptiveMult(state, zoneIdx) {
   const zone = ZONES[zoneIdx];
   const level = zoneEnemyLevel(zoneIdx);
@@ -715,25 +730,29 @@ function bossAdaptiveMult(state, zoneIdx) {
   const rawBaseline = bossLevelCorrectionMult(zoneIdx);
   const bandUids = state.band.flat().filter(Boolean);
   const baseline = bandUids.length >= MIN_BAND_FOR_BOOST ? rawBaseline * earlyGameBoostMult(rawBaseline, BOSS_EARLY_BOOST) : rawBaseline;
-  if (bandUids.length < MIN_BAND_FOR_BOOST) return baseline;
-  const refStats = buildUnitStats(zone.pool[0], level);
-  const refPower = fighterPowerScore({ hp: refStats.maxHp, atk: refStats.atk, def: refStats.def, agi: refStats.agi, wis: refStats.wis });
-  if (refPower <= 0) return baseline;
-  let bandTotal = 0, counted = 0;
-  bandUids.forEach(uid => {
-    const entry = rosterEntry(state, uid);
-    if (!entry) return;
-    bandTotal += fighterPowerScore(fighterStats(state, entry));
-    counted++;
-  });
-  if (!counted) return baseline;
-  const overpower = (bandTotal / counted) / refPower;
-  if (overpower <= 1) return baseline;
-  // El techo también crece con la zona (lateZoneMult, ver data.js) para que
-  // el jefe conserve margen sobre su propio camino en zonas avanzadas, en
-  // vez de quedarse siempre en el mismo ×4.5 mientras el camino ya sigue
-  // subiendo con lateZoneMult.
-  return baseline * Math.min(4.5 * lateZoneMult(zoneIdx), Math.pow(overpower, 0.85));
+  let result = baseline;
+  if (bandUids.length >= MIN_BAND_FOR_BOOST) {
+    const refStats = buildUnitStats(zone.pool[0], level);
+    const refPower = fighterPowerScore({ hp: refStats.maxHp, atk: refStats.atk, def: refStats.def, agi: refStats.agi, wis: refStats.wis });
+    let bandTotal = 0, counted = 0;
+    bandUids.forEach(uid => {
+      const entry = rosterEntry(state, uid);
+      if (!entry) return;
+      bandTotal += fighterPowerScore(fighterStats(state, entry));
+      counted++;
+    });
+    if (refPower > 0 && counted) {
+      const overpower = (bandTotal / counted) / refPower;
+      if (overpower > 1) {
+        // El techo también crece con la zona (lateZoneMult, ver data.js)
+        // para que el jefe conserve margen sobre su propio camino en zonas
+        // avanzadas, en vez de quedarse siempre en el mismo ×4.5 mientras
+        // el camino ya sigue subiendo con lateZoneMult.
+        result = baseline * Math.min(4.5 * lateZoneMult(zoneIdx), Math.pow(overpower, 0.85));
+      }
+    }
+  }
+  return result * playerDifficultyMult(state);
 }
 
 // Mismo concepto que bossAdaptiveMult pero para los MOBS de una etapa
@@ -754,22 +773,25 @@ function mobAdaptiveMult(state, zoneIdx) {
   const zone = ZONES[zoneIdx];
   const level = zoneEnemyLevel(zoneIdx);
   const bandUids = state.band.flat().filter(Boolean);
-  if (bandUids.length < MIN_BAND_FOR_BOOST) return 1;
-  const boosted = earlyGameBoostMult(bossLevelCorrectionMult(zoneIdx), MOB_EARLY_BOOST);
-  const refStats = buildUnitStats(zone.pool[0], level);
-  const refPower = fighterPowerScore({ hp: refStats.maxHp, atk: refStats.atk, def: refStats.def, agi: refStats.agi, wis: refStats.wis });
-  if (refPower <= 0) return boosted;
-  let bandTotal = 0, counted = 0;
-  bandUids.forEach(uid => {
-    const entry = rosterEntry(state, uid);
-    if (!entry) return;
-    bandTotal += fighterPowerScore(fighterStats(state, entry));
-    counted++;
-  });
-  if (!counted) return boosted;
-  const overpower = (bandTotal / counted) / refPower;
-  if (overpower <= 1) return boosted;
-  return boosted * Math.min(MOB_OVERPOWER_CAP * lateZoneMult(zoneIdx), Math.pow(overpower, MOB_OVERPOWER_EXP));
+  let result = 1;
+  if (bandUids.length >= MIN_BAND_FOR_BOOST) {
+    const boosted = earlyGameBoostMult(bossLevelCorrectionMult(zoneIdx), MOB_EARLY_BOOST);
+    result = boosted;
+    const refStats = buildUnitStats(zone.pool[0], level);
+    const refPower = fighterPowerScore({ hp: refStats.maxHp, atk: refStats.atk, def: refStats.def, agi: refStats.agi, wis: refStats.wis });
+    let bandTotal = 0, counted = 0;
+    bandUids.forEach(uid => {
+      const entry = rosterEntry(state, uid);
+      if (!entry) return;
+      bandTotal += fighterPowerScore(fighterStats(state, entry));
+      counted++;
+    });
+    if (refPower > 0 && counted) {
+      const overpower = (bandTotal / counted) / refPower;
+      if (overpower > 1) result = boosted * Math.min(MOB_OVERPOWER_CAP * lateZoneMult(zoneIdx), Math.pow(overpower, MOB_OVERPOWER_EXP));
+    }
+  }
+  return result * playerDifficultyMult(state);
 }
 
 // Jefes de la Torre Batalla: reutiliza bossAdaptiveMult referenciado a la
@@ -1158,6 +1180,7 @@ function migrateState(state) {
     if (state.settings.enableTorreBatalla === undefined) state.settings.enableTorreBatalla = false;
     if (state.settings.enableElementalDungeon === undefined) state.settings.enableElementalDungeon = false;
     if (state.settings.enableRoguelike === undefined) state.settings.enableRoguelike = false;
+    if (state.settings.difficultyMult === undefined) state.settings.difficultyMult = 1;
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     if (!state.homunculos) state.homunculos = { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 };
     if (!state.torre) state.torre = { clears: {} };

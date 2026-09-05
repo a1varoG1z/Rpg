@@ -4220,6 +4220,45 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     cambio (95.7 vs 95 Pixite, 6.51 vs 6.4 Voxite, 1.27 vs 1.28 Doxite),
     tal como pedía explícitamente ("es importante que sean los mismos").
 
+- [x] Añadido un ajuste de dificultad gradual en Ajustes, a petición
+    explícita del usuario ("una opción de subir o bajar dificultad, que
+    sea gradual, que puedas ir subiendo o bajando poco a poco"):
+    - Nuevo `state.settings.difficultyMult` (por defecto 1, sin efecto) —
+      un multiplicador global aplicado al FINAL de `bossAdaptiveMult` y
+      `mobAdaptiveMult` (state.js), por encima de todo lo demás ya
+      calibrado (baseline por zona, refuerzo temprano, adaptación a
+      overpower) — así 100% sigue siendo exactamente el punto ya
+      validado en TODO.md, y cada paso se aleja de ahí sin desmontar
+      ningún ajuste anterior. Cubre mobs y jefes del Mapa, y también los
+      jefes de la Torre Batalla y el Duelo por apuesta (reutilizan
+      `bossAdaptiveMult`).
+    - A diferencia del guardarraíl `MIN_BAND_FOR_BOOST` (que SÍ bloquea el
+      refuerzo automático por overpower con una banda diminuta, para no
+      romper el arranque del juego sin querer), este multiplicador se
+      aplica SIEMPRE, incluso con la banda inicial de 3 — es una decisión
+      deliberada del jugador, no un ajuste automático, así que si pide
+      más dificultad debe notarse desde el primer combate si así lo
+      quiere.
+    - Ambas funciones se reescribieron internamente (de varios `return`
+      tempranos a una única variable de resultado) para poder multiplicar
+      por `playerDifficultyMult(state)` en un solo punto de salida, sin
+      arriesgarse a que un valor se cuele sin pasar por el multiplicador.
+    - UI en Ajustes (index.html/main.js): fila "🎚️ Dificultad" con
+      botones "−"/"+" y un porcentaje en vivo (`DIFFICULTY_MULT_MIN=0.5`,
+      `DIFFICULTY_MULT_MAX=2.0`, `DIFFICULTY_MULT_STEP=0.1` en main.js) —
+      de 50% a 200% en pasos de 10%, guardado al momento y con un toast
+      de confirmación.
+    Verificado con Playwright: con el multiplicador en 150%/50%, tanto
+    `bossAdaptiveMult` como `mobAdaptiveMult` devuelven exactamente
+    ×1.5/×0.5 del valor por defecto (incluida la banda inicial de 3, que
+    también responde al ajuste); los botones de la UI suben/bajan de 10 en
+    10, quedan capados a 50%/200% en los extremos, y el valor se guarda de
+    verdad en la partida; una partida vieja sin este campo lo recibe a 1
+    (100%, sin cambio) al migrar. Repetida también la batería completa de
+    verificación de dificultad (banda natural/maxed/inicial en varias
+    zonas) con el ajuste en su valor por defecto (100%) para confirmar que
+    el refactor no cambió ni un número de los ya calibrados.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
