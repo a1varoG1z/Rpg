@@ -4297,6 +4297,62 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       cambio se compensa solo en el ratio de "overpower" salvo para zonas
       con Gurú de por medio, sin ningún efecto brusco detectado.
 
+- [x] Botones "⏩ Simular etapa" (en el recorrido de una etapa) y "⏩⏩ Simular
+      mapa" (en la lista de etapas de una zona) — pedidos explícitamente para
+      poder avanzar más rápido "con el fin de... probar mejor el juego", no
+      para trivializar el juego: ambos reutilizan el motor de combate REAL
+      (mismo `simulateOneRound`, mismas `resolveAvailableGroups`/
+      `pickAutoGroup` que ya respaldan el botón "🤖 Auto" de siempre) así que
+      el resultado (victoria/derrota, daño, recompensas) sale exactamente de
+      la misma probabilidad y calibración que jugarlo a mano — cero lógica
+      duplicada.
+      Implementación (ui.js):
+      - `driveStageRunToCompletion(state)`: activa `UI.autoBattleEnabled` y
+        fuerza `UI.stepBattle` a resolver cada choque al instante (en vez de
+        animado a 420ms/UI.battleSpeed), ambos restaurados al terminar
+        (try/finally) para no dejar "Auto"/velocidad tocados de cara al
+        siguiente combate manual del jugador. Con eso encadena
+        `UI.fightStageRunNode` las veces que haga falta hasta agotar
+        `run.encounters` o hasta `run.failed`.
+      - `UI.simulateStageRun(state)`: botón "⏩ Simular etapa" en
+        `UI.renderStageRun`, junto al de "Luchar" (mismo `disabled` que él,
+        por si la banda entera está desmayada) — completa de golpe la etapa
+        en curso. Al terminar deja la pantalla de resultado REAL a la vista
+        (recompensas si se supera del todo, o "💀 Derrota" si la banda cae
+        en algún encuentro intermedio) — el jugador sigue teniendo que
+        cerrarla, igual que si hubiera jugado a mano.
+      - `UI.simulateZoneMap(state, zoneIdx)`: botón "⏩⏩ Simular mapa" en
+        `UI.openZoneStages` (solo visible si a la zona le queda alguna etapa
+        por superar) — encadena `UI.startStageBattle` +
+        `driveStageRunToCompletion` etapa tras etapa desde la siguiente sin
+        superar, JEFE DE ZONA INCLUIDO (no hay forma de saltárselo, así que
+        también se simula — pedido explícito del usuario tras su propia
+        autocorrección: "que ese no se puede saltar, entonces se simulan
+        todas las etapas"). Se detiene sola, dejando la pantalla de derrota
+        real a la vista, en cuanto la banda pierde una etapa, o antes de
+        empezar si falta banda en Formación o Energía — el mismo freno que
+        ya tiene cualquier etapa jugada a mano, no una vía para saltárselo.
+      Verificado con Playwright (partida nueva, banda inicial de 3):
+      - "Simular etapa" en la etapa 1 de Linde del Bosque: victoria
+        instantánea con la recompensa real (+15 Texel, +1 XP, cristal
+        Pixite, objeto de equipo), `progress.zoneStage` avanza de -1 a 0
+        igual que si se hubiera jugado a mano; `UI.autoBattleEnabled` queda
+        en `false` tras terminar (no se filtra el modo automático al resto
+        del juego).
+      - "Simular mapa" desde ahí: encadena las etapas 2ª a 8ª sin ningún
+        click (Texel 415→520, +105 en 7 victorias, ~15/etapa como se
+        espera), y se detiene sola al perder la 9ª — pantalla de derrota
+        real mostrada, con estadísticas de daño reales del combate.
+      - Forzando (vía guardado) una banda muy nivelada en la ANTEPENÚLTIMA
+        etapa de la zona: "Simular mapa" completa la última etapa normal Y
+        el jefe (`zoneStage` pasa de 22 a 24 = `STAGES_PER_ZONE - 1`),
+        muestra la pantalla de victoria del jefe con sus recompensas, y al
+        cerrarla vuelve a la lista de etapas de esa misma zona con el botón
+        "Simular mapa" ya desaparecido (zona 100% completada) — igual que
+        tras vencer al jefe jugando a mano.
+      - Comprobado visualmente (capturas) que ambos botones encajan en su
+        pantalla sin romper el layout existente.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

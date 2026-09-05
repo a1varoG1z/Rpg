@@ -848,6 +848,19 @@ UI.openZoneStages = function (state, zoneIdx) {
   wrap.appendChild(grid);
   wrap.appendChild(el('p', 'settings-info', 'Cada etapa cuesta ' + STAGE_ENERGY_COST + ' ⚡ y se recorre nodo a nodo, con varios encuentros antes de la recompensa. La etapa ' + STAGES_PER_ZONE + ' es el jefe de zona: un único combate, solo contra él.'));
 
+  // "⏩⏩ Simular mapa": encadena "Simular etapa" (ver
+  // driveStageRunToCompletion) etapa tras etapa, empezando por la
+  // siguiente sin superar, hasta agotar toda la zona — jefe de zona
+  // incluido, no se puede saltar de otra forma. Se detiene sola en
+  // cuanto la banda pierde un recorrido (deja la pantalla de derrota a
+  // la vista, igual que "Simular etapa") o si falta Energía, en vez de
+  // seguir intentándolo sin parar.
+  if (highestClearedStage(state, zone.id) < STAGES_PER_ZONE - 1) {
+    const simMapBtn = el('button', 'mini-btn', '⏩⏩ Simular mapa');
+    simMapBtn.addEventListener('click', () => UI.simulateZoneMap(state, zoneIdx));
+    wrap.appendChild(simMapBtn);
+  }
+
   // Duelo por apuesta: solo si ya se derrotó al jefe de esta zona — una
   // revancha contra ÉL (con las estadísticas reforzadas, ver
   // WAGER_BOSS_BOOST) arriesgando Texel a cambio del doble si se gana.
@@ -962,6 +975,41 @@ UI.startStageBattle = function (state, zoneIdx, stageIdx) {
   window.__championRun = null;
   window.__stageRun = { zoneIdx, stageIdx, isBoss, encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {} };
   UI.renderStageRun(state);
+};
+
+// "⏩⏩ Simular mapa": arranca (UI.startStageBattle) y completa
+// (driveStageRunToCompletion, la misma función de "Simular etapa") una
+// etapa tras otra a partir de la siguiente sin superar de esta zona,
+// jefe de zona incluido — no hay forma de saltárselo, así que también
+// se simula. Se detiene en cuanto falta banda/Energía o una etapa se
+// pierde, dejando la pantalla de derrota real a la vista en vez de
+// tragársela: el jugador decide si mejora equipo, usa objetos o
+// simplemente vuelve a intentarlo.
+UI.simulateZoneMap = function (state, zoneIdx) {
+  const zone = ZONES[zoneIdx];
+  let cleared = 0;
+  for (;;) {
+    const nextStage = highestClearedStage(state, zone.id) + 1;
+    if (nextStage >= STAGES_PER_ZONE) break;
+    if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); break; }
+    if (!state.settings.infiniteEnergy && state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía para seguir simulando.'); break; }
+    UI.startStageBattle(state, zoneIdx, nextStage);
+    driveStageRunToCompletion(state);
+    const run = window.__stageRun;
+    // Derrota, o esta era la última etapa (jefe incluido): se deja
+    // window.__stageRun tal cual lo dejó driveStageRunToCompletion, para
+    // que el "Cerrar" normal de la pantalla de resultado (ver el manejador
+    // de #battleCloseBtn en main.js) lleve de vuelta al sitio de siempre
+    // — la propia zona tras un jefe, el mapa entero tras una derrota —
+    // exactamente igual que si esa última etapa se hubiera jugado a mano.
+    if (!run || run.failed) return;
+    cleared++;
+    if (highestClearedStage(state, zone.id) + 1 >= STAGES_PER_ZONE) return;
+    window.__stageRun = null;
+  }
+  UI.renderTopbar(state);
+  UI.openZoneStages(state, zoneIdx);
+  if (cleared > 0) UI.showToast('⏩⏩ ' + cleared + ' etapa' + (cleared > 1 ? 's' : '') + ' simulada' + (cleared > 1 ? 's' : ''));
 };
 
 // Uids que realmente combaten en este recorrido: la Formación 3×3 normal
@@ -1088,7 +1136,48 @@ UI.renderStageRun = function (state) {
     fightBtn.disabled = bandUids.every(uid => run.faintedSet.has(uid));
     fightBtn.addEventListener('click', () => UI.fightStageRunNode(state));
     wrap.appendChild(fightBtn);
+    const simBtn = el('button', 'mini-btn', '⏩ Simular etapa');
+    simBtn.disabled = fightBtn.disabled;
+    simBtn.addEventListener('click', () => UI.simulateStageRun(state));
+    wrap.appendChild(simBtn);
   }
+};
+
+// Corazón compartido de "⏩ Simular etapa" / "⏩⏩ Simular mapa": encadena
+// UI.fightStageRunNode las veces que hagan falta para agotar TODOS los
+// encuentros restantes del recorrido activo (window.__stageRun), sin
+// esperar ningún click intermedio del jugador. Para ello fuerza, solo
+// mientras dura, el mismo combate automático que ya respalda el botón
+// "🤖 Auto" (view.autoBattle, resolveAvailableGroups/pickAutoGroup) y
+// obliga a UI.stepBattle a resolver cada choque al instante en vez de
+// animado — así el resultado (victoria/derrota, daño, recompensas) sale
+// de exactamente el mismo motor de combate y las mismas probabilidades
+// que jugándolo a mano, solo que sin las pausas ni los clics.
+function driveStageRunToCompletion(state) {
+  const prevAuto = UI.autoBattleEnabled;
+  const prevStep = UI.stepBattle;
+  UI.autoBattleEnabled = true;
+  UI.stepBattle = function (view) { prevStep(view, true); };
+  try {
+    let run = window.__stageRun;
+    while (run && run.nodeIdx < run.encounters.length && !run.failed) {
+      UI.fightStageRunNode(state);
+      run = window.__stageRun;
+    }
+  } finally {
+    UI.stepBattle = prevStep;
+    UI.autoBattleEnabled = prevAuto;
+  }
+}
+
+// "⏩ Simular etapa": completa el recorrido en curso (el mismo que abre
+// "Luchar") de golpe. Deja a la vista, como en cualquier combate, la
+// pantalla final real (recompensas si se supera del todo, o derrota si
+// la banda cae en algún encuentro) — el jugador sigue teniendo que
+// cerrarla para volver al mapa, igual que si hubiera jugado a mano.
+UI.simulateStageRun = function (state) {
+  if (!window.__stageRun) return;
+  driveStageRunToCompletion(state);
 };
 
 function runFighterStatus(state, run, uid) {
