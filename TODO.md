@@ -4710,6 +4710,56 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
         aviso explicativo — roster confirma que las copias de ese jefe
         siguen en 1 tras la segunda victoria.
 
+- [x] Partidas guardadas (slots): varias partidas independientes desde
+      dentro de la propia app, sin exportar/importar código a mano —
+      pedido explícito: "puedo hacer para tener más de una partida
+      guardada e ir cambiando entre partidas? en la propia aplicación, sin
+      tener que exportar cosas".
+      - Nuevo sistema de slots en `state.js`: cada partida vive en su
+        propia clave de localStorage (`saveKeyForSlot`); un índice aparte
+        (`dot_texel_slots_v1`) guarda el nombre de cada slot y cuál está
+        activo (`ensureSlotsMeta`/`listSaveSlots`/`createSaveSlot`/
+        `renameSaveSlot`/`deleteSaveSlot`/`switchSaveSlot`). El slot
+        `'default'` reutiliza la clave clásica `SAVE_KEY` tal cual (en vez
+        de una clave nueva), así que una partida de antes de este cambio
+        aparece sola como "Partida 1" la primera vez, sin copiarse ni
+        perderse nada.
+      - `saveGame`/`loadGame`/`resetGame` ahora leen/escriben en
+        `activeSaveKey()` (la clave del slot activo) en vez de la
+        constante `SAVE_KEY` fija — cambio mínimo y sin tocar ninguno de
+        los ~70 puntos de la app que ya llamaban a `saveGame(state)`, ya
+        que ellos no necesitan saber nada de slots.
+      - Nueva UI en Ajustes → "🗂️ Gestionar partidas"
+        (`UI.openSaveSlots`, reutilizando el modal genérico `pickerModal`
+        igual que "📋 Formaciones guardadas"): lista cada slot con su
+        nombre, resumen (nº de luchadores y Texel) y si es el activo;
+        botones para cambiar de partida, renombrar (edición en línea) y
+        borrar (oculto en el slot activo y cuando solo queda uno, para no
+        quedarse sin ninguna partida); fila para crear una partida nueva
+        con nombre. Cambiar/crear partida guarda primero la partida activa
+        (`saveGame(state)`), frena el autoguardado
+        (`UI.suppressAutosave = true`, mismo patrón que Reiniciar/Importar
+        partida — evita que el `pagehide` del propio reload sobrescriba el
+        slot recién activado con el estado en memoria todavía viejo) y
+        recarga la página para arrancar desde la partida elegida.
+      Verificado con Playwright (llamando a las funciones reales del
+      juego, no una reimplementación aparte):
+      - Crear una partida nueva desde el botón real de la UI, cambiar a
+        ella y recargar: arranca con una partida nueva de verdad (Texel
+        inicial 400, roster de 3 luchadores iniciales), y la partida
+        original queda intacta con su propio Texel sin tocar.
+      - Cambiar de vuelta a la partida original y de nuevo a la nueva:
+        cada una conserva su propio progreso de forma independiente (Texel
+        distinto en cada una, confirmado en ambas direcciones).
+      - Renombrar un slot (edición en línea, Enter para confirmar) cambia
+        solo su nombre, sin afectar al otro slot.
+      - Borrar un slot no activo elimina su entrada del índice Y su clave
+        de localStorage (sin dejar basura); borrar el slot activo cae
+        automáticamente al primero que quede; intentar borrar el último
+        slot restante se rechaza (nunca te puedes quedar sin ninguna
+        partida).
+      - Sin errores de página (`pageerror`) en ningún paso.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

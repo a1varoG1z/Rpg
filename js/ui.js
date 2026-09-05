@@ -4141,6 +4141,98 @@ UI.showOfflineModal = function (energyGained) {
   $('offlineModal').classList.remove('hidden');
 };
 
+// ---------- Partidas guardadas (slots) ----------
+// Lista/crea/renombra/borra slots de partida y cambia entre ellos — ver
+// listSaveSlots/createSaveSlot/renameSaveSlot/deleteSaveSlot/switchSaveSlot
+// en state.js. Cambiar o crear partida implica recargar la página (el
+// estado en memoria de la partida actual vive en variables del closure de
+// main.js, no se puede "reemplazar en caliente"): se guarda primero la
+// partida activa para no perder nada, y se frena el autoguardado antes del
+// reload igual que en Reiniciar/Importar partida.
+UI.openSaveSlots = function (state) {
+  // Mismo motivo que en openExportSave/openImportSave: si no se oculta
+  // primero, settingsModal se queda tapando este modal por encima.
+  $('settingsModal').classList.add('hidden');
+  const body = $('pickerModalBody');
+  const render = () => {
+    body.innerHTML = '<h3>🗂️ Partidas guardadas</h3>' +
+      '<p class="settings-info">Mantén varias partidas independientes y cambia entre ellas sin exportar ni ' +
+      'importar nada. Cambiar de partida recarga la app — tu progreso actual se guarda antes, así que no se pierde.</p>';
+
+    const slots = listSaveSlots();
+    const list = el('div', 'formation-preset-list');
+    slots.forEach(slot => {
+      const row = el('div', 'formation-preset-row');
+      const summaryText = slot.summary
+        ? `${slot.summary.rosterCount} luchador${slot.summary.rosterCount === 1 ? '' : 'es'} · 💰 ${slot.summary.texel}`
+        : 'todavía sin jugar';
+      const nameEl = el('div', 'formation-preset-name', `${slot.active ? '▶️ ' : ''}${slot.name} <span class="settings-info">(${summaryText})</span>`);
+      row.appendChild(nameEl);
+      const actions = el('div', 'formation-preset-actions');
+
+      if (!slot.active) {
+        const switchBtn = el('button', 'mini-btn', '▶️ Cambiar');
+        switchBtn.addEventListener('click', () => {
+          saveGame(state);
+          UI.suppressAutosave = true;
+          switchSaveSlot(slot.id);
+          location.reload();
+        });
+        actions.appendChild(switchBtn);
+      }
+
+      const renameBtn = el('button', 'mini-btn', '✏️');
+      renameBtn.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'text-input';
+        input.value = slot.name;
+        input.maxLength = 40;
+        nameEl.replaceWith(input);
+        input.focus();
+        const commit = () => { renameSaveSlot(slot.id, input.value); render(); };
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+        input.addEventListener('blur', commit);
+      });
+      actions.appendChild(renameBtn);
+
+      if (!slot.active && slots.length > 1) {
+        const delBtn = el('button', 'mini-btn', '🗑️');
+        delBtn.addEventListener('click', () => {
+          if (!confirm(`¿Eliminar la partida "${slot.name}"? No se puede deshacer.`)) return;
+          deleteSaveSlot(slot.id);
+          render();
+        });
+        actions.appendChild(delBtn);
+      }
+
+      row.appendChild(actions);
+      list.appendChild(row);
+    });
+    body.appendChild(list);
+
+    const newRow = el('div', 'formation-preset-save-row');
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'text-input';
+    nameInput.placeholder = 'Nombre de la nueva partida...';
+    nameInput.maxLength = 40;
+    newRow.appendChild(nameInput);
+    const newBtn = el('button', 'primary-btn', '➕ Nueva partida');
+    newBtn.addEventListener('click', () => {
+      saveGame(state);
+      const id = createSaveSlot(nameInput.value);
+      UI.suppressAutosave = true;
+      switchSaveSlot(id);
+      location.reload();
+    });
+    newRow.appendChild(newBtn);
+    body.appendChild(newRow);
+  };
+  render();
+  $('pickerModal').classList.remove('hidden');
+};
+
 // ---------- Exportar/Importar partida ----------
 UI.openExportSave = function (state) {
   // Se abre desde dentro de Ajustes: sin ocultarlo primero, settingsModal

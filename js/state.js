@@ -1151,15 +1151,99 @@ function computeOfflineEnergy(state) {
   return state.currencies.energy - before;
 }
 
+// --- Partidas guardadas (slots) ---
+// Varias partidas independientes que se pueden crear/renombrar/borrar y
+// entre las que cambiar desde dentro de la propia app (Ajustes → 🗂️
+// Gestionar partidas), sin depender de Exportar/Importar código a mano. Cada
+// slot vive en su propia clave de localStorage; un pequeño índice aparte
+// (SAVE_SLOTS_META_KEY) guarda el nombre de cada uno y cuál está activo. El
+// slot 'default' reutiliza SAVE_KEY tal cual (en vez de una clave nueva), así
+// que una partida guardada ANTES de que existiera este sistema aparece sola
+// como "Partida 1" la primera vez, sin copiarse ni perderse nada.
+const SAVE_SLOTS_META_KEY = 'dot_texel_slots_v1';
+
+function saveKeyForSlot(slotId) {
+  return slotId === 'default' ? SAVE_KEY : SAVE_KEY + '__' + slotId;
+}
+function persistSlotsMeta(meta) {
+  try { localStorage.setItem(SAVE_SLOTS_META_KEY, JSON.stringify(meta)); } catch (e) {}
+}
+function ensureSlotsMeta() {
+  try {
+    const raw = localStorage.getItem(SAVE_SLOTS_META_KEY);
+    if (raw) {
+      const meta = JSON.parse(raw);
+      if (meta && Array.isArray(meta.slots) && meta.slots.length) return meta;
+    }
+  } catch (e) {}
+  const meta = { slots: [{ id: 'default', name: 'Partida 1', createdAt: Date.now() }], activeId: 'default' };
+  persistSlotsMeta(meta);
+  return meta;
+}
+function activeSaveKey() {
+  return saveKeyForSlot(ensureSlotsMeta().activeId);
+}
+// Lista para la UI: cada slot con su nombre, si es el activo, y un resumen
+// (nº de luchadores / Texel) leído directamente de su partida guardada —
+// null si el slot es nuevo y todavía no se ha jugado nada en él.
+function listSaveSlots() {
+  const meta = ensureSlotsMeta();
+  return meta.slots.map(slot => {
+    let summary = null;
+    try {
+      const raw = localStorage.getItem(saveKeyForSlot(slot.id));
+      if (raw) {
+        const s = JSON.parse(raw);
+        summary = { rosterCount: (s.roster || []).length, texel: (s.currencies && s.currencies.texel) || 0 };
+      }
+    } catch (e) {}
+    return { id: slot.id, name: slot.name, active: slot.id === meta.activeId, summary };
+  });
+}
+function createSaveSlot(name) {
+  const meta = ensureSlotsMeta();
+  const id = 'slot_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  meta.slots.push({ id, name: (name && name.trim()) || ('Partida ' + (meta.slots.length + 1)), createdAt: Date.now() });
+  persistSlotsMeta(meta);
+  return id;
+}
+function renameSaveSlot(slotId, name) {
+  if (!name || !name.trim()) return false;
+  const meta = ensureSlotsMeta();
+  const slot = meta.slots.find(s => s.id === slotId);
+  if (!slot) return false;
+  slot.name = name.trim();
+  persistSlotsMeta(meta);
+  return true;
+}
+function deleteSaveSlot(slotId) {
+  const meta = ensureSlotsMeta();
+  if (meta.slots.length <= 1) return false;
+  const idx = meta.slots.findIndex(s => s.id === slotId);
+  if (idx === -1) return false;
+  meta.slots.splice(idx, 1);
+  try { localStorage.removeItem(saveKeyForSlot(slotId)); } catch (e) {}
+  if (meta.activeId === slotId) meta.activeId = meta.slots[0].id;
+  persistSlotsMeta(meta);
+  return true;
+}
+function switchSaveSlot(slotId) {
+  const meta = ensureSlotsMeta();
+  if (!meta.slots.find(s => s.id === slotId)) return false;
+  meta.activeId = slotId;
+  persistSlotsMeta(meta);
+  return true;
+}
+
 // --- Persistencia ---
 function saveGame(state) {
   state.lastSave = Date.now();
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) { /* almacenamiento no disponible */ }
+  try { localStorage.setItem(activeSaveKey(), JSON.stringify(state)); } catch (e) { /* almacenamiento no disponible */ }
 }
 
 function loadGame() {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(activeSaveKey());
     if (!raw) return null;
     return migrateState(JSON.parse(raw));
   } catch (e) { return null; }
@@ -1267,7 +1351,7 @@ function migrateState(state) {
 }
 
 function resetGame() {
-  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  try { localStorage.removeItem(activeSaveKey()); } catch (e) {}
 }
 
 // ---------- Exportar/Importar partida ----------
