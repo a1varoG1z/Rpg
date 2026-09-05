@@ -4760,6 +4760,32 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
         partida).
       - Sin errores de página (`pageerror`) en ningún paso.
 
+- [x] Recorte de la tasa de aparición de equipo (petición explícita: "se
+      consiguen demasiados objetos de tipo equipo a lo largo del juego...
+      yo pondría que se consigan muchos menos"). Con las probabilidades
+      viejas, una pasada completa del Mapa (33 zonas) daba de media ~340
+      piezas de equipo solo entre mobs y jefes en primera vez — sin contar
+      la Mazmorra Elemental, que además soltaba equipo GARANTIZADO en TODAS
+      las repeticiones (bug de origen: a diferencia de voxite/doxite, esa
+      línea no distinguía primera vez de repetición, y es repetible sin
+      límite en sus 5 versiones elementales).
+      - `ZONE_GEAR_CHANCE_TOTAL` (combat.js): 9.6 → 3.2 (un tercio) — el
+        40% por etapa de mob baja a ~13.3%.
+      - `bossGearChance` en `stageRewards` (combat.js): 70%→35% en primera
+        vez, 8%→4% en repetición.
+      - `elementalDungeonRewards` (combat.js): el equipo pasa de
+        incondicional a condicionado igual que voxite/doxite — 100%
+        (se mantiene, premio de hito) en la primera vez, 20% en
+        repetición.
+      Verificado por simulación estadística de las funciones reales
+      (`stageRewards`/`elementalDungeonRewards`, miles de tiradas cada
+      una): las tasas resultantes caen justo donde se esperaba (13.1%
+      mob, 35.3% jefe 1ª vez, 3.7% jefe repetición, 100%/19.7% Mazmorra
+      Elemental) — el total esperado de una pasada completa del Mapa baja
+      de ~340 a ~115 piezas, un recorte de ~3× que deja equipo de sobra
+      para las 6 ranuras de cada luchador sin que seguir acumulándose sin
+      parar.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

@@ -441,7 +441,16 @@ const MOB_STAGE_PIXITE_VARIANCE = 1; // +-1 sobre la media, entero
 // con el nº de etapas, solo llega repartido en menos tiradas más generosas.
 const ZONE_VOXITE_CHANCE_TOTAL = 6.4; // 32 * 0.20
 const ZONE_DOXITE_CHANCE_TOTAL = 1.28; // 32 * 0.04
-const ZONE_GEAR_CHANCE_TOTAL = 9.6; // 32 * 0.30
+// Bajado a un tercio (32 * 0.30 = 9.6 → 3.2) a petición explícita del
+// usuario: "se consiguen demasiados objetos de tipo equipo a lo largo del
+// juego... yo pondría que se consigan muchos menos". Con el valor viejo,
+// cada etapa de mobs tenía un 40% de soltar equipo (9.6/24) — un pase
+// completo del Mapa (33 zonas) daba de media ~9.6 piezas SOLO de mobs por
+// zona (~317 en total, sin contar jefes ni Mazmorra Elemental). Con 3.2 baja
+// a ~13.3% por etapa (~2.6/zona, ~88 en todo el Mapa) — sigue habiendo
+// equipo suficiente para las 6 ranuras de cada luchador, pero deja de
+// acumularse sin parar sea cual sea el ritmo de juego.
+const ZONE_GEAR_CHANCE_TOTAL = 3.2;
 
 function elementalDungeonRewards(isFirstClear) {
   const zoneIdx = ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID);
@@ -450,7 +459,14 @@ function elementalDungeonRewards(isFirstClear) {
   // el Guardián hace que el reto sea mayor.
   const texel = Math.round(zoneTexelTotal(zoneIdx) * 0.35 * 3.5);
   const fighterXp = Math.round(zoneXpTotal(zoneIdx) * 0.30 * 3);
-  const drops = { voxite: 0, doxite: 0, gear: generateGear(randomGearSlot(), gearDropRarity(zoneIdx, isFirstClear)) };
+  const drops = { voxite: 0, doxite: 0, gear: null };
+  // El equipo aquí era antes incondicional (SIEMPRE caía una pieza, a
+  // diferencia de voxite/doxite justo debajo, que sí distinguen primera vez
+  // de repetición) — con 5 mazmorras (una por elemento) repetibles sin
+  // límite, eso era una fuente de equipo garantizada sin tope. Se alinea
+  // ahora con el resto del recorte de equipo: garantizado solo la primera
+  // vez (premio de hito de la mazmorra), 20% en repeticiones.
+  if (Math.random() < (isFirstClear ? 1 : 0.2)) drops.gear = generateGear(randomGearSlot(), gearDropRarity(zoneIdx, isFirstClear));
   if (isFirstClear) {
     drops.voxite = 1;
     if (Math.random() < 0.4) drops.doxite = 1;
@@ -499,14 +515,13 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
       if (Math.random() < 0.45) drops.voxite = 1;
       if (Math.random() < 0.18) drops.doxite = 1;
     }
-    // Igual que el cristal: el 70% de probabilidad de equipo es el premio
-    // de vencer al jefe por primera vez. Repetirlo lo bajaba a una tabla de
-    // rareza floja (ver gearDropRarity) pero seguía dando equipo el 70% de
-    // las veces — con un jefe fácil de repetir en segundos (Auto +
-    // velocidad 3×), eso seguía siendo mucho volumen de piezas, aunque
-    // fueran de rareza baja. En la repetición baja también la probabilidad
-    // misma de que caiga algo, a un 8%.
-    const bossGearChance = isFirstClear ? 0.7 : 0.08;
+    // Bajado a la mitad (70%→35% / 8%→4%), en línea con el recorte de
+    // ZONE_GEAR_CHANCE_TOTAL más arriba — mismo motivo: demasiado equipo en
+    // total. Repetirlo sigue usando una tabla de rareza floja (ver
+    // gearDropRarity) además de esta probabilidad más baja de que caiga
+    // algo, ya que un jefe fácil de repetir en segundos (Auto + velocidad
+    // 3×) sigue siendo mucho volumen de piezas si la probabilidad es alta.
+    const bossGearChance = isFirstClear ? 0.35 : 0.04;
     if (Math.random() < bossGearChance) drops.gear = generateGear(randomGearSlot(), gearDropRarity(zoneIdx, isFirstClear));
   } else {
     texel = Math.round(zTexel * 0.65 / MOB_STAGES_PER_ZONE);
