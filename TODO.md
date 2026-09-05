@@ -4259,6 +4259,44 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     zonas) con el ajuste en su valor por defecto (100%) para confirmar que
     el refactor no cambió ni un número de los ya calibrados.
 
+- [x] Arreglado un desequilibrio real de clase reportado por el usuario con
+    datos concretos: "Ra, Señor del Sol" (Legendario) quedaba por DEBAJO
+    de varias cartas Épicas al comparar en Nv.1 sin equipo — le mandó una
+    captura de su Colección ordenada así, mencionando que "ya pasó con
+    Odín" antes. Investigado y confirmado con simulación: NO era un fallo
+    puntual de Ra ni de Odín — ambos son clase Gurú, y Gurú resultó ser
+    estructuralmente la clase más floja bajo `fighterPowerScore`
+    (hp×0.3+atk+def+agi×0.5+wis×0.5): con sus pesos antiguos
+    (hp:85,atk:9,def:10,agi:16,wis:28) su "poder" implícito (66.5) quedaba
+    un 25-34% por debajo de las otras 4 clases (75-89.5) — bastante para
+    que hasta un Legendario Gurú (×4.6 de rareza) perdiera contra un
+    Épico de otra clase (×3.2), justo lo que reportó el usuario.
+    Arreglado subiendo SOLO los pesos de Gurú en `CLASS_INFO` (data.js) —
+    85/9/10/16/28 → 102/11/12/19/34 (escala ×1.203 sobre los 5 números,
+    preservando la identidad de la clase: sigue siendo la de más WIS y de
+    las de menos ATK/DEF) — sin tocar ninguna otra clase, ya dentro de un
+    rango razonable entre sí, para no arriesgar el resto de la dificultad
+    ya calibrada (`ENEMY_CLASS_TOUGHNESS_MULT.campeon`, etc., que sí
+    siguen intactos). Verificado con Playwright:
+    - "Ra, Señor del Sol" pasa de ser la carta más floja de la muestra
+      del usuario (293 de poder, por debajo de 9 Épicos distintos) a la
+      2ª más fuerte con clara diferencia (353, por delante de los mismos
+      9 Épicos, solo por detrás de otro Legendario).
+    - "Odín, Padre de Todo" sube a 439 de poder, dentro del rango sano de
+      Legendario.
+    - Comparando TODOS los Gurú contra el resto de clases, rareza a
+      rareza: el poder medio de Gurú pasa de estar un 15-34% por debajo
+      del resto (antes) a quedar dentro de un 2-4% en las 5 rarezas
+      (79/120/175/255/372 Gurú vs. 82/124/182/266/381 el resto) — ya no
+      es una clase sistemáticamente floja.
+    - Repetida la batería de verificación de dificultad (banda natural en
+      varias zonas, banda maxed en las zonas más duras, banda inicial de
+      3): sin cambios significativos frente a antes del ajuste — al ser
+      `fighterPowerScore` la base tanto de la banda del jugador como de la
+      referencia de cada zona en `mobAdaptiveMult`/`bossAdaptiveMult`, el
+      cambio se compensa solo en el ratio de "overpower" salvo para zonas
+      con Gurú de por medio, sin ningún efecto brusco detectado.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

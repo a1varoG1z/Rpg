@@ -39,10 +39,31 @@ function elementMultiplier(atkEl, defEl) {
   return 1.0;
 }
 
+// weights de Gurú subidos (85/9/10/16/28 → 102/11/12/19/34), a petición
+// explícita del usuario tras comprobar con datos reales que "Ra, Señor del
+// Sol" (Legendario) quedaba por DEBAJO de varias cartas Épicas al comparar
+// en Nv.1 sin equipo — no era un bug puntual de Ra, sino que Gurú es
+// estructuralmente la clase más floja bajo fighterPowerScore (hp*0.3+atk+
+// def+agi*0.5+wis*0.5): con los pesos antiguos su "poder" implícito
+// (85*0.3+9+10+16*0.5+28*0.5=66.5) queda un 25-34% por debajo de las otras
+// 4 clases (75-89.5), así que hasta un Legendario Gurú (mult ×4.6) podía
+// perder contra un Épico de otra clase (mult ×3.2) — ya le pasó antes a
+// "Odín, Padre de Todo" (mismo problema, también Gurú). Mismo motivo
+// exacto que ya arregló ENEMY_CLASS_TOUGHNESS_MULT para Campeón como
+// RIVAL (combat.js) — aquí es la clase la que estaba mal calibrada como
+// stats base, no un ajuste de rival. Subida SOLO Gurú (no las demás
+// clases, ya dentro de un rango razonable entre sí) hasta un "poder"
+// implícito de ~80 (escala ×1.203 sobre los 5 números, preservando la
+// identidad de la clase — sigue siendo la de más WIS y de las de menos
+// ATK/DEF, solo que ya no es la más floja en total). Verificado por
+// simulación: "Ra, Señor del Sol" pasa de ser la carta más floja de su
+// nivel (293 de poder, por debajo de 9 Épicos distintos) a la más fuerte
+// con clara diferencia (352, por delante de los mismos 9 Épicos) — ver
+// TODO.md para la comparación completa.
 const CLASS_INFO = {
   campeon: { label: 'Campeón', icon: '🛡️', role: 'Tanque', weights: { hp: 145, atk: 17, def: 22, agi: 8, wis: 6 } },
   picaro: { label: 'Pícaro', icon: '🗡️', role: 'Daño físico', weights: { hp: 90, atk: 26, def: 10, agi: 22, wis: 6 } },
-  guru: { label: 'Gurú', icon: '🔮', role: 'Daño mágico', weights: { hp: 85, atk: 9, def: 10, agi: 16, wis: 28 } },
+  guru: { label: 'Gurú', icon: '🔮', role: 'Daño mágico', weights: { hp: 102, atk: 11, def: 12, agi: 19, wis: 34 } },
   brujo: { label: 'Brujo', icon: '💀', role: 'Híbrido', weights: { hp: 100, atk: 21, def: 14, agi: 10, wis: 24 } },
   explorador: { label: 'Explorador', icon: '🏹', role: 'Soporte', weights: { hp: 100, atk: 16, def: 14, agi: 18, wis: 12 } },
 };
