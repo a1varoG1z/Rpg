@@ -792,23 +792,30 @@ const XP_LEVEL_CAP = 40;
 // cerca esta misma curva zona a zona.
 function fighterXpToNext(level) { return Math.floor(20 * Math.pow(level, 1.5)); }
 
-// Nº de etapas por zona — 8 originalmente, subido a 15 y ahora a 33 (32 de
-// mobs + 1 jefe) a petición del usuario: incluso con 15 etapas, acumular
-// varias de golpe (~7 Pixite de media cada una) llevaba a "aperturas" de
-// 40-50 cristales de un tirón, gestionando un montón de personajes a la
-// vez — le quitaba la gracia a que cada tirada se sintiera especial. Con
-// 33, la media baja a ~3 Pixite por etapa (ZONE_PIXITE_TOTAL / 32, ver
-// stageRewards en combat.js) — mismo total por zona, pero llegando en
-// trocitos pequeños de verdad. IMPORTANTE: el nivel del rival
-// (zoneEnemyLevel, justo abajo) se calcula a propósito a partir de
-// zoneIdx, NUNCA de STAGES_PER_ZONE — así, subir este número reparte mejor
-// los premios sin acelerar ni frenar la escalada de nivel (antes, con el
-// nivel calculado como 1+zoneIdx*STAGES_PER_ZONE+etapa, más etapas por
-// zona significaba automáticamente nivel más alto por zona, el efecto
-// contrario al que se buscaba). El mapa entero pasa de 495 a 1.089 etapas
-// — bastante más largo, pero es justo lo que pidió el usuario ("hacer el
-// juego más lento y no tan frenético").
-const STAGES_PER_ZONE = 33;
+// Nº de etapas por zona — 8 originalmente, subido a 15 y luego a 33 (32 de
+// mobs + 1 jefe) para que cada tirada de cristales se sintiera pequeña de
+// verdad (ver historial completo en TODO.md). Bajado ahora a 25 (24 de
+// mobs + 1 jefe), a petición explícita del usuario: con 32 etapas de solo
+// 2-3 oleadas cada una, demasiadas se superaban sin la más mínima
+// oposición — su propuesta fue MENOS etapas pero cada una con MÁS
+// oleadas seguidas SIN curación entre medias (ver rowCount en
+// buildEnemyBand, combat.js: ahora 3/4/5 oleadas según el tramo de la
+// zona, antes 2/3), para que el desgaste acumulado suba la dificultad de
+// verdad sin tocar ni un stat de los rivales. El total de oleadas por
+// zona apenas cambia (90 ahora, 85 antes) — la dificultad sube por
+// estructura (menos "reinicios" de vida a base de curarse entre etapas),
+// no por inflar números. Recompensas de zona (texel/XP/Pixite,
+// stageRewards en combat.js) siguen siendo un TOTAL por zona repartido
+// entre las etapas de mobs que haya — automáticamente más grandes por
+// etapa al haber menos, sin que el total de la zona cambie; las
+// probabilidades de Voxite/Doxite/equipo por etapa (antes fijas) pasaron
+// a derivarse igual (un total esperado por zona, dividido entre
+// MOB_STAGES_PER_ZONE) para que el total esperado por zona tampoco
+// cambie, solo llegue en menos tiradas más gordas. IMPORTANTE: el nivel
+// del rival (zoneEnemyLevel, justo abajo) se sigue calculando a partir de
+// zoneIdx, NUNCA de STAGES_PER_ZONE — este cambio no toca la escalada de
+// nivel para nada. El mapa entero pasa de 1.089 a 825 etapas.
+const STAGES_PER_ZONE = 25;
 
 // El nivel del rival ya NO depende de STAGES_PER_ZONE ni de la etapa
 // dentro de la zona (todas las etapas de una misma zona pelean al MISMO

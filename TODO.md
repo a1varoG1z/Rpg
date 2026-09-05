@@ -4130,6 +4130,68 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     (47%/19% de daño, sin ninguna derrota) para no crear un muro fuera de
     la zona donde el usuario reportó el problema.
 
+- [x] Rediseño estructural del Mapa a petición explícita del usuario: le
+    seguían pareciendo "demasiadas etapas sin absolutamente ninguna
+    dificultad" incluso después de subir el riesgo del jefe (punto
+    anterior) — su propuesta fue MENOS etapas por zona pero con MÁS
+    oleadas seguidas SIN curación en cada una, manteniendo el número
+    total de combates y TODAS las recompensas exactamente iguales (solo
+    más concentradas). Cambios:
+    - `STAGES_PER_ZONE` (data.js): 33 → 25 (24 de mobs + 1 jefe, antes 32
+      + 1). El mapa entero pasa de 1.089 a 825 etapas.
+    - `rowCount` en `buildEnemyBand` (combat.js): antes 2 oleadas en el
+      primer tercio de la zona y 3 en el resto; ahora 3 oleadas en las
+      primeras 8 etapas, 4 en las 14 siguientes, y 5 en las 2 últimas
+      antes del jefe (un "último tramo" más duro justo antes del jefe,
+      tal como pidió explícitamente el usuario: "incluso poner un nivel o
+      dos con 5 combates"). Total de oleadas por zona: 90 ahora, 85 antes
+      — prácticamente el mismo número de combates, tal como se pidió.
+    - Recompensas: `zoneTexelTotal`/`zoneXpTotal`/`ZONE_PIXITE_TOTAL` ya
+      eran un total por ZONA (no por etapa) repartido automáticamente
+      entre `MOB_STAGES_PER_ZONE` etapas — con menos etapas, cada una da
+      automáticamente más sin que el total de la zona cambie, sin tocar
+      ni una línea de esa parte. Lo que SÍ había que arreglar: Voxite/
+      Doxite/equipo por etapa normal eran un % FIJO (20%/4%/30%), que con
+      menos etapas hubiera dado MENOS cristales/equipo de media por zona
+      sin querer (menos tiradas independientes al mismo %). Nuevas
+      constantes `ZONE_VOXITE_CHANCE_TOTAL`/`ZONE_DOXITE_CHANCE_TOTAL`/
+      `ZONE_GEAR_CHANCE_TOTAL` (combat.js) guardan el total ESPERADO de
+      antes (32 × 20%/4%/30%) y la probabilidad por etapa se deriva
+      dividiendo entre `MOB_STAGES_PER_ZONE` — mismo patrón que ya usaba
+      `pixiteAvg` — así el total esperado por zona no cambia pase lo que
+      pase con el nº de etapas, solo llega en menos tiradas más grandes,
+      exactamente como pidió el usuario ("los cristales deberían ser los
+      mismos que antes... solo más concentrados").
+    - `MOB_POWER_MULT` (combat.js): bajado de 0.72 a 0.65 — descubierto
+      por simulación que hacía falta: con 0.72 y el nuevo mínimo de 3
+      oleadas seguidas (antes 2), la banda inicial de 3 luchadores con la
+      que se empieza la partida pasaba de ganar siempre la primerísima
+      etapa a perderla siempre (0% de victorias en 10 pruebas) — el
+      desgaste extra de la 3ª oleada ya era demasiado para una banda tan
+      floja. Con 0.65 esa prueba vuelve al 100%.
+    Verificado con Playwright (motor de combate real):
+    - Totales de recompensa por zona (simulando 2000 limpiados completos
+      de todas las etapas de mobs de una zona): Texel/XP/Pixite/Voxite/
+      Doxite/equipo, todos dentro de ~2% del total esperado de antes de
+      este cambio — confirma que "las recompensas y todo igual" se
+      cumple de verdad, no solo en teoría.
+    - Distribución de oleadas por etapa: exactamente 8×3, 14×4, 2×5, como
+      se diseñó.
+    - Banda inicial de 3 luchadores contra la primerísima etapa: 100% de
+      victorias (arreglado el 0% que causaba MOB_POWER_MULT sin bajar).
+    - Banda "natural" (simulación real de partida sin grindear/equipar
+      nada) en zonas 0/9/10/15: mobs 20-24% de daño recibido (sensato,
+      similar al ritmo de antes), jefes con el mismo riesgo real ya
+      calibrado en el punto anterior (75% de victorias en Salón del
+      Juicio/Sabana Ardiente, sin empeorar ni mejorar significativamente
+      por la reestructuración).
+    - Banda "maxed" de referencia (TODO Legendario 3★ equipo Nv.15) en
+      Llanura del Titán/Salón de los Engaños: sin cambios significativos,
+      sigue ganando siempre.
+    - Los 141 Logros siguen calculando `get`/`target` sin errores; el
+      total de etapas posibles (825) y de jefes (33) siguen siendo
+      alcanzables para `etapas_500`/`jefes_20`.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

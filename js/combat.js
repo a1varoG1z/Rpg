@@ -151,17 +151,29 @@ function makeBossUnit(defId, level, extraMult) {
 // TODO.md) para dar un reto real pero siempre superable; el relleno de las
 // etapas normales nunca pasó por ese mismo ajuste — usa la fórmula de
 // rareza×nivel tal cual, la misma que un luchador del jugador de esa misma
-// rareza/nivel. Como cada etapa encadena 2-3 oleadas SIN curación entre
-// ellas (solo se cura al empezar una etapa nueva), un enfrentamiento
-// "igualado" oleada a oleada se convertía en desgaste imposible: simulando
-// miles de combates, un equipo a la altura de su zona perdía el 100% de
-// las etapas normales en las zonas media/tardías, frente a un 0% contra el
-// jefe de esa misma zona — justo lo contrario de lo que se espera de la
-// curva de dificultad. MOB_POWER_MULT (afinado por la misma simulación,
-// probando 0.65/0.72/0.78) devuelve el camino a un reto real pero
-// superable (~26% de derrota en una muestra representativa de zonas) sin
-// tocar los jefes, que ya estaban bien calibrados.
-const MOB_POWER_MULT = 0.72;
+// rareza/nivel. Como cada etapa encadena varias oleadas SIN curación entre
+// ellas (solo se cura al empezar una etapa nueva — 2-3 originalmente,
+// ahora 3-5, ver rowCount más abajo), un enfrentamiento "igualado" oleada
+// a oleada se convertía en desgaste imposible: simulando miles de
+// combates, un equipo a la altura de su zona perdía el 100% de las etapas
+// normales en las zonas media/tardías, frente a un 0% contra el jefe de
+// esa misma zona — justo lo contrario de lo que se espera de la curva de
+// dificultad. MOB_POWER_MULT (afinado por la misma simulación, probando
+// 0.65/0.72/0.78, cuando rowCount todavía era 2-3) devuelve el camino a
+// un reto real pero superable sin tocar los jefes.
+//
+// Bajado de 0.72 a 0.65 al subir rowCount a 3-5 (a petición del usuario,
+// para concentrar la dificultad en menos etapas, ver su comentario en
+// data.js) — verificado por simulación que hacía falta: con 0.72 y el
+// nuevo mínimo de 3 oleadas seguidas (antes 2), la banda inicial de solo
+// 3 luchadores con la que se empieza la partida pasaba de ganar siempre
+// la primerísima etapa del juego a perderla siempre (0% de victorias en
+// 10 pruebas) — el "desgaste extra" de la 3ª oleada ya era demasiado para
+// una banda tan pequeña y floja. Con 0.65 esa misma prueba vuelve al
+// 100% de victorias, y el resto de la curva de dificultad (banda natural
+// media/tardía, banda maxed de referencia) sigue dentro de lo ya
+// calibrado — ver TODO.md.
+const MOB_POWER_MULT = 0.65;
 // `state` (nuevo parámetro): hace falta para mobAdaptiveMult (state.js),
 // que mide cómo de overpowered va la banda REAL del jugador frente al
 // relleno nominal de la zona — antes los mobs no recibían ningún ajuste
@@ -183,10 +195,16 @@ function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
   if (isBoss) {
     return { rows: [[makeBossUnit(zone.pool[2], level, bossExtraMult)]], isBoss, level };
   }
-  // Rampa de nº de rivales dentro de la zona, adaptada a las 32 etapas de
-  // mobs actuales (antes 14, antes 7): las primeras 11 (un tercio) traen 2
-  // filas, el resto 3 — misma proporción que antes.
-  const rowCount = stageIdx < 11 ? 2 : 3;
+  // Rampa de nº de oleadas SEGUIDAS (sin curación entre ellas) dentro de la
+  // etapa — pedido explícito del usuario: menos etapas, pero cada una con
+  // más oleadas, para que el desgaste acumulado suba la dificultad de
+  // verdad sin tocar los stats de los rivales. Adaptada a las 24 etapas de
+  // mobs actuales (antes 32, con 2/3 oleadas): las primeras 8 (un tercio)
+  // traen 3 oleadas, las siguientes 14 traen 4, y las 2 últimas antes del
+  // jefe traen 5 — un "último tramo" más duro justo antes del jefe de
+  // zona, tal como pidió el usuario ("incluso poner un nivel o dos con 5
+  // combates").
+  const rowCount = stageIdx < 8 ? 3 : (stageIdx < 22 ? 4 : 5);
   const rows = [];
   const mobMult = MOB_POWER_MULT * lateZoneMult(zoneIdx) * mobAdaptiveMult(state, zoneIdx);
   for (let r = 0; r < rowCount; r++) {
@@ -323,6 +341,20 @@ function zoneXpTotal(zoneIdx) { return 40 + zoneIdx * 190; }
 // una tirada pequeña, no ocasionalmente un salto grande.
 const ZONE_PIXITE_TOTAL = 95;
 const MOB_STAGE_PIXITE_VARIANCE = 1; // +-1 sobre la media, entero
+// Totales ESPERADOS de Voxite/Doxite/equipo por zona (solo etapas de mobs,
+// sin contar el jefe) — igual que ZONE_PIXITE_TOTAL, pero para probabilidades
+// en vez de una cantidad continua: antes eran un % FIJO por etapa (20%/4%/
+// 30%), que con STAGES_PER_ZONE bajado de 33 a 25 (ver su comentario en
+// data.js — menos etapas, más oleadas por etapa) daría MENOS cristales/
+// equipo de media por zona sin querer, ya que menos etapas = menos tiradas
+// independientes al mismo % cada una. Se guarda en su lugar el total
+// esperado de ANTES (32 etapas × 20%/4%/30%) y la probabilidad por etapa se
+// deriva de él dividiendo entre MOB_STAGES_PER_ZONE (igual que ya hacía
+// pixiteAvg) — así el total esperado por zona no cambia pase lo que pase
+// con el nº de etapas, solo llega repartido en menos tiradas más generosas.
+const ZONE_VOXITE_CHANCE_TOTAL = 6.4; // 32 * 0.20
+const ZONE_DOXITE_CHANCE_TOTAL = 1.28; // 32 * 0.04
+const ZONE_GEAR_CHANCE_TOTAL = 9.6; // 32 * 0.30
 
 function elementalDungeonRewards(isFirstClear) {
   const zoneIdx = ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID);
@@ -395,12 +427,15 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
     const pixiteAvg = ZONE_PIXITE_TOTAL / MOB_STAGES_PER_ZONE;
     const v = MOB_STAGE_PIXITE_VARIANCE;
     drops.pixite = Math.max(0, Math.round(pixiteAvg) - v + Math.floor(Math.random() * (2 * v + 1)));
-    // Voxite/Doxite de etapa normal: bajado (40%→20% / 12%→4%) a petición
-    // explícita del usuario, mismo motivo y mismo ajuste que en el jefe
-    // (ver comentario de arriba).
-    if (Math.random() < 0.20) drops.voxite = 1;
-    if (Math.random() < 0.04) drops.doxite = 1;
-    if (Math.random() < 0.3) drops.gear = generateGear(randomGearSlot(), gearDropRarity(zoneIdx));
+    // Voxite/Doxite/equipo de etapa normal: probabilidad derivada de un
+    // total esperado por zona (ver ZONE_VOXITE_CHANCE_TOTAL/
+    // ZONE_DOXITE_CHANCE_TOTAL/ZONE_GEAR_CHANCE_TOTAL más arriba), NO un %
+    // fijo — así el total esperado por zona no depende de cuántas etapas
+    // de mobs tenga (STAGES_PER_ZONE), solo de cuántas oleadas de verdad
+    // se jueguen.
+    if (Math.random() < ZONE_VOXITE_CHANCE_TOTAL / MOB_STAGES_PER_ZONE) drops.voxite = 1;
+    if (Math.random() < ZONE_DOXITE_CHANCE_TOTAL / MOB_STAGES_PER_ZONE) drops.doxite = 1;
+    if (Math.random() < ZONE_GEAR_CHANCE_TOTAL / MOB_STAGES_PER_ZONE) drops.gear = generateGear(randomGearSlot(), gearDropRarity(zoneIdx));
   }
   return { texel, fighterXp, drops };
 }
