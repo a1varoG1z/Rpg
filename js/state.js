@@ -508,6 +508,17 @@ function superFuse(state, targetUid, sacrificeUid) {
   // completado en su lugar. sef>=5 por sí solo no bastaba: una forma no
   // final con SEF lleno sigue pudiendo evolucionar antes de sacrificarse.
   if (fighterDef(sac.defId).evolvesTo) return false;
+  // El OBJETIVO también debe estar en forma final: las ★ de Superfusión
+  // son una inversión de POST-evolución (mismo criterio que selfSuperFuse,
+  // que ya lo exigía) — sin este check, cualquier forma todavía
+  // evolucionable (p.ej. un Común recién invocado) podía recibir ★
+  // sacrificando a OTRO luchador, sin haber avanzado su propia cadena de
+  // fusión/evolución para nada. Común e Infrecuente nunca son forma
+  // final de ninguna familia (siempre evolucionan 2 veces desde ahí), así
+  // que con este check ningún luchador de esas dos rarezas puede llegar
+  // nunca a tener ★ — solo Raro/Épico/Legendario, y solo en su forma
+  // final concreta dentro de esa rareza.
+  if (fighterDef(target.defId).evolvesTo) return false;
   if (target.stars >= 3) return false;
   target.stars++;
   removeFromRoster(state, sacrificeUid);
@@ -1021,19 +1032,30 @@ function objectivesSummary(state) {
 // de cada rareza ha descubierto ALGUNA VEZ (discoveredDefIds, la Pokédex
 // permanente — igual que formsDiscovered en objectivesSummary, pero
 // desglosado por tier en vez de un único total) sobre el total de esa
-// rareza, cuántos le faltan, y cuántos tiene ya MAXEADOS (3★ de
-// Superfusión, el tope — mismo criterio que starredCount) sobre ese mismo
-// total. Un personaje cuenta como maxeado si CUALQUIER copia suya en el
-// roster actual llegó a 3★, no hace falta que sea la única copia que se
-// tenga ni que sea el resto de copias también las máximas.
+// rareza, y cuántos le faltan.
+//
+// "Maxeado" (3★ de Superfusión, el tope — mismo criterio que
+// starredCount) es aparte y con su PROPIO total, no el mismo `total` de
+// arriba: las ★ son una inversión de POST-evolución (ver el check de
+// !evolvesTo añadido a superFuse), y Común/Infrecuente NUNCA son la
+// forma final de ninguna familia (siempre evolucionan 2 veces desde
+// ahí) — ninguna carta de esas dos rarezas puede llegar a tener ★ jamás,
+// así que contarlas sobre el total de la rareza entera (como se hacía
+// antes) daba un "0 maxeables de 36" sin sentido. `maxable` (formas
+// finales de esa rareza) es el total correcto para esta métrica — 0 en
+// Común/Infrecuente, así que la UI puede directamente no mostrar la fila
+// de maxeados ahí. Un personaje cuenta como maxeado si CUALQUIER copia
+// suya en el roster actual llegó a 3★, no hace falta que sea la única
+// copia que se tenga ni que sea el resto de copias también las máximas.
 function rarityCollectionStats(state) {
   const discovered = new Set(state.discoveredDefIds || []);
   const maxedDefIds = new Set(state.roster.filter(r => r.stars >= 3).map(r => r.defId));
   return RARITIES.map(r => {
     const ids = FIGHTERS.filter(f => f.rarity === r.id).map(f => f.id);
+    const finalIds = ids.filter(id => !fighterDef(id).evolvesTo);
     const found = ids.filter(id => discovered.has(id)).length;
-    const maxed = ids.filter(id => maxedDefIds.has(id)).length;
-    return { id: r.id, label: r.label, icon: r.icon, total: ids.length, found, missing: ids.length - found, maxed };
+    const maxed = finalIds.filter(id => maxedDefIds.has(id)).length;
+    return { id: r.id, label: r.label, icon: r.icon, total: ids.length, found, missing: ids.length - found, maxable: finalIds.length, maxed };
   });
 }
 

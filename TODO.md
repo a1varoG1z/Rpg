@@ -4032,6 +4032,45 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
     coinciden con lo esperado a mano; la pantalla de Objetivos renderiza
     el nuevo panel con las 5 rarezas y las dos barras de cada una.
 
+- [x] Corregido "Maxeados (3★)" en Colección por tier tras aviso del
+    usuario: "no todas las cartas se pueden maxear... las Comunes no se
+    pueden maxear". Tenía razón, y el motivo era un bug real de la propia
+    Superfusión, no solo de la pantalla de estadísticas:
+    - **Bug en `superFuse`** (state.js): comprobaba que el SACRIFICIO
+      estuviera en forma final (sin evolvesTo), pero nunca comprobaba lo
+      mismo del OBJETIVO — así que cualquier forma todavía evolucionable
+      (p.ej. un Común recién invocado, SEF 0, sin haber avanzado nada de
+      su propia cadena) podía recibir una ★ permanente sacrificando a
+      OTRO luchador cualquiera. Las ★ están pensadas como inversión de
+      POST-evolución (mismo criterio que ya exigía `selfSuperFuse` sobre
+      sí mismo), así que se añadió el mismo check sobre el objetivo.
+    - **Mismo agujero en la UI** (`UI.openFighterModal`, ui.js): el botón
+      "Superfusionar (sacrificar otro luchador)" solo comprobaba
+      `entry.stars < 3`, sin mirar si esa forma era final — ahora exige
+      también `!def.evolvesTo`, así que ni siquiera aparece en una forma
+      evolucionable.
+    - **rarityCollectionStats corregido** (state.js): el total sobre el
+      que se medía "Maxeados" era el total de TODA la rareza (p.ej. las
+      36 formas Comunes), pero por diseño (cada familia evoluciona
+      exactamente 2 veces) Común e Infrecuente NUNCA son la forma final
+      de ninguna familia — 0 de sus formas pueden llegar a tener ★ jamás.
+      Nuevo campo `maxable` (formas FINALES de esa rareza: 0 en Común/
+      Infrecuente, 36 en Raro, 45 en Épico, 31 en Legendario — verificado
+      con Playwright) sustituye a `total` como denominador de "Maxeados";
+      `UI.openObjectives` (ui.js) directamente NO muestra esa fila cuando
+      `maxable` es 0, en vez de un "0 de 36" sin sentido.
+    No se ha tocado el roster de ninguna partida ya guardada (si alguien
+    ya se benefició del bug antes de este arreglo, esa ★ ya dada se
+    queda tal cual — no hay forma de saber si fue sin querer, y
+    revertirla sería destructivo sin que el usuario lo haya pedido); el
+    arreglo solo evita que vuelva a pasar a partir de ahora. Verificado
+    con Playwright: `superFuse` sobre un objetivo no final devuelve
+    `false` sin tocar ni el objetivo ni consumir el sacrificio; sobre un
+    objetivo SÍ final sigue funcionando igual que antes; el botón
+    "Superfusionar" no aparece en la ficha de una forma no final y sí en
+    una final; la pantalla de Objetivos ahora solo muestra la fila
+    "Maxeados (3★)" en Raro/Épico/Legendario (antes en las 5 rarezas).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

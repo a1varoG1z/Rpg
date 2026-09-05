@@ -394,7 +394,11 @@ UI.openObjectives = function (state) {
     tierPanel.appendChild(label);
     tierPanel.appendChild(el('div', 'settings-info', `${r.missing} por descubrir todavía`));
     tierPanel.appendChild(objRow('Descubiertos', r.found, r.total));
-    tierPanel.appendChild(objRow('Maxeados (3★)', r.maxed, r.total));
+    // Maxeados (3★): solo tiene sentido sobre las formas FINALES de esta
+    // rareza (r.maxable, ver rarityCollectionStats) — Común e Infrecuente
+    // no tienen ninguna (siempre evolucionan 2 veces), así que ahí no se
+    // muestra esta fila en vez de un "0 de X" sin sentido.
+    if (r.maxable > 0) tierPanel.appendChild(objRow('Maxeados (3★)', r.maxed, r.maxable));
   });
   body.appendChild(tierPanel);
 
@@ -2415,7 +2419,13 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     selfFusePanel.appendChild(selfFuseBtn);
     body.appendChild(selfFusePanel);
   }
-  if (entry.stars < 3) {
+  // Las ★ de Superfusión son una inversión de POST-evolución (ver
+  // superFuse en state.js, que ahora también exige que el objetivo esté
+  // en forma final) — faltaba el mismo `!def.evolvesTo` aquí, así que
+  // este botón aparecía también en formas todavía evolucionables (p.ej.
+  // un Común recién invocado), dejando dar ★ a un luchador que ni
+  // siquiera había empezado su propia cadena de fusión/evolución.
+  if (!def.evolvesTo && entry.stars < 3) {
     const superBtn = el('button', 'primary-btn', 'Superfusionar (sacrificar otro luchador)');
     superBtn.addEventListener('click', () => UI.openSuperFusePicker(state, uid));
     body.appendChild(superBtn);
