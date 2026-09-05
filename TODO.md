@@ -4398,6 +4398,30 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
         etapa", zona completa con "Simular todo" desde cero): mismos
         resultados que antes de este cambio, sin regresiones.
 
+- [x] Botón "🗑️ Desequipar todo" en la ficha del personaje (sección
+      "Equipo") — pedido explícito: "en el perfil del personaje, en la
+      sección de objetos de equipo, añade una opción de desequipar todo".
+      Quita de golpe las 6 piezas de equipo de ESE luchador en concreto
+      (a diferencia de la función ya existente `unequipBenchedGear`, que
+      desequipa a todo el roster salvo la Formación) — el equipo no se
+      pierde, solo vuelve al inventario sin dueño, listo para ponérselo a
+      otro. Solo aparece si el luchador lleva algo puesto en algún hueco.
+      Implementación:
+      - `unequipAllGear(state, fighterUid)` (state.js): recorre
+        `GEAR_SLOT_IDS` y limpia `entry.gear[slot]` en los que tuviera algo
+        puesto, devuelve cuántos huecos tenía.
+      - Botón en `UI.openFighterModal` (ui.js), junto a "⚡ Auto-equipar
+        mejor" en el panel "Equipo", visible solo si
+        `GEAR_SLOT_IDS.some(slot => entry.gear[slot])`; al pulsarlo llama a
+        `unequipAllGear`, guarda, refresca la ficha y Banda si está abierta,
+        y muestra un toast con cuántos huecos se han vaciado.
+      Verificado con Playwright: equipando 3 piezas (arma/armadura/casco)
+      generadas con el motor real (`generateGear`) a un luchador, el botón
+      aparece; al pulsarlo los 6 huecos quedan a `null`, las 3 piezas siguen
+      existiendo en `gearInventory` (mismo total antes/después, solo sin
+      dueño) y el botón desaparece al no quedar nada que desequipar.
+      Confirmado visualmente con captura.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

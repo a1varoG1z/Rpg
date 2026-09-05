@@ -315,6 +315,23 @@ function unequipGear(state, fighterUid, slot) {
   return true;
 }
 
+// Desequipa los 6 huecos de UN luchador concreto de golpe (a diferencia de
+// unequipBenchedGear, que hace lo mismo pero para todo el roster salvo la
+// Formación) — pensado para el botón "Desequipar todo" de su ficha, cuando
+// se le quiere quitar el equipo entero de un tirón (por ejemplo, para
+// pasárselo a otro) en vez de sacarlo hueco a hueco. El equipo no se
+// pierde, solo vuelve al inventario sin dueño. Devuelve cuántos huecos
+// tenía puestos.
+function unequipAllGear(state, fighterUid) {
+  const entry = rosterEntry(state, fighterUid);
+  if (!entry) return 0;
+  let count = 0;
+  GEAR_SLOT_IDS.forEach(slot => {
+    if (entry.gear[slot]) { entry.gear[slot] = null; count++; }
+  });
+  return count;
+}
+
 // Desequipa TODO el equipo de cualquier luchador del roster que no esté
 // colocado en la Formación actual — pensado para recuperar de un tirón el
 // equipo bueno que se ha quedado puesto en luchadores de banca (ya

@@ -2566,6 +2566,17 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     UI.showToast(changed > 0 ? '⚡ ' + changed + ' hueco' + (changed > 1 ? 's' : '') + ' mejorado' + (changed > 1 ? 's' : '') : '⚡ Ya llevabas puesto lo mejor disponible');
   });
   gearPanel.appendChild(autoEquipBtn);
+  if (GEAR_SLOT_IDS.some(slotKey => entry.gear[slotKey])) {
+    const unequipAllBtn = el('button', 'mini-btn', '🗑️ Desequipar todo');
+    unequipAllBtn.addEventListener('click', () => {
+      const count = unequipAllGear(state, uid);
+      saveGame(state);
+      UI.openFighterModal(state, uid, formationCtx);
+      if (activeScreen === 'banda') UI.renderBanda(state);
+      UI.showToast('🗑️ ' + count + ' hueco' + (count > 1 ? 's' : '') + ' desequipado' + (count > 1 ? 's' : '') + ' (vuelve al inventario)');
+    });
+    gearPanel.appendChild(unequipAllBtn);
+  }
   body.appendChild(gearPanel);
 
   const fs = entry.stats || newFighterStats();
