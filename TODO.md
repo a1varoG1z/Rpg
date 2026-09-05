@@ -4422,6 +4422,42 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       dueño) y el botón desaparece al no quedar nada que desequipar.
       Confirmado visualmente con captura.
 
+- [x] Fallo real corregido en la Torre Batalla: los rivales tenían un nivel
+      que escalaba según la zona de ORIGEN de su familia (`level.enemyLevel
+      = zoneEnemyLevel(level.originZoneIdx)`) — los primeros niveles de la
+      escalera (familias de zonas tempranas) peleaban a nivel muy bajo
+      (Nv. 1, 5, 7...) frente a una banda que YA ha terminado el mapa entero
+      (Torre solo se desbloquea así, ver `torreUnlocked`) y por tanto ronda
+      ya el nivel tope. Reportado por el usuario: "todos los rivales tienen
+      que estar a nivel máximo, no hay que ir escalando niveles". Arreglado
+      en `buildTorreLevels` (data.js): `level.enemyLevel = XP_LEVEL_CAP`
+      fijo, para mobs y jefes por igual, en vez de depender de la zona de
+      origen — el reto de la escalera sigue viniendo de `fightDefId`
+      (siempre la forma más fuerte de la familia) y de `enemyCount`
+      (crece cada 8 niveles), como ya pretendía el comentario original,
+      solo que ahora sin la fuga de dificultad que suponía un nivel bajo.
+      A los jefes (`def.fixedStats`) este cambio NO les toca ninguna
+      estadística real — `buildUnitStats` (combat.js) ignora `level` por
+      completo cuando hay `fixedStats`, así que solo corregía un nivel
+      NOMINAL mal mostrado en su ficha de combate (verificado generando el
+      mismo jefe a Nv. 40 y a Nv. 3 con el mismo `extraMult`: HP/ATK/DEF
+      idénticos en ambos). Verificado con Playwright:
+      - Los 66 niveles de `TORRE_LEVELS` (33 mobs + 33 jefes) quedan todos a
+        `enemyLevel === XP_LEVEL_CAP`.
+      - Simulando el primer nivel de mobs (Araña, ×3) contra una banda de
+        referencia Nv.38 épico/legendario sin equipo: 100% de victorias
+        antes y después (un primer nivel debe seguir siendo un trámite).
+      - Simulando niveles intermedios/tardíos de la escalera de mobs: los
+        primeros tramos (×3/×6/×9 rivales) siguen en 100% con el nivel
+        fijo a 40, pero el penúltimo tramo (family "hombreseisbrazos",
+        ×12 rivales, antes Nv. 23) cae de 100% a 10-22% de victorias con
+        el mismo Nv. 38-40 de banda — confirma que antes esos tramos
+        avanzados estaban regalados por el nivel bajo del rival, no por
+        `fightDefId`/`enemyCount` como pretendía el diseño original.
+      - Confirmado visualmente (captura de la lista de la Torre) que cada
+        fila muestra ahora "Nv. 40" de forma uniforme en vez de una
+        progresión ascendente.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

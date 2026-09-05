@@ -951,10 +951,25 @@ function buildTorreLevels() {
   [mobLevels, bossLevels].forEach(section => {
     section.forEach((level, sectionIdx) => {
       level.sectionIdx = sectionIdx;
-      // Potencia del rival: se reutiliza el mismo nivel que ya tiene
-      // calibrado su zona de origen en el Mapa (zoneEnemyLevel, mismo tope
-      // que el resto del juego).
-      level.enemyLevel = zoneEnemyLevel(level.originZoneIdx);
+      // Nivel del rival: SIEMPRE al tope (XP_LEVEL_CAP), sin escalar por
+      // zona de origen — a diferencia del Mapa, la Torre es contenido de
+      // final de partida (solo se desbloquea al completarlo entero, ver
+      // torreUnlocked en state.js) al que se llega con la banda YA cerca
+      // del nivel tope. Usar zoneEnemyLevel(originZoneIdx) aquí dejaba los
+      // primeros niveles (familias de zonas tempranas) con un rival de
+      // nivel bajísimo frente a una banda de nivel ~40 — la propia
+      // levelGrowth (state.js) ya multiplica por ~5× entre nivel 1 y 40,
+      // así que esa diferencia de nivel por sí sola volvía triviales esos
+      // primeros niveles bastante antes de que el tier/nº de rivales
+      // pesara nada. El reto real ya viene de fightDefId (siempre la forma
+      // MÁS FUERTE de la familia) y de enemyCount (crece con sectionIdx,
+      // más abajo) — no hace falta además escalar el nivel. A los jefes
+      // (def.fixedStats) esto no les cambia ninguna estadística real (ver
+      // buildUnitStats en combat.js, que ignora `level` cuando hay
+      // fixedStats) — solo corrige el nivel NOMINAL mostrado en su ficha de
+      // combate, que antes decía p.ej. "Nv. 3" para un jefe que en realidad
+      // pelea con `torreBossMult`/fixedStats de endgame.
+      level.enemyLevel = XP_LEVEL_CAP;
       // Nº de rivales: crece cada 8 niveles de su propia escalera. Los
       // mobs llegan en filas de hasta 3 simultáneos, como una oleada
       // normal; los jefes SIEMPRE en solitario, en oleadas sucesivas — un
