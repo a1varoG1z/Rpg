@@ -608,6 +608,28 @@ setLeaderSkill('ragnar_legendario', 'def_boost');
 // que esos turnos se sientan flojos.
 setStatMult('odin_legendario', { hp: 1.2, atk: 1.7, def: 1.3, agi: 1.1 });
 
+// hombreseisbrazos (Pícaro): a diferencia de Odín, aquí el problema era el
+// contrario — un pico de dificultad, no un bajón. Al fijar el nivel de la
+// Torre Batalla a XP_LEVEL_CAP para todos los rivales (antes escalaba con
+// la zona de origen, ver buildTorreLevels), el peso de ATK/AGI de Pícaro
+// (el más alto de las 5 clases en ambas stats — pensado como "glass
+// cannon") combinado con la rareza Épica (×3.2, la más alta de ese tramo
+// de la escalera) dejaba a este mob con 435 ATK / 351 AGI a Nv.40 — muy
+// por encima de sus vecinos de la MISMA tanda de 12 rivales (todos Brujo/
+// Campeón/Gurú en esa tanda, con 115-356 ATK / 115-298 AGI): agi tan alta
+// significa que sus 3 atacantes por oleada golpean SIEMPRE antes que la
+// línea del jugador, y con ese ATK cada golpe pesa mucho más — combinado
+// con las 4 oleadas seguidas sin curación de este nivel, la tasa de
+// victoria de una banda recién terminado el mapa se desplomaba al
+// 10-45% frente al ~100% de sus vecinos en simulación. Rebajado con
+// setStatMult para devolverlo a una dificultad en línea con el resto de
+// esa tanda (228 AGI / 326 ATK a Nv.40, ~98% de victorias en la misma
+// simulación) sin perder del todo su identidad de Pícaro rápido/pegador
+// — sigue siendo de los más ágiles y contundentes de su tanda, solo que
+// ya no es un muro aislado en mitad de una escalera pensada para subir
+// de dificultad progresivamente, no a saltos.
+setStatMult('hombreseisbrazos_epico', { agi: 0.65, atk: 0.75 });
+
 const ZONES = [
   { id: 'bosque', name: 'Linde del Bosque', emoji: '🌲', color: '#2f4f2f', pool: ['goblin_comun', 'arana_comun', 'boss_guardianbosque'] },
   { id: 'pantano', name: 'Pantano Oscuro', emoji: '🐊', color: '#3a4a2f', pool: ['sapo_infrecuente', 'babosa_infrecuente', 'boss_brujapantano'] },

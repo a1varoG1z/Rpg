@@ -4458,6 +4458,33 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
         fila muestra ahora "Nv. 40" de forma uniforme en vez de una
         progresión ascendente.
 
+- [x] Pico de dificultad aislado suavizado en la escalera de mobs de la
+      Torre Batalla, encontrado al verificar el punto anterior — el
+      usuario confirmó que la Torre debe ir haciéndose más difícil de
+      forma progresiva (partiendo del Nv. 40 fijo), así que un salto
+      aislado en mitad de la escalera (100% de victorias en los niveles de
+      alrededor, 10-45% en ESTE en concreto) no encajaba con ese diseño.
+      Causa: `hombreseisbrazos_epico` (Pícaro) — con el nivel ya fijo a
+      Nv.40 (ver punto anterior), el peso de ATK/AGI de la clase Pícaro (el
+      más alto de las 5 clases en ambas stats, pensado como "glass cannon")
+      combinado con la rareza Épica (×3.2, la más alta de su tanda de 12
+      rivales) le daba 435 ATK/351 AGI — muy por encima de sus vecinos de
+      la MISMA tanda (Brujo/Campeón/Gurú, 115-356 ATK/115-298 AGI). Agilidad
+      tan alta significa que sus 3 atacantes por oleada golpean SIEMPRE
+      antes que la línea del jugador, y ese ATK hace que cada golpe pese
+      mucho más — con las 4 oleadas seguidas sin curación de ese nivel, el
+      efecto se acumulaba hasta un desplome real de la tasa de victoria.
+      Arreglado con `setStatMult('hombreseisbrazos_epico', { agi: 0.65,
+      atk: 0.75 })` (data.js, junto al de Odín) — rebaja puntual de ESTE
+      personaje, sin tocar la clase Pícaro en general (que sigue intacta en
+      el resto del roster) ni su propia forma Rara/Infrecuente. Verificado
+      con Playwright: 435→326 ATK, 351→228 AGI a Nv.40; tasa de victoria de
+      la misma simulación (banda Nv.40, 60 pruebas) sube de 10-45% a 96.7%,
+      en línea con el resto de su tanda (98-100%) en vez de ser un muro
+      aislado. Repetida la simulación de zona en el Mapa (aparece también
+      como mob de relleno en Desierto de Espinas/Cima Quimérica) para
+      confirmar que sigue construyéndose sin errores.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
