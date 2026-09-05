@@ -4640,6 +4640,76 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
         simple) para confirmar que sigue sin haber ninguna tanda con 0%
         de victorias tras este segundo ajuste.
 
+- [x] Tres correcciones más sobre los jefes capturables en la Torre
+      Batalla, con captura de pantalla real: el usuario mandó la Colección
+      ordenada por "⭐ Poder total" "Base (Nv.1, sin equipo)" mostrando al
+      Coloso de Cristal (un jefe) EL PRIMERO, pero al abrir su ficha sus
+      stats (Vida 318/Ataque 39/Defensa 53) eran claramente peores que las
+      de Drácula (460/107/59), varias posiciones más abajo — "aparece como
+      el más poderoso... pero miro las estadísticas y no lo es". Pidió
+      arreglar: 1) el orden, 2) que los jefes sean SIEMPRE más poderosos
+      que el mejor Legendario ("si no, no tiene sentido que sean bosses"),
+      3) que la Torre no dé más de una copia de un mismo jefe — repetir su
+      nivel debe dar recompensa reforzada (mucha XP/Texel/Gemas + 1 cristal
+      del tier más alto garantizado, que crece según se sube en la
+      escalera) en vez de otra copia.
+      1) Bug de ordenación (causa raíz de todo lo demás): `baseCompareStats`
+      (ui.js, usado por el sort "Poder total"/"Base" y por "Comparar con
+      otro luchador") llamaba a `buildUnitStats(defId, 1)` — para un jefe
+      (def.fixedStats) esa función devuelve sus stats de RIVAL (con las que
+      pelea como enemigo en la Torre, ver combat.js), no las de luchador
+      jugable — un jefe con fixedStats de rival altos podía ordenarse
+      primero con números que ni siquiera coincidían con los de su propia
+      ficha (fighterStats). Mismo bug en `UI.showPokedexEntry`. Arreglado
+      con `basePlayerStats(defId)` (ui.js), que SIEMPRE pasa por
+      `fighterStats` — la fórmula real de cualquier copia jugable, jefe o
+      no — con un luchador de usar y tirar a Nv.1/0★/sin equipo.
+      2) Jefes más poderosos que cualquier Legendario: `addBoss` (data.js)
+      ahora ignora el `rarity` que se le pasa y fija SIEMPRE
+      `rarity: 'legendario'` (antes variaba Común/Infrecuente/Raro según
+      cada jefe, heredado de su zona de origen en el Mapa — de ahí que el
+      Coloso de Cristal fuera Común como luchador). Además,
+      `fighterStats` (state.js) aplica un `BOSS_PLAYER_PREMIUM = 1.4`
+      encima del multiplicador de rareza para cualquier `def.isBoss` — ni
+      siquiera igualando la rareza a Legendario bastaba: con el reparto de
+      stats de su propia clase, varios jefes seguían midiendo por debajo
+      del Legendario base más fuerte del roster (Odín). Calibrado
+      comparando los 33 jefes contra los ~40 Legendarios jugables: a ×1.4,
+      el jefe más flojo (antes Común) queda en ~466 de potencia, por
+      encima de Odín (~439) con margen. La insignia "👑 Jefe" (color y
+      etiqueta propios, ver `rarityInfoFor`/`BOSS_RARITY_INFO`) no cambia —
+      sigue distinguiéndolos visualmente de un Legendario normal aunque
+      ahora midan más que uno.
+      3) Sin copias repetidas de jefe: `UI.fightStageRunNode` (ui.js) ya no
+      llama a `applySummonResult` para un nivel de jefe cuyo `rewardDefId`
+      ya esté en `state.discoveredDefIds` (para siempre, sobrevive a
+      vender/fusionar la copia) — en su lugar usa
+      `torreRepeatBossRewards(level)` (data.js): Texel ×2.5, XP ×2, Gemas
+      (`15 + sectionIdx×3`, la Torre no daba NINGUNA hasta ahora) y Cristal
+      Doxite —el de mejor tier— GARANTIZADO (`1 + floor(sectionIdx/8)`,
+      mismo ritmo de crecimiento que ya usa `enemyCount`, así que sube
+      "según se asciende" sin necesitar una constante aparte). Los MOBS no
+      se tocan: siguen dando copia siempre, como material de Fusión. Un
+      aviso ("👑 Ya tienes su carta — no da otra copia, pero la recompensa
+      es mejor") deja claro por qué no llegó otra copia.
+      Verificado con Playwright:
+      - Los 33 jefes quedan con `rarity === 'legendario'` y con potencia
+        base (`basePlayerStats`) por encima de los ~40 Legendarios
+        jugables sin excepción (mínimo 466 vs máximo Legendario 439).
+        Coloso de Cristal recalculado: Vida 930/Ataque 115 (antes
+        318/39, con el bug de origen) — ahora consistente entre la ficha
+        y el orden de la Colección, confirmado en pantalla (captura).
+        Comprobado también que sigue sin recuperar la vida etiqueta "Jefe"
+        (no confunde a un jefe con un Legendario normal).
+      - Orden de la Colección (Base, Poder total) con Coloso de Cristal y
+        Odín en el roster: Coloso primero (correcto ahora — 592 vs 439 de
+        Odín, con las MISMAS stats que muestra su propia ficha).
+      - 1ª vez contra un jefe de Torre: da la copia ("🆕 ... +1 copia"). 2ª
+        vez (mismo jefe, ya en discoveredDefIds): NO da copia, sí +150%
+        más Texel, +100% más XP, +15 Gemas y +1 Cristal Doxite, con el
+        aviso explicativo — roster confirma que las copias de ese jefe
+        siguen en 1 tras la segunda victoria.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

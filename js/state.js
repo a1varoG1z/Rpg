@@ -159,10 +159,21 @@ function gearBonusForEntry(state, entry) {
   return bonus;
 }
 
+// Todo jefe (def.isBoss, ver addBoss en data.js) ya es rareza Legendario
+// como luchador jugable, pero eso sola no basta: algunos, con el reparto de
+// stats de su propia clase, medían por debajo del Legendario normal más
+// fuerte del roster (Odín) incluso a rareza igualada — un jefe, el reto más
+// duro del Mapa, no puede acabar siendo peor carta que un Legendario
+// cualquiera. Este plus fijo se aplica ENCIMA del multiplicador de rareza
+// de siempre. Calibrado comparando los 33 jefes contra los ~40 Legendarios
+// jugables (potencia base, Nv.1 sin equipo): ×1.4 deja al jefe más flojo de
+// los 33 (antes Común, el Guardián del Bosque) en ~466 de potencia, por
+// encima del Legendario base más fuerte (Odín, ~439) con margen real.
+const BOSS_PLAYER_PREMIUM = 1.4;
 function fighterStats(state, entry) {
   const def = fighterDef(entry.defId);
   const w = CLASS_INFO[def.class].weights;
-  const mult = rarityInfo(def.rarity).mult * levelGrowth(entry.level) * starBonus(entry.stars);
+  const mult = rarityInfo(def.rarity).mult * (def.isBoss ? BOSS_PLAYER_PREMIUM : 1) * levelGrowth(entry.level) * starBonus(entry.stars);
   const stats = {
     hp: Math.round(w.hp * mult * statVarianceMult(def.family, 'hp') * fighterStatMult(def, 'hp')),
     atk: Math.round(w.atk * mult * statVarianceMult(def.family, 'atk') * fighterStatMult(def, 'atk')),

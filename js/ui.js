@@ -277,7 +277,7 @@ function pokedexCard(def, discovered) {
 UI.showPokedexEntry = function (def) {
   const rarity = rarityInfo(def.rarity);
   const vuln = TYPE_VULNERABILITY[def.class];
-  const stats = buildUnitStats(def.id, 1);
+  const stats = basePlayerStats(def.id);
   const body = $('pokedexEntryModalBody');
   body.innerHTML = '';
   const head = el('div', 'fighter-modal-head');
@@ -297,7 +297,7 @@ UI.showPokedexEntry = function (def) {
 
   const statsPanel = el('div', 'panel');
   statsPanel.innerHTML = `<h3>Estadísticas base (Nv. 1)</h3>
-    <div class="stat-row"><span>❤️ Vida</span><span>${stats.maxHp}</span></div>
+    <div class="stat-row"><span>❤️ Vida</span><span>${stats.hp}</span></div>
     <div class="stat-row"><span>⚔️ Ataque</span><span>${stats.atk}</span></div>
     <div class="stat-row"><span>🛡️ Defensa</span><span>${stats.def}</span></div>
     <div class="stat-row"><span>💨 Agilidad</span><span>${stats.agi}</span></div>
@@ -1298,17 +1298,33 @@ UI.fightStageRunNode = function (state) {
       }
       if (run.isTorre) {
         const level = TORRE_LEVELS[run.torreIdx];
-        const rewards = torreRewards(run.torreIdx);
+        // Un jefe ya conseguido (ver discoveredDefIds — "para siempre",
+        // sobrevive aunque luego se venda o se fusione la copia) no da OTRA
+        // copia al repetir su nivel: es un antagonista único, no material
+        // de fusión como sí lo son los mobs. En su lugar, recompensa
+        // reforzada — ver torreRepeatBossRewards (data.js).
+        const alreadyOwnsBossCard = level.kind === 'boss' && (state.discoveredDefIds || []).includes(level.rewardDefId);
+        const rewards = alreadyOwnsBossCard ? torreRepeatBossRewards(level) : torreRewards(run.torreIdx);
         state.currencies.texel += rewards.texel;
+        if (rewards.gemas) state.currencies.gemas += rewards.gemas;
+        if (rewards.doxite) state.currencies.doxite += rewards.doxite;
         const leveled = [];
         state.band.flat().filter(Boolean).forEach(uid => {
           const entry = rosterEntry(state, uid);
           if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
         });
-        const capture = applySummonResult(state, level.rewardDefId);
+        let capturedCopy = null, capturedIsNew = false;
+        if (!alreadyOwnsBossCard) {
+          const capture = applySummonResult(state, level.rewardDefId);
+          capturedCopy = fighterDef(level.rewardDefId);
+          capturedIsNew = capture.outcome === 'nuevo';
+        }
         recordTorreClear(state, run.torreIdx);
         saveGame(state);
-        return { rewards, leveled, capturedCopy: fighterDef(level.rewardDefId), capturedIsNew: capture.outcome === 'nuevo' };
+        return {
+          rewards: { texel: rewards.texel, fighterXp: rewards.fighterXp, drops: rewards.doxite ? { doxite: rewards.doxite } : undefined },
+          leveled, gemas: rewards.gemas, capturedCopy, capturedIsNew, repeatBoss: alreadyOwnsBossCard,
+        };
       }
       if (run.isTierCap) {
         const rewards = tierCapRewards(run.tierCapIdx);
@@ -2727,14 +2743,26 @@ function compareStatRow(icon, label, key, statsA, statsB) {
 }
 
 // Estadísticas BASE de un luchador: nivel 1, sin estrellas de Superfusión
-// ni equipo puesto — la misma fórmula que ya usa la ficha de solo lectura
-// de la Pokédex (buildUnitStats(defId, 1) en combat.js) para mostrar el
-// potencial "de fábrica" de una forma, aquí reutilizada para poder
-// comparar dos luchadores sin que el nivel/equipo actual de cada uno
-// distorsione cuál es realmente mejor.
+// ni equipo puesto — para comparar dos luchadores (o para ordenar la
+// Colección por "Poder total (Base)") sin que el nivel/equipo actual de
+// cada uno distorsione cuál es realmente mejor.
+//
+// A propósito NO usa buildUnitStats(defId, 1) (combat.js) como antes: esa
+// función, para un jefe (def.fixedStats), devuelve sus stats de RIVAL —
+// las mismas que usa la Torre Batalla para pelear contra él, escaladas
+// aparte por torreBossMult — no las de luchador jugable. Eso causaba un
+// bug real: un jefe con fixedStats altos (p.ej. HP muy alto puesto a mano
+// para aguantar como rival) podía aparecer como "el más poderoso" al
+// ordenar la Colección por potencia, con stats que ni siquiera coincidían
+// con las que muestra su propia ficha (fighterStats). basePlayerStats usa
+// SIEMPRE fighterStats — la fórmula real de cualquier copia que el
+// jugador llegue a poseer, jefe o no — con un luchador de usar y tirar a
+// Nv.1/0★/sin equipo.
+function basePlayerStats(defId) {
+  return fighterStats(null, { defId, level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet() });
+}
 function baseCompareStats(entry) {
-  const s = buildUnitStats(entry.defId, 1);
-  return { hp: s.maxHp, atk: s.atk, def: s.def, agi: s.agi, wis: s.wis };
+  return basePlayerStats(entry.defId);
 }
 
 // mode: 'current' (por defecto, estadísticas reales con nivel/estrellas/
@@ -4081,6 +4109,7 @@ UI.endBattle = function (view, result) {
     if (outcome && outcome.zoneGemsBonus) html += `<div class="stat-row"><span>🎉 Zona completada</span><span>+${outcome.zoneGemsBonus} 💎</span></div>`;
     if (outcome && outcome.unlockedZone) html += `<p class="settings-info">🗺️ ¡Nueva zona desbloqueada: ${outcome.unlockedZone.name}!</p>`;
     if (outcome && outcome.capturedCopy) html += `<div class="stat-row"><span>${outcome.capturedIsNew ? '🆕' : '🔁'} ${outcome.capturedCopy.name}</span><span>+1 copia</span></div>`;
+    if (outcome && outcome.repeatBoss) html += `<p class="settings-info">👑 Ya tienes su carta — no da otra copia, pero la recompensa es mejor.</p>`;
   } else {
     html = `<h3>💀 Derrota</h3><p class="settings-info">Tu banda ha caído. Mejora tu equipo y vuelve a intentarlo.</p>`;
   }

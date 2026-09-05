@@ -324,18 +324,31 @@ function addMobFamily(slug, tier, element, cls, skillId, names, lores, hasImages
 // por forma): pásale `true` una vez subido assets/creatures/<slug>.png.
 // `fixedStats` ({hp,atk,def,agi,wis}) son las estadísticas de combate REALES
 // con las que el jefe pelea como rival (ver makeBossUnit en combat.js) —
-// fijas y ajustables a mano aquí mismo, independientes de `rarity` y de
-// cualquier fórmula de nivel/rareza compartida con el resto de luchadores,
-// para poder calibrar la dificultad de cada jefe uno a uno. Se sembraron con
-// el valor que ya tenía cada uno (mismo nivel/rareza/clase de su zona de
-// origen) para no cambiar la dificultad existente; a partir de aquí se
-// pueden retocar libremente. `rarity` se sigue usando tal cual SOLO para si
-// el jugador llega a poseer una copia (Torre Batalla): ahí sí sube de nivel,
-// se equipa y se vende con la fórmula normal, como cualquier otro luchador.
+// fijas y ajustables a mano aquí mismo, independientes de la fórmula de
+// nivel/rareza compartida con el resto de luchadores, para poder calibrar
+// la dificultad de cada jefe uno a uno (ver torreMobMult/torreBossMult en
+// combat.js para cómo se reescala dentro de la Torre Batalla).
+//
+// El parámetro `rarity` que se le sigue pasando a cada addBoss YA NO decide
+// la rareza final del jefe (antes sí, y por eso un jefe de zona temprana
+// como el Guardián del Bosque quedaba con rareza Común como luchador
+// jugable) — se ignora a propósito y se deja aquí solo porque ~33 llamadas
+// ya lo pasaban y no aporta nada quitarlo. Todo jefe capturado en la Torre
+// Batalla es SIEMPRE Legendario (fighterDef.rarity), y además recibe un
+// plus fijo sobre eso en sus stats de luchador jugable (ver
+// BOSS_PLAYER_PREMIUM en fighterStats, state.js) — pedido explícito del
+// usuario: "los bosses tienen que ser más poderosos siempre que la mejor
+// legendaria, si no, no tiene sentido que sean bosses". Antes, con la
+// rareza original de cada uno (Común/Infrecuente/Raro en su mayoría), el
+// Coloso de Cristal (Común) aparecía como "el más poderoso" al ordenar por
+// potencia base en la Colección pese a tener stats muy por debajo de
+// cualquier Legendario — un bug de ordenación aparte (ver
+// baseCompareStats/basePlayerStats en ui.js) que además delataba esta
+// inconsistencia de fondo.
 const BOSSES = [];
 function addBoss(slug, element, cls, skillId, name, lore, rarity, hasImage, fixedStats) {
   const entry = {
-    id: 'boss_' + slug, name, element, class: cls, rarity: rarity || 'legendario', family: 'boss_' + slug,
+    id: 'boss_' + slug, name, element, class: cls, rarity: 'legendario', family: 'boss_' + slug,
     evolvesTo: null, skillId, lore, isBoss: true, fixedStats: fixedStats || null,
   };
   if (hasImage) entry.image = slug + '.png';
@@ -1012,6 +1025,32 @@ function torreRewards(idx) {
   const texel = Math.round((40 + level.globalIdx * 6) * (level.kind === 'boss' ? 2 : 1));
   const fighterXp = Math.round((25 + level.globalIdx * 5) * (level.kind === 'boss' ? 1.8 : 1));
   return { texel, fighterXp };
+}
+
+// Recompensa de REPETIR un nivel de JEFE de la Torre Batalla cuya carta ya
+// se tiene (ver discoveredDefIds) — pedido explícito del usuario: "hay que
+// revisar que en la torre batalla, no se pueda obtener más de una copia de
+// un boss... si ya le has ganado y obtenido su carta, tienes muy buenos
+// premios: mucha experiencia, dinero, gemas y 1 cristal (del tier más alto)
+// garantizado (se va sumando... según se asciende)". Antes, replayear un
+// nivel de jefe daba SIEMPRE otra copia (útil para Superfusión en los
+// mobs, pero un jefe no tiene sentido acumularlo — es un antagonista
+// único, no material de fusión) — ver UI.fightStageRunNode (ui.js), que ya
+// no llama a applySummonResult si el jefe está en discoveredDefIds.
+// Cristal Doxite (CRYSTALS en este archivo): el de mejor tier, con más
+// probabilidad de Épico/Legendario al abrirlo — el garantizado de verdad
+// que pide el usuario, no una probabilidad. Crece cada 8 escalones de la
+// escalera de jefes (level.sectionIdx), el mismo ritmo que ya usa
+// enemyCount en buildTorreLevels, así que el "también según se asciende"
+// no es una constante aparte sino que seguir el mismo pulso ya establecido.
+function torreRepeatBossRewards(level) {
+  const base = torreRewards(level.globalIdx);
+  return {
+    texel: Math.round(base.texel * 2.5),
+    fighterXp: Math.round(base.fighterXp * 2),
+    gemas: 15 + level.sectionIdx * 3,
+    doxite: 1 + Math.floor(level.sectionIdx / 8),
+  };
 }
 
 // ---------- Tope de Tier ----------
