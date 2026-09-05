@@ -4550,6 +4550,43 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
         de un nivel de Torre real (capturada) sigue funcionando sin
         excepciones ni regresiones visuales.
 
+- [x] Corregido un sobre-ajuste real del punto anterior: el usuario mandó
+      captura de una derrota real contra un jefe de la Torre con su banda
+      de 9 Legendarios Nv.40 con equipo Legendario — 42.511 de daño
+      recibido, 2.277 hecho, derrota total ("te has pasado de dificultad").
+      Causa raíz: `torreBossMult` normalizaba la potencia de CADA jefe
+      hasta una potencia objetivo común por tanda (igual que ya hacía, de
+      forma segura, con los mobs) — pero las stats de jefe son fixedStats
+      puestas A MANO, con muchísima más variación entre sí que las de un
+      mob (la tanda de un único jefe iba de 584 a 2299 de potencia nativa,
+      casi 4×, frente a solo ~1.5× en cualquier tanda de mobs). Normalizar
+      todos a la misma potencia objetivo disparaba el multiplicador del
+      jefe más flojo de esa tanda — la Bruja del Pantano Eterno, el de la
+      2ª zona — a ×14.6 (HP 501→17.513, ATK 79→1.151 a la vez), justo el
+      jefe real contra el que perdió el usuario.
+      Arreglado en `torreBossMult` (combat.js): los JEFES dejan de
+      normalizarse por potencia nativa y pasan a un multiplicador FIJO por
+      tanda (`TORRE_BOSS_MULT = {1:3, 2:2.5, 3:2.2, 4:1.6, 5:1.4}`) — el
+      jefe ya fuerte de fábrica se vuelve muy fuerte, el flojo se vuelve
+      simplemente más fuerte, nunca desproporcionado. Los MOBS no se han
+      tocado (su normalización por potencia sigue siendo segura: su
+      potencia nativa, al salir de la fórmula rareza×clase compartida con
+      cualquier luchador, varía mucho menos entre familias de una misma
+      tanda que las stats a mano de los jefes).
+      Verificado con Playwright:
+      - La Bruja del Pantano Eterno pasa de HP 17.513/ATK 1.151 (×14.6) a
+        HP 3.607/ATK 237 (×3) — una subida real sobre sus stats originales
+        (HP 501/ATK 79) pero ya no una locura imposible de encajar.
+      - Repetida la simulación de las 5 tandas de jefes completas (8
+        familias cada una, banda de referencia Legendario Nv.40 + equipo
+        Nv.15, heurística de combate real): 0 familias con tasa de
+        victoria nula en ninguna tanda (antes de este arreglo ya había
+        confirmado 0 con el sistema normalizado en simulación, pero el
+        caso real del usuario demostró que esa simulación no capturaba
+        bien el riesgo de las stats fixedStats disparadas) — victoria
+        97-100% en las 4 primeras tandas, 97% en la última (Tifón, el
+        reto final, deliberadamente cerca del límite pero no un muro).
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

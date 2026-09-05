@@ -231,49 +231,58 @@ function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
 // otro momento (Torre es repetible sin límite, así que no hay "una sola
 // banda de referencia" estable como en el Mapa).
 //
-// Motivo del cambio: con el nivel ya fijo a XP_LEVEL_CAP para todos (ver
-// buildTorreLevels en data.js) pero sin ningún multiplicador extra, los
-// mobs (ninguno) y la mayoría de jefes (el antiguo torreBossMult,
-// referenciado a la zona de ORIGEN de cada jefe — un listón muy bajo para
-// uno de zona temprana) no le hacían nada de daño de verdad a esa banda
-// de referencia. Reportado por el usuario: "los bosses en la torre
-// batalla tienen que ser mucho más difíciles y los mobs también... a un
-// equipo de todo legendarios equipados con objetos legendarios, al nivel
-// 40, no les hacen nada. Ese es el escenario realista en el que se llega
-// a la torre batalla tras pasar el mapa".
+// Motivo del cambio original: con el nivel ya fijo a XP_LEVEL_CAP para
+// todos (ver buildTorreLevels en data.js) pero sin ningún multiplicador
+// extra, los mobs (ninguno) y la mayoría de jefes (el antiguo
+// torreBossMult, referenciado a la zona de ORIGEN de cada jefe) no le
+// hacían nada de daño de verdad a esa banda. Reportado por el usuario:
+// "los bosses en la torre batalla tienen que ser mucho más difíciles y
+// los mobs también... a un equipo de todo legendarios equipados con
+// objetos legendarios, al nivel 40, no les hacen nada".
 //
-// Cómo funciona: cada tanda de enemyCount (crece cada 8 escalones, ver
-// buildTorreLevels) tiene una potencia OBJETIVO fija (TORRE_MOB_TARGET_POWER
-// / TORRE_BOSS_TARGET_POWER de abajo, en las mismas unidades que
-// fighterPowerScore). El multiplicador de CADA familia/jefe es el que
-// hace falta para que SU potencia nativa (a ×1 — la de rareza/clase o
-// fixedStats de siempre) llegue a esa potencia objetivo, en vez de aplicar
-// el mismo múltiplo a todos por igual — así una familia floja para su
-// tanda recibe más empujón que una que ya viene fuerte de fábrica (el
-// mismo fallo de fondo que causaba picos de dificultad aislados, ver
-// TODO.md sobre "hombreseisbrazos"). Nunca se BAJA de la potencia nativa
-// (Math.max(1, ...)): si un jefe ya la supera de por sí (p.ej. Tifón, el
-// de la última zona), se deja como está en vez de suavizarlo.
+// MOBS (torreMobMult): cada tanda de enemyCount (crece cada 8 escalones)
+// tiene una potencia OBJETIVO fija (TORRE_MOB_TARGET_POWER, en unidades de
+// fighterPowerScore) — el multiplicador de CADA familia es el que hace
+// falta para que SU potencia nativa (a ×1, la de rareza/clase de
+// siempre) llegue a esa potencia objetivo, así una familia floja para su
+// tanda recibe más empujón que una que ya viene fuerte de fábrica. Esto
+// es seguro para mobs porque su potencia nativa, al salir de la misma
+// fórmula rareza×clase que cualquier otro luchador, varía poco dentro de
+// una tanda (~2-4.7× de multiplicador en toda la escalera, verificado).
+//
+// JEFES (torreBossMult): aquí NO se normaliza por potencia nativa, a
+// propósito. Un primer intento sí lo hizo igual que los mobs, y
+// PROVOCÓ UNA DERROTA REAL reportada por el usuario (captura: 42.511 de
+// daño recibido contra un solo jefe, banda de 9 Legendarios Nv.40
+// arrasada) — las stats de jefe son fixedStats puestas A MANO, y varían
+// muchísimo MÁS que las de un mob dentro de una misma tanda (p.ej. la
+// tanda de un único jefe va de 584 a 2299 de potencia nativa, casi 4×):
+// normalizar todos a la misma potencia objetivo disparaba el
+// multiplicador del jefe más flojo (la Bruja del Pantano, zona 2) a
+// ×14.6 — HP y ATK a la vez multiplicados por 14.6, una combinación que
+// ninguna banda por buena que sea puede encajar. Por eso los jefes usan
+// un multiplicador FIJO por tanda (TORRE_BOSS_MULT) en vez de un objetivo
+// de potencia: el jefe ya fuerte de fábrica se vuelve MUY fuerte, el
+// flojo se vuelve simplemente más fuerte — nunca desproporcionado.
 //
 // Calibrado por simulación (banda de referencia de arriba, con la misma
-// heurística de combate automático real que usa el botón "🤖 Auto") para
-// que la tasa de victoria de cada tanda quede entre el ~65-90% en la
-// mayoría de escalones — un reto real, pero casi siempre superable —
-// cayendo a un reto de verdad SOLO en el último escalón de cada ladder:
-// el mob final (Lamia, ~15-20% de victorias) y el jefe final (Tifón, el
-// de la última zona, ~0-5%) — el "gran final" de cada mitad de la Torre,
-// donde toca que incluso la mejor banda posible sude de verdad.
+// heurística de combate automático real que usa el botón "🤖 Auto",
+// probando SIEMPRE los 8 jefes/familias de cada tanda, no solo uno) para
+// que ninguna tanda tenga una tasa de victoria por debajo del 90% salvo
+// la última (un único jefe por tanda desde la 4ª en adelante, donde ya
+// hace falta un margen menor): el jefe final de todos (Tifón, el de la
+// última zona) queda deliberadamente cerca del límite (~97% de victorias,
+// hasta el 96% de daño de la banda) como el reto de fin de partida que
+// tiene que ser, sin llegar a ser un muro garantizado.
 const TORRE_MOB_TARGET_POWER = { 3: 3300, 6: 2950, 9: 2700, 12: 2646, 15: 3200 };
-const TORRE_BOSS_TARGET_POWER = { 1: 8500, 2: 6612, 3: 5309, 4: 5338, 5: 5600 };
+const TORRE_BOSS_MULT = { 1: 3, 2: 2.5, 3: 2.2, 4: 1.6, 5: 1.4 };
 function torreMobMult(level) {
   const u = makeUnit('enemy', level.fightDefId, XP_LEVEL_CAP);
   const native = fighterPowerScore({ hp: u.maxHp, atk: u.atk, def: u.def, agi: u.agi, wis: u.wis });
   return Math.max(1, TORRE_MOB_TARGET_POWER[level.enemyCount] / native);
 }
 function torreBossMult(level) {
-  const u = makeBossUnit(level.fightDefId, XP_LEVEL_CAP, 1);
-  const native = fighterPowerScore({ hp: u.maxHp, atk: u.atk, def: u.def, agi: u.agi, wis: u.wis });
-  return Math.max(1, TORRE_BOSS_TARGET_POWER[level.enemyCount] / native);
+  return TORRE_BOSS_MULT[level.enemyCount];
 }
 
 // Oleadas de un nivel de la Torre Batalla (ver TORRE_LEVELS en data.js):
