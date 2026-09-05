@@ -670,10 +670,11 @@ function applyFormationPreset(state, presetId) {
 // se vuelva imposible ni deje de tener nunca ninguna oportunidad de golpear.
 //
 // Antes se amortiguaba con raíz cuadrada (exponente 0.5), pensado sobre
-// todo para los jefes de la Torre Batalla (ver torreBossMult más abajo,
-// que YA divide el exceso entre la repetición sin curación — con esa
-// segunda capa de damping, un jefe de Mapa de encuentro único quedaba
-// doblemente suavizado sin necesidad). Con una banda nivel 40 TODO
+// todo para los jefes de la Torre Batalla (que en su momento reutilizaban
+// esta misma función referenciada a su zona de origen — ya no: la Torre
+// tiene su propio multiplicador fijo por escalón, ver torreBossMult en
+// combat.js, independiente de la banda real del jugador). Con una banda
+// nivel 40 TODO
 // legendario (equipo Nv.15 incluido) medí que "overpower" real ronda 2×
 // sobre el jefe de referencia, pero raíz cuadrada solo subía el jefe a
 // 1.4× — el jefe recibía de vuelta 100-1000 de daño frente a una banda con
@@ -809,28 +810,6 @@ function mobAdaptiveMult(state, zoneIdx) {
     }
   }
   return result * playerDifficultyMult(state);
-}
-
-// Jefes de la Torre Batalla: reutiliza bossAdaptiveMult referenciado a la
-// zona de ORIGEN de ese jefe (level.originZoneIdx) — así un jefe de zona
-// temprana (calibrado para un jugador muy por debajo del que ya terminó el
-// mapa entero) sube hasta su techo al medirse contra la banda real del
-// jugador, mientras uno de zona tardía (cuya referencia ya está cerca del
-// ritmo endgame) apenas cambia, porque ya era un reto real de por sí.
-// PERO cada nivel de jefe se repite level.enemyCount veces SEGUIDAS sin
-// curación (ver buildTorreEncounters) — aplicar el mismo techo que en el
-// Mapa (pensado para UN único encuentro) sin más lo volvía injugable hasta
-// para la banda mejor posible (9 legendarios Nv.40 5★ con equipo
-// legendario tope: 0/5 combates ganados contra el último nivel en
-// pruebas). Se amortigua el EXCESO sobre 1× dividiéndolo entre la raíz de
-// las veces que se repite, para que la propia repetición ya cuente como
-// parte del reto en vez de sumarse sin más al multiplicador de un solo
-// golpe — en enemyCount=1 (los primeros niveles de jefe, sin amortiguar)
-// se necesita la subida completa para dejar de ser triviales.
-function torreBossMult(state, level) {
-  const raw = bossAdaptiveMult(state, level.originZoneIdx);
-  if (raw <= 1) return raw;
-  return 1 + (raw - 1) / Math.sqrt(level.enemyCount);
 }
 
 // Habilidad de líder de banda: solo está activa si el luchador que la tiene

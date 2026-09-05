@@ -1579,8 +1579,7 @@ UI.startTorreLevel = function (state, idx) {
     UI.renderTopbar(state);
   }
   const level = TORRE_LEVELS[idx];
-  const bossExtraMult = level.kind === 'boss' ? torreBossMult(state, level) : undefined;
-  const encounters = buildTorreEncounters(level, bossExtraMult);
+  const encounters = buildTorreEncounters(level);
   window.__championRun = null;
   window.__stageRun = {
     isTorre: true, torreIdx: idx, isBoss: level.kind === 'boss',

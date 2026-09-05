@@ -218,32 +218,79 @@ function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
   return { rows, isBoss, level };
 }
 
+// ---------- Dificultad de la Torre Batalla ----------
+// A diferencia del Mapa (mobAdaptiveMult/bossAdaptiveMult, en state.js,
+// que miden la banda REAL del jugador contra la zona) la Torre asume
+// siempre el mismo público objetivo: solo se desbloquea al completar el
+// Mapa entero (torreUnlocked, state.js), así que en vez de un
+// multiplicador ADAPTATIVO usa uno FIJO por escalón, calibrado contra una
+// banda de referencia "recién terminado el mapa" (9 Legendarios Nv.40 3★
+// con equipo Legendario Nv.15 — la misma referencia ya usada para
+// calibrar el tramo final del Mapa, ver TODO.md) en vez de la banda real
+// de quien juega, que puede llevar mucho menos invertido en cualquier
+// otro momento (Torre es repetible sin límite, así que no hay "una sola
+// banda de referencia" estable como en el Mapa).
+//
+// Motivo del cambio: con el nivel ya fijo a XP_LEVEL_CAP para todos (ver
+// buildTorreLevels en data.js) pero sin ningún multiplicador extra, los
+// mobs (ninguno) y la mayoría de jefes (el antiguo torreBossMult,
+// referenciado a la zona de ORIGEN de cada jefe — un listón muy bajo para
+// uno de zona temprana) no le hacían nada de daño de verdad a esa banda
+// de referencia. Reportado por el usuario: "los bosses en la torre
+// batalla tienen que ser mucho más difíciles y los mobs también... a un
+// equipo de todo legendarios equipados con objetos legendarios, al nivel
+// 40, no les hacen nada. Ese es el escenario realista en el que se llega
+// a la torre batalla tras pasar el mapa".
+//
+// Cómo funciona: cada tanda de enemyCount (crece cada 8 escalones, ver
+// buildTorreLevels) tiene una potencia OBJETIVO fija (TORRE_MOB_TARGET_POWER
+// / TORRE_BOSS_TARGET_POWER de abajo, en las mismas unidades que
+// fighterPowerScore). El multiplicador de CADA familia/jefe es el que
+// hace falta para que SU potencia nativa (a ×1 — la de rareza/clase o
+// fixedStats de siempre) llegue a esa potencia objetivo, en vez de aplicar
+// el mismo múltiplo a todos por igual — así una familia floja para su
+// tanda recibe más empujón que una que ya viene fuerte de fábrica (el
+// mismo fallo de fondo que causaba picos de dificultad aislados, ver
+// TODO.md sobre "hombreseisbrazos"). Nunca se BAJA de la potencia nativa
+// (Math.max(1, ...)): si un jefe ya la supera de por sí (p.ej. Tifón, el
+// de la última zona), se deja como está en vez de suavizarlo.
+//
+// Calibrado por simulación (banda de referencia de arriba, con la misma
+// heurística de combate automático real que usa el botón "🤖 Auto") para
+// que la tasa de victoria de cada tanda quede entre el ~65-90% en la
+// mayoría de escalones — un reto real, pero casi siempre superable —
+// cayendo a un reto de verdad SOLO en el último escalón de cada ladder:
+// el mob final (Lamia, ~15-20% de victorias) y el jefe final (Tifón, el
+// de la última zona, ~0-5%) — el "gran final" de cada mitad de la Torre,
+// donde toca que incluso la mejor banda posible sude de verdad.
+const TORRE_MOB_TARGET_POWER = { 3: 3300, 6: 2950, 9: 2700, 12: 2646, 15: 3200 };
+const TORRE_BOSS_TARGET_POWER = { 1: 8500, 2: 6612, 3: 5309, 4: 5338, 5: 5600 };
+function torreMobMult(level) {
+  const u = makeUnit('enemy', level.fightDefId, XP_LEVEL_CAP);
+  const native = fighterPowerScore({ hp: u.maxHp, atk: u.atk, def: u.def, agi: u.agi, wis: u.wis });
+  return Math.max(1, TORRE_MOB_TARGET_POWER[level.enemyCount] / native);
+}
+function torreBossMult(level) {
+  const u = makeBossUnit(level.fightDefId, XP_LEVEL_CAP, 1);
+  const native = fighterPowerScore({ hp: u.maxHp, atk: u.atk, def: u.def, agi: u.agi, wis: u.wis });
+  return Math.max(1, TORRE_BOSS_TARGET_POWER[level.enemyCount] / native);
+}
+
 // Oleadas de un nivel de la Torre Batalla (ver TORRE_LEVELS en data.js):
 // siempre el mismo rival del nivel, repetido level.enemyCount veces. Los
 // mobs llegan en filas de hasta 3 simultáneos, como una oleada normal; los
 // jefes SIEMPRE en solitario, en oleadas sucesivas — un jefe nunca debe
 // recibir compañía (ver el comentario de makeBossUnit más arriba).
-//
-// bossExtraMult (solo para level.kind === 'boss'): sus fixedStats son las
-// mismas con las que ese jefe pelea en su zona de origen del Mapa,
-// calibradas para un jugador "a la par" de ESA zona — pero aquí, como gran
-// final de partida, los pelea un jugador que YA terminó el mapa entero, así
-// que un jefe de zona temprana (p.ej. el de la 1ª zona) se quedaba
-// trivial (~1 de daño recibido en pruebas). Se le pasa
-// bossAdaptiveMult(state, level.originZoneIdx) — el MISMO mecanismo ya
-// calibrado para el jefe de Mapa — así un jefe de zona temprana, medido
-// contra la banda real (de nivel endgame) del jugador, sube hasta su
-// techo; uno de zona tardía, cuya referencia ya está cerca del ritmo
-// endgame, apenas cambia (ya era un reto real sin tocarlo, ver TODO.md).
-function buildTorreEncounters(level, bossExtraMult) {
+function buildTorreEncounters(level) {
   const perRow = level.kind === 'boss' ? 1 : 3;
+  const extraMult = level.kind === 'boss' ? torreBossMult(level) : torreMobMult(level);
   const rows = [];
   let remaining = level.enemyCount;
   while (remaining > 0) {
     const count = Math.min(perRow, remaining);
     const row = [];
     for (let i = 0; i < count; i++) {
-      row.push(level.kind === 'boss' ? makeBossUnit(level.fightDefId, level.enemyLevel, bossExtraMult) : makeUnit('enemy', level.fightDefId, level.enemyLevel));
+      row.push(level.kind === 'boss' ? makeBossUnit(level.fightDefId, level.enemyLevel, extraMult) : makeUnit('enemy', level.fightDefId, level.enemyLevel, extraMult));
     }
     rows.push(row);
     remaining -= count;

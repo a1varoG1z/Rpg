@@ -4485,6 +4485,71 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       como mob de relleno en Desierto de Espinas/Cima Quimérica) para
       confirmar que sigue construyéndose sin errores.
 
+- [x] Rediseño completo de la dificultad de la Torre Batalla (mobs Y
+      jefes) — el usuario reportó, tras los dos puntos anteriores, el
+      problema de fondo: "los bosses en la torre batalla tienen que ser
+      mucho más difíciles y los mobs también. a un equipo de todo
+      legendarios equipados con objetos legendarios, al nivel 40, no les
+      hacen nada. ese es el escenario realista en el que se llega a la
+      torre batalla tras pasar el mapa". Confirmado por simulación contra
+      esa banda de referencia exacta (9 Legendarios Nv.40 3★, equipo
+      Legendario Nv.15 — la misma ya usada para calibrar el tramo final del
+      Mapa): los mobs (sin NINGÚN multiplicador propio hasta ahora) le
+      hacían 7-468 de daño total sobre ~28.000 HP de banda; los jefes
+      (reutilizando bossAdaptiveMult referenciado a su zona de ORIGEN, un
+      listón bajísimo para uno de zona temprana) iban de 0.007% a ~81% de
+      daño SIN ninguna relación con su posición en la escalera (p.ej. un
+      jefe más avanzado en la Torre podía ser más flojo que uno anterior).
+      Ambos confirman el reporte: la Torre, pensada como reto de fin de
+      partida, no suponía ningún reto real para el público al que está
+      dirigida.
+      Rediseño (combat.js, junto a `buildTorreEncounters`): la Torre deja
+      de reutilizar el sistema ADAPTATIVO del Mapa (pensado para medir la
+      banda REAL y variable del jugador) y pasa a un multiplicador FIJO por
+      escalón, calibrado de una vez contra la banda de referencia de
+      arriba — tiene sentido porque, a diferencia del Mapa, todo el que
+      juega la Torre parte del mismo sitio (mapa completado):
+      - `TORRE_MOB_TARGET_POWER` / `TORRE_BOSS_TARGET_POWER`: potencia
+        OBJETIVO (unidades de `fighterPowerScore`) por tanda de
+        `enemyCount` (crece cada 8 escalones, sin cambios en eso).
+      - `torreMobMult(level)` / `torreBossMult(level)`: el multiplicador de
+        CADA familia/jefe es el que hace falta para que SU potencia nativa
+        (a ×1, la de siempre) llegue a la potencia objetivo de su tanda —
+        no el mismo múltiplo para todos por igual, así una familia floja
+        para su tanda recibe más empujón que una que ya viene fuerte de
+        fábrica (el mismo fallo de fondo que causó el pico de
+        "hombreseisbrazos" del punto anterior, ahora evitado de raíz en
+        toda la escalera). `Math.max(1, ...)` de por medio: nunca se baja
+        de la potencia nativa — un jefe que ya la supere (p.ej. Tifón, el
+        de la última zona) se deja como está.
+      - Ya no depende de `state` ni de `bossAdaptiveMult`/originZoneIdx —
+        `buildTorreEncounters(level)` pierde el parámetro `bossExtraMult`
+        (ahora inútil, se calcula dentro) y el call site en
+        `UI.startTorreLevel` (ui.js) se simplifica a juego.
+      Calibrado por simulación (banda de referencia + heurística de
+      combate automático REAL — la misma de `pickAutoGroup`/"🤖 Auto", no
+      una elección ciega) para que la tasa de victoria de cada tanda ronde
+      65-90%, cayendo a un reto de verdad SOLO en el último escalón de
+      cada ladder — el mob final (Lamia) y el jefe final (Tifón) — el
+      "gran final" de cada mitad. Verificado con Playwright (llamando
+      directamente a `buildTorreEncounters`, la función real del juego):
+      - Antes → Después (banda de referencia, daño total sobre su HP):
+        mob inicial (Araña, ×3) 0.1%→57%; mob intermedio (Serpiente, ×9)
+        0.2%→75%; mob final (Lamia, ×15) trivial→112% (finale genuino,
+        ~20-25% de victorias); jefe inicial (Guardián del Bosque) 0.007%→4%;
+        jefe final (Tifón) ~81%→132% (0-5% de victorias, como debe ser el
+        último jefe del juego).
+      - Tasa de victoria media por tanda completa (33 familias de mobs +
+        33 jefes, banda de referencia): mobs entre 64-87% en las 4
+        primeras tandas, 20% en la última; jefes entre 73-88% en las 4
+        primeras, 0% en la última (solo Tifón) — sin ninguna tanda
+        completa trivial ni ninguna imposible salvo los dos finales
+        buscados a propósito.
+      - Confirmado que el Mapa (bossAdaptiveMult, sin tocar) sigue
+        construyendo su propio jefe de zona sin errores, y que la pantalla
+        de un nivel de Torre real (capturada) sigue funcionando sin
+        excepciones ni regresiones visuales.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
