@@ -809,9 +809,16 @@ function activeLeaderSkill(state) {
 }
 
 // --- Progreso de zonas ---
+// Capado a STAGES_PER_ZONE-1: una partida guardada de cuando STAGES_PER_ZONE
+// era mayor (33, antes de bajarlo a 25) puede tener un índice de etapa por
+// encima del máximo actual — sin este tope se veía como "33/25" en el Mapa
+// para cualquier zona ya terminada bajo el número de etapas antiguo.
+// migrateState también reescribe el valor guardado (ver más abajo) para
+// que quede limpio de una vez, pero este tope se deja aquí también para
+// que ninguna lectura futura pueda volver a mostrar un valor imposible.
 function highestClearedStage(state, zoneId) {
   const v = state.progress.zoneStage[zoneId];
-  return v === undefined ? -1 : v;
+  return v === undefined ? -1 : Math.min(v, STAGES_PER_ZONE - 1);
 }
 function isZoneUnlocked(state, zoneId) { return state.progress.unlockedZones.includes(zoneId); }
 function isStageUnlocked(state, zoneId, stageIdx) {
@@ -1136,6 +1143,16 @@ function migrateState(state) {
   try {
     if (!state || state.version !== 2 || !state.roster) return null;
     state.roster.forEach(r => { if (!r.stats) r.stats = newFighterStats(); });
+    // Partidas guardadas de cuando STAGES_PER_ZONE era mayor (33, antes de
+    // bajarlo a 25): el índice de etapa más alta superada de cada zona
+    // puede quedar por encima del máximo actual — se capa aquí de una vez
+    // (además del tope de lectura en highestClearedStage) para que el
+    // propio dato guardado quede limpio, no solo lo que se muestra.
+    if (state.progress && state.progress.zoneStage) {
+      Object.keys(state.progress.zoneStage).forEach(zoneId => {
+        if (state.progress.zoneStage[zoneId] > STAGES_PER_ZONE - 1) state.progress.zoneStage[zoneId] = STAGES_PER_ZONE - 1;
+      });
+    }
     if (!state.settings) state.settings = { infiniteEnergy: false, showMedallion: true };
     if (state.settings.showMedallion === undefined) state.settings.showMedallion = true;
     if (state.settings.enableTorreBatalla === undefined) state.settings.enableTorreBatalla = false;

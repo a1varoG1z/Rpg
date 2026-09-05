@@ -4192,6 +4192,34 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       total de etapas posibles (825) y de jefes (33) siguen siendo
       alcanzables para `etapas_500`/`jefes_20`.
 
+- [x] Arreglado un bug reportado por el usuario tras bajar `STAGES_PER_ZONE`
+    de 33 a 25 (punto anterior): una partida ya empezada, con alguna zona
+    con más etapas superadas que el nuevo máximo (p.ej. una zona ya
+    terminada del todo bajo las 33 etapas antiguas, `progress.zoneStage`
+    guardado en 32), mostraba "33/25" en el Mapa en vez de un progreso
+    dentro de rango. `highestClearedStage` (state.js) ahora capa el valor
+    leído a `STAGES_PER_ZONE - 1`, y `migrateState` además reescribe de
+    una vez el valor guardado en `progress.zoneStage` para las zonas que
+    lo tuvieran por encima del máximo actual (una migración más, mismo
+    patrón que las demás — solo toca zonas afectadas, dejando intactas
+    las que ya estaban dentro de rango). Verificado con Playwright: una
+    partida de prueba con `zoneStage.sabana = 32` (el valor "imposible"
+    con el `STAGES_PER_ZONE` actual) se lee ya capada a 24 incluso ANTES
+    de migrar (por el tope en `highestClearedStage`), y tras
+    `migrateState` el propio valor guardado también queda en 24; la
+    pantalla del Mapa renderizada muestra "25/25" en vez de "33/25", y
+    ninguna zona con progreso ya dentro de rango (probado con `bosque`)
+    se ve afectada por la migración.
+
+- [x] Confirmado al usuario (pregunta directa, sin cambio de código
+    necesario): los cristales totales por zona NO cambiaron con la
+    reestructuración de etapas — ya estaba verificado en el punto
+    anterior por simulación (2000 limpiados de zona completos), pero se
+    le repitió la cifra concreta para que quedara claro: Pixite/Voxite/
+    Doxite/Texel/XP, todos dentro de ~2% del total esperado de antes del
+    cambio (95.7 vs 95 Pixite, 6.51 vs 6.4 Voxite, 1.27 vs 1.28 Doxite),
+    tal como pedía explícitamente ("es importante que sean los mismos").
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
