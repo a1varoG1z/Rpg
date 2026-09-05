@@ -12,13 +12,23 @@ function buildUnitStats(defId, level, extraMult) {
   // copia que el jugador llegue a poseer (ver Torre Batalla) sigue usando
   // fighterStats() en state.js, con la fórmula normal de nivel/rareza.
   if (def.fixedStats) {
-    const m = extraMult || 1;
+    // extraMult admite un número (multiplica las 5 stats por igual, el uso
+    // de siempre — bossAdaptiveMult del Mapa, WAGER_BOSS_BOOST) o un objeto
+    // { off, def } (solo lo usa torreBossMult, ver más abajo): `off` sube
+    // ATK/WIS — lo que decide si un golpe hace daño de verdad, ver
+    // computeDamage (dmg = ATK − DEF_rival×0.5) — y `def` sube HP/DEF/AGI
+    // por separado, con un techo más bajo, para poder corregir un jefe de
+    // ATK nativo muy bajo sin dispararle también la vida/defensa/agilidad
+    // (que solo alargan el combate y disparan la prob. de crítico vía AGI,
+    // sin hacerlo más peligroso de verdad) al mismo ritmo.
+    const off = (extraMult && typeof extraMult === 'object') ? (extraMult.off || 1) : (extraMult || 1);
+    const dfn = (extraMult && typeof extraMult === 'object') ? (extraMult.def || 1) : (extraMult || 1);
     return {
-      maxHp: Math.round(def.fixedStats.hp * m),
-      atk: Math.round(def.fixedStats.atk * m),
-      def: Math.round(def.fixedStats.def * m),
-      agi: Math.round(def.fixedStats.agi * m),
-      wis: Math.round(def.fixedStats.wis * m),
+      maxHp: Math.round(def.fixedStats.hp * dfn),
+      atk: Math.round(def.fixedStats.atk * off),
+      def: Math.round(def.fixedStats.def * dfn),
+      agi: Math.round(def.fixedStats.agi * dfn),
+      wis: Math.round(def.fixedStats.wis * off),
     };
   }
   const w = CLASS_INFO[def.class].weights;
@@ -76,7 +86,10 @@ function makeUnit(side, defId, level, extraMult, sourceUid) {
     // queda en el nivel NOMINAL (capado en XP_LEVEL_CAP), así que sin este
     // campo la ficha de combate (UI.showBattleUnitStats) mostraba "Nv. 40"
     // sin ningún indicio del refuerzo real que ya llevan las stats.
-    level, powerMult: extraMult || 1,
+    // extraMult puede ser un objeto { off, def } (ver buildUnitStats,
+    // solo lo usa torreBossMult) — se muestra `off` (el que decide si de
+    // verdad pega fuerte) en vez de "[object Object]".
+    level, powerMult: (extraMult && typeof extraMult === 'object') ? (extraMult.off || 1) : (extraMult || 1),
     maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
     skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], dots: [], stunTurns: 0, alive: true,
   };
@@ -250,39 +263,57 @@ function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
 // fórmula rareza×clase que cualquier otro luchador, varía poco dentro de
 // una tanda (~2-4.7× de multiplicador en toda la escalera, verificado).
 //
-// JEFES (torreBossMult): aquí NO se normaliza por potencia nativa, a
-// propósito. Un primer intento sí lo hizo igual que los mobs, y
-// PROVOCÓ UNA DERROTA REAL reportada por el usuario (captura: 42.511 de
-// daño recibido contra un solo jefe, banda de 9 Legendarios Nv.40
-// arrasada) — las stats de jefe son fixedStats puestas A MANO, y varían
-// muchísimo MÁS que las de un mob dentro de una misma tanda (p.ej. la
-// tanda de un único jefe va de 584 a 2299 de potencia nativa, casi 4×):
-// normalizar todos a la misma potencia objetivo disparaba el
-// multiplicador del jefe más flojo (la Bruja del Pantano, zona 2) a
-// ×14.6 — HP y ATK a la vez multiplicados por 14.6, una combinación que
-// ninguna banda por buena que sea puede encajar. Por eso los jefes usan
-// un multiplicador FIJO por tanda (TORRE_BOSS_MULT) en vez de un objetivo
-// de potencia: el jefe ya fuerte de fábrica se vuelve MUY fuerte, el
-// flojo se vuelve simplemente más fuerte — nunca desproporcionado.
-//
-// Calibrado por simulación (banda de referencia de arriba, con la misma
-// heurística de combate automático real que usa el botón "🤖 Auto",
-// probando SIEMPRE los 8 jefes/familias de cada tanda, no solo uno) para
-// que ninguna tanda tenga una tasa de victoria por debajo del 90% salvo
-// la última (un único jefe por tanda desde la 4ª en adelante, donde ya
-// hace falta un margen menor): el jefe final de todos (Tifón, el de la
-// última zona) queda deliberadamente cerca del límite (~97% de victorias,
-// hasta el 96% de daño de la banda) como el reto de fin de partida que
-// tiene que ser, sin llegar a ser un muro garantizado.
+// JEFES (torreBossMult): pasó por DOS intentos fallidos antes de este.
+// 1º) normalizar por potencia nativa, igual que los mobs — PROVOCÓ UNA
+// DERROTA REAL reportada por el usuario (captura: 42.511 de daño
+// recibido contra un solo jefe, banda de 9 Legendarios Nv.40 arrasada):
+// las stats de jefe son fixedStats puestas A MANO, con muchísima más
+// variación entre sí que las de un mob (la tanda de un único jefe va de
+// 584 a 2299 de potencia nativa, casi 4×), así que normalizar todos a la
+// misma potencia objetivo disparó el multiplicador del jefe más flojo
+// (Bruja del Pantano, zona 2) a ×14.6 sobre TODAS sus stats a la vez.
+// 2º) un multiplicador FIJO por tanda (sin normalizar) — más seguro, pero
+// el usuario mandó una segunda captura mostrando lo contrario: con ese
+// mismo equipo ganaba al Coloso de Cristal (jefe de la 3ª zona) sin
+// ningún problema (7 de daño recibido). La razón, mirando computeDamage
+// (más arriba): el daño de un golpe es `ATK_atacante − DEF_rival×0.5`,
+// así que lo que de verdad decide si un jefe hace daño NO es su potencia
+// general sino si su ATK nativo (aquí 65) llega a superar la mitad de la
+// DEF de la banda (~566 con equipo Legendario bueno, así que hacen falta
+// más de 283 de ATK) — un multiplicador FIJO igual para todos los jefes
+// de la tanda no puede corregir eso sin sobre-subir también a los que ya
+// tenían ATK decente.
+// Solución: dos multiplicadores por separado (ver el objeto { off, def }
+// que acepta buildUnitStats) — `off` sube SOLO ATK/WIS hasta que cruce con
+// margen ese umbral de la DEF de la banda de referencia (con techo propio,
+// más alto, porque no arrastra HP/DEF/AGI consigo) y `def` sube HP/DEF/AGI
+// por separado con un techo más bajo (para que el combate dure lo
+// suficiente para que ese ATK ya relevante se note, sin volverse
+// eterno ni disparar la prob. de crítico vía AGI sin necesidad).
+// TORRE_BOSS_ATK_TARGET (700) es el ATK nativo que, multiplicado por el
+// "off" de un jefe cualquiera, se intenta alcanzar; TORRE_BOSS_OFF_CAP/
+// DEF_CAP limitan cuánto puede subir cada uno para un jefe de ATK nativo
+// muy bajo (si no, un jefe como el Guardián del Bosque, ATK nativo 26,
+// dispararía su "off" a ×27 solo por intentar llegar a 700). El exceso de
+// ambos se amortigua entre la raíz del nº de repeticiones de la tanda
+// (level.enemyCount) igual que antes, para que la propia repetición sin
+// curación ya cuente como parte del reto.
 const TORRE_MOB_TARGET_POWER = { 3: 3300, 6: 2950, 9: 2700, 12: 2646, 15: 3200 };
-const TORRE_BOSS_MULT = { 1: 3, 2: 2.5, 3: 2.2, 4: 1.6, 5: 1.4 };
+const TORRE_BOSS_ATK_TARGET = 700, TORRE_BOSS_OFF_CAP = 10, TORRE_BOSS_DEF_CAP = 4;
 function torreMobMult(level) {
   const u = makeUnit('enemy', level.fightDefId, XP_LEVEL_CAP);
   const native = fighterPowerScore({ hp: u.maxHp, atk: u.atk, def: u.def, agi: u.agi, wis: u.wis });
   return Math.max(1, TORRE_MOB_TARGET_POWER[level.enemyCount] / native);
 }
 function torreBossMult(level) {
-  return TORRE_BOSS_MULT[level.enemyCount];
+  const ratio = TORRE_BOSS_ATK_TARGET / fighterDef(level.fightDefId).fixedStats.atk;
+  const rawOff = Math.min(TORRE_BOSS_OFF_CAP, ratio);
+  const rawDef = Math.min(TORRE_BOSS_DEF_CAP, ratio);
+  const damp = Math.sqrt(level.enemyCount);
+  return {
+    off: rawOff <= 1 ? 1 : 1 + (rawOff - 1) / damp,
+    def: rawDef <= 1 ? 1 : 1 + (rawDef - 1) / damp,
+  };
 }
 
 // Oleadas de un nivel de la Torre Batalla (ver TORRE_LEVELS en data.js):

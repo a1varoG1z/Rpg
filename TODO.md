@@ -4587,6 +4587,59 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
         97-100% en las 4 primeras tandas, 97% en la última (Tifón, el
         reto final, deliberadamente cerca del límite pero no un muro).
 
+- [x] Segunda corrección de la dificultad de los jefes de la Torre
+      Batalla: el multiplicador fijo por tanda del punto anterior evitaba
+      la derrota real, pero el usuario mandó una segunda captura mostrando
+      el problema contrario — con el MISMO equipo (9 Legendarios Nv.40 con
+      equipo Legendario) ganaba al Coloso de Cristal (jefe de la 3ª zona)
+      sin ningún problema: 5.420 de daño hecho, solo 7 recibido. "pero
+      ahora les gano sin ningún problema... hazlo bien, tienes que nivelar
+      bien la dificultad del juego".
+      Causa raíz encontrada mirando `computeDamage` (combat.js): el daño
+      de un golpe es `ATK_atacante − DEF_rival×0.5`, así que lo que decide
+      si un jefe hace daño de verdad NO es su potencia general sino si su
+      ATK nativo supera la mitad de la DEF de la banda rival — con equipo
+      Legendario bueno esa DEF ronda 566, así que hacen falta más de 283
+      de ATK solo para no quedarse en el daño mínimo (1). El Coloso de
+      Cristal tiene un ATK nativo de solo 65 (es un jefe "muro": mucha
+      vida/defensa, poco ataque) — el multiplicador fijo ×3 de la
+      corrección anterior solo lo subía a 195 ATK, muy por debajo de ese
+      umbral, así que casi todos sus golpes caían en el mínimo.
+      Arreglado con un cambio más profundo: `buildUnitStats` (combat.js)
+      ahora acepta `extraMult` como un objeto `{ off, def }` además de un
+      número (retrocompatible con el resto de usos — bossAdaptiveMult del
+      Mapa, WAGER_BOSS_BOOST) — `off` sube SOLO ATK/WIS (lo que decide si
+      el golpe hace daño de verdad) y `def` sube HP/DEF/AGI por separado,
+      con un techo más bajo (para que el combate dure lo suficiente sin
+      alargarse sin sentido ni disparar la probabilidad de crítico vía
+      AGI). `torreBossMult` calcula ambos por separado: `off` es el
+      multiplicador que hace falta para que el ATK nativo de cada jefe
+      llegue a un objetivo común (`TORRE_BOSS_ATK_TARGET = 700`, muy por
+      encima del umbral de 283), con techo propio más alto
+      (`TORRE_BOSS_OFF_CAP = 10`, porque no arrastra HP/DEF/AGI consigo);
+      `def` usa el mismo objetivo pero con techo más bajo
+      (`TORRE_BOSS_DEF_CAP = 4`). El exceso de ambos se amortigua entre la
+      raíz de `enemyCount` (repeticiones de la tanda), igual que antes.
+      `makeUnit`/`powerMult` (para el "💪 Reforzado ×X" de la ficha de
+      combate) se actualiza para mostrar `off` en vez de "[object Object]"
+      cuando `extraMult` es un objeto.
+      Verificado con Playwright (banda de referencia Legendario Nv.40 +
+      equipo Nv.15, Y TAMBIÉN una banda con equipo Nv.5 para comprobar que
+      no se vuelve injusto con menos inversión, heurística de combate
+      real):
+      - Coloso de Cristal: ATK nativo 65 → 650 tras el ajuste (antes 195
+        con el multiplicador fijo), HP 704→6.758 (antes 17.513 con el
+        primer intento fallido, ×14.6 sin separar ATK de HP) — ficha de
+        combate confirmada visualmente ("💪 Reforzado ×10.00", sin bugs).
+      - Ninguna de las 33 familias de jefes queda con 0% de victorias en
+        ninguna de las dos bandas de prueba — el daño real ahora va desde
+        un ~0-8% en los jefes más flojos de fábrica (los 2-3 primeros de
+        la Torre, un colador de entrada aceptable) hasta un 41-82% en los
+        más duros de cada tanda, sin ningún muro garantizado.
+      - Repetida la batería completa (33 mobs + 33 jefes, heurística
+        simple) para confirmar que sigue sin haber ninguna tanda con 0%
+        de victorias tras este segundo ajuste.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
