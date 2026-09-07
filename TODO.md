@@ -4786,6 +4786,61 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       para las 6 ranuras de cada luchador sin que seguir acumulándose sin
       parar.
 
+- [x] Corrige el "muro imposible" de un jefe de zona: reportado con un
+      ejemplo exacto — "imagina una partida que me pongo dificultad 120%,
+      voy al boss y pierdo, me dedico a levelear y a conseguir mejores
+      objetos de equipo, vuelvo a pelear contra el boss y vuelvo a perder
+      porque claro, el nivel del jefe ha subido... si a un boss no le ganas
+      de primeras, pierdes siempre". Causa raíz confirmada leyendo el
+      código: `bossAdaptiveMult`/`mobAdaptiveMult` (state.js) miden la
+      banda REAL del jugador EN EL MOMENTO de cada intento (no algo fijado
+      de antemano) — perder, mejorar y reintentar solo consigue que el
+      propio jefe "mejore" con esa misma banda, así que la ventaja nunca
+      llega a materializarse y la persecución no termina nunca.
+      - Nuevas `lockedBossAdaptiveMult`/`lockedMobAdaptiveMult` (state.js):
+        calculan el multiplicador (sin contar el ajuste manual de
+        dificultad, que se sigue aplicando en vivo, ver más abajo) UNA SOLA
+        VEZ, la primera vez que se entra a la etapa/jefe de esa zona, y lo
+        guardan en `state.progress.bossDifficultyLock`/`mobDifficultyLock`
+        (nuevos, con su entrada de migración). Las llamadas siguientes
+        para esa MISMA zona devuelven el valor ya guardado sin
+        recalcularlo — cualquier mejora del jugador a partir de ahí solo
+        puede acercarlo a ganar, nunca alejarlo.
+      - `UI.startStageBattle` (ui.js) y el `mobMult` dentro de
+        `buildEnemyBand` (combat.js) usan ahora las versiones bloqueadas en
+        vez de `bossAdaptiveMult`/`mobAdaptiveMult` directamente.
+      - El Duelo por apuesta (`UI.startWagerDuel`) se deja
+        DELIBERADAMENTE sin tocar — sigue llamando a `bossAdaptiveMult` en
+        vivo, porque ahí el objetivo del cálculo adaptativo es el
+        contrario (evitar que se vuelva Texel gratis repetible cuando el
+        jugador se hace más fuerte), no protegerlo de un muro.
+      - El ajuste manual de dificultad de Ajustes (`difficultyMult`) se
+        divide fuera del valor que se guarda en el lock y se vuelve a
+        multiplicar cada vez que se lee — así, si tocas el mando de
+        Ajustes DESPUÉS de que una zona ya esté bloqueada, se nota al
+        instante en esa zona también, en vez de quedarse anclado al valor
+        de cuando entraste la primera vez.
+      Verificado con Playwright, comparando la versión en vivo (sin
+      bloquear) contra la bloqueada con una banda de 9 luchadores real
+      (imprescindible — con menos de 6 en la Formación el escalado
+      adaptativo ni se activa, así que antes de este ajuste la primera
+      prueba no medía nada de verdad):
+      - En vivo, subir toda la banda a Nv.40/3★/equipo legendario completo
+        SÍ sube el multiplicador del jefe (0.71 → 1.75, confirmando que el
+        bug es real). Bloqueado, la MISMA mejora deja el valor
+        exactamente igual (0.71 antes y después).
+      - Una zona nunca visitada sigue fijando su lock con la banda YA
+        mejorada, tal como debe ser (protección anti-farming intacta).
+      - El Duelo por apuesta sigue devolviendo un valor distinto (en vivo)
+        del bloqueado, confirmando que no se ha tocado su comportamiento.
+      - Tocar el ajuste de dificultad manual sube/baja el valor incluso ya
+        con la zona bloqueada (0.71 → 0.86 al 120%, vuelve a 0.71 al
+        volver a 100%).
+      - Con el flujo real de la UI (`UI.startStageBattle` dos veces
+        seguidas sobre la misma zona, con una mejora de banda brutal en
+        medio): `state.progress.bossDifficultyLock` queda idéntico en
+        ambos intentos.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

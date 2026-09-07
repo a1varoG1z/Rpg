@@ -969,11 +969,13 @@ UI.startStageBattle = function (state, zoneIdx, stageIdx) {
     saveGame(state);
     UI.renderTopbar(state);
   }
-  // El multiplicador adaptativo (ver bossAdaptiveMult en state.js) solo
-  // afecta a la etapa del jefe (buildEnemyBand lo ignora en el resto) y
-  // solo sube por encima de 1× si la banda ya va muy por encima de lo
-  // esperado para esta zona — nunca debilita al jefe.
-  const { rows, isBoss } = buildEnemyBand(state, zoneIdx, stageIdx, bossAdaptiveMult(state, zoneIdx));
+  // El multiplicador adaptativo del jefe se BLOQUEA la primera vez que se
+  // entra a esta zona (ver lockedBossAdaptiveMult en state.js) — evita que
+  // perder, mejorar la banda y reintentar suba el jefe al mismo ritmo que
+  // tú y lo vuelva imposible de ganar para siempre. Los mobs normales usan
+  // el mismo bloqueo, pero dentro de buildEnemyBand (combat.js), ya que ahí
+  // se calcula por zona sin pasar por un parámetro aparte como el jefe.
+  const { rows, isBoss } = buildEnemyBand(state, zoneIdx, stageIdx, lockedBossAdaptiveMult(state, zoneIdx));
   const encounters = rows.filter(r => r.length > 0);
   // hpMap/faintedSet/chargeMap llevan la cuenta de la vida, los desmayos y la
   // carga de ulti de cada luchador durante TODA la etapa (entre nodos del

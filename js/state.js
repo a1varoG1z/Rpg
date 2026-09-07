@@ -32,7 +32,7 @@ function createNewState() {
     [null, null, null],
     [null, null, null],
   ];
-  const progress = { unlockedZones: ['bosque'], zoneStage: {}, daysPlayed: [] };
+  const progress = { unlockedZones: ['bosque'], zoneStage: {}, daysPlayed: [], bossDifficultyLock: {}, mobDifficultyLock: {} };
   ZONES.forEach(z => { progress.zoneStage[z.id] = -1; });
   return {
     version: 2,
@@ -823,6 +823,47 @@ function mobAdaptiveMult(state, zoneIdx) {
   return result * playerDifficultyMult(state);
 }
 
+// mobAdaptiveMult/bossAdaptiveMult miden la banda EN EL MOMENTO de cada
+// intento — si pierdes, subes de nivel o consigues mejor equipo y vuelves a
+// intentarlo, tu banda ahora es más fuerte, así que el propio cálculo
+// también sube el multiplicador con ella. Contra el jefe de una zona (que
+// bloquea la única ruta de avance del Mapa) eso podía convertirse en una
+// persecución sin fin: pierdes, mejoras, el jefe "mejora" exactamente al
+// mismo ritmo que tú, y nunca consigues la ventaja que necesitas para
+// ganarle — el problema que reportó el usuario explícitamente ("si a un
+// boss no le ganas de primeras, pierdes siempre").
+//
+// La solución: la parte que depende de tu banda (todo salvo
+// playerDifficultyMult, que es el ajuste manual de Ajustes y debe seguir
+// respondiendo AL INSTANTE si lo tocas) se calcula UNA SOLA VEZ, la primera
+// vez que entras a esa etapa/jefe de esa zona, y se guarda en
+// state.progress — de ahí en adelante cualquier mejora tuya solo puede
+// ACERCARTE a ganar, nunca alejarte, sin perder la protección anti-farming
+// original (una banda ya overpowered la primera vez que visita una zona
+// floja sigue recibiendo el refuerzo de siempre, calculado en ese momento).
+//
+// El Duelo por apuesta (openWagerDuel/startWagerDuel) es la única excepción
+// deliberada: sigue llamando a bossAdaptiveMult en vivo, sin bloquear (ver
+// su propio comentario) porque ahí el objetivo es justo el contrario —
+// impedir que se vuelva Texel gratis repetible según el jugador se hace más
+// fuerte, no protegerlo de un muro imposible.
+function lockedBossAdaptiveMult(state, zoneIdx) {
+  const zoneId = ZONES[zoneIdx].id;
+  if (!state.progress.bossDifficultyLock) state.progress.bossDifficultyLock = {};
+  if (state.progress.bossDifficultyLock[zoneId] === undefined) {
+    state.progress.bossDifficultyLock[zoneId] = bossAdaptiveMult(state, zoneIdx) / playerDifficultyMult(state);
+  }
+  return state.progress.bossDifficultyLock[zoneId] * playerDifficultyMult(state);
+}
+function lockedMobAdaptiveMult(state, zoneIdx) {
+  const zoneId = ZONES[zoneIdx].id;
+  if (!state.progress.mobDifficultyLock) state.progress.mobDifficultyLock = {};
+  if (state.progress.mobDifficultyLock[zoneId] === undefined) {
+    state.progress.mobDifficultyLock[zoneId] = mobAdaptiveMult(state, zoneIdx) / playerDifficultyMult(state);
+  }
+  return state.progress.mobDifficultyLock[zoneId] * playerDifficultyMult(state);
+}
+
 // Habilidad de líder de banda: solo está activa si el luchador que la tiene
 // ocupa la celda central [1][1] de la Formación. Devuelve el LEADER_SKILLS
 // correspondiente (o null si no hay líder activo), para aplicarlo a TODA
@@ -1266,6 +1307,8 @@ function migrateState(state) {
         if (state.progress.zoneStage[zoneId] > STAGES_PER_ZONE - 1) state.progress.zoneStage[zoneId] = STAGES_PER_ZONE - 1;
       });
     }
+    if (!state.progress.bossDifficultyLock) state.progress.bossDifficultyLock = {};
+    if (!state.progress.mobDifficultyLock) state.progress.mobDifficultyLock = {};
     if (!state.settings) state.settings = { infiniteEnergy: false, showMedallion: true };
     if (state.settings.showMedallion === undefined) state.settings.showMedallion = true;
     if (state.settings.enableTorreBatalla === undefined) state.settings.enableTorreBatalla = false;

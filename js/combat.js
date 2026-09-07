@@ -219,7 +219,12 @@ function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
   // combates").
   const rowCount = stageIdx < 8 ? 3 : (stageIdx < 22 ? 4 : 5);
   const rows = [];
-  const mobMult = MOB_POWER_MULT * lateZoneMult(zoneIdx) * mobAdaptiveMult(state, zoneIdx);
+  // lockedMobAdaptiveMult (state.js): bloqueada la primera vez que se entra
+  // a esta zona, igual que el jefe — ver su comentario ahí. Solo se llega
+  // aquí desde una etapa de mobs real (UI.startStageBattle); el Duelo por
+  // apuesta siempre pasa stageIdx = etapa del jefe, así que nunca entra en
+  // esta rama.
+  const mobMult = MOB_POWER_MULT * lateZoneMult(zoneIdx) * lockedMobAdaptiveMult(state, zoneIdx);
   for (let r = 0; r < rowCount; r++) {
     const row = [];
     for (let i = 0; i < 3; i++) {
