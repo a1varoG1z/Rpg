@@ -5180,6 +5180,31 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Wukong (405.3) > Fenrir (403) > Leviatán (401.3) > ... — sin errores
       de página.
 
+- [x] "añade estadísticas más completas donde puedas ir filtrando por
+      personajes, record de víctimas, más daño, etc, así con todas las
+      estadísticas registradas, una zona donde poder ver estadísticas en
+      profundidad". Ya existían dos piezas sueltas: `state.stats` (totales
+      globales de toda la partida, acumulados en `UI.endBattle`) mostrado
+      solo dentro de Objetivos, y `entry.stats`/`newFighterStats` (por
+      luchador: combates, daño hecho/recibido, curación, bajas, mejor
+      golpe) mostrado solo dentro de la ficha de CADA luchador uno a uno,
+      sin forma de compararlos entre sí. Nueva zona dedicada
+      "📊 Estadísticas en profundidad" (botón en Ajustes → `UI.openStats`,
+      ui.js), con 3 bloques: (1) el mismo resumen global de antes; (2)
+      "🏅 Récords por luchador" — top 3 de toda la Colección en daño hecho,
+      bajas, golpe más fuerte, curación hecha, combates jugados y daño
+      recibido (aguante), calculado sobre `entry.stats` de todo
+      `state.roster`; (3) listado completo de la Colección con su
+      historial resumido por fila (combates/daño/bajas/mejor golpe),
+      filtrable por nombre (buscador en vivo) y ordenable por cualquiera
+      de esas estadísticas (selector, reordena al vuelo) — tocar una fila
+      abre la ficha completa de ese luchador (que ya tenía el detalle
+      entero de su historial). Verificado con datos de combate simulados
+      (no reales, para no depender de jugar partidas): el ranking de
+      récords, el filtro de búsqueda y el cambio de orden reflejan
+      exactamente los datos esperados, y tocar una fila abre la ficha
+      correcta del luchador — sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

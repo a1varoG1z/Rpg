@@ -88,6 +88,8 @@ function difficultyLabelText(mult) { return Math.round(mult * 100) + '%'; }
   $('familyTrialsModalClose').addEventListener('click', () => $('familyTrialsModal').classList.add('hidden'));
   $('guideBtn').addEventListener('click', () => UI.openGuide());
   $('guideModalClose').addEventListener('click', () => $('guideModal').classList.add('hidden'));
+  $('statsBtn').addEventListener('click', () => UI.openStats(state));
+  $('statsModalClose').addEventListener('click', () => $('statsModal').classList.add('hidden'));
   $('saveSlotsBtn').addEventListener('click', () => UI.openSaveSlots(state));
   $('exportSaveBtn').addEventListener('click', () => UI.openExportSave(state));
   $('importSaveBtn').addEventListener('click', () => UI.openImportSave());

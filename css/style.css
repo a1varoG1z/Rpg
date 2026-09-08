@@ -167,6 +167,14 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .roster-filter-hint { padding: 0 12px 8px; }
 .roster-filter-hint:empty { display: none; }
 
+/* ---------- Estadísticas en profundidad ---------- */
+.stats-search-input {
+  flex: 1; background: #1f1811; border: 1px solid var(--gold-dim); border-radius: 8px; color: var(--cream);
+  font-family: inherit; font-size: 0.8rem; padding: 6px 8px;
+}
+.stats-record-group { margin-top: 10px; font-weight: bold; font-size: 0.78rem; color: var(--gold); }
+.stats-record-group:first-child { margin-top: 0; }
+
 /* ---------- Mapa ---------- */
 .loc-card { margin-top: 12px; }
 .loc-card-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }

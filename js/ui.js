@@ -769,6 +769,115 @@ UI.openGuide = function () {
   $('guideModal').classList.remove('hidden');
 };
 
+// ---------- Estadísticas en profundidad ----------
+// Zona dedicada a ver el historial de combate completo: un resumen global
+// (reutiliza state.stats, ya acumulado en UI.endBattle), una tabla de
+// récords (quién ha hecho más daño, más bajas, el golpe más fuerte...) y un
+// listado de TODOS los luchadores de la Colección con su propio historial
+// (entry.stats, ver newFighterStats en state.js), filtrable por nombre y
+// ordenable por cualquier estadística — antes solo se podía ver el
+// historial de un luchador entrando a su ficha uno a uno.
+const STATS_SORT_OPTIONS = [
+  ['dmgDealt', '💥 Daño hecho'], ['kills', '💀 Bajas'], ['highestHit', '⚡ Golpe más fuerte'],
+  ['healDone', '💚 Curación hecha'], ['battles', '⚔️ Combates'], ['dmgReceived', '🛡️ Daño recibido'],
+  ['nombre', 'Nombre'],
+];
+function statsRecordGroupHtml(label, icon, unit, entries, key) {
+  const top = entries.filter(r => r.fs[key] > 0).sort((a, b) => b.fs[key] - a.fs[key]).slice(0, 3);
+  if (!top.length) return '';
+  return `<div class="stats-record-group">${icon} ${label}</div>` +
+    top.map((r, i) => `<div class="stat-row"><span>${i + 1}. ${r.def.name}</span><span>${r.fs[key].toLocaleString('es-ES')}${unit}</span></div>`).join('');
+}
+function statsFighterRow(state, r) {
+  const { entry, def, fs } = r;
+  const rarity = rarityInfoFor(def);
+  const row = el('div', 'torre-row');
+  row.appendChild(el('div', 'torre-row-empty-icon', rarity.icon));
+  const info = el('div', 'torre-row-info');
+  info.appendChild(el('div', 'torre-row-name', `${def.name} <span class="badge">Nv.${entry.level}</span>`));
+  info.appendChild(el('div', 'torre-row-sub',
+    `⚔️ ${fs.battles} combates · 💥 ${fs.dmgDealt.toLocaleString('es-ES')} daño · 💀 ${fs.kills} bajas · ⚡ ${fs.highestHit.toLocaleString('es-ES')} mejor golpe`));
+  row.appendChild(info);
+  row.addEventListener('click', () => { $('statsModal').classList.add('hidden'); UI.openFighterModal(state, entry.uid); });
+  return row;
+}
+UI.openStats = function (state) {
+  const body = $('statsModalBody');
+  body.innerHTML = '';
+  body.appendChild(el('h3', null, '📊 Estadísticas en profundidad'));
+  body.appendChild(el('p', 'settings-info', 'Todo el historial de combate de la partida, con récords y detalle por luchador.'));
+
+  const gs = state.stats;
+  const totalBattles = gs.battlesWon + gs.battlesLost;
+  const winRate = totalBattles > 0 ? Math.round(gs.battlesWon / totalBattles * 100) : 0;
+  const globalPanel = el('div', 'panel');
+  globalPanel.innerHTML = `<h3>🌍 Resumen global</h3>
+    <div class="stat-row"><span>Combates totales</span><span>${totalBattles}</span></div>
+    <div class="stat-row"><span>Victorias</span><span>${gs.battlesWon}</span></div>
+    <div class="stat-row"><span>Derrotas</span><span>${gs.battlesLost}</span></div>
+    <div class="stat-row"><span>% de victorias</span><span>${winRate}%</span></div>
+    <div class="stat-row"><span>⚔️ Daño total infligido</span><span>${Math.round(gs.totalDmgDealt).toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>🛡️ Daño total recibido</span><span>${Math.round(gs.totalDmgReceived).toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>💚 Curación total</span><span>${Math.round(gs.totalHealDone).toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>💥 Golpe más fuerte (partida)</span><span>${Math.round(gs.highestSingleHit).toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>🪙 Texel ganado en combate</span><span>${Math.round(gs.totalTexelEarned).toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>⭐ XP de luchador ganada</span><span>${Math.round(gs.totalFighterXpEarned).toLocaleString('es-ES')}</span></div>`;
+  body.appendChild(globalPanel);
+
+  const withStats = state.roster.map(entry => ({ entry, def: fighterDef(entry.defId), fs: entry.stats || newFighterStats() }));
+
+  const recordsPanel = el('div', 'panel');
+  recordsPanel.innerHTML = '<h3>🏅 Récords por luchador</h3>';
+  recordsPanel.innerHTML +=
+    statsRecordGroupHtml('Más daño hecho', '💥', '', withStats, 'dmgDealt') +
+    statsRecordGroupHtml('Más bajas', '💀', '', withStats, 'kills') +
+    statsRecordGroupHtml('Golpe más fuerte', '⚡', '', withStats, 'highestHit') +
+    statsRecordGroupHtml('Más curación hecha', '💚', '', withStats, 'healDone') +
+    statsRecordGroupHtml('Más combates', '⚔️', '', withStats, 'battles') +
+    statsRecordGroupHtml('Más daño recibido (aguante)', '🛡️', '', withStats, 'dmgReceived');
+  if (!withStats.some(r => r.fs.battles > 0)) recordsPanel.innerHTML += '<p class="settings-info">Todavía no hay combates registrados.</p>';
+  body.appendChild(recordsPanel);
+
+  const listPanel = el('div', 'panel');
+  listPanel.innerHTML = '<h3>🔎 Por luchador</h3>';
+  const searchRow = el('div', 'roster-sort-row');
+  const searchInput = document.createElement('input');
+  searchInput.type = 'search'; searchInput.className = 'stats-search-input'; searchInput.placeholder = 'Buscar por nombre…';
+  searchRow.appendChild(searchInput);
+  listPanel.appendChild(searchRow);
+
+  const sortRow = el('div', 'roster-sort-row');
+  sortRow.appendChild(el('label', null, 'Ordenar por'));
+  const sortSelect = document.createElement('select');
+  STATS_SORT_OPTIONS.forEach(([v, label]) => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = label;
+    sortSelect.appendChild(opt);
+  });
+  sortRow.appendChild(sortSelect);
+  listPanel.appendChild(sortRow);
+
+  const listWrap = el('div', 'torre-list');
+  listPanel.appendChild(listWrap);
+  body.appendChild(listPanel);
+
+  function renderList() {
+    const query = searchInput.value.trim().toLowerCase();
+    const filtered = withStats.filter(r => r.def.name.toLowerCase().includes(query));
+    const sortKey = sortSelect.value;
+    if (sortKey === 'nombre') filtered.sort((a, b) => a.def.name.localeCompare(b.def.name, 'es'));
+    else filtered.sort((a, b) => b.fs[sortKey] - a.fs[sortKey] || a.def.name.localeCompare(b.def.name, 'es'));
+    listWrap.innerHTML = '';
+    if (!filtered.length) { listWrap.appendChild(el('div', 'empty-hint', 'Sin resultados.')); return; }
+    filtered.forEach(r => listWrap.appendChild(statsFighterRow(state, r)));
+  }
+  searchInput.addEventListener('input', renderList);
+  sortSelect.addEventListener('change', renderList);
+  renderList();
+
+  $('statsModal').classList.remove('hidden');
+};
+
 // ---------- Topbar ----------
 UI.renderTopbar = function (state) {
   $('texelVal').textContent = Math.floor(state.currencies.texel).toLocaleString('es-ES');
