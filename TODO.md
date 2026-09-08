@@ -5152,6 +5152,34 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       7. Petición de opinión sobre el orden ideal de los Legendarios —
          respondida como discusión en el chat, no como cambio de código.
 
+- [x] Tras dar mi opinión sobre el orden ideal de poder de los Legendarios
+      (punto 7 de arriba), petición explícita de aplicarla de verdad para
+      Zeus, Thor, Fenrir y Sun Wukong: "pon a zeus, thor, fenrir y sun
+      wukong en el orden que has dicho, así que hincha sus estadísticas
+      hasta llegar a esas posiciones". Criterio (no de combate, sino de
+      "fantasía de poder" mitológica/pop, ya que en poder base los cuatro
+      quedaban bastante más abajo de lo que su peso cultural sugiere): Zeus
+      por delante de Poseidón (su hermano, pero menos "rey de los dioses"
+      en la cultura popular), Thor por delante de Hércules, y Sun
+      Wukong/Fenrir — infravalorados porque su clase (Pícaro) reparte casi
+      todo en ATK/AGI en vez de HP/DEF, que es lo que más pesa en
+      `fighterPowerScore` — subidos a la primera fila junto a ellos.
+      Implementado con `setStatMult(defId, {hp,atk,def,agi,wis})`
+      (data.js), el mecanismo ya existente de multiplicador manual por
+      personaje: se usa un multiplicador UNIFORME (la misma proporción en
+      las 5 stats) para no romper la identidad de cada uno — como
+      `fighterPowerScore` es una suma ponderada lineal, un multiplicador
+      uniforme `k` escala el power score resultante exactamente por `k`,
+      así que los multiplicadores (Zeus ×1.069, Thor ×1.103, Sun Wukong
+      ×1.095, Fenrir ×1.148) se calcularon para aterrizar exactos en el
+      poder base (Nv.1, sin equipo, medido con `fighterPowerScore` +
+      `basePlayerStats`) que produce el orden final pedido. Verificado
+      recalculando el ranking completo de los 31 Legendarios contra el
+      archivo real (no una simulación aparte): Odín (439.3) > Zeus (437.1)
+      > Poseidón (433.3) > Thor (427.3) > Hércules (423.8) > ... > Sun
+      Wukong (405.3) > Fenrir (403) > Leviatán (401.3) > ... — sin errores
+      de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

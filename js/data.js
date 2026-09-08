@@ -726,6 +726,28 @@ setStatMult('odin_legendario', { hp: 1.2, atk: 1.7, def: 1.3, agi: 1.1 });
 // de dificultad progresivamente, no a saltos.
 setStatMult('hombreseisbrazos_epico', { agi: 0.65, atk: 0.75 });
 
+// Zeus/Thor/Fenrir/Sun Wukong: petición explícita del usuario tras
+// preguntarle mi opinión sobre el orden de poder de los Legendarios y
+// contestar con estos 4 — "pon a zeus, thor, fenrir y sun wukong en el
+// orden que has dicho, así que hincha sus estadísticas hasta llegar a
+// esas posiciones". El criterio no es de combate sino de "fantasía de
+// poder" mitológica/pop: Zeus por delante de Poseidón (su hermano, pero
+// menos "rey de los dioses" en la cultura popular), Thor por delante de
+// Hércules, y Sun Wukong/Fenrir — infravalorados por su clase (Pícaro,
+// que reparte casi todo en ATK/AGI en vez de HP/DEF, lo que pesa menos en
+// fighterPowerScore) — subidos a la primera fila junto a ellos.
+// Multiplicador UNIFORME (misma proporción en las 5 stats, no solo una)
+// para no romper la identidad de cada uno, calculado para aterrizar en el
+// poder base (Nv.1, sin equipo) exacto que deja este orden final:
+// Odín(439) > Zeus(437) > Poseidón(433) > Thor(427) > Hércules(424) >
+// ... > Sun Wukong(405) > Fenrir(403) > Leviatán(401) > ...
+// — verificado por simulación antes de aplicarlo, recalculando el ranking
+// completo de los 31 Legendarios con los 4 multiplicadores ya puestos.
+setStatMult('zeus_legendario', { hp: 1.069, atk: 1.069, def: 1.069, agi: 1.069, wis: 1.069 });
+setStatMult('thor_legendario', { hp: 1.103, atk: 1.103, def: 1.103, agi: 1.103, wis: 1.103 });
+setStatMult('sunwukong_legendario', { hp: 1.095, atk: 1.095, def: 1.095, agi: 1.095, wis: 1.095 });
+setStatMult('fenrir_legendario', { hp: 1.148, atk: 1.148, def: 1.148, agi: 1.148, wis: 1.148 });
+
 const ZONES = [
   { id: 'bosque', name: 'Linde del Bosque', emoji: '🌲', color: '#2f4f2f', pool: ['goblin_comun', 'arana_comun', 'boss_guardianbosque'] },
   { id: 'pantano', name: 'Pantano Oscuro', emoji: '🐊', color: '#3a4a2f', pool: ['sapo_infrecuente', 'babosa_infrecuente', 'boss_brujapantano'] },
