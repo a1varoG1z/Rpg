@@ -214,6 +214,25 @@ function upgradeGear(state, gearUid) {
   return true;
 }
 
+// Mejora TODAS las piezas indicadas (equipadas o no, a diferencia de
+// sellAllUnequippedGear) un nivel cada una, mientras el Texel alcance — el
+// coste de cada pieza es el suyo propio (gearUpgradeCost, sube con su nivel
+// y rareza), así que con Texel ajustado pueden subir unas sí y otras no en
+// el mismo lote, en vez de bloquearlo todo si no llega para todas.
+// Reutiliza upgradeGear pieza a pieza (ya es un no-op si no alcanza el
+// Texel para esa pieza en concreto). Devuelve cuántas piezas subieron y
+// cuánto Texel se ha gastado en total.
+function upgradeAllGear(state, uids) {
+  let count = 0, spent = 0;
+  uids.forEach(uid => {
+    const gear = gearItem(state, uid);
+    if (!gear) return;
+    const cost = gearUpgradeCost(gear);
+    if (upgradeGear(state, uid)) { count++; spent += cost; }
+  });
+  return { count, spent };
+}
+
 function sellGear(state, gearUid) {
   const gear = gearItem(state, gearUid);
   if (!gear) return false;

@@ -3180,17 +3180,25 @@ UI.gearFilterMode = 'all';
 UI.gearBulkMode = false;
 UI.gearBulkSelection = new Set();
 
-UI.renderEquipo = function (state) {
-  $('gearCount').textContent = state.gearInventory.length;
-  const grid = $('gearGrid');
-  grid.innerHTML = '';
-  $('gearEmptyHint').classList.toggle('hidden', state.gearInventory.length > 0);
-  const filtered = state.gearInventory.filter(g => {
+// Piezas que se ven ahora mismo en la grilla, con el filtro actual
+// aplicado (Todo/Solo sin usar/Solo equipado) — la usan tanto el render de
+// la grilla como "☑️ Seleccionar todos", para que ese botón seleccione
+// justo lo que se está viendo, no el inventario entero sin filtrar.
+function visibleGearEntries(state) {
+  return state.gearInventory.filter(g => {
     const used = !!equippedGearOwner(state, g.uid);
     if (UI.gearFilterMode === 'unused') return !used;
     if (UI.gearFilterMode === 'equipped') return used;
     return true;
   });
+}
+
+UI.renderEquipo = function (state) {
+  $('gearCount').textContent = state.gearInventory.length;
+  const grid = $('gearGrid');
+  grid.innerHTML = '';
+  $('gearEmptyHint').classList.toggle('hidden', state.gearInventory.length > 0);
+  const filtered = visibleGearEntries(state);
   filtered.forEach(g => {
     const rarity = rarityInfo(g.rarity);
     const owner = equippedGearOwner(state, g.uid);
@@ -3200,7 +3208,10 @@ UI.renderEquipo = function (state) {
     cell.appendChild(gearIcon(g, 30));
     cell.addEventListener('click', () => {
       if (UI.gearBulkMode) {
-        if (owner) { UI.showToast('⚠️ Ese equipo está puesto — quítaselo antes de venderlo.'); return; }
+        // A diferencia de antes, el equipo PUESTO sí se puede seleccionar
+        // aquí — mejorar de nivel una pieza equipada es el caso de uso más
+        // habitual. Solo Vender (en la barra de abajo) sigue excluyendo lo
+        // puesto, igual que antes.
         if (UI.gearBulkSelection.has(g.uid)) UI.gearBulkSelection.delete(g.uid);
         else UI.gearBulkSelection.add(g.uid);
         UI.renderEquipo(state);
@@ -3222,28 +3233,60 @@ function renderGearBulkActionBar(state) {
   if (!UI.gearBulkMode) { bar.classList.add('hidden'); bar.innerHTML = ''; return; }
   bar.classList.remove('hidden');
   bar.innerHTML = '';
-  // Descarta de la selección cualquier uid que ya no exista o que se haya
-  // equipado mientras seguía seleccionado.
-  const uids = [...UI.gearBulkSelection].filter(uid => gearItem(state, uid) && !equippedGearOwner(state, uid));
+  // Descarta de la selección cualquier uid que ya no exista (p.ej. vendida
+  // desde la ficha mientras seguía seleccionada).
+  const uids = [...UI.gearBulkSelection].filter(uid => gearItem(state, uid));
   if (uids.length !== UI.gearBulkSelection.size) UI.gearBulkSelection = new Set(uids);
   const gears = uids.map(uid => gearItem(state, uid));
   bar.appendChild(el('p', 'settings-info', gears.length === 0
-    ? 'Toca piezas de equipo sin usar para seleccionarlas.'
+    ? 'Toca piezas de equipo para seleccionarlas, o usa "Seleccionar todos".'
     : `${gears.length} pieza${gears.length === 1 ? '' : 's'} seleccionada${gears.length === 1 ? '' : 's'}.`));
 
-  const totalValue = gears.reduce((sum, g) => sum + gearStatValue(g) * 2, 0);
-  const sellBtn = el('button', 'danger-btn', gears.length ? `🪙 Vender seleccionadas (+${totalValue})` : '🪙 Vender seleccionadas');
-  sellBtn.disabled = gears.length === 0;
+  const selectAllBtn = el('button', 'mini-btn', `☑️ Seleccionar todos (${visibleGearEntries(state).length})`);
+  selectAllBtn.addEventListener('click', () => {
+    UI.gearBulkSelection = new Set(visibleGearEntries(state).map(g => g.uid));
+    UI.renderEquipo(state);
+  });
+  bar.appendChild(selectAllBtn);
+
+  // Mejorar: funciona sobre TODA la selección, puesta o no — cada pieza
+  // sube 1 nivel con su propio coste (gearUpgradeCost); si el Texel no
+  // llega para todas, sube tantas como pueda pagar (ver upgradeAllGear en
+  // state.js) en vez de bloquear el lote entero.
+  const upgradeCost = gears.reduce((sum, g) => sum + gearUpgradeCost(g), 0);
+  const upgradeBtn = el('button', 'primary-btn', gears.length ? `⬆️ Mejorar seleccionadas (🪙 ${upgradeCost})` : '⬆️ Mejorar seleccionadas');
+  upgradeBtn.disabled = gears.length === 0;
+  upgradeBtn.addEventListener('click', () => {
+    const { count, spent } = upgradeAllGear(state, uids);
+    saveGame(state);
+    UI.renderTopbar(state);
+    UI.renderEquipo(state);
+    if (count === 0) UI.showToast('⚠️ No tienes suficiente Texel para mejorar ninguna.');
+    else if (count < gears.length) UI.showToast(`⬆️ ${count}/${gears.length} piezas mejoradas por 🪙 ${spent} — no llegó el Texel para el resto.`);
+    else UI.showToast(`⬆️ ${count} piezas mejoradas por 🪙 ${spent}`);
+  });
+  bar.appendChild(upgradeBtn);
+
+  // Vender: solo sobre la parte de la selección que NO está equipada,
+  // igual que antes.
+  const sellUids = uids.filter(uid => !equippedGearOwner(state, uid));
+  const sellGears = sellUids.map(uid => gearItem(state, uid));
+  const totalValue = sellGears.reduce((sum, g) => sum + gearStatValue(g) * 2, 0);
+  const sellBtn = el('button', 'danger-btn', sellGears.length ? `🪙 Vender seleccionadas (+${totalValue})` : '🪙 Vender seleccionadas');
+  sellBtn.disabled = sellGears.length === 0;
   sellBtn.addEventListener('click', () => {
-    if (!confirm(`¿Vender ${gears.length} piezas de equipo por ${totalValue} Texel en total? No se puede deshacer.`)) return;
-    uids.forEach(uid => sellGear(state, uid));
+    if (!confirm(`¿Vender ${sellGears.length} piezas de equipo por ${totalValue} Texel en total? No se puede deshacer.`)) return;
+    sellUids.forEach(uid => sellGear(state, uid));
     UI.gearBulkSelection.clear();
     saveGame(state);
     UI.renderTopbar(state);
     UI.renderEquipo(state);
-    UI.showToast(`🪙 Vendidas ${gears.length} piezas por +${totalValue} Texel`);
+    UI.showToast(`🪙 Vendidas ${sellGears.length} piezas por +${totalValue} Texel`);
   });
   bar.appendChild(sellBtn);
+  if (gears.length > sellGears.length) {
+    bar.appendChild(el('p', 'settings-info', `${gears.length - sellGears.length} de las seleccionadas están equipadas — no se pueden vender, quítaselas antes si quieres venderlas también.`));
+  }
 
   if (gears.length > 0) {
     const clearBtn = el('button', 'mini-btn', 'Vaciar selección');

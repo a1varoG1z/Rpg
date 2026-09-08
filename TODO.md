@@ -4850,6 +4850,36 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       10000 Texel se refleja en `state`, en la topbar y en la partida
       guardada.
 
+- [x] Selección múltiple en Equipo + mejorar en bloque (petición explícita:
+      "en la sección de equipo, tiene que haber una opción de elegir
+      varios y otra de elegir todos y al seleccionar múltiples poder subir
+      el nivel de todos a la vez si tienes el dinero suficiente"). "Elegir
+      varios" (☑️ Selección múltiple) ya existía, pero solo para vender
+      equipo sin usar. Añadido:
+      - `☑️ Seleccionar todos` en la barra de acciones en bloque
+        (`renderGearBulkActionBar`, ui.js): selecciona TODO lo que se ve
+        ahora mismo en la grilla (respeta el filtro Todo/Solo sin
+        usar/Solo equipado, vía el nuevo `visibleGearEntries`).
+      - El equipo PUESTO ahora se puede seleccionar en modo selección
+        múltiple (antes lo bloqueaba con un aviso, pensado solo para
+        Vender) — mejorar de nivel una pieza equipada es el caso de uso
+        más habitual.
+      - Nueva `upgradeAllGear(state, uids)` (state.js): sube 1 nivel cada
+        pieza de la selección (equipada o no), reutilizando `upgradeGear`
+        pieza a pieza — con Texel ajustado, sube tantas como pueda pagar
+        en vez de bloquear el lote entero si no llega para todas. Nuevo
+        botón "⬆️ Mejorar seleccionadas (🪙 coste total)" con aviso
+        (tostada) de cuántas subieron realmente y cuánto costó, incluido
+        el caso de 0 subidas por falta de Texel.
+      - "Vender seleccionadas" se mantiene EXCLUSIVA de lo no equipado
+        (como antes), con un aviso aparte si parte de la selección está
+        equipada y por tanto no se puede vender.
+      Verificado con Playwright: seleccionar todos (incluida una pieza
+      equipada) selecciona las 5 piezas del inventario; mejorar en bloque
+      con Texel de sobra sube las 5 un nivel y gasta lo esperado; con
+      Texel insuficiente para ninguna, sube 0 y avisa en vez de fallar en
+      silencio; vender sigue excluyendo la pieza equipada y avisa de ello.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
