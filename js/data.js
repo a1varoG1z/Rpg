@@ -803,7 +803,17 @@ const GEAR_SHOP_PRICES = { comun: 60, infrecuente: 150, raro: 350, epico: 800, l
 const CONSUMABLES = {
   pocion_menor: { label: 'Poción Menor', icon: '🧪', desc: 'Cura al 40% de su vida máxima a toda la banda.', healPct: 0.4, price: 40, currency: 'texel' },
   pocion_mayor: { label: 'Poción Mayor', icon: '⚗️', desc: 'Cura al 100% de su vida máxima a toda la banda.', healPct: 1.0, price: 120, currency: 'texel' },
-  pluma_fenix: { label: 'Pluma Fénix', icon: '🪶', desc: 'Revive a un luchador caído con el 50% de su vida.', revivePct: 0.5, price: 12, currency: 'gemas' },
+  // altPrice/altCurrency (petición explícita del usuario: "la pluma fenix
+  // se tiene que poder comprar con monedas también, por un precio muy
+  // elevado, más que el equivalente en diamantes"): además de su precio
+  // normal en Gemas, se puede comprar con Texel — pensado como recurso de
+  // emergencia caro para quien se quede sin Gemas, nunca como forma barata
+  // de esquivarlas. 5000 Texel se queda MUY por encima de lo que costarían
+  // 12 Gemas compradas con Texel al mejor precio posible (ver
+  // GEMAS_TEXEL_OFFERS: el lote de 10 sale a 60 Texel/Gema, así que 12
+  // Gemas rondarían los 720) — así la ruta directa en Texel nunca es más
+  // barata que convertir y comprar con Gemas, solo más cómoda en un apuro.
+  pluma_fenix: { label: 'Pluma Fénix', icon: '🪶', desc: 'Revive a un luchador caído con el 50% de su vida.', revivePct: 0.5, price: 12, currency: 'gemas', altPrice: 5000, altCurrency: 'texel' },
 };
 
 // Comprar Gemas con Texel: caro a propósito (Texel es abundante, Gemas

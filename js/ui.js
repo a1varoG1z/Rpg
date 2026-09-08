@@ -3449,6 +3449,22 @@ UI.renderTienda = function (state) {
       }
     });
     info.appendChild(buyBtn);
+    // altPrice/altCurrency (solo pluma_fenix): un segundo botón para
+    // comprarla con Texel, más cara a propósito — ver el comentario junto
+    // a CONSUMABLES en data.js.
+    if (item.altPrice) {
+      const altBuyBtn = el('button', 'primary-btn', 'Comprar (' + (item.altCurrency === 'texel' ? '🪙' : '💎') + item.altPrice + ')');
+      altBuyBtn.disabled = state.currencies[item.altCurrency] < item.altPrice;
+      altBuyBtn.addEventListener('click', () => {
+        if (buyConsumable(state, itemId, true)) {
+          saveGame(state);
+          UI.renderTopbar(state);
+          UI.renderTienda(state);
+          UI.showToast(item.icon + ' ' + item.label + ' comprada');
+        }
+      });
+      info.appendChild(altBuyBtn);
+    }
     panel.appendChild(info);
     itemWrap.appendChild(panel);
   });

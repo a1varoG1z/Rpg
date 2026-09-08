@@ -280,10 +280,15 @@ function buyShopGear(state, slot, rarity) {
   return gear;
 }
 
-function buyConsumable(state, itemId) {
+// useAlt (solo lo tiene pluma_fenix, ver CONSUMABLES en data.js): compra
+// con altPrice/altCurrency en vez del precio normal — mismo objeto
+// resultante (state.items[itemId]++), solo cambia de qué moneda se cobra.
+function buyConsumable(state, itemId, useAlt) {
   const item = CONSUMABLES[itemId];
-  if (state.currencies[item.currency] < item.price) return false;
-  state.currencies[item.currency] -= item.price;
+  const price = (useAlt && item.altPrice) ? item.altPrice : item.price;
+  const currency = (useAlt && item.altCurrency) ? item.altCurrency : item.currency;
+  if (state.currencies[currency] < price) return false;
+  state.currencies[currency] -= price;
   state.items[itemId] = (state.items[itemId] || 0) + 1;
   return true;
 }

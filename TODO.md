@@ -4880,6 +4880,29 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Texel insuficiente para ninguna, sube 0 y avisa en vez de fallar en
       silencio; vender sigue excluyendo la pieza equipada y avisa de ello.
 
+- [x] Pluma Fénix comprable también con Texel (petición explícita: "la
+      pluma fenix se tiene que poder comprar con monedas también, por un
+      precio muy elevado, más que el equivalente en diamantes"). Seguía
+      costando 12 💎 Gemas como hasta ahora; se añade una segunda opción de
+      compra a 5000 🪙 Texel — muy por encima de lo que costarían esas 12
+      Gemas convertidas desde Texel al mejor precio posible (ver
+      GEMAS_TEXEL_OFFERS: ~720 en el lote más barato), así la ruta directa
+      en Texel nunca es un atajo más barato que Gemas, solo una opción de
+      emergencia cara para quien se quede sin ellas.
+      - `CONSUMABLES.pluma_fenix` (data.js): nuevos `altPrice`/
+        `altCurrency` junto al `price`/`currency` normal.
+      - `buyConsumable(state, itemId, useAlt)` (state.js): parámetro nuevo
+        opcional, compatible con las llamadas ya existentes (por defecto
+        sigue usando el precio normal).
+      - Tienda → 🧪 Objetos (ui.js): un segundo botón "Comprar (🪙5000)"
+        junto al de Gemas, solo en la fila de Pluma Fénix — el resto de
+        objetos (sin `altPrice`) siguen mostrando un único botón.
+      Verificado con Playwright: con 0 Gemas, el botón de Gemas aparece
+      deshabilitado y el de Texel habilitado; comprar con Texel gasta
+      exactamente 5000 y da +1 Pluma Fénix; comprar con Gemas (ya con
+      saldo) sigue gastando 12 y dando +1; Poción Menor/Mayor (sin
+      altPrice) siguen mostrando un único botón, sin cambios.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
