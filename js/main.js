@@ -147,6 +147,13 @@ function difficultyLabelText(mult) { return Math.round(mult * 100) + '%'; }
     UI.renderScreen(activeScreen, state);
     UI.showToast('💎 +1000 Gemas');
   });
+  $('cheatTexelBtn').addEventListener('click', () => {
+    state.currencies.texel += 10000;
+    saveGame(state);
+    UI.renderTopbar(state);
+    UI.renderScreen(activeScreen, state);
+    UI.showToast('🪙 +10000 Texel');
+  });
   $('cheatCrystalsBtn').addEventListener('click', () => {
     state.currencies.pixite += 20;
     state.currencies.voxite += 20;

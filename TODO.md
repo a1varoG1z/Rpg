@@ -4841,6 +4841,15 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
         medio): `state.progress.bossDifficultyLock` queda idéntico en
         ambos intentos.
 
+- [x] Truco de Texel en Ajustes ("en los ajustes, añade la opción de
+      aumentar el dinero"): nuevo botón "+10000 🪙 Texel" en 🎁 Trucos,
+      junto a los ya existentes de Gemas y cristales (mismo patrón:
+      `cheatTexelBtn` en index.html, listener en main.js que suma a
+      `state.currencies.texel`, guarda y refresca la topbar/pantalla).
+      Verificado con Playwright: el botón aparece en Ajustes, sumar
+      10000 Texel se refleja en `state`, en la topbar y en la partida
+      guardada.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
