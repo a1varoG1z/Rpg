@@ -3818,6 +3818,13 @@ UI.commitGroup = function (view, group) {
   const clone = JSON.parse(JSON.stringify({ p: playerRow, e: enemyRow }));
   const { log } = simulateOneRound(clone.p, clone.e);
   view.log = log; view.idx = 0;
+  // Guarda el resultado final de la ronda ya simulada (clon) para
+  // sincronizarlo con los objetos EN VIVO en cuanto termine de reproducirse
+  // la animación — ver syncUnitFromClone/UI.onClashDone: sin esto, todo
+  // efecto de varios turnos (buffs, debuffs, veneno, aturdimiento, el
+  // nuevo escudo de Barrera...) se perdía en cuanto acababa la ronda en la
+  // que se aplicó.
+  view.pendingSync = clone;
 
   // El combate en sí siempre se muestra en fila horizontal, elijas la
   // línea que elijas (fila/columna/diagonal) — a diferencia de la
@@ -3938,7 +3945,38 @@ UI.stepBattle = function (view, instant) {
   advance();
 };
 
+// Copia sobre una unidad EN VIVO (referenciada por view.unitById, la que
+// persiste entre rondas) todo lo que la simulación pudo haber cambiado en
+// su clon durante la ronda — ver el comentario de view.pendingSync en
+// UI.commitGroup. La reproducción evento a evento (UI.applyBattleEvent) ya
+// se encarga de la vida/muerte/carga de ulti para la animación en vivo;
+// esto cubre TODO lo demás que antes se perdía en cuanto acababa la ronda
+// en la que se aplicó: buffs, debuffs, veneno, aturdimiento, el escudo de
+// Barrera y el "segundo aliento" (enrage) de un jefe.
+function syncUnitFromClone(live, cloned) {
+  live.hp = cloned.hp;
+  live.alive = cloned.alive;
+  live.ultCharge = cloned.ultCharge;
+  live.buffs = cloned.buffs;
+  live.debuffs = cloned.debuffs;
+  live.dots = cloned.dots;
+  live.stunTurns = cloned.stunTurns;
+  live.shield = cloned.shield;
+  live.atk = cloned.atk;
+  live.def = cloned.def;
+  live.wis = cloned.wis;
+  live.enraged = cloned.enraged;
+  live.bossAtkCount = cloned.bossAtkCount;
+}
+
 UI.onClashDone = function (view) {
+  if (view.pendingSync) {
+    [...view.pendingSync.p, ...view.pendingSync.e].forEach(cloned => {
+      const live = view.unitById[cloned.id];
+      if (live) syncUnitFromClone(live, cloned);
+    });
+    view.pendingSync = null;
+  }
   if (!rowAlive(view.currentEnemyRow)) {
     view.enemyIdx++;
     // Nueva oleada: las 3 combinaciones (las que sigan vivas) vuelven a
@@ -4035,6 +4073,20 @@ UI.applyBattleEvent = function (view, ev) {
       triggerBattleAnim(target.id, 'heal-glow', 500);
       UI.spawnBattleFloat(target.id, '+' + ev.amount, false);
       UI.logLine(`🌟 ${u.name} revive a ${target.name}!`);
+      break;
+    case 'shield':
+      UI.spawnBattleFloat(u.id, '🛡️+' + ev.amount, false);
+      UI.logLine(`🛡️ ${u.name} recibe un escudo de ${ev.amount}.`);
+      break;
+    case 'shieldabsorb':
+      UI.spawnBattleFloat(u.id, '🛡️-' + ev.amount, false);
+      UI.logLine(`🛡️ El escudo de ${u.name} absorbe ${ev.amount} de daño.`);
+      break;
+    case 'dispel':
+      UI.logLine(`🌀 ${u.name} pierde sus mejoras activas.`);
+      break;
+    case 'chargedrain':
+      UI.logLine(`🔋 ${u.name} reduce en ${ev.amount} la carga de ulti de ${target.name}.`);
       break;
     case 'buff':
     case 'debuff':

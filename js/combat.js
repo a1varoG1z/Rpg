@@ -91,7 +91,7 @@ function makeUnit(side, defId, level, extraMult, sourceUid) {
     // verdad pega fuerte) en vez de "[object Object]".
     level, powerMult: (extraMult && typeof extraMult === 'object') ? (extraMult.off || 1) : (extraMult || 1),
     maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
-    skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], dots: [], stunTurns: 0, alive: true,
+    skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], dots: [], stunTurns: 0, shield: null, alive: true,
   };
 }
 
@@ -108,7 +108,7 @@ function makePlayerUnit(state, uid, level) {
     id: 'u' + (unitSeq++), side: 'player', defId: entry.defId, sourceUid: uid,
     name: def.name, element: def.element, class: def.class, rarity: def.rarity,
     level: entry.level, maxHp: stats.hp, hp: stats.hp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
-    skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], dots: [], stunTurns: 0, alive: true,
+    skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], dots: [], stunTurns: 0, shield: null, alive: true,
   };
 }
 
@@ -750,10 +750,23 @@ function maybeTriggerEnrage(log, target) {
   log.push({ type: 'enrage', unitId: target.id });
 }
 
+// Escudo (Barrera de Piedra, ver SKILL_TYPES): absorbe daño ANTES que la
+// vida, hasta agotarse o hasta que expiren sus turnos (ver tickTimers). Un
+// golpe totalmente absorbido no llega a tocar la vida ni a cargar la ulti
+// de quien lo recibe — un bloqueo completo de verdad, no una reducción.
 function applyDamage(log, attacker, target, rawAmount, isCrit, label) {
+  let amount = rawAmount;
+  if (target.shield && target.shield.amount > 0) {
+    const absorbed = Math.min(target.shield.amount, amount);
+    target.shield.amount -= absorbed;
+    amount -= absorbed;
+    log.push({ type: 'shieldabsorb', unitId: target.id, amount: absorbed });
+    if (target.shield.amount <= 0) target.shield = null;
+  }
+  if (amount <= 0) return;
   const before = target.hp;
-  target.hp = Math.max(0, target.hp - rawAmount);
-  log.push({ type: 'attack', attackerId: attacker.id, targetId: target.id, amount: rawAmount, isCrit, label });
+  target.hp = Math.max(0, target.hp - amount);
+  log.push({ type: 'attack', attackerId: attacker.id, targetId: target.id, amount, isCrit, label });
   if (before > 0 && target.hp <= 0) {
     target.alive = false;
     log.push({ type: 'faint', unitId: target.id, side: target.side, killerId: attacker.id });
@@ -773,18 +786,30 @@ function typeVulnerabilityMult(targetClass, useWis) {
   return 1 + (useWis ? (vuln.magic || 0) : (vuln.physical || 0));
 }
 
-function computeDamage(attacker, target, mult, useWis, forceCrit) {
+// AGI "efectiva" de un luchador contando su buff de Agilidad activo (ver
+// Ráfaga de Viento en SKILL_TYPES) — a diferencia de atk/def, cuya lectura
+// ya pasaba por sus buffs/debuffs aquí mismo, el resto del motor leía
+// unit.agi en crudo en 4 sitios distintos (crítico, ganancia de carga de
+// ulti ×2, orden de turnos) sin que ningún buff de Agilidad pudiera
+// afectarles — necesario centralizarlo aquí para que Ráfaga de Viento
+// tenga efecto de verdad en los 4 sitios a la vez.
+function effectiveAgi(unit) {
+  const buff = unit.buffs.find(b => b.stat === 'agi');
+  return unit.agi * (1 + (buff ? buff.pct : 0));
+}
+
+function computeDamage(attacker, target, mult, useWis, forceCrit, ignoreDef) {
   const power = useWis ? attacker.wis : attacker.atk;
   const atkBuff = attacker.buffs.find(b => b.stat === 'atk');
   const power2 = power * (1 + (atkBuff ? atkBuff.pct : 0));
   const defDebuff = target.debuffs.find(b => b.stat === 'def');
   const defBuff = target.buffs.find(b => b.stat === 'def');
   let defVal = target.def * (1 + (defBuff ? defBuff.pct : 0)) * (1 - (defDebuff ? defDebuff.pct : 0));
-  const base = Math.max(1, power2 - defVal * 0.5);
+  const base = Math.max(1, power2 - (ignoreDef ? 0 : defVal * 0.5));
   const elMult = elementDamageMult(attacker.element, target.element);
   const vulnMult = typeVulnerabilityMult(target.class, useWis);
   const variance = 0.9 + Math.random() * 0.2;
-  const critChance = Math.min(40, 5 + attacker.agi * 0.15);
+  const critChance = Math.min(40, 5 + effectiveAgi(attacker) * 0.15);
   const isCrit = forceCrit || Math.random() * 100 < critChance;
   const dmg = base * elMult * vulnMult * mult * variance * (isCrit ? 1.5 : 1);
   return { amount: Math.max(1, Math.round(dmg)), isCrit };
@@ -817,6 +842,10 @@ function healWisMult(healer, skill) {
 function tickTimers(unit, log) {
   unit.buffs = unit.buffs.filter(b => --b.turnsLeft > 0);
   unit.debuffs = unit.debuffs.filter(b => --b.turnsLeft > 0);
+  if (unit.shield) {
+    unit.shield.turnsLeft--;
+    if (unit.shield.turnsLeft <= 0) unit.shield = null;
+  }
   if (unit.dots && unit.dots.length) {
     unit.dots.forEach(d => {
       if (!unit.alive) return;
@@ -854,7 +883,7 @@ function performTurn(log, unit, ownRow, enemyRow) {
     const { amount, isCrit } = computeDamage(unit, target, isDevastador ? 1.6 : 1.0, false, isDevastador);
     applyDamage(log, unit, target, amount, isCrit, null);
     if (unit.alive) {
-      const gain = Math.round(22 + unit.agi * 0.4);
+      const gain = Math.round(22 + effectiveAgi(unit) * 0.4);
       unit.ultCharge = Math.min(ULT_CHARGE_MAX, unit.ultCharge + gain);
       log.push({ type: 'charge', unitId: unit.id, value: unit.ultCharge });
     }
@@ -976,10 +1005,87 @@ function performTurn(log, unit, ownRow, enemyRow) {
       if (fallen) {
         fallen.alive = true;
         fallen.hp = Math.round(fallen.maxHp * skill.pct);
-        fallen.buffs = []; fallen.debuffs = []; fallen.dots = []; fallen.stunTurns = 0;
+        fallen.buffs = []; fallen.debuffs = []; fallen.dots = []; fallen.stunTurns = 0; fallen.shield = null;
         log.push({ type: 'revive', unitId: unit.id, targetId: fallen.id, amount: fallen.hp });
       }
       applyUltBonusHit(log, unit, enemyRow, skill);
+      break;
+    }
+    case 'shieldRow': {
+      // Barrera de Piedra: da a cada aliado vivo un escudo propio (importe
+      // según SU PROPIA vida máxima) que absorbe daño antes que la vida —
+      // ver applyDamage. Expira solo por turnos (tickTimers), no por uso:
+      // puede absorber varios golpes seguidos mientras dure el importe.
+      ownRow.filter(u => u.alive).forEach(ally => {
+        const amount = Math.round(ally.maxHp * skill.shieldPct);
+        ally.shield = { amount, turnsLeft: skill.turns };
+        log.push({ type: 'shield', unitId: ally.id, amount });
+      });
+      applyUltBonusHit(log, unit, enemyRow, skill);
+      break;
+    }
+    case 'trueDamage': {
+      // Golpe Perforante: ignora la Defensa del objetivo por completo (ver
+      // el parámetro ignoreDef de computeDamage) — sigue afectado por
+      // elemento/vulnerabilidad/crítico igual que cualquier otro golpe.
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const { amount, isCrit } = computeDamage(unit, target, skill.mult, !!skill.usesWis, false, true);
+      applyDamage(log, unit, target, amount, isCrit, skill.name);
+      break;
+    }
+    case 'damageDouble': {
+      // Doble Golpe: repite pickTarget tantas veces como skill.hits — si el
+      // primer objetivo muere, el siguiente golpe ya elige entre los que
+      // queden vivos, nunca golpea a un enemigo ya derrotado.
+      for (let i = 0; i < skill.hits; i++) {
+        const target = pickTarget(enemyRow);
+        if (!target) break;
+        const { amount, isCrit } = computeDamage(unit, target, skill.mult, !!skill.usesWis);
+        applyDamage(log, unit, target, amount, isCrit, skill.name);
+      }
+      break;
+    }
+    case 'execute': {
+      // Golpe de Gracia: el multiplicador de daño sube cuanta menos vida le
+      // quede al objetivo (hasta +executeBonusMult al 0% de vida) — pickTarget
+      // ya prioriza el objetivo con menos vida el 70% de las veces, así que
+      // esta ulti tiende a rematar a quien ya esté más débil.
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const missingFrac = 1 - target.hp / target.maxHp;
+      const finalMult = skill.mult * (1 + skill.executeBonusMult * missingFrac);
+      const { amount, isCrit } = computeDamage(unit, target, finalMult, !!skill.usesWis);
+      applyDamage(log, unit, target, amount, isCrit, skill.name);
+      break;
+    }
+    case 'dispel': {
+      // Corromper: el espejo de "cleanse" pero contra el rival — quita
+      // cualquier buff (ataque/defensa/agilidad) activo de toda la fila
+      // enemiga. No toca debuffs/dots/aturdimiento (esos son negativos para
+      // ELLOS, no algo que "corromper" tenga sentido que quite).
+      enemyRow.filter(u => u.alive).forEach(target => {
+        const hadBuffs = target.buffs.length > 0;
+        target.buffs = [];
+        if (hadBuffs) log.push({ type: 'dispel', unitId: target.id });
+      });
+      applyUltBonusHit(log, unit, enemyRow, skill);
+      break;
+    }
+    case 'chargeDrain': {
+      // Sabotaje: resta carga de ulti a un enemigo, retrasando su próxima
+      // ulti — reutiliza el propio evento 'charge' (ya sincronizado por la
+      // UI) para reflejar el nuevo valor, además de 'chargedrain' para el
+      // mensaje de combate.
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const before = target.ultCharge;
+      target.ultCharge = Math.max(0, target.ultCharge - skill.drainAmount);
+      if (before !== target.ultCharge) {
+        log.push({ type: 'chargedrain', unitId: unit.id, targetId: target.id, amount: before - target.ultCharge });
+        log.push({ type: 'charge', unitId: target.id, value: target.ultCharge });
+      }
+      applyUltBonusHit(log, unit, enemyRow, skill, target);
       break;
     }
   }
@@ -994,7 +1100,7 @@ function rowAlive(row) { return row.some(u => u.alive); }
 // usaron las 3, volver a elegir entre ellas otra vez.
 function simulateOneRound(playerRow, enemyRow) {
   const log = [];
-  const order = [...playerRow, ...enemyRow].filter(u => u.alive).sort((a, b) => b.agi - a.agi || Math.random() - 0.5);
+  const order = [...playerRow, ...enemyRow].filter(u => u.alive).sort((a, b) => effectiveAgi(b) - effectiveAgi(a) || Math.random() - 0.5);
   for (const unit of order) {
     if (!unit.alive) continue;
     tickTimers(unit, log);
@@ -1014,6 +1120,6 @@ function simulateOneRound(playerRow, enemyRow) {
 // recibir golpes, que depende del rival). Solo para mostrarlo en la UI.
 function estimatedTurnsToUlt(unit) {
   if (unit.ultCharge >= ULT_CHARGE_MAX) return 0;
-  const gainPerTurn = Math.round(22 + unit.agi * 0.4);
+  const gainPerTurn = Math.round(22 + effectiveAgi(unit) * 0.4);
   return Math.max(1, Math.ceil((ULT_CHARGE_MAX - unit.ultCharge) / gainPerTurn));
 }

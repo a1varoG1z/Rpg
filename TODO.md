@@ -4952,6 +4952,103 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       aparece de verdad en la ficha real de un luchador ("Efecto exacto:
       Reduce la Defensa de un enemigo un 25% durante 3 turnos...").
 
+- [x] 7 ultis nuevas, repartidas entre 32 familias ya existentes (petición
+      explícita: "implementa y reparte entre los personajes existentes:
+      barrera, golpe perforante, doble golpe, golpe de gracia, ráfaga de
+      viento, corromper, sabotaje"):
+      - **Barrera de Piedra** (`barrera`, Campeón): escudo a TODA su fila
+        (22% de la vida máxima de cada uno) que absorbe daño antes que la
+        vida, 2 turnos — cerbero, genbu, lamasu, ent, basajaun (antes
+        `escudo`).
+      - **Golpe Perforante** (`perforar`, Pícaro): daño ×1.7 IGNORANDO la
+        Defensa por completo (nuevo parámetro `ignoreDef` en
+        `computeDamage`, combat.js) — samurai, wyvern, velociraptor,
+        tiburonmartillo (antes `furia`).
+      - **Doble Golpe** (`dobleGolpe`, Pícaro): 2 golpes ×1.3, cada uno
+        eligiendo objetivo por separado (si el primero muere, el segundo
+        ya no le da a un cadáver) — amazona, hombrelobo, sunwukong,
+        gatubela (antes `furia`/`aturdir`).
+      - **Golpe de Gracia** (`golpeGracia`, Pícaro): daño ×1.5 que sube
+        hasta ×3.9 cuanta menos vida le quede al objetivo — escualo,
+        guerreroleopardo, deerwoman, hombretigre (antes `furia`/`aturdir`).
+      - **Ráfaga de Viento** (`rafaga`, Explorador): sube la Agilidad de
+        TODA su fila un 25%, 3 turnos (más críticos, ulti más rápida y
+        actúan antes) — hipogrifo, garuda, grifo, pegaso, icaro (antes
+        `debilitar`/`furia`).
+      - **Corromper** (`corromper`, Brujo): quita cualquier buff activo
+        (ataque/defensa/agilidad) de TODA la fila enemiga — nahual,
+        mandragora, pazuzu, anubis, babayaga (antes `debilitar`).
+      - **Sabotaje** (`sabotaje`, Explorador/Brujo): resta 45 de carga de
+        ulti a un enemigo, retrasando su próximo golpe especial —
+        cecaelia, hombrefuego, davyjones, zapador, tanuki (antes
+        `debilitar`).
+      De paso, arreglado un bug real de grado ("el Agilidad" en vez de "la
+      Agilidad") en `skillMechanicsText` — los textos de buff/debuff
+      tenían el artículo fijo a mano porque hasta ahora solo se usaban con
+      atk/def; Ráfaga de Viento fue la primera vez que se usa con agi.
+
+      **Corregido de raíz un bug real y bastante grave del motor de
+      combate, necesario para que Barrera/Ráfaga de Viento funcionaran de
+      verdad**: los buffs, debuffs, veneno, aturdimiento y el
+      "enfurecimiento" de jefe NUNCA sobrevivían a un cambio de línea —
+      `UI.commitGroup` simula cada ronda sobre un CLON
+      (`JSON.parse(JSON.stringify(...))`) y solo el log de eventos vuelve
+      a la app; la reproducción de ese log (`UI.applyBattleEvent`) sí
+      replicaba vida/muerte/carga de ulti sobre los luchadores EN VIVO,
+      pero los casos `'buff'`/`'debuff'` estaban vacíos (`break;` sin
+      hacer nada) y no existía ningún mecanismo para el veneno, el
+      aturdimiento ni el enfurecimiento de jefe — así que un buff de "3
+      turnos" en la práctica solo duraba lo que quedara de ESA ronda, y
+      cualquier cosa que necesitara sobrevivir a la siguiente elección de
+      línea (lo habitual, ya que raramente se resuelve un encuentro en una
+      sola ronda) se perdía sin más. Confirmado el fallo con una prueba
+      exacta antes de tocar nada (el buff aparecía en el clon recién
+      simulado pero como `[]` vacío en el objeto en vivo tras repetir el
+      mismo reproductor de eventos que ya usaba ui.js).
+      - Solución: en vez de enseñar a cada tipo de evento a replicar la
+        mutación exacta del motor (frágil, fácil dejarse alguna), al
+        terminar de simular cada ronda se guarda el clon entero
+        (`view.pendingSync`, en `UI.commitGroup`) y, en cuanto acaba de
+        reproducirse toda la animación (`UI.onClashDone`), una nueva
+        `syncUnitFromClone(live, cloned)` copia de golpe TODO lo que pudo
+        cambiar (vida, viva/muerta, carga de ulti, buffs, debuffs, veneno,
+        aturdimiento, el nuevo escudo, ataque/sabiduría — por el
+        enfurecimiento de jefe — y el contador del Golpe Devastador) desde
+        el clon hacia el objeto en vivo. La reproducción evento a evento
+        se queda exactamente igual (vida/animaciones durante la propia
+        ronda), esto solo cubre lo que antes se perdía AL TERMINAR la
+        ronda.
+      - Nuevo campo `shield` (`{amount, turnsLeft}` o `null`) en las
+        unidades de combate (`makeUnit`/`makePlayerUnit`, combat.js) y su
+        expiración por turnos en `tickTimers`, igual que buffs/debuffs.
+      - Nueva `effectiveAgi(unit)` (combat.js): la Agilidad ya pasaba por
+        los buffs de ataque/defensa en 1 sitio (computeDamage), pero se
+        leía en CRUDO en otros 3 (probabilidad de crítico, ganancia de
+        carga de ulti ×2, orden de turnos) — sin esto, Ráfaga de Viento no
+        habría tenido ningún efecto real pese a "aplicarse".
+      Verificado con Playwright, con el motor real (no una reimplementación
+      aparte):
+      - Las 7 ultis nuevas probadas una a una con `performTurn`/
+        `computeDamage` reales: Barrera concede y consume el escudo antes
+        que la vida; Golpe Perforante hace ×49 más daño que un golpe
+        normal contra una Defensa altísima (2 → 98); Doble Golpe genera
+        exactamente 2 eventos de ataque; Golpe de Gracia hace 2.6× más
+        daño contra un objetivo casi muerto que contra uno a vida
+        completa; Corromper deja `buffs: []` en el rival; Sabotaje resta
+        exactamente 45 de carga (confirmado por el propio evento
+        `chargedrain`, con el pequeño matiz correcto de que su golpe extra
+        le devuelve +9 al mismo objetivo, como cualquier golpe recibido).
+      - Las 32 familias reasignadas comprobadas una a una contra
+        `FIGHTERS`: las 32 tienen el `skillId` nuevo esperado.
+      - **La prueba decisiva**, con el flujo real de la UI
+        (`UI.openBattle`/`UI.commitGroup` dos rondas seguidas contra el
+        mismo rival, sin pasar por ningún atajo): un buff de "Grito de
+        Guerra" (3 turnos) sigue presente y con `turnsLeft` correctamente
+        bajado a 2 en la ronda siguiente (antes del arreglo esto habría
+        dado `[]`, confirmado aparte). El escudo de Barrera (2 turnos) se
+        mantiene íntegro en la ronda 2 (`turnsLeft` 2→1) y expira solo
+        (`null`) exactamente en la ronda 3.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
