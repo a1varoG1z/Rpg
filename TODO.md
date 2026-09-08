@@ -5049,6 +5049,109 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
         mantiene íntegro en la ronda 2 (`turnsLeft` 2→1) y expira solo
         (`null`) exactamente en la ronda 3.
 
+- [x] Siete peticiones sueltas sobre logros/Roguelike/Torre Batalla/orden de
+      jefes, todas verificadas con Playwright y el motor real:
+
+      1. **Logros por tier + por colección completa** ("tiene que haber un
+         logro por conseguir todas las cartas de cada tier y por conseguir
+         todas las cartas"). "Descubre todas las formas" ya existía; se
+         añaden 5 nuevos (`tier_comun`/`tier_infrecuente`/`tier_raro`/
+         `tier_epico`/`tier_legendario`, OBJECTIVES en data.js) — "tier" se
+         interpreta como rareza (⚪🟢🔵🟣🟡), el mismo concepto que ya usa
+         `rarityCollectionStats` para Objetivos/Estadísticas; nuevo campo
+         `s.rarityStats` en `objectivesSummary` (state.js) para no duplicar
+         el conteo. Verificado: 5 objetivos con target 36/81/112/76/31
+         (el nº real de cartas de cada rareza).
+
+      2. **Poder salir del Roguelike** ("hay que poder salir del modo
+         roguelike"). Antes la única forma de terminar una run era perder
+         — sin ninguna pantalla de "Retirarse" en ningún punto. Nuevo botón
+         "🚪 Retirarse (conservar lo ya ganado)" en el selector de bono
+         (`UI.openRoguelikeBoonPicker`, ui.js) — el único punto seguro de
+         la run (entre rondas, sin combate en curso); las recompensas ya
+         ganadas se quedan (se aplicaron y guardaron al ganar cada ronda).
+         Verificado: el botón aparece y, al pulsarlo, `window.__roguelikeRun`
+         pasa a `null` y vuelve a la pantalla de Retos.
+
+      3. **Roguelike facilísimo con banda maximizada** ("el modo roguelike
+         es facilísimo, con legendarios lvl 40 y buenos objetos no pierdes
+         nunca con los buffos"). Confirmado por simulación (banda de
+         referencia, eligiendo siempre el mejor bono cada ronda): la run
+         seguía ganándose sin perder ni una vez hasta la ronda 100 (nivel
+         de rival 160), sin visos de terminar. Causa: el nivel del rival
+         crecía sin techo pero LINEAL, y los bonos (ROGUELIKE_BOONS) TAMBIÉN
+         se acumulan lineal y sin límite — la distancia entre banda y rival
+         nunca se cerraba sola. Nueva `roguelikeLateMult(round)`
+         (combat.js): sin efecto hasta la ronda 15 (no toca el ritmo ya
+         calibrado), y a partir de ahí un refuerzo que crece al CUADRADO de
+         la ronda — cualquier acumulación LINEAL de bonos acaba
+         superándose tarde o temprano. Calibrado por simulación probando
+         varias curvas (cuadráticas y exponenciales): con este cambio la
+         misma banda de referencia termina la run entre las rondas ~40 y
+         ~50 en vez de no terminar nunca.
+
+      4. **Más variedad de bonos** ("en el modo roguelike tiene que haber
+         más opciones diferentes de elección"). Los 7 bonos existentes
+         eran casi todos variaciones de "+% de una stat"; se añaden 3
+         nuevos en categorías distintas (ROGUELIKE_BOONS, combat.js):
+         **Escudo de emergencia** (25% de vida máxima en escudo para toda
+         la banda, reutilizando el campo `shield` de las ultis nuevas —
+         nuevo `run.shieldMap`, persistido entre rondas igual que
+         hp/carga de ulti), **Revive a TODOS** (a diferencia del bono
+         "heal" ya existente, que solo revive a uno) y **Recompensa ×2**
+         en la próxima ronda superada (economía, en vez de poder de
+         combate). Verificados uno a uno: el escudo se guarda con el
+         importe/turnos correctos, reviveall saca del `faintedSet` a
+         todos con HP > 0, y doublereward duplica correctamente
+         `roguelikeRoundRewards`.
+
+      5. **Jefes de la Torre más fáciles que los mobs** ("deberían ser más
+         complicados"). Confirmado por simulación de los 65 niveles con la
+         banda de referencia: los jefes nunca hacían perder a esa banda
+         más de un ~50% de vida en TODO su nivel (Tifón, el final,
+         incluido), mientras varias tandas de mobs intermedias ya la
+         aniquilaban del todo. Causa: `torreBossMult` (combat.js) tenía un
+         techo de ATK reforzado (`TORRE_BOSS_OFF_CAP`) demasiado bajo
+         (×10) para que un jefe de ATK nativo flojo (p.ej. Guardián del
+         Bosque, ATK 26) llegara siquiera a superar la mitad de la
+         Defensa de esa banda — se quedaba en el suelo de daño mínimo
+         SIEMPRE, y encima ese refuerzo insuficiente se amortiguaba más
+         con `level.enemyCount`. Solución: techo subido (×10→×30) y sin
+         amortiguar dentro de la tanda (solo `def` se sigue amortiguando).
+         Verificado con los 65 niveles: la escalada de daño perdido queda
+         ahora en progresión sensata (~4-20% en jefes tempranos hasta ~55%
+         en Tifón) y por encima de las tandas de mobs equivalentes.
+
+      6. **Orden de poder de los jefes mal calibrado** ("el más poderoso
+         debe ser el tifón..., luego balrog y así sucesivamente").
+         Confirmado con datos: el orden de poder que veía el jugador
+         (ficha/orden "Poder total" de la Colección) no tenía nada que ver
+         con `fixedStats` (las stats de combate de cada jefe, calibradas a
+         mano una a una) — Tifón, el más fuerte de los 33 por diseño con
+         diferencia, aparecía #28 de 33; el más flojo a propósito
+         (Guardián del Bosque) aparecía #8. El plus de potencia de
+         luchador jugable (antes `BOSS_PLAYER_PREMIUM`, un ×1.4 fijo IGUAL
+         para los 33) no tenía en cuenta `fixedStats` en absoluto, así que
+         el orden dependía solo de la clase de cada uno más ruido
+         aleatorio de individualización de familia. Solución
+         (`bossPlayerPremium`, state.js): el plus ahora escala con la
+         potencia nativa real de `fixedStats` de cada jefe (comprimida con
+         raíz cuadrada para no disparar el rango ×7.8 entre el más flojo y
+         Tifón), y se desactiva la individualización aleatoria por familia
+         (`statVarianceMult`) para cualquier jefe — un jefe ya tiene su
+         propia identidad en `fixedStats`, no necesita otra capa de ruido
+         encima que pueda deshacer el orden entre dos jefes muy parejos de
+         la misma clase (el caso real de Tifón/Balrog). Verificado: Tifón
+         #1, Balrog #2 en el orden que ve el jugador, coincidiendo con el
+         orden nativo de `fixedStats`; el resto de los 33 queda muy
+         correlacionado (las pocas permutaciones que quedan son por
+         diferencias de CLASE, igual que ya pasa entre Legendarios
+         normales, no ruido); el jefe más flojo (Guardián del Bosque)
+         sigue por delante del mejor Legendario normal (Odín) con margen.
+
+      7. Petición de opinión sobre el orden ideal de los Legendarios —
+         respondida como discusión en el chat, no como cambio de código.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

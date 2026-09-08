@@ -298,13 +298,39 @@ function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
 // TORRE_BOSS_ATK_TARGET (700) es el ATK nativo que, multiplicado por el
 // "off" de un jefe cualquiera, se intenta alcanzar; TORRE_BOSS_OFF_CAP/
 // DEF_CAP limitan cuánto puede subir cada uno para un jefe de ATK nativo
-// muy bajo (si no, un jefe como el Guardián del Bosque, ATK nativo 26,
-// dispararía su "off" a ×27 solo por intentar llegar a 700). El exceso de
-// ambos se amortigua entre la raíz del nº de repeticiones de la tanda
-// (level.enemyCount) igual que antes, para que la propia repetición sin
-// curación ya cuente como parte del reto.
+// muy bajo. `def` se sigue amortiguando con la raíz del nº de repeticiones
+// de la tanda (level.enemyCount), para que el combate dure lo suficiente
+// sin volverse eterno.
+//
+// `off`, en cambio, YA NO se amortigua — bug real reportado por el
+// usuario ("los bosses de la torre batalla son más fáciles que los mobs,
+// deberían ser más complicados"), confirmado por simulación con la banda
+// de referencia (9 Legendarios Nv.40 + equipo legendario Nv.15): con la
+// amortiguación antigua (÷√enemyCount, techo ×10) NINGÚN jefe de los 33
+// hacía perder a esa banda más de un ~50% de vida en todo su nivel
+// (Tifón, el jefe final, incluido) — mientras que varias tandas de mobs
+// intermedias ya la aniquilaban del todo (100%+). La razón: con el techo
+// antiguo (×10), un jefe de ATK nativo bajo (p.ej. Guardián del Bosque,
+// ATK 26) llegaba como mucho a 260 de ATK reforzado — por DEBAJO de la
+// mitad de la Defensa media de esa banda (~579 → 290), así que
+// `computeDamage` (ATK − DEF×0.5) se quedaba en el suelo de 1 de daño
+// SIEMPRE, por mucho que se repitiera la oleada; amortiguar además ese
+// techo ya insuficiente solo lo empeoraba. Subir el techo (×10→×30) y
+// dejar de amortiguarlo dentro de una misma tanda arregla la causa real
+// (que el golpe cruce ese umbral) sin tocar cómo escala `def`. Verificado
+// con la MISMA banda de referencia, simulando los 33 jefes uno a uno: la
+// escalada de daño perdido por sección queda ahora en progresión sensata
+// (~4-20% en los jefes de zona temprana, enemyCount 1, hasta ~55% en
+// Tifón, el jefe final, enemyCount 5) y por encima de las tandas de mobs
+// equivalentes en vez de por debajo. Un único jefe intermedio (Surtr,
+// enemyCount 4 — mucha Defensa Y ATK ya de fábrica, la combinación más
+// dura posible) sí llega a derrotar a esa banda de referencia; el resto
+// de los 33 se supera con margen, coherente con que unas pocas tandas de
+// mobs de esa misma tabla también la derrotan (es una tabla de dificultad
+// creciente pensada para ir mejorando equipo/nivel según se sube, no un
+// pasillo sin riesgo en ningún escalón).
 const TORRE_MOB_TARGET_POWER = { 3: 3300, 6: 2950, 9: 2700, 12: 2646, 15: 3200 };
-const TORRE_BOSS_ATK_TARGET = 700, TORRE_BOSS_OFF_CAP = 10, TORRE_BOSS_DEF_CAP = 4;
+const TORRE_BOSS_ATK_TARGET = 700, TORRE_BOSS_OFF_CAP = 30, TORRE_BOSS_DEF_CAP = 4;
 function torreMobMult(level) {
   const u = makeUnit('enemy', level.fightDefId, XP_LEVEL_CAP);
   const native = fighterPowerScore({ hp: u.maxHp, atk: u.atk, def: u.def, agi: u.agi, wis: u.wis });
@@ -316,7 +342,7 @@ function torreBossMult(level) {
   const rawDef = Math.min(TORRE_BOSS_DEF_CAP, ratio);
   const damp = Math.sqrt(level.enemyCount);
   return {
-    off: rawOff <= 1 ? 1 : 1 + (rawOff - 1) / damp,
+    off: rawOff <= 1 ? 1 : rawOff,
     def: rawDef <= 1 ? 1 : 1 + (rawDef - 1) / damp,
   };
 }
@@ -642,11 +668,34 @@ function championDuelRewards(duelIdx) {
 // contra 1 como la Prueba del Campeón) para que la Formación completa y sus
 // 8 líneas también importen aquí. El número de rivales por ronda crece
 // igual que el nº de oleadas de una etapa avanzada del Mapa.
+//
+// roguelikeLateMult: refuerzo extra que crece al CUADRADO de la ronda (no
+// lineal) a partir de la ronda 15 — bug real reportado por el usuario ("el
+// modo roguelike es facilísimo, con legendarios lvl 40 y buenos objetos no
+// pierdes nunca con los buffos"), confirmado por simulación con la banda
+// de referencia (9 Legendarios Nv.40 + equipo legendario) eligiendo
+// siempre el mejor bono disponible cada ronda: la run seguía ganándose sin
+// perder ni una vez hasta la ronda 100 (tope puesto a propósito para la
+// prueba), sin visos de terminar nunca. Motivo de fondo: el nivel del
+// rival ya crecía sin techo con la ronda, pero de forma LINEAL — y los
+// bonos (ROGUELIKE_BOONS) TAMBIÉN se acumulan de forma lineal (un % fijo
+// más por ronda, sin límite de cuántos se pueden ir sumando), así que la
+// distancia entre banda y rival nunca se cerraba sola. Este refuerzo
+// cuadrático no se nota en las primeras 15 rondas (el ritmo ya calibrado
+// se queda igual) pero acaba superando cualquier acumulación LINEAL de
+// bonos tarde o temprano, garantizando que toda run termine en algún
+// momento — verificado por simulación: con este cambio la misma banda de
+// referencia (siempre el mejor bono disponible) termina la run entre las
+// rondas ~40 y ~50, en vez de no terminar nunca.
+function roguelikeLateMult(round) {
+  return round <= 15 ? 1 : 1 + Math.pow((round - 15) / 10, 2) * 0.15;
+}
 function buildRoguelikeEnemyRow(round) {
   const level = Math.max(1, Math.round(round * 2));
   const legendaryChance = Math.min(0.4, round * 0.02);
   const epicChance = Math.min(0.3, round * 0.025);
   const count = round < 3 ? 1 : (round < 6 ? 2 : 3);
+  const mult = roguelikeLateMult(round);
   const row = [];
   for (let i = 0; i < count; i++) {
     const roll = Math.random();
@@ -656,7 +705,7 @@ function buildRoguelikeEnemyRow(round) {
         ? FIGHTERS.filter(f => f.rarity === 'epico')
         : FIGHTERS.filter(f => f.rarity === 'comun' || f.rarity === 'infrecuente' || f.rarity === 'raro');
     const def = pool[Math.floor(Math.random() * pool.length)];
-    row.push(makeUnit('enemy', def.id, level));
+    row.push(makeUnit('enemy', def.id, level, mult));
   }
   return row;
 }
@@ -671,6 +720,13 @@ function roguelikeRoundRewards(round) {
 // total, no +32,25%). El de vida también reescala el HP actual en la misma
 // proporción para no perder ni ganar % de vida restante solo por subir el
 // bono a mitad de combate.
+// Los 3 últimos (shield/reviveall/doublereward) son nuevos — petición
+// explícita: "en el modo roguelike tiene que haber más opciones diferentes
+// de elección". Antes de esto todas las opciones eran variaciones de lo
+// mismo (subir un % de una stat, o una de dos casillas instantáneas ya
+// muy parecidas entre sí) — estos tres cubren categorías que no existían
+// (protección, rescate en masa, economía) para que el trío de opciones de
+// cada ronda se sienta distinto de verdad más a menudo.
 const ROGUELIKE_BOONS = [
   { id: 'atk', icon: '⚔️', label: '+15% Ataque', stat: 'atk', pct: 0.15 },
   { id: 'def', icon: '🛡️', label: '+15% Defensa', stat: 'def', pct: 0.15 },
@@ -679,6 +735,9 @@ const ROGUELIKE_BOONS = [
   { id: 'wis', icon: '🧠', label: '+15% Sabiduría', stat: 'wis', pct: 0.15 },
   { id: 'heal', icon: '💚', label: 'Cura al 50% a toda la banda y revive a un caído', instant: true },
   { id: 'ult', icon: '⚡', label: 'Ulti lista para todos en la próxima ronda', instant: true },
+  { id: 'shield', icon: '🔰', label: 'Escudo del 25% de la vida máxima para toda la banda', instant: true },
+  { id: 'reviveall', icon: '💫', label: 'Revive a TODOS los caídos con 40% de vida', instant: true },
+  { id: 'doublereward', icon: '💰', label: 'Recompensa ×2 al superar la próxima ronda', instant: true },
 ];
 function applyRoguelikeBuffs(u, buffs) {
   if (!buffs) return;

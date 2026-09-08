@@ -417,8 +417,9 @@ function addMobFamily(slug, tier, element, cls, skillId, names, lores, hasImages
 // jugable) — se ignora a propósito y se deja aquí solo porque ~33 llamadas
 // ya lo pasaban y no aporta nada quitarlo. Todo jefe capturado en la Torre
 // Batalla es SIEMPRE Legendario (fighterDef.rarity), y además recibe un
-// plus fijo sobre eso en sus stats de luchador jugable (ver
-// BOSS_PLAYER_PREMIUM en fighterStats, state.js) — pedido explícito del
+// plus sobre eso en sus stats de luchador jugable, escalado con su
+// fixedStats real (ver bossPlayerPremium en fighterStats, state.js) —
+// pedido explícito del
 // usuario: "los bosses tienen que ser más poderosos siempre que la mejor
 // legendaria, si no, no tiene sentido que sean bosses". Antes, con la
 // rareza original de cada uno (Común/Infrecuente/Raro en su mayoría), el
@@ -1421,6 +1422,17 @@ const OBJECTIVES = [
   { id: 'formas_50', icon: '📖', label: 'Descubre 50 formas', reward: rG(20), get: (st, s) => s.formsDiscovered, target: 50 },
   { id: 'formas_100', icon: '📖', label: 'Descubre 100 formas', reward: rG(45), get: (st, s) => s.formsDiscovered, target: 100 },
   { id: 'formas_todas', icon: '📖', label: 'Descubre todas las formas', reward: rG(120), get: (st, s) => s.formsDiscovered, target: FIGHTERS.length },
+  // Un objetivo por rareza ("tier"), además del de arriba (todas las
+  // formas juntas) — petición explícita del usuario: "tiene que haber un
+  // logro por conseguir todas las cartas de cada tier y por conseguir
+  // todas las cartas". Reutiliza s.rarityStats (objectivesSummary,
+  // state.js), ya calculado con rarityCollectionStats — mismo found/total
+  // que ya se muestra en Objetivos/Estadísticas, sin duplicar el conteo.
+  { id: 'tier_comun', icon: '⚪', label: 'Consigue todas las cartas Comunes', reward: rT(150), get: (st, s) => s.rarityStats.find(r => r.id === 'comun').found, target: s => s.rarityStats.find(r => r.id === 'comun').total },
+  { id: 'tier_infrecuente', icon: '🟢', label: 'Consigue todas las cartas Infrecuentes', reward: rT(300), get: (st, s) => s.rarityStats.find(r => r.id === 'infrecuente').found, target: s => s.rarityStats.find(r => r.id === 'infrecuente').total },
+  { id: 'tier_raro', icon: '🔵', label: 'Consigue todas las cartas Raras', reward: rG(30), get: (st, s) => s.rarityStats.find(r => r.id === 'raro').found, target: s => s.rarityStats.find(r => r.id === 'raro').total },
+  { id: 'tier_epico', icon: '🟣', label: 'Consigue todas las cartas Épicas', reward: rG(70), get: (st, s) => s.rarityStats.find(r => r.id === 'epico').found, target: s => s.rarityStats.find(r => r.id === 'epico').total },
+  { id: 'tier_legendario', icon: '🟡', label: 'Consigue todas las cartas Legendarias', reward: rG(150), get: (st, s) => s.rarityStats.find(r => r.id === 'legendario').found, target: s => s.rarityStats.find(r => r.id === 'legendario').total },
   { id: 'familias_1', icon: '⭐', label: 'Completa 1 familia entera (3 formas)', reward: rT(100), get: (st, s) => s.familiesComplete, target: 1 },
   { id: 'familias_10', icon: '⭐', label: 'Completa 10 familias', reward: rG(25), get: (st, s) => s.familiesComplete, target: 10 },
   { id: 'familias_25', icon: '⭐', label: 'Completa 25 familias', reward: rG(60), get: (st, s) => s.familiesComplete, target: 25 },

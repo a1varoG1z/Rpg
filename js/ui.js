@@ -1648,7 +1648,7 @@ UI.startRoguelikeRun = function (state) {
   }
   window.__championRun = null;
   window.__stageRun = null;
-  window.__roguelikeRun = { round: 1, hpMap: {}, chargeMap: {}, faintedSet: new Set(), buffs: {} };
+  window.__roguelikeRun = { round: 1, hpMap: {}, chargeMap: {}, shieldMap: {}, faintedSet: new Set(), buffs: {}, doubleRewardNext: false };
   UI.fightRoguelikeRound(state);
 };
 
@@ -1659,12 +1659,17 @@ UI.fightRoguelikeRound = function (state) {
   // Mismo patrón de persistencia entre combates que un recorrido de etapa
   // (ver UI.fightStageRunNode): ni la vida ni la carga de ulti se
   // restablecen de una ronda a otra, y los bonos elegidos (run.buffs) se
-  // aplican de cero cada vez sobre las stats ya recalculadas.
+  // aplican de cero cada vez sobre las stats ya recalculadas. El escudo
+  // del bono "shield" (run.shieldMap) sigue el mismo patrón — se aplica al
+  // reconstruir la unidad y se recoge de vuelta al terminar, igual que
+  // hp/carga de ulti, así que decae solo con los turnos como cualquier
+  // escudo de combate (ver tickTimers en combat.js).
   playerCombos.forEach(row => row.forEach(u => {
     if (!u.sourceUid) return;
     if (run.faintedSet.has(u.sourceUid)) { u.hp = 0; u.alive = false; }
     else if (run.hpMap[u.sourceUid] !== undefined) u.hp = Math.min(u.maxHp, run.hpMap[u.sourceUid]);
     if (run.chargeMap[u.sourceUid] !== undefined) u.ultCharge = run.chargeMap[u.sourceUid];
+    if (run.shieldMap[u.sourceUid]) u.shield = run.shieldMap[u.sourceUid];
     applyRoguelikeBuffs(u, run.buffs);
   }));
   UI.openBattle(state, playerCombos, [enemyRow], {
@@ -1676,6 +1681,7 @@ UI.fightRoguelikeRound = function (state) {
           if (!u.sourceUid) return;
           run.hpMap[u.sourceUid] = u.hp;
           run.chargeMap[u.sourceUid] = u.ultCharge;
+          run.shieldMap[u.sourceUid] = u.shield;
           if (u.alive) run.faintedSet.delete(u.sourceUid); else run.faintedSet.add(u.sourceUid);
         }));
       }
@@ -1688,6 +1694,11 @@ UI.fightRoguelikeRound = function (state) {
       }
       const clearedRound = run.round;
       const rewards = roguelikeRoundRewards(clearedRound);
+      if (run.doubleRewardNext) {
+        rewards.texel *= 2;
+        rewards.fighterXp *= 2;
+        run.doubleRewardNext = false;
+      }
       state.currencies.texel += rewards.texel;
       const leveled = [];
       state.band.flat().filter(Boolean).forEach(uid => {
@@ -1707,6 +1718,20 @@ UI.openRoguelikeBoonPicker = function (state) {
   const body = $('pickerModalBody');
   body.innerHTML = `<h3>🌀 Elige un bono — Ronda ${run.round + 1}</h3>
     <p class="settings-info">Se queda para el resto de esta run.</p>`;
+  // Único punto seguro de la run para salir a propósito (entre rondas, sin
+  // combate en curso) — petición explícita: "hay que poder salir del modo
+  // roguelike". Antes la única forma de terminar una run era perder; las
+  // recompensas de las rondas ya superadas se quedan (ya se aplicaron y
+  // guardaron al ganar cada ronda, ver UI.fightRoguelikeRound), así que
+  // retirarse no pierde nada de lo ya ganado.
+  const retireBtn = el('button', 'mini-btn', '🚪 Retirarse (conservar lo ya ganado)');
+  retireBtn.addEventListener('click', () => {
+    window.__roguelikeRun = null;
+    $('pickerModal').classList.add('hidden');
+    UI.switchScreen('torre');
+    UI.showToast(`🌀 Run terminada — mejor ronda: ${state.roguelike.bestRound}`);
+  });
+  body.appendChild(retireBtn);
   const options = [...ROGUELIKE_BOONS].sort(() => Math.random() - 0.5).slice(0, 3);
   options.forEach(boon => {
     const btn = el('button', 'primary-btn', boon.icon + ' ' + boon.label);
@@ -1728,6 +1753,21 @@ UI.openRoguelikeBoonPicker = function (state) {
         });
       } else if (boon.id === 'ult') {
         state.band.flat().filter(Boolean).forEach(uid => { if (!run.faintedSet.has(uid)) run.chargeMap[uid] = 100; });
+      } else if (boon.id === 'shield') {
+        state.band.flat().filter(Boolean).forEach(uid => {
+          if (run.faintedSet.has(uid)) return;
+          const stats = fighterStats(state, rosterEntry(state, uid));
+          run.shieldMap[uid] = { amount: Math.round(stats.hp * 0.25), turnsLeft: 3 };
+        });
+      } else if (boon.id === 'reviveall') {
+        state.band.flat().filter(Boolean).forEach(uid => {
+          if (!run.faintedSet.has(uid)) return;
+          run.faintedSet.delete(uid);
+          const stats = fighterStats(state, rosterEntry(state, uid));
+          run.hpMap[uid] = Math.round(stats.hp * 0.4);
+        });
+      } else if (boon.id === 'doublereward') {
+        run.doubleRewardNext = true;
       } else {
         run.buffs[boon.stat] = (run.buffs[boon.stat] || 0) + boon.pct;
       }

@@ -164,22 +164,54 @@ function gearBonusForEntry(state, entry) {
 // stats de su propia clase, medían por debajo del Legendario normal más
 // fuerte del roster (Odín) incluso a rareza igualada — un jefe, el reto más
 // duro del Mapa, no puede acabar siendo peor carta que un Legendario
-// cualquiera. Este plus fijo se aplica ENCIMA del multiplicador de rareza
-// de siempre. Calibrado comparando los 33 jefes contra los ~40 Legendarios
-// jugables (potencia base, Nv.1 sin equipo): ×1.4 deja al jefe más flojo de
-// los 33 (antes Común, el Guardián del Bosque) en ~466 de potencia, por
-// encima del Legendario base más fuerte (Odín, ~439) con margen real.
-const BOSS_PLAYER_PREMIUM = 1.4;
+// cualquiera. Este plus se aplica ENCIMA del multiplicador de rareza de
+// siempre.
+//
+// Antes era un ×1.4 FIJO, igual para los 33 jefes — así que el orden de
+// potencia que veía el jugador (ficha, "Poder total" de la Colección) no
+// tenía nada que ver con fixedStats (las stats de COMBATE de cada jefe,
+// calibradas a mano una a una, ver addBoss): dependía solo de la clase de
+// cada uno, dominada por el peso de HP de Campeón. Confirmado con datos:
+// Tifón — el más fuerte de los 33 por diseño, con diferencia — aparecía
+// #28 de 33 en potencia de cara al jugador; el más flojo a propósito
+// (Guardián del Bosque Ancestral) aparecía #8. Bug real reportado así:
+// "los bosses están mal calibrados, el más poderoso debe ser el tifón
+// (hablando desde el nivel base), luego balrog y así sucesivamente".
+//
+// Ahora el plus escala con la potencia NATIVA real del jefe
+// (fighterPowerScore de su fixedStats) respecto al jefe más flojo de los
+// 33 — el orden que ve el jugador vuelve a coincidir con el ya calibrado a
+// mano en fixedStats. BOSS_NATIVE_COMPRESS_EXP (<1) comprime el rango
+// nativo (×7.8 entre el más flojo y Tifón) a algo menos extremo en
+// potencia de cara al jugador sin aplanarlo del todo — cualquier
+// exponente > 0 conserva el orden exacto, solo cambia cuánto se nota la
+// diferencia.
+const BOSS_BASE_PREMIUM = 1.4;
+const BOSS_NATIVE_COMPRESS_EXP = 0.5;
+const BOSS_MIN_NATIVE_POWER = Math.min(...BOSSES.map(b => fighterPowerScore(b.fixedStats)));
+function bossPlayerPremium(def) {
+  const ratio = fighterPowerScore(def.fixedStats) / BOSS_MIN_NATIVE_POWER;
+  return BOSS_BASE_PREMIUM * Math.pow(ratio, BOSS_NATIVE_COMPRESS_EXP);
+}
 function fighterStats(state, entry) {
   const def = fighterDef(entry.defId);
   const w = CLASS_INFO[def.class].weights;
-  const mult = rarityInfo(def.rarity).mult * (def.isBoss ? BOSS_PLAYER_PREMIUM : 1) * levelGrowth(entry.level) * starBonus(entry.stars);
+  const mult = rarityInfo(def.rarity).mult * (def.isBoss ? bossPlayerPremium(def) : 1) * levelGrowth(entry.level) * starBonus(entry.stars);
+  // statVarianceMult individualiza un poco cada FAMILIA dentro de su clase
+  // (±12%, ver su comentario) — pensado para luchadores normales, que no
+  // tienen ninguna otra fuente de identidad propia entre sí. Un jefe SÍ la
+  // tiene (fixedStats, ya reflejada en bossPlayerPremium de arriba): dos
+  // jefes de la MISMA clase con potencia nativa casi idéntica (p.ej. Tifón
+  // y Balrog, ambos Brujo) podían intercambiar el orden solo por el ±12%
+  // aleatorio de esta variancia, deshaciendo el propio ajuste de arriba —
+  // se desactiva a propósito para cualquier jefe.
+  const varianceMult = (family, stat) => def.isBoss ? 1 : statVarianceMult(family, stat);
   const stats = {
-    hp: Math.round(w.hp * mult * statVarianceMult(def.family, 'hp') * fighterStatMult(def, 'hp')),
-    atk: Math.round(w.atk * mult * statVarianceMult(def.family, 'atk') * fighterStatMult(def, 'atk')),
-    def: Math.round(w.def * mult * statVarianceMult(def.family, 'def') * fighterStatMult(def, 'def')),
-    agi: Math.round(w.agi * mult * statVarianceMult(def.family, 'agi') * fighterStatMult(def, 'agi')),
-    wis: Math.round(w.wis * mult * statVarianceMult(def.family, 'wis') * fighterStatMult(def, 'wis')),
+    hp: Math.round(w.hp * mult * varianceMult(def.family, 'hp') * fighterStatMult(def, 'hp')),
+    atk: Math.round(w.atk * mult * varianceMult(def.family, 'atk') * fighterStatMult(def, 'atk')),
+    def: Math.round(w.def * mult * varianceMult(def.family, 'def') * fighterStatMult(def, 'def')),
+    agi: Math.round(w.agi * mult * varianceMult(def.family, 'agi') * fighterStatMult(def, 'agi')),
+    wis: Math.round(w.wis * mult * varianceMult(def.family, 'wis') * fighterStatMult(def, 'wis')),
   };
   const bonus = gearBonusForEntry(state, entry);
   Object.keys(bonus).forEach(k => { stats[k] += bonus[k]; });
@@ -1150,6 +1182,11 @@ function objectivesSummary(state) {
     homunculosTotal: state.homunculos.homunculo_t1 + state.homunculos.homunculo_t2 + state.homunculos.homunculo_t3,
     crystalsConverted: state.stats.crystalsConverted,
     totalFusionsMade: state.stats.totalFusionsMade, totalEvolutions: state.stats.totalEvolutions,
+    // Para los objetivos "Consigue todas las cartas de cada tier" (ver
+    // OBJECTIVES en data.js) — reutiliza rarityCollectionStats (ya
+    // calculaba found/total por rareza para la pantalla de Objetivos/
+    // Estadísticas) en vez de duplicar el mismo conteo aparte.
+    rarityStats: rarityCollectionStats(state),
   };
 }
 
