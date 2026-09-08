@@ -694,6 +694,10 @@ UI.openGuide = function () {
     luchadores se enfrentan a la fila enemiga activa. Una vez usada, esa línea queda tachada hasta
     que se agoten las demás; cuando ya no queda ninguna línea viva sin usar, todas vuelven a estar
     disponibles.</p>
+    <p class="settings-info">Si al deslizar "engancha" sin querer una línea distinta a la que
+    buscabas (típico al intentar una diagonal), <b>desliza hacia atrás sin soltar el dedo</b> sobre
+    las celdas ya tocadas para deshacer el trazo y volver a intentarlo, sin tener que soltar ni
+    perder el turno.</p>
     <p class="settings-info">El pequeño número junto al rayo ⚡ sobre cada luchador indica cuántos
     golpes le faltan para tener la ulti lista ("¡LISTA!" cuando ya puede desatarla).</p>
     <p class="settings-info">Cada personaje del selector también muestra un ▲ verde o ▼ rojo si
@@ -770,16 +774,19 @@ UI.openGuide = function () {
 };
 
 // ---------- Estadísticas en profundidad ----------
-// Zona dedicada a ver el historial de combate completo: un resumen global
-// (reutiliza state.stats, ya acumulado en UI.endBattle), una tabla de
-// récords (quién ha hecho más daño, más bajas, el golpe más fuerte...) y un
-// listado de TODOS los luchadores de la Colección con su propio historial
-// (entry.stats, ver newFighterStats en state.js), filtrable por nombre y
-// ordenable por cualquier estadística — antes solo se podía ver el
-// historial de un luchador entrando a su ficha uno a uno.
+// Zona dedicada a ver el historial de combate completo: resumen global (con
+// métricas derivadas como % crítico y ratio daño hecho/recibido), progreso
+// de cada modo de juego, actividad, desglose por elemento/clase, récords
+// (quién ha hecho más daño, más bajas, más críticos...) y un listado de
+// TODOS los luchadores de la Colección con su propio historial (entry.stats,
+// ver newFighterStats en state.js), filtrable por nombre y ordenable por
+// cualquier estadística — antes solo se podía ver el historial de un
+// luchador entrando a su ficha uno a uno, y las históricas globales solo
+// vivían (más resumidas) dentro de Objetivos.
 const STATS_SORT_OPTIONS = [
   ['dmgDealt', '💥 Daño hecho'], ['kills', '💀 Bajas'], ['highestHit', '⚡ Golpe más fuerte'],
   ['healDone', '💚 Curación hecha'], ['battles', '⚔️ Combates'], ['dmgReceived', '🛡️ Daño recibido'],
+  ['crits', '✨ Críticos'], ['ultsUsed', '🌀 Ultis desatadas'], ['deaths', '☠️ Veces caído'],
   ['nombre', 'Nombre'],
 ];
 function statsRecordGroupHtml(label, icon, unit, entries, key) {
@@ -796,10 +803,37 @@ function statsFighterRow(state, r) {
   const info = el('div', 'torre-row-info');
   info.appendChild(el('div', 'torre-row-name', `${def.name} <span class="badge">Nv.${entry.level}</span>`));
   info.appendChild(el('div', 'torre-row-sub',
-    `⚔️ ${fs.battles} combates · 💥 ${fs.dmgDealt.toLocaleString('es-ES')} daño · 💀 ${fs.kills} bajas · ⚡ ${fs.highestHit.toLocaleString('es-ES')} mejor golpe`));
+    `⚔️ ${fs.battles} combates · 💥 ${fs.dmgDealt.toLocaleString('es-ES')} daño · 💀 ${fs.kills} bajas · ⚡ ${fs.highestHit.toLocaleString('es-ES')} mejor golpe · 🌀 ${fs.ultsUsed} ultis · ☠️ ${fs.deaths} caídas`));
   row.appendChild(info);
   row.addEventListener('click', () => { $('statsModal').classList.add('hidden'); UI.openFighterModal(state, entry.uid); });
   return row;
+}
+// Racha de días jugados SEGUIDOS hasta hoy (o hasta ayer si hoy todavía no
+// se ha abierto el juego, para no resetear a 0 solo por no haber entrado
+// TODAVÍA hoy) — mismo formato de fecha (ISO/UTC) que recordPlayDay usa
+// para rellenar state.progress.daysPlayed, así que compara directamente.
+function currentPlayStreak(daysPlayed) {
+  if (!daysPlayed || !daysPlayed.length) return 0;
+  const daySet = new Set(daysPlayed);
+  const cursor = new Date();
+  if (!daySet.has(cursor.toISOString().slice(0, 10))) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (daySet.has(cursor.toISOString().slice(0, 10))) { streak++; cursor.setDate(cursor.getDate() - 1); }
+  return streak;
+}
+// Agrupa el roster por elemento o clase (groupFn) sobre el orden fijo de
+// `order`, sumando cuántos luchadores hay de cada uno y su daño/bajas
+// acumulados — para las tarjetas "🧬 Por elemento" / "🎭 Por clase".
+function statsGroupBreakdown(withStats, groupFn, order) {
+  const groups = {};
+  withStats.forEach(r => {
+    const key = groupFn(r.def);
+    if (!groups[key]) groups[key] = { count: 0, dmg: 0, kills: 0 };
+    groups[key].count++;
+    groups[key].dmg += r.fs.dmgDealt;
+    groups[key].kills += r.fs.kills;
+  });
+  return order.map(key => ({ key, ...(groups[key] || { count: 0, dmg: 0, kills: 0 }) }));
 }
 UI.openStats = function (state) {
   const body = $('statsModalBody');
@@ -810,6 +844,9 @@ UI.openStats = function (state) {
   const gs = state.stats;
   const totalBattles = gs.battlesWon + gs.battlesLost;
   const winRate = totalBattles > 0 ? Math.round(gs.battlesWon / totalBattles * 100) : 0;
+  const critRate = gs.totalHits > 0 ? Math.round(gs.totalCritsLanded / gs.totalHits * 100) : 0;
+  const dmgRatio = gs.totalDmgReceived > 0 ? (gs.totalDmgDealt / gs.totalDmgReceived).toFixed(2) : '—';
+  const avgDmgPerBattle = totalBattles > 0 ? Math.round(gs.totalDmgDealt / totalBattles) : 0;
   const globalPanel = el('div', 'panel');
   globalPanel.innerHTML = `<h3>🌍 Resumen global</h3>
     <div class="stat-row"><span>Combates totales</span><span>${totalBattles}</span></div>
@@ -820,12 +857,60 @@ UI.openStats = function (state) {
     <div class="stat-row"><span>🛡️ Daño total recibido</span><span>${Math.round(gs.totalDmgReceived).toLocaleString('es-ES')}</span></div>
     <div class="stat-row"><span>💚 Curación total</span><span>${Math.round(gs.totalHealDone).toLocaleString('es-ES')}</span></div>
     <div class="stat-row"><span>💥 Golpe más fuerte (partida)</span><span>${Math.round(gs.highestSingleHit).toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>💀 Enemigos derrotados</span><span>${gs.totalKills.toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>☠️ Veces que ha caído un luchador tuyo</span><span>${gs.totalFaints.toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>🌀 Ultis desatadas</span><span>${gs.totalUltsUsed.toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>✨ Golpes críticos (% de golpes)</span><span>${gs.totalCritsLanded.toLocaleString('es-ES')} (${critRate}%)</span></div>
+    <div class="stat-row"><span>📈 Daño medio por combate</span><span>${avgDmgPerBattle.toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>⚖️ Ratio daño hecho/recibido</span><span>×${dmgRatio}</span></div>
     <div class="stat-row"><span>🪙 Texel ganado en combate</span><span>${Math.round(gs.totalTexelEarned).toLocaleString('es-ES')}</span></div>
     <div class="stat-row"><span>⭐ XP de luchador ganada</span><span>${Math.round(gs.totalFighterXpEarned).toLocaleString('es-ES')}</span></div>`;
   body.appendChild(globalPanel);
 
+  // ---------- Progreso por modo ----------
+  const s = objectivesSummary(state);
+  const torreCleared = Object.values(state.torre.clears).filter(v => v > 0).length;
+  const elementalTotal = Object.values(state.elementalClears).reduce((a, b) => a + b, 0);
+  const modePanel = el('div', 'panel');
+  modePanel.innerHTML = `<h3>🎮 Progreso por modo</h3>
+    <div class="stat-row"><span>🗺️ Etapas superadas</span><span>${s.stagesCleared}/${s.totalStages}</span></div>
+    <div class="stat-row"><span>👹 Jefes de zona derrotados</span><span>${s.bossesDefeated}/${s.totalBosses}</span></div>
+    <div class="stat-row"><span>⚔️ Rango de Arena actual</span><span>${s.arenaRank}</span></div>
+    <div class="stat-row"><span>⚔️ Mejor rango de Arena histórico</span><span>${s.arenaBestRank}</span></div>
+    <div class="stat-row"><span>🗼 Niveles de Torre Batalla superados</span><span>${torreCleared}/${TORRE_LEVELS.length}</span></div>
+    <div class="stat-row"><span>🌋 Mazmorras Elementales superadas</span><span>${elementalTotal}</span></div>
+    <div class="stat-row"><span>🌀 Mejor ronda de Roguelike</span><span>${s.roguelikeBestRound}</span></div>
+    <div class="stat-row"><span>🏆 Mejor racha de la Prueba del Campeón</span><span>${state.champion.bestStreak}</span></div>`;
+  body.appendChild(modePanel);
+
+  // ---------- Actividad ----------
+  const daysPlayed = state.progress.daysPlayed || [];
+  const activityPanel = el('div', 'panel');
+  activityPanel.innerHTML = `<h3>📅 Actividad</h3>
+    <div class="stat-row"><span>Días jugados en total</span><span>${daysPlayed.length}</span></div>
+    <div class="stat-row"><span>Racha actual de días seguidos</span><span>${currentPlayStreak(daysPlayed)}</span></div>`;
+  body.appendChild(activityPanel);
+
   const withStats = state.roster.map(entry => ({ entry, def: fighterDef(entry.defId), fs: entry.stats || newFighterStats() }));
 
+  // ---------- Por elemento / por clase ----------
+  const elementPanel = el('div', 'panel');
+  elementPanel.innerHTML = '<h3>🧬 Por elemento</h3>';
+  statsGroupBreakdown(withStats, d => d.element, ELEMENT_ORDER).forEach(g => {
+    const info = ELEMENT_INFO[g.key];
+    elementPanel.innerHTML += `<div class="stat-row"><span>${info.icon} ${info.label}</span><span>${g.count} luchador${g.count === 1 ? '' : 'es'} · ${g.dmg.toLocaleString('es-ES')} daño · ${g.kills} bajas</span></div>`;
+  });
+  body.appendChild(elementPanel);
+
+  const classPanel = el('div', 'panel');
+  classPanel.innerHTML = '<h3>🎭 Por clase</h3>';
+  statsGroupBreakdown(withStats, d => d.class, Object.keys(CLASS_INFO)).forEach(g => {
+    const info = CLASS_INFO[g.key];
+    classPanel.innerHTML += `<div class="stat-row"><span>${info.icon} ${info.label}</span><span>${g.count} luchador${g.count === 1 ? '' : 'es'} · ${g.dmg.toLocaleString('es-ES')} daño · ${g.kills} bajas</span></div>`;
+  });
+  body.appendChild(classPanel);
+
+  // ---------- Récords por luchador ----------
   const recordsPanel = el('div', 'panel');
   recordsPanel.innerHTML = '<h3>🏅 Récords por luchador</h3>';
   recordsPanel.innerHTML +=
@@ -834,10 +919,14 @@ UI.openStats = function (state) {
     statsRecordGroupHtml('Golpe más fuerte', '⚡', '', withStats, 'highestHit') +
     statsRecordGroupHtml('Más curación hecha', '💚', '', withStats, 'healDone') +
     statsRecordGroupHtml('Más combates', '⚔️', '', withStats, 'battles') +
-    statsRecordGroupHtml('Más daño recibido (aguante)', '🛡️', '', withStats, 'dmgReceived');
+    statsRecordGroupHtml('Más daño recibido (aguante)', '🛡️', '', withStats, 'dmgReceived') +
+    statsRecordGroupHtml('Más críticos', '✨', '', withStats, 'crits') +
+    statsRecordGroupHtml('Más ultis desatadas', '🌀', '', withStats, 'ultsUsed') +
+    statsRecordGroupHtml('Más veces caído', '☠️', '', withStats, 'deaths');
   if (!withStats.some(r => r.fs.battles > 0)) recordsPanel.innerHTML += '<p class="settings-info">Todavía no hay combates registrados.</p>';
   body.appendChild(recordsPanel);
 
+  // ---------- Listado filtrable/ordenable ----------
   const listPanel = el('div', 'panel');
   listPanel.innerHTML = '<h3>🔎 Por luchador</h3>';
   const searchRow = el('div', 'roster-sort-row');
@@ -2746,15 +2835,20 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   body.appendChild(gearPanel);
 
   const fs = entry.stats || newFighterStats();
+  const critRate = fs.hits > 0 ? Math.round(fs.crits / fs.hits * 100) : 0;
   const combatHistoryPanel = el('div', 'panel');
   combatHistoryPanel.innerHTML = `<h3>📊 Estadísticas de combate</h3>
     <p class="settings-info">Acumuladas a lo largo de toda la partida con este luchador (sobreviven a Fusión/Evolución).</p>
     <div class="stat-row"><span>⚔️ Combates</span><span>${fs.battles}</span></div>
-    <div class="stat-row"><span>💥 Daño hecho</span><span>${fs.dmgDealt}</span></div>
-    <div class="stat-row"><span>🛡️ Daño recibido</span><span>${fs.dmgReceived}</span></div>
-    <div class="stat-row"><span>💚 Curación hecha</span><span>${fs.healDone}</span></div>
+    <div class="stat-row"><span>💥 Daño hecho</span><span>${fs.dmgDealt.toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>🛡️ Daño recibido</span><span>${fs.dmgReceived.toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>💚 Curación hecha</span><span>${fs.healDone.toLocaleString('es-ES')}</span></div>
     <div class="stat-row"><span>💀 Bajas</span><span>${fs.kills}</span></div>
-    <div class="stat-row"><span>💢 Mejor golpe</span><span>${fs.highestHit}</span></div>`;
+    <div class="stat-row"><span>💢 Mejor golpe</span><span>${fs.highestHit.toLocaleString('es-ES')}</span></div>
+    <div class="stat-row"><span>🎯 Golpes de arma/ulti</span><span>${fs.hits}</span></div>
+    <div class="stat-row"><span>✨ Críticos (% de golpes)</span><span>${fs.crits} (${critRate}%)</span></div>
+    <div class="stat-row"><span>🌀 Ultis desatadas</span><span>${fs.ultsUsed}</span></div>
+    <div class="stat-row"><span>☠️ Veces caído</span><span>${fs.deaths}</span></div>`;
   body.appendChild(combatHistoryPanel);
 
   const sellValue = fighterSellValue(entry);
@@ -3675,7 +3769,7 @@ UI.openBattle = function (state, playerRowsRaw, enemyRowsRaw, opts) {
     // Resumen post-combate (ver battleStatsSummaryHtml): se acumula con
     // cada evento de UI.applyBattleEvent a lo largo de este combate
     // entero (todas las líneas/oleadas), no se resetea entre choques.
-    battleStats: { dmgDealt: 0, dmgReceived: 0, healDone: 0, maxHit: 0, byUnit: {} },
+    battleStats: { dmgDealt: 0, dmgReceived: 0, healDone: 0, maxHit: 0, hits: 0, crits: 0, ultsUsed: 0, deaths: 0, kills: 0, byUnit: {} },
   };
   window.__battleView = view;
   $('battleTitle').textContent = opts.title;
@@ -3917,8 +4011,20 @@ UI.showGroupPicker = function (view, remaining) {
     if (!dragCells) return;
     const cell = cellFromPoint(e.clientX, e.clientY);
     if (!cell) return;
-    const already = dragCells.some(([r, c]) => r === cell[0] && c === cell[1]);
-    if (already) return;
+    const revisitIdx = dragCells.findIndex(([r, c]) => r === cell[0] && c === cell[1]);
+    if (revisitIdx !== -1) {
+      // El dedo/ratón ha vuelto a pasar por una celda ya tocada en este
+      // mismo gesto: deshace el trazo hasta ahí (quita las celdas
+      // posteriores). Así, si un roce accidental "engancha" una línea que
+      // no era la que querías (típico al intentar una diagonal y rozar de
+      // paso una fila/columna), puedes corregirlo deslizando hacia atrás
+      // sin soltar, en vez de quedarte atascado con esa línea hasta soltar.
+      if (revisitIdx < dragCells.length - 1) {
+        dragCells = dragCells.slice(0, revisitIdx + 1);
+        applyHighlight(lineForCells(dragCells));
+      }
+      return;
+    }
     const candidate = [...dragCells, cell];
     if (!lineForCells(candidate)) return; // no alineado con lo ya tocado: se ignora
     dragCells = candidate;
@@ -4143,6 +4249,7 @@ UI.onClashDone = function (view) {
 function battleUnitRec(view, unit) {
   return view.battleStats.byUnit[unit.id] || (view.battleStats.byUnit[unit.id] = {
     sourceUid: unit.sourceUid || null, name: unit.name, dmg: 0, dmgReceived: 0, healDone: 0, kills: 0, highestHit: 0,
+    hits: 0, crits: 0, ultsUsed: 0, deaths: 0,
   });
 }
 
@@ -4155,6 +4262,10 @@ UI.applyBattleEvent = function (view, ev) {
       u.ultCharge = 0;
       UI.updateUnitCardCharge(u);
       UI.logLine(`💥 ¡${u.name} desata su ULTI: ${ev.skillName}!`);
+      if (u.side === 'player') {
+        view.battleStats.ultsUsed++;
+        battleUnitRec(view, u).ultsUsed++;
+      }
       break;
     case 'charge':
       if (u) { u.ultCharge = ev.value; UI.updateUnitCardCharge(u); }
@@ -4175,9 +4286,13 @@ UI.applyBattleEvent = function (view, ev) {
       UI.logLine(`${attacker.name} → ${target.name}: -${ev.amount}${ev.isCrit ? ' ¡CRÍTICO!' : ''}`);
       if (attacker.side === 'player') {
         view.battleStats.dmgDealt += ev.amount;
+        view.battleStats.hits++;
+        if (ev.isCrit) view.battleStats.crits++;
         if (ev.amount > view.battleStats.maxHit) view.battleStats.maxHit = ev.amount;
         const rec = battleUnitRec(view, attacker);
         rec.dmg += ev.amount;
+        rec.hits++;
+        if (ev.isCrit) rec.crits++;
         if (ev.amount > rec.highestHit) rec.highestHit = ev.amount;
       } else {
         view.battleStats.dmgReceived += ev.amount;
@@ -4197,7 +4312,14 @@ UI.applyBattleEvent = function (view, ev) {
     case 'faint':
       if (u) { u.alive = false; UI.updateUnitCardHp(u); }
       UI.logLine(`💀 ${u ? u.name : ''} ha caído.`);
-      if (ev.side === 'enemy' && ev.killerId && view.battleStats.byUnit[ev.killerId]) view.battleStats.byUnit[ev.killerId].kills++;
+      if (ev.side === 'enemy' && ev.killerId && view.battleStats.byUnit[ev.killerId]) {
+        view.battleStats.byUnit[ev.killerId].kills++;
+        view.battleStats.kills++;
+      }
+      if (ev.side === 'player') {
+        view.battleStats.deaths++;
+        if (u) battleUnitRec(view, u).deaths++;
+      }
       break;
     case 'stunattempt':
       UI.logLine(ev.success ? `⚡ ${target.name} queda aturdido.` : `${target.name} resiste el aturdimiento.`);
@@ -4300,6 +4422,11 @@ UI.endBattle = function (view, result) {
   st.totalDmgReceived += view.battleStats.dmgReceived;
   st.totalHealDone += view.battleStats.healDone;
   if (view.battleStats.maxHit > st.highestSingleHit) st.highestSingleHit = view.battleStats.maxHit;
+  st.totalHits += view.battleStats.hits;
+  st.totalCritsLanded += view.battleStats.crits;
+  st.totalUltsUsed += view.battleStats.ultsUsed;
+  st.totalFaints += view.battleStats.deaths;
+  st.totalKills += view.battleStats.kills;
   // Estadísticas POR LUCHADOR (entry.stats, ver newFighterStats en
   // state.js) — "combates" cuenta a todo el que estuviera en la Formación
   // cuando empezó ESTE combate (aunque no le tocara actuar en ningún
@@ -4319,6 +4446,10 @@ UI.endBattle = function (view, result) {
     entry.stats.dmgReceived += rec.dmgReceived;
     entry.stats.healDone += rec.healDone;
     entry.stats.kills += rec.kills;
+    entry.stats.hits += rec.hits;
+    entry.stats.crits += rec.crits;
+    entry.stats.ultsUsed += rec.ultsUsed;
+    entry.stats.deaths += rec.deaths;
     if (rec.highestHit > entry.stats.highestHit) entry.stats.highestHit = rec.highestHit;
   });
   if (outcome) {

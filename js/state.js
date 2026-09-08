@@ -18,7 +18,7 @@ function emptyGearSet() {
 // solo cambia de defId, nunca se recrea. Se acumulan en UI.endBattle
 // (ui.js), el mismo punto único por el que pasa cualquier combate.
 function newFighterStats() {
-  return { battles: 0, dmgDealt: 0, dmgReceived: 0, healDone: 0, kills: 0, highestHit: 0 };
+  return { battles: 0, dmgDealt: 0, dmgReceived: 0, healDone: 0, kills: 0, highestHit: 0, hits: 0, crits: 0, ultsUsed: 0, deaths: 0 };
 }
 
 function createNewState() {
@@ -54,6 +54,12 @@ function createNewState() {
       totalDmgDealt: 0, totalDmgReceived: 0, totalHealDone: 0,
       totalTexelEarned: 0, totalFighterXpEarned: 0, highestSingleHit: 0,
       crystalsConverted: 0,
+      // Ampliación del historial de combate (ver UI.applyBattleEvent):
+      // totalHits/totalCritsLanded miden juntos la precisión crítica
+      // global (% = crits/hits), totalUltsUsed cuenta ultis propias
+      // desatadas, totalFaints cuenta veces que un luchador PROPIO ha
+      // caído en combate (no bajas rivales, eso ya es totalKills más abajo).
+      totalHits: 0, totalCritsLanded: 0, totalUltsUsed: 0, totalFaints: 0, totalKills: 0,
       // Contadores DE POR VIDA (nunca bajan, a diferencia de finalFormCount/
       // totalSefStars en objectivesSummary, que son una foto del estado
       // actual del roster) — totalFusionsMade cuenta copias consumidas como
@@ -1357,7 +1363,10 @@ function loadGame() {
 function migrateState(state) {
   try {
     if (!state || state.version !== 2 || !state.roster) return null;
-    state.roster.forEach(r => { if (!r.stats) r.stats = newFighterStats(); });
+    state.roster.forEach(r => {
+      if (!r.stats) r.stats = newFighterStats();
+      else Object.keys(newFighterStats()).forEach(key => { if (r.stats[key] === undefined) r.stats[key] = 0; });
+    });
     // Partidas guardadas de cuando STAGES_PER_ZONE era mayor (33, antes de
     // bajarlo a 25): el índice de etapa más alta superada de cada zona
     // puede quedar por encima del máximo actual — se capa aquí de una vez
@@ -1399,7 +1408,7 @@ function migrateState(state) {
     if (!state.formationPresets) state.formationPresets = [];
     if (!state.progress.daysPlayed) state.progress.daysPlayed = [];
     if (!state.stats) state.stats = { battlesWon: 0, battlesLost: 0 };
-    ['totalDmgDealt', 'totalDmgReceived', 'totalHealDone', 'totalTexelEarned', 'totalFighterXpEarned', 'highestSingleHit', 'crystalsConverted', 'totalFusionsMade', 'totalEvolutions'].forEach(key => {
+    ['totalDmgDealt', 'totalDmgReceived', 'totalHealDone', 'totalTexelEarned', 'totalFighterXpEarned', 'highestSingleHit', 'crystalsConverted', 'totalFusionsMade', 'totalEvolutions', 'totalHits', 'totalCritsLanded', 'totalUltsUsed', 'totalFaints', 'totalKills'].forEach(key => {
       if (state.stats[key] === undefined) state.stats[key] = 0;
     });
     // Partidas guardadas antes de que existiera este registro: se

@@ -5205,6 +5205,71 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       exactamente los datos esperados, y tocar una fila abre la ficha
       correcta del luchador — sin errores de página.
 
+- [x] "cuando selecciono una línea, sobre todo las diagonales, muchas veces
+      me coge una línea horizontal o vertical, y no tengo forma de
+      deshacer [...] puedes hacer que esté la opción de deshacer el trazo
+      y hacer otra línea? por ejemplo si deslizas volviendo hacia atrás,
+      se borra la línea hecha". Causa real (`UI.showGroupPicker`, ui.js):
+      el gesto de arrastre solo podía AÑADIR celdas al trazo
+      (`onPointerMove` ignoraba cualquier celda ya tocada) — si un roce
+      accidental de un pixel "enganchaba" 2 celdas de una fila/columna
+      antes de llegar a la diagonal deseada, esas 2 celdas quedaban
+      fijadas como la línea del gesto para siempre (cualquier movimiento
+      posterior que no encajara en esa línea se ignoraba en vez de
+      corregirla), y al soltar se confirmaba la línea equivocada sin
+      ninguna forma de evitarlo salvo soltar y repetir el turno entero.
+      Arreglado exactamente como pedía el usuario: si el puntero vuelve a
+      pasar por una celda YA tocada en este mismo gesto (sin soltar),
+      el trazo se deshace hasta ahí (se quitan las celdas posteriores),
+      dejando corregir el roce accidental y terminar la diagonal (u otra
+      línea) correcta sin soltar el dedo. Añadida también una nota en la
+      Guía del juego explicando el gesto. Verificado con un gesto
+      Playwright que simula exactamente el caso descrito (empezar
+      diagonal, rozar una fila por accidente, retroceder, completar la
+      diagonal): la línea confirmada final es la diagonal correcta, no la
+      fila rozada por accidente; y el arrastre normal de una fila completa
+      (sin ningún error de por medio) se comprobó que sigue funcionando
+      igual que antes — sin errores de página.
+
+- [x] "aumenta el apartado estadístico, hazlo muy completo". Sobre la zona
+      de Estadísticas en profundidad recién creada (punto anterior),
+      ampliación en dos frentes:
+      1. Tracking nuevo, añadido en el mismo punto único por el que ya
+         pasaba todo (`UI.applyBattleEvent`/`UI.endBattle`, ui.js): golpes
+         totales (`hits`), críticos (`crits`), ultis desatadas
+         (`ultsUsed`) y veces caído en combate (`deaths`) — tanto por
+         luchador (`entry.stats`/`newFighterStats`, state.js) como
+         globales de toda la partida (`state.stats.totalHits/
+         totalCritsLanded/totalUltsUsed/totalFaints`, más un
+         `totalKills` global que antes solo existía por luchador).
+         Migración añadida para partidas guardadas antiguas (rellena los
+         campos que falten con 0, tanto en `state.stats` como en cada
+         `entry.stats` del roster, sin tocar los valores ya existentes).
+      2. La pantalla de Estadísticas (`UI.openStats`) pasa de 3 a 8
+         paneles: (1) Resumen global, ampliado con las métricas nuevas
+         más 3 derivadas — % de golpes críticos, daño medio por combate y
+         ratio daño hecho/recibido; (2) "🎮 Progreso por modo" — etapas y
+         jefes de zona, rango de Arena (actual y mejor histórico),
+         niveles de Torre Batalla superados, Mazmorras Elementales
+         superadas, mejor ronda de Roguelike, mejor racha de la Prueba
+         del Campeón (todo reutilizando datos que ya existían repartidos
+         por el estado, sin duplicar el tracking); (3) "📅 Actividad" —
+         días jugados totales y racha de días seguidos (calculada sobre
+         `state.progress.daysPlayed`); (4)/(5) "🧬 Por elemento" y
+         "🎭 Por clase" — cuántos luchadores tienes de cada uno y su daño/
+         bajas agregados; (6) Récords, con 3 categorías nuevas (más
+         críticos, más ultis, más veces caído); (7) el listado filtrable
+         de antes, con las 3 estadísticas nuevas también como opción de
+         orden y visibles en cada fila. Verificado en 3 frentes: (a) los
+         eventos de combate reales (`UI.applyBattleEvent`) registran
+         crits/ultis/caídas correctamente con casos sintéticos control;
+         (b) una tanda de combates simulados de principio a fin con el
+         motor real confirma que la suma de `entry.stats` de todo el
+         roster cuadra exactamente con los totales globales de
+         `state.stats`; (c) la migración de una partida vieja sin estos
+         campos no lanza ninguna excepción y rellena todo a 0 sin tocar
+         los valores previos — sin errores de página en ningún caso.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
