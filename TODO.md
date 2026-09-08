@@ -4903,6 +4903,33 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       saldo) sigue gastando 12 y dando +1; Poción Menor/Mayor (sin
       altPrice) siguen mostrando un único botón, sin cambios.
 
+- [x] Ver ficha (stats/ulti) de los luchadores al elegir línea, propios y
+      rivales (petición explícita con captura de la pantalla de "Desliza
+      para elegir 1 línea" de la Torre: "debería poder hacer click en los
+      personajes (tanto míos como del rival) y ver el perfil... antes de
+      elegir la línea"). Las tarjetas rivales de arriba (`enemyActiveRow`,
+      vía `UI.battleUnitCard`) YA abrían la ficha al tocarlas — confirmado
+      con Playwright que ya funcionaba, sin tocar nada ahí. El hueco real
+      estaba en la rejilla 3×3 propia de abajo (`UI.showGroupPicker`): un
+      toque simple sin arrastrar no formaba ninguna línea (`lineForCells`
+      necesita ≥2 celdas) y no hacía nada.
+      - `onPointerUp` dentro de `UI.showGroupPicker` (ui.js): si el gesto
+        termina habiendo tocado una única celda (`dragCells.length === 1`,
+        es decir, sin arrastre real a una segunda celda alineada), en vez
+        de no hacer nada abre `UI.showBattleUnitStats` para el luchador de
+        esa celda — el mismo modal de ficha que ya usan las tarjetas
+        rivales, sin necesidad de tocar esa función.
+        Arrastrar de verdad por ≥2 celdas de una línea sigue confirmando
+        esa línea exactamente igual que antes.
+      Verificado con Playwright simulando eventos pointerdown/move/up
+      reales (no solo `.click()`): tocar una tarjeta rival sigue abriendo
+      su ficha; un toque simple (pointerdown+pointerup en la misma celda,
+      sin pointermove) en una celda propia abre su ficha Y deja el
+      selector de línea abierto (no confirma nada por error); arrastrar de
+      verdad por las 3 celdas de una fila completa sigue confirmando esa
+      línea y avanzando el combate como siempre, sin abrir ningún modal de
+      por medio.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

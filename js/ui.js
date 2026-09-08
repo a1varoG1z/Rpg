@@ -3777,6 +3777,19 @@ UI.showGroupPicker = function (view, remaining) {
   }
   function onPointerUp() {
     if (!dragCells) return;
+    // Un toque simple (sin arrastrar a una segunda celda) no puede formar
+    // ninguna línea — antes no hacía nada. Ahora abre la ficha de ese
+    // luchador (mismo modal de stats/ulti que ya se usa para las tarjetas
+    // rivales de arriba, ver UI.battleUnitCard/showBattleUnitStats) para
+    // poder consultarlo antes de decidir qué línea elegir.
+    if (dragCells.length === 1) {
+      const [r, c] = dragCells[0];
+      dragCells = null;
+      const uid = view.state.band[r][c];
+      const unit = uid ? cellPickerUnit(view, uid) : null;
+      if (unit) UI.showBattleUnitStats(unit);
+      return;
+    }
     const line = lineForCells(dragCells);
     dragCells = null;
     if (!line) { clearHighlight(); return; }
