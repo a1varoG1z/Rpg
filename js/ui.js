@@ -306,7 +306,7 @@ UI.showPokedexEntry = function (def) {
 
   const skill = SKILL_TYPES[def.skillId];
   const skillPanel = el('div', 'panel');
-  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p>`;
+  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p><p class="settings-info"><b>Efecto exacto:</b> ${skillMechanicsText(skill)}</p>`;
   body.appendChild(skillPanel);
 
   $('pokedexEntryModal').classList.remove('hidden');
@@ -582,7 +582,7 @@ UI.showBossEntry = function (entry) {
 
   const skill = SKILL_TYPES[def.skillId];
   const skillPanel = el('div', 'panel');
-  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p>`;
+  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p><p class="settings-info"><b>Efecto exacto:</b> ${skillMechanicsText(skill)}</p>`;
   body.appendChild(skillPanel);
 
   $('bossEntryModal').classList.remove('hidden');
@@ -2413,7 +2413,7 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   body.appendChild(compareBtn);
 
   const skillPanel = el('div', 'panel');
-  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p><p class="settings-info">Se carga peleando: golpea o recibe daño para llenar la barra morada y desatarla.</p>`;
+  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p><p class="settings-info"><b>Efecto exacto:</b> ${skillMechanicsText(skill)}</p><p class="settings-info">Se carga peleando: golpea o recibe daño para llenar la barra morada y desatarla.</p>`;
   body.appendChild(skillPanel);
 
   if (def.leaderSkillId) {
@@ -3895,7 +3895,7 @@ UI.showBattleUnitStats = function (u) {
   body.appendChild(statsPanel);
 
   const skillPanel = el('div', 'panel');
-  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p>
+  skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p><p class="settings-info"><b>Efecto exacto:</b> ${skillMechanicsText(skill)}</p>
     <div class="ult-bar"><div class="ult-fill" style="width:${u.ultCharge || 0}%"></div></div>
     <p class="settings-info">${ultTurnsText(u)}</p>`;
   body.appendChild(skillPanel);

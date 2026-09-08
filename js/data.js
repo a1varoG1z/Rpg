@@ -151,6 +151,52 @@ const SKILL_TYPES = {
   revivir: { name: 'Milagro de Vida', kind: 'revive', pct: 0.4, target: 'row-ally', bonusHitMult: 0.85, usesWis: true, desc: 'Revive a un aliado caído de su fila con parte de su vida máxima, y golpea a un enemigo.' },
 };
 
+// Texto con los números EXACTOS de cada ulti (%, turnos, probabilidad...)
+// para mostrar junto a su `desc` narrativo — pedido explícito del usuario
+// ("quiero que donde se expliquen las ultis, pongas toda esa información
+// con turnos, etc. porque actualmente en el juego no se entiende muy
+// bien"). Antes solo se veía el `desc` de sabor ("Aumenta el ataque de su
+// fila y golpea a un enemigo"), sin decir cuánto ni cuántos turnos. Se
+// genera a partir de los propios campos del skill (pct/turns/mult/chance/
+// dotPct/dotTurns/drainPct/bonusHitMult) en vez de escribirlo a mano en 12
+// sitios, para que nunca se desincronice si se reajustan los números de
+// alguna ulti más adelante.
+const SKILL_STAT_LABEL = { atk: 'Ataque', def: 'Defensa', hp: 'Vida', agi: 'Agilidad', wis: 'Sabiduría' };
+function skillMechanicsText(skill) {
+  const pct = (n) => Math.round(n * 100) + '%';
+  const bonusHit = skill.bonusHitMult ? ` También golpea a un enemigo (×${skill.bonusHitMult} de daño${skill.usesWis ? ', según su Sabiduría' : ''}).` : '';
+  switch (skill.kind) {
+    case 'damage':
+      return `Daño ×${skill.mult} a un enemigo.` + (skill.selfBuff
+        ? ` Sube su propio ${SKILL_STAT_LABEL[skill.selfBuff.stat]} un ${pct(skill.selfBuff.pct)} durante ${skill.selfBuff.turns} turnos.`
+        : '');
+    case 'damageRow':
+      return `Daño mágico (según su Sabiduría) ×${skill.mult} a TODA la fila enemiga a la vez.`;
+    case 'heal':
+      return `Se cura un ${pct(skill.pct)} de su vida máxima (más cuanta más Sabiduría tenga).` + bonusHit;
+    case 'healRow':
+      return `Cura un ${pct(skill.pct)} de vida máxima a TODA su fila (más cuanta más Sabiduría tenga).` + bonusHit;
+    case 'buffSelf':
+      return `Sube su propia ${SKILL_STAT_LABEL[skill.stat]} un ${pct(skill.pct)} durante ${skill.turns} turnos.` + bonusHit;
+    case 'buffRow':
+      return `Sube el ${SKILL_STAT_LABEL[skill.stat]} de TODA su fila un ${pct(skill.pct)} durante ${skill.turns} turnos.` + bonusHit;
+    case 'debuff':
+      return `Reduce la ${SKILL_STAT_LABEL[skill.stat]} de un enemigo un ${pct(skill.pct)} durante ${skill.turns} turnos.` + bonusHit;
+    case 'stun':
+      return `${Math.round(skill.chance * 100)}% de posibilidades de aturdir a un enemigo ${skill.turns} turno${skill.turns === 1 ? '' : 's'} (pierde el turno entero).` + bonusHit;
+    case 'dot':
+      return `Daño ×${skill.mult} a un enemigo, y lo envenena: pierde un ${pct(skill.dotPct)} de su vida máxima cada turno durante ${skill.dotTurns} turnos, ignorando su Defensa.`;
+    case 'drain':
+      return `Daño ×${skill.mult} a un enemigo; recupera el ${pct(skill.drainPct)} de ese daño como vida propia.`;
+    case 'cleanse':
+      return 'Elimina todos los debuffs, el veneno y el aturdimiento de TODA su fila.' + bonusHit;
+    case 'revive':
+      return `Si tiene algún aliado caído en su fila, lo revive con un ${pct(skill.pct)} de su vida máxima (sin ningún debuff/veneno/aturdimiento encima). También golpea a un enemigo (×${skill.bonusHitMult} de daño, según su Sabiduría) pase lo que pase, haya o no a quien revivir.`;
+    default:
+      return '';
+  }
+}
+
 // Habilidad de líder de banda: una bonificación pasiva para TODA la banda
 // (no solo quien la tiene), que solo está activa mientras ese luchador
 // ocupe la celda central [1][1] de la Formación 3×3. Solo la tienen los

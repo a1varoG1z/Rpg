@@ -4930,6 +4930,28 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       línea y avanzando el combate como siempre, sin abrir ningún modal de
       por medio.
 
+- [x] Explicación de ultis con números exactos (petición explícita: "quiero
+      que donde se expliquen las ultis, pongas toda esa información con
+      turnos, etc. porque actualmente en el juego no se entiende muy
+      bien"). Antes solo se veía el `desc` de sabor de cada ulti ("Aumenta
+      el ataque de su fila y golpea a un enemigo"), sin decir cuánto ni
+      cuántos turnos.
+      - Nueva `skillMechanicsText(skill)` (data.js, junto a SKILL_TYPES):
+        genera el texto con los números EXACTOS (%, turnos, probabilidad,
+        multiplicador...) a partir de los propios campos del skill
+        (pct/turns/mult/chance/dotPct/dotTurns/drainPct/bonusHitMult) en
+        vez de escribirlo a mano en cada sitio — así nunca se desincroniza
+        si se reajustan los números de alguna ulti más adelante.
+      - Añadido un párrafo "**Efecto exacto:** ..." (con esta función) en
+        los 4 sitios donde se muestra la ulti de un luchador: ficha de la
+        Pokédex, ficha de un jefe (Bosses), ficha de un luchador propio
+        (Banda) y la ficha de stats en combate (rival o propio, incluido
+        el nuevo toque simple del selector de línea).
+      Verificado con Playwright: las 12 ultis generan un texto correcto y
+      completo (ninguna con "undefined"/"NaN" ni vacía) y se confirma que
+      aparece de verdad en la ficha real de un luchador ("Efecto exacto:
+      Reduce la Defensa de un enemigo un 25% durante 3 turnos...").
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
