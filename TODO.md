@@ -5526,6 +5526,25 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Verificado contra el archivo real: ranking completo de los 58
       recalculado con los 3 en su nueva posición — sin errores de página.
 
+- [x] 3 peticiones más: (1) implementar las 12 propuestas de tier 1 del
+      mensaje anterior (Erizo, Ardilla, Rana, Nutria, Abeja, Foca, Cabra
+      Montés, Mofeta, Cuervo, Musaraña, Duende del Hogar, Gnomo de
+      Jardín) — reparto de tiers pasa de 47/64/58 a 59/64/58, mucho más
+      nivelado; (2) más propuestas de tier 1 para seguir nivelando —
+      respondida en el chat, no como cambio de código; (3) bajar a
+      Sekhmet del top 9 (confirmado por el usuario tras mi pregunta
+      anterior). Sekhmet: mitológicamente es una MANIFESTACIÓN de la ira
+      de Ra (nació de su ojo para castigar a la humanidad), no una
+      gobernante suprema por derecho propio — no tenía sentido que
+      compitiera con Ra/Sobek ni superase a Anubis. `setStatMult`
+      (×0.97087, único caso de esta sesión que BAJA en vez de subir)
+      calculado por convergencia para aterrizar en la franja de Sigurd/
+      Aquiles/Anubis: 429→416.5, cae del #9 al #12. Verificado contra el
+      archivo real: 181 familias jugables en total, todas con 3 formas,
+      sin ids duplicados; ranking completo de los 58 Legendarios
+      recalculado con Sekhmet en su nueva posición — sin errores de
+      página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

@@ -620,6 +620,24 @@ addFamily("morfeo", 2, "tierra", "brujo", "aturdir", ["Aprendiz del Polvo de Sue
 addFamily("atila", 3, "fuego", "campeon", "grito", ["Joven Príncipe de las Estepas","Atila, el que Cabalga al Frente","Atila, Azote de Dios"], ["Une a tribus enteras bajo un solo estandarte con solo su presencia.","Ningún imperio ha logrado detener el avance de su horda por mucho que lo haya intentado.","Es el azote de Dios, y se dice que donde pisa su caballo, la hierba no vuelve a crecer."], false);
 addFamily("khagan", 3, "rayo", "picaro", "rafaga", ["Joven Jinete de las Llanuras","Khagan de la Horda Interminable","Khagan, Señor de Todas las Estepas"], ["Nació sobre un caballo antes casi que sobre tierra firme.","Su horda ya no conoce fronteras que no haya cruzado a caballo.","Es el señor de todas las estepas, y ningún pueblo se atreve a alzar sus murallas sin temer su llegada."], false);
 
+// --- Quinta ronda: 12 familias tier 1 (Común -> Raro) pedidas
+// explícitamente para nivelar el reparto de tiers (antes 47/64/58,
+// desequilibrado hacia tier 2/3) — animales sencillos y espíritus
+// menores de folclore, todos con identidad propia ("humanizados" en
+// actitud/nombre, no solo la bestia en sí), como pidió el usuario.
+addFamily("erizo", 1, "tierra", "campeon", "barrera", ["Cría de Erizo","Erizo Guerrero de Púas","Gran Erizo, Fortaleza de Espinas Vivientes"], ["Se enrosca en una bola de púas ante el primer indicio de peligro.","Sus púas ya han detenido garras y colmillos por igual sin ceder terreno.","Es la fortaleza de espinas vivientes, y nada logra ya desenroscarlo por la fuerza."], false);
+addFamily("ardilla", 1, "viento", "picaro", "dobleGolpe", ["Cría de Ardilla","Ardilla Saltarina de Garras Rápidas","Gran Ardilla, Relámpago de las Copas"], ["Salta de rama en rama más rápido de lo que el ojo puede seguir.","Sus garras ya golpean dos veces antes de que el rival reaccione a la primera.","Es el relámpago de las copas, y ningún árbol de Texel guarda secretos que ella no conozca."], false);
+addFamily("rana", 1, "agua", "brujo", "veneno", ["Renacuajo Curioso","Rana Venenosa de Colores Vivos","Gran Rana, Reina del Estanque Ponzoñoso"], ["Sus colores brillantes son la única advertencia antes de tocarla.","Su piel ya segrega un veneno capaz de nublar los sentidos al instante.","Gobierna el estanque ponzoñoso entero, y ningún depredador se atreve ya a probarla."], false);
+addFamily("nutria", 1, "agua", "explorador", "curar", ["Cría de Nutria","Nutria Juguetona de Manos Hábiles","Gran Nutria, Guardiana del Río en Calma"], ["Cuida de su familia con la misma dedicación con la que juega entre las corrientes.","Sus cuidados ya devuelven las fuerzas a cualquier compañero herido del grupo.","Es la guardiana del río en calma, y bajo su cuidado nadie del grupo queda atrás."], false);
+addFamily("abeja", 1, "viento", "picaro", "veneno", ["Abeja Obrera","Abeja Guerrera del Aguijón Certero","Gran Abeja Reina, Señora del Enjambre Infinito"], ["Un solo aguijonazo suyo basta para hacer huir a presas mucho más grandes.","Su aguijón ya no falla nunca, y su veneno actúa antes de que el rival lo note.","Es la señora del enjambre infinito, y quien la ataca a ella se enfrenta a miles más."], false);
+addFamily("foca", 1, "agua", "campeon", "escudo", ["Cría de Foca","Foca Guerrera de Piel Gruesa","Gran Foca, Centinela de las Rocas Heladas"], ["Su grasa gruesa absorbe golpes que hundirían a cualquier otro nadador.","Ya ha resistido embestidas en las rocas que partirían huesos a cualquier otro.","Es la centinela de las rocas heladas, y ninguna ola ni ningún golpe logran ya moverla."], false);
+addFamily("cabramontes", 1, "tierra", "campeon", "golpe", ["Cría de Cabra Montés","Cabra Montés de Cuernos de Piedra","Gran Cabra Montés, Señora de los Riscos Imposibles"], ["Trepa riscos que ningún otro animal de Texel se atreve siquiera a mirar.","Su cabezazo ya ha derribado rivales que la doblaban en tamaño.","Es la señora de los riscos imposibles, y ninguna cima de Texel queda fuera de su alcance."], false);
+addFamily("mofeta", 1, "tierra", "brujo", "debilitar", ["Cría de Mofeta","Mofeta del Hedor Insoportable","Gran Mofeta, Terror de Nariz Sensible"], ["Su advertencia es clara: nadie se acerca dos veces tras oler lo que puede hacer.","Su hedor ya debilita la guardia de cualquier rival que se acerque demasiado.","Es el terror de nariz sensible, y ningún depredador de Texel se atreve ya a arriesgarse."], false);
+addFamily("cuervo", 1, "viento", "brujo", "corromper", ["Cría de Cuervo","Cuervo Susurrador de Malos Augurios","Gran Cuervo, Heraldo de las Sombras Aladas"], ["Su graznido se dice que anuncia desgracias antes de que ocurran.","Sus susurros ya deshacen la buena fortuna de quien se cruza en su vuelo.","Es el heraldo de las sombras aladas, y ninguna bendición sobrevive mucho bajo su mirada."], false);
+addFamily("musarana", 1, "tierra", "picaro", "aturdir", ["Cría de Musaraña","Musaraña Frenética de Mordisco Rápido","Gran Musaraña, Furia en Miniatura"], ["Se mueve tan rápido que parece estar en varios sitios a la vez.","Sus mordiscos ya llegan tan seguidos que el rival apenas tiene tiempo de reaccionar.","Es la furia en miniatura, y ningún rival grande la ha visto venir a tiempo."], false);
+addFamily("duendehogar", 1, "fuego", "guru", "bendicion", ["Duendecillo del Hogar","Duende del Hogar, Guardián de la Chimenea","Gran Duende del Hogar, Protector de Cada Techo"], ["Vive escondido tras la chimenea, y cuida de la casa mientras nadie mira.","Su bendición ya mantiene el fuego encendido en las noches más frías.","Es el protector de cada techo de Texel, y ningún hogar que honra su presencia pasa hambre."], false);
+addFamily("gnomojardin", 1, "tierra", "explorador", "sabotaje", ["Gnomo de Jardín Travieso","Gnomo de Jardín, Guardián de las Macetas","Gran Gnomo, Señor de Todos los Jardines Secretos"], ["Mueve las herramientas de sitio de la noche a la mañana solo por diversión.","Sus travesuras ya confunden a cualquiera que intente cuidar un jardín sin su permiso.","Es el señor de todos los jardines secretos, y ninguna planta de Texel crece sin que él lo sepa."], false);
+
 // ### Enemigos / mobs normales (14.3)
 addMobFamily('arpia', 1, 'viento', 'picaro', 'furia', ['Arpía Joven', 'Arpía Chillona', 'Arpía Matriarca del Nido'], ['Ataca en bandada, chillando para desorientar a su presa.', 'Su chillido ya basta para desorientar a toda una banda de viajeros.', 'Gobierna el nido entero, y ninguna arpía ataca sin su permiso.'], true);
 addMobFamily('dullahan', 2, 'rayo', 'brujo', 'debilitar', ['Jinete sin Cabeza Menor', 'Dullahan Cabalgante', 'Dullahan, Heraldo de la Muerte'], ['Lleva su propia cabeza bajo el brazo, y donde se detiene, alguien muere.', 'Su montura ya no se detiene ante nada que se cruce en su camino.', 'Es el heraldo de la muerte misma: nadie sobrevive a su visita.'], true);
@@ -897,6 +915,16 @@ setStatMult('anubis_legendario', { hp: 1.15184, atk: 1.15184, def: 1.15184, agi:
 setStatMult('aquiles_legendario', { hp: 1.2108, atk: 1.2108, def: 1.2108, agi: 1.2108, wis: 1.2108 });
 setStatMult('musashi_legendario', { hp: 1.16981, atk: 1.16981, def: 1.16981, agi: 1.16981, wis: 1.16981 });
 setStatMult('hermes_legendario', { hp: 1.09455, atk: 1.09455, def: 1.09455, agi: 1.09455, wis: 1.09455 });
+
+// Sekhmet: el usuario preguntó si no debería bajar del top 9 (donde
+// había quedado, sin calibrar, casi empatada con Ra y Sobek) y confirmó
+// que sí. Mitológicamente es una MANIFESTACIÓN de la ira de Ra (nació
+// de su ojo para castigar a la humanidad), no una gobernante suprema
+// por derecho propio como Ra/Isis/Osiris — no tenía sentido que
+// superase a Anubis o compitiera con el trío supremo. Bajada a la
+// franja de Sigurd/Aquiles/Anubis (~415-419): sigue siendo una diosa
+// temible de primera fila, solo que ya no en el top 8.
+setStatMult('sekhmet_legendario', { hp: 0.97087, atk: 0.97087, def: 0.97087, agi: 0.97087, wis: 0.97087 });
 
 
 // --- 11 jefes nuevos (pedidos explícitamente por el usuario), añadidos
