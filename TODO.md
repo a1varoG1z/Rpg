@@ -5388,6 +5388,35 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       exactamente el top 5 pedido, con margen real (2-3 puntos) frente al
       redondeo — sin errores de página.
 
+- [x] 4 peticiones más sobre lo anterior:
+      1. "pon como que todo lo que has añadido nuevo tiene foto, porque
+         las añadiré ahora" — los 38 personajes jugables (114 formas) y
+         los 11 jefes nuevos pasan de `hasImages: false` a `true`
+         (`, false);` → `, true);` en `addFamily`, `'legendario', false,
+         {` → `'legendario', true, {` en `addBoss`), así que en cuanto se
+         suban los PNG a `assets/creatures/` se usan automáticamente en
+         vez del sprite procedural — sin tocar ninguna otra familia ya
+         existente (verificado: exactamente 38 y 11 líneas coincidían
+         con el patrón antes de reemplazar, ni una más).
+      2. Lista completa de las 125 rutas de sprite que hacen falta
+         (114 de personajes `assets/creatures/<slug>_<rareza>.png` × 3
+         formas cada uno, 11 de jefes `assets/creatures/<slug>.png`)
+         generada consultando `FIGHTERS`/`BOSSES` reales (no a mano, para
+         que el nombre de archivo sea el que el motor espera de verdad) —
+         entregada en el chat, no en el código.
+      3. Atenea y Amaterasu ajustadas (`setStatMult`): de 359/363 (por
+         detrás de Genio, Afrodita, el Fénix...) a 400/397.9, la franja de
+         Susanoo/Fenrir/Leviatán/Shenlong — sin tocar el top 8 ya fijado.
+      4. Ra y Anubis, a petición de "si así lo consideras": sí — Ra
+         (dios sol supremo egipcio) quedaba incluso por detrás de Anubis
+         pese a tener más peso narrativo. Subidos ambos (353.2→389.4 y
+         361.8→380.7), con Ra ligeramente por delante de Anubis como
+         corresponde.
+      Verificado contra el archivo ya editado: ranking completo de los 45
+      recalculado (top 8 intacto, Atenea #16/Amaterasu #18/Ra #20/
+      Anubis #24), 0 personajes/jefes nuevos sin `image` asignada — sin
+      errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
