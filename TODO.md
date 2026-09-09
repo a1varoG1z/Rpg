@@ -5491,6 +5491,31 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Verificado contra el archivo real: 169 familias jugables, todas con
       3 formas, sin ids duplicados — sin errores de página.
 
+- [x] Bug real detectado por el usuario con una captura del Mapa: las 11
+      zonas nuevas se habían añadido DESPUÉS de Torre Prohibida (Balrog)
+      y Salón de los Engaños (Tifón) en vez de ANTES, así que esos dos
+      jefes — documentados desde el principio como "los dos últimos
+      jefes del mapa... el final del juego" — ya no salían los últimos.
+      Efecto colateral que esto también arreglaba de paso: al tener
+      `zoneIdx` más bajo que las zonas nuevas, Torre Prohibida/Salón de
+      los Engaños también se habían quedado con menos `lateZoneMult`
+      (dificultad de MOBS, no de jefe) que las zonas nuevas — invertido
+      ahora también. Arreglado reordenando `ZONES`: las 11 zonas nuevas
+      pasan a ir justo ANTES de esas dos, ordenadas de más floja a más
+      fuerte por poder nativo (Jersey Devil 550 → Grendel 999 → Anzu 1200
+      → Simbionte 1220 → Fafnir 1274 → Set 1470 → Hel 1560 → Hades 1620 →
+      Jörmungandr 1900 → Kaiju 1980 → Titán Colosal 2050), y solo
+      entonces Torre Prohibida(Balrog)/Salón de los Engaños(Tifón) como
+      las 2 últimas de las 44 — sin tocar `addBoss` ni `addFamily` para
+      nada, solo el orden del array. Efecto en cascada automático (sin
+      tocar más código): la Torre Batalla, que ordena sus niveles de
+      jefe por `originZoneIdx` de `ZONES`, también vuelve a terminar en
+      Balrog → Tifón. Verificado contra el archivo real: las últimas 5
+      zonas (Mapa real renderizado, no solo el array) son Océano sin
+      Fondo → Costa Devastada → Murallas Caídas → Torre Prohibida →
+      Salón de los Engaños; los últimos 2 niveles de jefe de la Torre son
+      boss_balrog → boss_tifon — sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

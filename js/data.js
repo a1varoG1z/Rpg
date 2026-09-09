@@ -951,23 +951,40 @@ const ZONES = [
   { id: 'minas_sinfondo', name: 'Minas Sin Fondo', emoji: '⛏️', color: '#3a1414', pool: ['demonio_epico', 'frankenstein_epico', 'boss_loki'] },
   { id: 'palacio_espejos', name: 'Palacio de Espejos', emoji: '🪞', color: '#3a2a4a', pool: ['dullahan_epico', 'hombreseisbrazos_epico', 'boss_rakshasa'] },
   { id: 'necropolis', name: 'Necrópolis Eterna', emoji: '💀', color: '#242424', pool: ['draugr_epico', 'banshee_epico', 'boss_liche'] },
-  { id: 'torre_prohibida', name: 'Torre Prohibida', emoji: '🏰', color: '#2a1f3a', pool: ['gargola_epico', 'dementor_epico', 'boss_balrog'] },
-  { id: 'salon_enganos', name: 'Salón de los Engaños', emoji: '🎭', color: '#3a2424', pool: ['troll_epico', 'gigante_epico', 'boss_tifon'] },
 
   // --- 11 zonas nuevas de "segunda vuelta" (contenido tras completar el
   // mapa original), una por cada jefe nuevo — ver el comentario junto a
-  // los addBoss correspondientes más arriba.
-  { id: 'oceano_jormungandr', name: 'Océano sin Fondo', emoji: '🌊', color: '#1a2f3a', pool: ['ondina_epico', 'lamia_epico', 'boss_jormungandr'] },
-  { id: 'inframundo_hades', name: 'Inframundo de las Sombras Eternas', emoji: '💀', color: '#241f2a', pool: ['dementor_epico', 'draugr_epico', 'boss_hades'] },
-  { id: 'reino_hel', name: 'Reino de Hel', emoji: '⚰️', color: '#2a2434', pool: ['banshee_epico', 'dullahan_epico', 'boss_hel'] },
-  { id: 'tormenta_set', name: 'Tormenta Roja del Desierto', emoji: '🌪️', color: '#3a2414', pool: ['demonio_epico', 'gargola_epico', 'boss_set'] },
-  { id: 'guarida_fafnir', name: 'Guarida de la Avaricia', emoji: '🐲', color: '#3a2a14', pool: ['troll_epico', 'gigante_epico', 'boss_fafnir'] },
+  // los addBoss correspondientes más arriba. IMPORTANTE (arreglado tras
+  // un aviso del usuario, que las vio salir ANTES de Torre Prohibida/
+  // Salón de los Engaños en el Mapa): van ANTES de esas dos, no después
+  // — Tifón y Balrog siguen siendo a propósito los dos últimos jefes del
+  // mapa entero (ver el comentario de más arriba, "el final del juego"),
+  // así que estas 11 son el tramo previo a esa recta final, no un
+  // añadido detrás. Ordenadas de más floja a más fuerte por poder nativo
+  // (fighterPowerScore(fixedStats), el mismo criterio que el ranking de
+  // jefes) para que la dificultad siga escalando sin saltos: Jersey
+  // Devil(550) < Grendel(999) < Anzu(1200) < Simbionte(1220) <
+  // Fafnir(1274) < Set(1470) < Hel(1560) < Hades(1620) <
+  // Jörmungandr(1900) < Kaiju(1980) < Titán Colosal(2050) — y solo
+  // entonces Balrog(2210)/Tifón(2290), la pareja que cierra el mapa.
+  { id: 'bosque_jerseydevil', name: 'Bosque de los Pinos Malditos', emoji: '🦇', color: '#1a2a1a', pool: ['dullahan_epico', 'lamia_epico', 'boss_jerseydevil'] },
+  { id: 'salon_grendel', name: 'Salón de los Huesos', emoji: '🦴', color: '#2a241a', pool: ['draugr_epico', 'banshee_epico', 'boss_grendel'] },
   { id: 'nido_anzu', name: 'Nido de la Tempestad', emoji: '🌩️', color: '#24304a', pool: ['kitsune_epico', 'dementor_epico', 'boss_anzu'] },
   { id: 'crater_simbionte', name: 'Cráter del Impacto', emoji: '☄️', color: '#2a1424', pool: ['frankenstein_epico', 'hombreseisbrazos_epico', 'boss_simbionte'] },
-  { id: 'murallas_titan', name: 'Murallas Caídas', emoji: '🏛️', color: '#3a3424', pool: ['gigante_epico', 'troll_epico', 'boss_titancolosal'] },
+  { id: 'guarida_fafnir', name: 'Guarida de la Avaricia', emoji: '🐲', color: '#3a2a14', pool: ['troll_epico', 'gigante_epico', 'boss_fafnir'] },
+  { id: 'tormenta_set', name: 'Tormenta Roja del Desierto', emoji: '🌪️', color: '#3a2414', pool: ['demonio_epico', 'gargola_epico', 'boss_set'] },
+  { id: 'reino_hel', name: 'Reino de Hel', emoji: '⚰️', color: '#2a2434', pool: ['banshee_epico', 'dullahan_epico', 'boss_hel'] },
+  { id: 'inframundo_hades', name: 'Inframundo de las Sombras Eternas', emoji: '💀', color: '#241f2a', pool: ['dementor_epico', 'draugr_epico', 'boss_hades'] },
+  { id: 'oceano_jormungandr', name: 'Océano sin Fondo', emoji: '🌊', color: '#1a2f3a', pool: ['ondina_epico', 'lamia_epico', 'boss_jormungandr'] },
   { id: 'costa_kaiju', name: 'Costa Devastada', emoji: '🦑', color: '#142a3a', pool: ['ondina_epico', 'demonio_epico', 'boss_kaiju'] },
-  { id: 'salon_grendel', name: 'Salón de los Huesos', emoji: '🦴', color: '#2a241a', pool: ['draugr_epico', 'banshee_epico', 'boss_grendel'] },
-  { id: 'bosque_jerseydevil', name: 'Bosque de los Pinos Malditos', emoji: '🦇', color: '#1a2a1a', pool: ['dullahan_epico', 'lamia_epico', 'boss_jerseydevil'] },
+  { id: 'murallas_titan', name: 'Murallas Caídas', emoji: '🏛️', color: '#3a3424', pool: ['gigante_epico', 'troll_epico', 'boss_titancolosal'] },
+
+  // Tifón y Balrog: los dos últimos jefes del mapa ENTERO, a propósito
+  // (ver el comentario junto a addBoss más arriba) — quedan siempre al
+  // final del array, después de cualquier zona que se añada en el
+  // futuro, salvo que se decida expresamente lo contrario.
+  { id: 'torre_prohibida', name: 'Torre Prohibida', emoji: '🏰', color: '#2a1f3a', pool: ['gargola_epico', 'dementor_epico', 'boss_balrog'] },
+  { id: 'salon_enganos', name: 'Salón de los Engaños', emoji: '🎭', color: '#3a2424', pool: ['troll_epico', 'gigante_epico', 'boss_tifon'] },
 ];
 const STAGE_ENERGY_COST = 6;
 
