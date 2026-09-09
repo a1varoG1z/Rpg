@@ -5270,6 +5270,82 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
          campos no lanza ninguna excepción y rellena todo a 0 sin tocar
          los valores previos — sin errores de página en ningún caso.
 
+- [x] Tras una sesión de brainstorming (sugerencias de personajes de
+      mitologías/animales/monstruos/cine-anime nuevos, divididas entre
+      jugables y bosses, más viabilidad de añadir bosses y opinión sobre
+      el orden de poder de los 33 jefes existentes), 3 peticiones
+      explícitas del usuario implementadas de una vez:
+
+      1. Reordenar el poder de 4 jefes ya existentes: Loki y Cthulhu
+         subidos (antes infravalorados frente a monstruos "normales" pese
+         a ser un dios nórdico y una entidad cósmica), Quimera y Joker
+         bajados (antes sobrevalorados para lo que representan). Mismo
+         método que con los Legendarios: multiplicador uniforme sobre las
+         5 stats de `fixedStats` (en vez de `setStatMult`, que no aplica a
+         jefes — sus stats son fijas a mano, no pasan por `fighterStats`),
+         calculado para aterrizar en el poder nativo objetivo
+         (`fighterPowerScore(fixedStats)`).
+
+      2. 38 personajes jugables nuevos (`addFamily`, 3 formas cada uno,
+         114 formas en total) de las mitologías/inspiraciones sugeridas en
+         el brainstorming: Ganesha, Amaterasu, Susanoo, Anansi, Tlaloc,
+         Hanuman, Kali, Cernunnos, Maui (tier 3 a petición expresa),
+         Pele, Xolotl, Coatlicue, Mami Wata, Leprechaun, Púca, Apsara,
+         Naga, Tikbalang, Simurgh, Qinglong, Baihu, Zhuque, Rinoceronte
+         Acorazado, Elefante de Guerra, Pangolín Acorazado, Búho Sabio,
+         Camaleón Sigiloso, Morsa Guerrera, Ninja de los Clones Fantasma,
+         Cazador de Demonios, Tezcatlipoca, Camazotz, Ares, Artemisa,
+         Atenea, Sekhmet, una criatura corrupta de cuevas (estilo Gollum,
+         sin usar el nombre registrado tal cual en el propio slug/lore) y
+         Sobek. Tier/elemento/clase/skill asignados a mano según el peso e
+         identidad de cada uno, pero las STATS de cada forma se generan
+         con la fórmula procedural normal (igual que cualquier otra
+         familia) — NO se calibró a mano el poder resultante de cada uno
+         frente a los demás Legendarios, a diferencia del punto 1 y del
+         ajuste anterior de Zeus/Thor/Fenrir/Sun Wukong. `hasImages:
+         false` en los 38 (sprite procedural, no hay arte real subida
+         todavía). Ranking resultante de los 45 Legendarios (31 previos +
+         14 nuevas familias tier 3) verificado contra el motor real y
+         comunicado al usuario en el chat para que decida si algún ajuste
+         le chirría — casos detectados de entrada: Ares queda por encima
+         de Zeus, Sobek y Sekhmet por encima de Poseidón/Thor, y Maui
+         (Explorador, la clase con los pesos más bajos de las 5) queda el
+         ÚLTIMO de los 45 pese a ser tier 3 — mismo problema de fondo que
+         ya se corrigió una vez con Sun Wukong/Fenrir (clase con reparto
+         de stats que pesa poco en `fighterPowerScore`), pendiente de que
+         el usuario confirme si quiere el mismo tratamiento aquí.
+
+      3. 11 jefes nuevos (`addBoss`), cada uno en su propia zona nueva
+         apilada al FINAL del mapa (zonas 34-44, después de "Salón de los
+         Engaños"/Tifón) para no tener que recalibrar la curva de nivel
+         (`LEVEL_CAP_ZONE_IDX=28` ya deja al jugador a tope mucho antes) —
+         contenido de "segunda vuelta" tras completar el mapa original,
+         como pidió el usuario: Jörmungandr, Hades, Hel, Set, Fafnir,
+         Anzu, un simbionte devorador (sin nombre registrado), un titán
+         colosal, un kaiju, Grendel y el Jersey Devil. `fixedStats`
+         calibradas a mano con `fighterPowerScore` para el lugar que les
+         corresponde por peso narrativo: Titán Colosal/Kaiju/Jörmungandr
+         quedan #3/#4/#5, justo debajo de Tifón/Balrog (una "segunda
+         cabecera" de amenazas); Hades/Hel se unen a Loki/Set/Cthulhu en
+         la franja alta de dioses; Fafnir iguala a Dracorex casi al
+         decimal (dos "grandes dragones" a la par); Simbionte/Anzu en la
+         media-alta; Grendel en la media; Jersey Devil deliberadamente
+         bajo (folclore moderno, no divino). Efecto colateral esperado y
+         asumido: al colarse por delante, Loki/Cthulhu ya NO quedan en un
+         top 5 literal (quedan #8/#10) pese al punto 1 — se avisa de esto
+         explícitamente en vez de forzarlos por delante de dioses de peso
+         narrativo mayor recién añadidos.
+
+      Verificado con el motor real tras la implementación (no en una
+      simulación aparte): 150 familias jugables (450 formas) sin ninguna
+      con menos/más de 3 formas ni ids duplicados; 44 jefes y 44 zonas con
+      ids únicos; Torre Batalla pasa de 66 a 77 niveles automáticamente
+      (33 mobs + 44 jefes, sin tocar `buildTorreLevels`); el Mapa renderiza
+      las 44 zonas con la última bloqueada por defecto; la ficha de un
+      jefe nuevo (`UI.showBossEntry`) renderiza lore/stats/vulnerabilidad
+      sin errores; ranking completo de los 44 jefes recalculado y
+      contrastado con los objetivos de arriba — sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
