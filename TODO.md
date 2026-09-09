@@ -5516,6 +5516,16 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Salón de los Engaños; los últimos 2 niveles de jefe de la Torre son
       boss_balrog → boss_tifon — sin errores de página.
 
+- [x] "sí, arreglalos" — confirmación para subir a Aquiles, Musashi y
+      Hermes tras la auditoría del punto anterior. Mismo tratamiento
+      (`setStatMult` uniforme, convergencia iterativa) que Sun Wukong/
+      Fenrir/Maui: Aquiles 346.3→418.9 (se une a Sigurd en el puesto
+      #10-11, justo detrás del top 9), Musashi 345.7→404.4 (junto a Sun
+      Wukong/Susanoo/Fenrir, #21-24), Hermes 355.5→389.2 (junto a
+      Freya/Maui, #30-32) — ninguno de los tres toca el top 9 ya fijado.
+      Verificado contra el archivo real: ranking completo de los 58
+      recalculado con los 3 en su nueva posición — sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

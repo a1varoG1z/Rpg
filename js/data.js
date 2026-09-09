@@ -884,6 +884,20 @@ setStatMult('amaterasu_legendario', { hp: 1.09559, atk: 1.09559, def: 1.09559, a
 setStatMult('ra_legendario', { hp: 1.23518, atk: 1.23518, def: 1.23518, agi: 1.23518, wis: 1.23518 });
 setStatMult('anubis_legendario', { hp: 1.15184, atk: 1.15184, def: 1.15184, agi: 1.15184, wis: 1.15184 });
 
+// Aquiles/Musashi/Hermes: mismo sesgo estructural de clase Pícaro (ver
+// Sun Wukong/Fenrir/Maui más arriba) — el usuario pidió auditar la
+// escala de poder de los guerreros épicos recién añadidos y confirmó
+// arreglarlo tras ver que Aquiles y Musashi caían a las dos ÚLTIMAS
+// posiciones de los 58 Legendarios pese a representar "el guerrero casi
+// invencible de Troya" y "el espadachín invicto en 60 duelos". Subidos
+// a la franja de los guerreros legendarios ya bien situados (junto a
+// Sigurd/Guan Yu y Sun Wukong/Susanoo/Fenrir respectivamente); Hermes
+// (sesgo más leve, no llegaba a caer del todo al fondo) sube a la
+// franja de "segundo escalón de dioses" junto a Freya/Maui.
+setStatMult('aquiles_legendario', { hp: 1.2108, atk: 1.2108, def: 1.2108, agi: 1.2108, wis: 1.2108 });
+setStatMult('musashi_legendario', { hp: 1.16981, atk: 1.16981, def: 1.16981, agi: 1.16981, wis: 1.16981 });
+setStatMult('hermes_legendario', { hp: 1.09455, atk: 1.09455, def: 1.09455, agi: 1.09455, wis: 1.09455 });
+
 
 // --- 11 jefes nuevos (pedidos explícitamente por el usuario), añadidos
 // DESPUÉS de completar el mapa original de 33 zonas: cada uno vive en su
