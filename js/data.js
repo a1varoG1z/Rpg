@@ -837,8 +837,21 @@ setStatMult('maui_legendario', { hp: 1.20968, atk: 1.20968, def: 1.20968, agi: 1
 // en peso narrativo egipcio).
 setStatMult('atenea_legendario', { hp: 1.11421, atk: 1.11421, def: 1.11421, agi: 1.11421, wis: 1.11421 });
 setStatMult('amaterasu_legendario', { hp: 1.09559, atk: 1.09559, def: 1.09559, agi: 1.09559, wis: 1.09559 });
-setStatMult('ra_legendario', { hp: 1.10335, atk: 1.10335, def: 1.10335, agi: 1.10335, wis: 1.10335 });
-setStatMult('anubis_legendario', { hp: 1.05142, atk: 1.05142, def: 1.05142, agi: 1.05142, wis: 1.05142 });
+
+// Segunda subida de Ra/Anubis: el usuario, tras ver el primer ajuste
+// (arriba, ~390), preguntó objetivamente si no deberían estar en el top
+// 10 o casi — respuesta sincera: sí. Ra es (en la mayoría de periodos)
+// el dios creador/solar SUPREMO del panteón egipcio, no un dios
+// regional como Sobek ni una diosa de la guerra como Sekhmet — no tenía
+// sentido que quedara por detrás de ambos. Anubis es icónico pero
+// tradicionalmente un guía/guardián, no "rey" del panteón, así que se
+// queda justo en el borde del top 10 en vez de compitiendo con Ra o con
+// el top 6. Multiplicadores que REEMPLAZAN a los de la subida anterior
+// (no se acumulan) — calculados por convergencia igual que el resto de
+// este bloque, para: Ares(438.7) > Ra(436) > Sobek(434.2) > Sekhmet(429)
+// > Anubis(416) > Drakón(411.4) > ...
+setStatMult('ra_legendario', { hp: 1.23518, atk: 1.23518, def: 1.23518, agi: 1.23518, wis: 1.23518 });
+setStatMult('anubis_legendario', { hp: 1.15184, atk: 1.15184, def: 1.15184, agi: 1.15184, wis: 1.15184 });
 
 
 // --- 11 jefes nuevos (pedidos explícitamente por el usuario), añadidos

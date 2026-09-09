@@ -5417,6 +5417,34 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Anubis #24), 0 personajes/jefes nuevos sin `image` asignada — sin
       errores de página.
 
+- [x] Sobre el punto anterior, dos preguntas más: "¿Ra y Anubis no
+      deberían estar en el top 10 (o casi)? sé objetivo" y "¿de qué
+      zonas de bosses necesito crear sprites de fondo?".
+      1. Respuesta objetiva: sí, la subida anterior se quedó corta. Ra es
+         (en la mayoría de periodos) el dios creador/solar SUPREMO del
+         panteón egipcio — no tenía sentido que quedara por detrás de
+         Sobek (dios regional) o Sekhmet (diosa de la guerra, no la
+         gobernante del panteón). Anubis es muy icónico pero
+         tradicionalmente un guía/guardián, no un "rey", así que se deja
+         justo en el borde del top 10 en vez de compitiendo con el top 6.
+         Segunda subida con `setStatMult` (reemplaza, no acumula, a la
+         anterior): Ra 389.4→436.2 (#7, por delante de Sobek y Sekhmet),
+         Anubis 380.7→415.9 (#10, por delante de Drakón/Cerbero/Ragnar).
+      2. Los fondos de zona (`zoneBackgroundStyle`, ui.js) siempre
+         intentan cargar `assets/scenery/<id-de-zona>.jpg` (con un
+         degradado de color de respaldo detrás si no existe, así que no
+         rompe nada mientras tanto) — las 11 zonas nuevas del punto
+         anterior (una por jefe nuevo) necesitan cada una la suya:
+         `oceano_jormungandr.jpg`, `inframundo_hades.jpg`,
+         `reino_hel.jpg`, `tormenta_set.jpg`, `guarida_fafnir.jpg`,
+         `nido_anzu.jpg`, `crater_simbionte.jpg`, `murallas_titan.jpg`,
+         `costa_kaiju.jpg`, `salon_grendel.jpg`,
+         `bosque_jerseydevil.jpg` — entregado en el chat, no en el
+         código (igual que el listado de sprites de personajes/jefes del
+         punto anterior).
+      Verificado contra el archivo ya editado: Ra #7, Anubis #10, resto
+      del top 6-9 y 11+ sin cambios — sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
