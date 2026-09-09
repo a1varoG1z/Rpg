@@ -5545,6 +5545,18 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       recalculado con Sekhmet en su nueva posición — sin errores de
       página.
 
+- [x] Las 12 propuestas de la segunda tanda de tier 1 también
+      implementadas: Colibrí, Libélula, Castor, Comadreja, Zarigüeya,
+      Mariposa, Escarabajo, Caracol, Pelícano, Rata Callejera, Fuego
+      Fatuo y Ganso — mismo criterio de "humanizados" en identidad/lore
+      que la tanda anterior. Reparto de tiers pasa de 59/64/58 a
+      71/64/58 (193 familias en total) — el tier 1 ha pasado de ser el
+      más flojo a ser ahora el más numeroso de los tres, así que si se
+      sigue ampliando el roster convendría mirar tier 2/3 la próxima vez
+      en vez de tier 1 otra vez. Verificado contra el archivo real: las
+      12 nuevas con 3 formas cada una, sin ids duplicados en las 193 —
+      sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
