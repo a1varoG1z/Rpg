@@ -746,7 +746,14 @@ setLeaderSkill('ragnar_legendario', 'def_boost');
 // usando WIS (ver SKILL_TYPES) su ulti ya no depende de su ATK, pero
 // sigue atacando con él en los turnos SIN ulti — un ATK más alto evita
 // que esos turnos se sientan flojos.
-setStatMult('odin_legendario', { hp: 1.2, atk: 1.7, def: 1.3, agi: 1.1 });
+// Escalado de nuevo (×1.02436 extra sobre el vector de arriba, no
+// reemplazado) al ampliar el top 5 más abajo (ver el bloque de
+// Zeus/Poseidón/Thor/Hércules/Maui) — necesitaba más margen sobre Ares
+// para que el top 5 quedase separado de verdad y no en un empate frágil
+// a merced del redondeo por stat. Multiplicar TODO el vector asimétrico
+// por un mismo factor mantiene su identidad (ATK el más subido, WIS
+// intacto en proporción al resto) mientras sube el total.
+setStatMult('odin_legendario', { hp: 1.22896, atk: 1.74102, def: 1.33137, agi: 1.12654, wis: 1.02413 });
 
 // hombreseisbrazos (Pícaro): a diferencia de Odín, aquí el problema era el
 // contrario — un pico de dificultad, no un bajón. Al fijar el nivel de la
@@ -787,10 +794,36 @@ setStatMult('hombreseisbrazos_epico', { agi: 0.65, atk: 0.75 });
 // ... > Sun Wukong(405) > Fenrir(403) > Leviatán(401) > ...
 // — verificado por simulación antes de aplicarlo, recalculando el ranking
 // completo de los 31 Legendarios con los 4 multiplicadores ya puestos.
-setStatMult('zeus_legendario', { hp: 1.069, atk: 1.069, def: 1.069, agi: 1.069, wis: 1.069 });
-setStatMult('thor_legendario', { hp: 1.103, atk: 1.103, def: 1.103, agi: 1.103, wis: 1.103 });
 setStatMult('sunwukong_legendario', { hp: 1.095, atk: 1.095, def: 1.095, agi: 1.095, wis: 1.095 });
 setStatMult('fenrir_legendario', { hp: 1.148, atk: 1.148, def: 1.148, agi: 1.148, wis: 1.148 });
+
+// Corrección posterior: al añadir 38 Legendarios/personajes nuevos (ver
+// más abajo), 3 de ellos (Ares, Sobek, Sekhmet) colaron por delante de
+// Zeus/Poseidón/Thor en el ranking — el usuario confirmó que el top 5
+// correcto es Odín > Zeus > Poseidón > Thor > Hércules, así que los 4
+// (más Odín arriba) se recalibran para que ese orden se cumpla con
+// margen de verdad frente a Ares (438.7, el más alto de los 3 intrusos)
+// en vez de un empate a merced del redondeo. Multiplicador uniforme
+// (reemplaza al de Zeus/Thor de arriba, que ya no basta) calculado por
+// convergencia iterativa (el redondeo POR STAT individual hace que un
+// solo cálculo directo target/base se quede corto) para aterrizar en:
+// Odín(450) > Zeus(447) > Poseidón(445) > Thor(443) > Hércules(441) >
+// Ares(438.7) > Sobek(434.2) > Sekhmet(429) — verificado por simulación
+// recalculando el ranking completo de los 45 Legendarios.
+setStatMult('zeus_legendario', { hp: 1.09415, atk: 1.09415, def: 1.09415, agi: 1.09415, wis: 1.09415 });
+setStatMult('poseidon_legendario', { hp: 1.02631, atk: 1.02631, def: 1.02631, agi: 1.02631, wis: 1.02631 });
+setStatMult('thor_legendario', { hp: 1.14467, atk: 1.14467, def: 1.14467, agi: 1.14467, wis: 1.14467 });
+setStatMult('hercules_legendario', { hp: 1.03895, atk: 1.03895, def: 1.03895, agi: 1.03895, wis: 1.03895 });
+
+// Maui (Explorador, tier 3): mismo problema de fondo que Sun Wukong/
+// Fenrir en su momento — Explorador reparte los pesos MÁS bajos de las 5
+// clases (ver CLASS_INFO), así que por mucho que sea Legendario quedaba
+// el ÚLTIMO de los 45 (322.4, por detrás incluso de la Común mejor
+// plantada). Subido a una posición media-alta acorde a su tier y a su
+// peso narrativo ("semidiós de las mil hazañas"), sin intentar competir
+// con el top 5 de dioses mayores — queda entre Shenlong y el resto de
+// Legendarios "sólidos", no entre los más fuertes del roster.
+setStatMult('maui_legendario', { hp: 1.20968, atk: 1.20968, def: 1.20968, agi: 1.20968, wis: 1.20968 });
 
 
 // --- 11 jefes nuevos (pedidos explícitamente por el usuario), añadidos

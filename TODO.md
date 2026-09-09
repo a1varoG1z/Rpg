@@ -5346,6 +5346,48 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       sin errores; ranking completo de los 44 jefes recalculado y
       contrastado con los objetivos de arriba — sin errores de página.
 
+- [x] Tras reportar el ranking de los 45 Legendarios del punto anterior
+      (con Ares/Sobek/Sekhmet colados por delante de Zeus/Poseidón/Thor, y
+      Maui último pese a ser tier 3), el usuario pidió arreglar esos 4 y
+      confirmó el top 5 objetivo: "Odín, Zeus, Poseidón, Thor, Hércules".
+      Recalibrados con `setStatMult` (multiplicador uniforme sobre las 5
+      stats, salvo Odín — ver abajo) para ese orden exacto:
+      - **Descubrimiento importante**: un solo cálculo directo
+        `k = target/base` no basta cuando el margen objetivo es pequeño
+        (aquí, encajar 4 personajes en el hueco de solo 0.6 puntos entre
+        Ares y el Odín de antes) — el redondeo a entero de CADA stat por
+        separado (hp/atk/def/agi/wis, antes de sumarlos en
+        `fighterPowerScore`) introduce un ruido de ~0.3-0.5% que un
+        cálculo de un solo paso no compensa, y con un margen tan
+        estrecho ese ruido basta para desordenar el resultado (confirmado
+        reproduciendo el fallo: un primer intento con margen estrecho dio
+        Poseidón por delante de Zeus y de Odín). Solución de dos partes:
+        (1) ensanchar el margen objetivo entre los 5 (subiendo también un
+        poco a Odín, no solo a los otros 4) en vez de dejarlos casi
+        empatados con Ares; (2) calcular el multiplicador por
+        CONVERGENCIA iterativa (mide el poder real tras aplicar un primer
+        k, corrige k proporcionalmente al error, repite ~5 veces) en vez
+        de un solo cálculo directo — con ambas cosas a la vez, el
+        resultado converge exacto y de forma robusta.
+      - Odín: en vez de reemplazar su multiplicador ASIMÉTRICO ya
+        existente (hp×1.2/atk×1.7/def×1.3/agi×1.1/wis sin tocar — a
+        propósito, ver su comentario en data.js) por uno uniforme, se
+        escala ese mismo vector por un factor extra (×1.02436) para
+        subirle el poder sin aplanar su identidad de stats.
+      - Zeus/Thor: su multiplicador uniforme de la vez anterior (×1.069 /
+        ×1.103) ya no bastaba con los nuevos rivales; reemplazado por uno
+        nuevo (×1.09415 / ×1.14467).
+      - Poseidón/Hércules: no tenían multiplicador antes; añadido uno
+        nuevo (×1.02631 / ×1.03895).
+      - Maui: subido (×1.20968) de la última posición de los 45 a una
+        media-alta acorde a su tier 3 y a su peso narrativo, sin competir
+        con el top 5 de dioses mayores.
+      Verificado contra el archivo YA editado (no una simulación aparte):
+      Odín(449.9) > Zeus(446.9) > Poseidón(445) > Thor(443.1) >
+      Hércules(441.1) > Ares(438.7) > Sobek(434.2) > Sekhmet(429) > ...
+      exactamente el top 5 pedido, con margen real (2-3 puntos) frente al
+      redondeo — sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
