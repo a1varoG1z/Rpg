@@ -5445,6 +5445,20 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Verificado contra el archivo ya editado: Ra #7, Anubis #10, resto
       del top 6-9 y 11+ sin cambios — sin errores de página.
 
+- [x] 11 familias jugables nuevas más, de la última ronda de sugerencias
+      del brainstorming: 6 dioses que faltaban en panteones ya muy
+      presentes (mismo criterio que el caso Ares) — Isis y Horus
+      (egipcio), Freya y Tyr (nórdico), Hermes y Hefesto (griego) — y 5
+      animales humanizados (a petición expresa, "recuerda los animales
+      hacerlos tipo humanizados") — Tejón Mielero, Hiena Embaucadora,
+      Dragón de Komodo, Búfalo y Mapache. `hasImages: false` (sin
+      calibrar poder a mano tampoco, igual que la tanda anterior de 38 —
+      no se ha pedido). Verificado contra el archivo real: 161 familias
+      jugables en total, todas con exactamente 3 formas, sin ids
+      duplicados; Tyr y Hefesto caen de forma natural (sin tocar nada) en
+      el top 15 de Legendarios (#13 y #11), el resto del top 10 ya
+      fijado no se mueve — sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
