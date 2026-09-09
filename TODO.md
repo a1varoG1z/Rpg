@@ -5557,6 +5557,20 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       12 nuevas con 3 formas cada una, sin ids duplicados en las 193 —
       sin errores de página.
 
+- [x] El usuario preguntó si el "Hombre de Arena" ya estaba implementado
+      (lo había pedido varias iteraciones atrás) — sí, como `morfeo`
+      (tier 2), pero al recordárselo cayó en la cuenta de que ya existía
+      el mob `hombrearena` original (el que motivó usar un slug distinto
+      para no chocar ids) y pidió eliminar el personaje jugable
+      directamente. Quitada la línea `addFamily("morfeo", ...)` de
+      data.js (única referencia a ese slug en todo el código, aparte de
+      la entrada de TODO.md que documentaba su alta). El mob
+      `hombrearena` original no se toca para nada. Verificado contra el
+      archivo real: 0 formas de "morfeo" en FIGHTERS, el mob
+      `hombrearena` sigue con sus 3 formas intactas, 192 familias
+      jugables restantes sin ninguna rota ni ids duplicados — sin
+      errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
