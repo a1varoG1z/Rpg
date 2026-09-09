@@ -5459,6 +5459,38 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       el top 15 de Legendarios (#13 y #11), el resto del top 10 ya
       fijado no se mueve — sin errores de página.
 
+- [x] 8 familias jugables nuevas más: 5 guerreros épicos/históricos de la
+      lista sugerida (Sigurd, Aquiles, Sansón, Miyamoto Musashi, Guan
+      Yu), un "Hombre de Arena" tier 2 (slug `morfeo` — distinto del mob
+      `hombrearena` ya existente para no colisionar ids; enraizado en
+      Morfeo, el dios grecorromano de los sueños, con el nombre "Hombre
+      de Arena" tal cual en su lore/nombre de forma media), Atila y un
+      señor de la guerra nómada de las estepas ORIGINAL (slug `khagan`,
+      un título histórico real de gobernante estepario — el usuario pidió
+      explícitamente no usar el nombre de ningún personaje de ficción
+      registrado para este último, así que no se referencia ninguno).
+      Sigurd/Guan Yu/Atila/Sansón caen de forma natural en el top 10-17
+      de Legendarios (clase Campeón, favorecida por el peso de
+      `fighterPowerScore`) sin tocar nada a mano.
+
+      Auditoría pedida por el usuario ("revisa que los personajes nuevos
+      y los de la iteración anterior estén bien implementados en la
+      escala de poder"): calculado el poder medio por CLASE sobre los 58
+      Legendarios — Campeón 420.8, Gurú 382.7, Brujo 382, Pícaro 367.4,
+      Explorador 354.3 — confirma que el sesgo estructural de
+      `fighterPowerScore` (favorece HP/DEF sin atenuar, penaliza AGI/WIS
+      a la mitad) sigue vivo pese a los ajustes ya aplicados a Sun
+      Wukong/Fenrir/Maui. Consecuencia directa detectada: **Aquiles y
+      Musashi (ambos Pícaro) caen a las dos ÚLTIMAS posiciones de los 58
+      Legendarios** (55º y 56º, por detrás incluso de personajes menores)
+      pese a ser "el guerrero casi invencible de Troya" y "el espadachín
+      invicto en 60 duelos" — mismo problema de fondo que Sun Wukong/
+      Fenrir/Maui, sin corregir todavía porque el usuario pidió
+      "revisar y dar la lista", no "arreglar" — reportado en el chat en
+      vez de tocarlo sin permiso, a la espera de confirmación.
+      Verificado contra el archivo real: 169 familias jugables, todas con
+      3 formas, sin ids duplicados — sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
