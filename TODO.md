@@ -5658,6 +5658,47 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       ranking completo de los 61 Legendarios recalculado con ambos en su
       nueva posición, top 8 (Odín...Sobek) intacto — sin errores de
       página.
+- [x] Reordenación COMPLETA del ranking de poder de los 61 Legendarios
+      (petición del usuario tras 3 rondas de propuestas suyas, cada una
+      revisada por mí punto por punto antes de implementar). El nuevo
+      orden agrupa por criterio narrativo: dioses "reyes de panteón
+      entero" arriba del todo (Zeus > Odín > Ra > Poseidón > Thor), el
+      panteón egipcio como segundo bloque de poder (Sekhmet, Isis, Horus,
+      Osiris agrupados en el top 15), semidioses/héroes mortales
+      (Sigurd, Aquiles, Guan Yu, Musashi, Atila, Sansón, Ragnar)
+      desplazados a la mitad de tabla por debajo de los dioses plenos, y
+      los jefes genéricos sin identidad divina (Titanes, Señor del
+      Maelström, Señor de las Cenizas Eternas, etc.) al fondo. Rondas de
+      revisión: en la 1ª propuesta señalé 4 saltos que parecían fuera de
+      lugar — Shenlong en el puesto #1 por delante de Odín/Zeus/Ra sin
+      build-up narrativo previo, Quetzalcóatl saltando del #42 al #9,
+      Drakón Adulto de Fuego cayendo del #18 al #58 (la caída más grande
+      de la lista) y Gengis Kan cayendo al último puesto absoluto (un
+      conquistador legendario por debajo hasta de los jefes genéricos);
+      el usuario corrigió los 4 en la 2ª ronda (Shenlong bajado a #6,
+      Drakón/Esfinge intercambiados, Gengis Kan/Devorador de Flotas
+      rotados). En la 3ª ronda pidió analizar la lista en detalle: señalé
+      que Sun Wukong debería ir por delante de Shenlong (en el mito,
+      Sun Wukong somete a los Reyes Dragón) y que Quetzalcóatl seguía
+      superando a Hércules/Ares sin justificación — el usuario aplicó
+      ambos ajustes en la propuesta final, que ya no tenía ningún punto
+      cuestionable. Implementado sustituyendo TODOS los `setStatMult`
+      puntuales acumulados en rondas anteriores (Zeus/Thor/Fenrir/Sun
+      Wukong, Maui, Atenea/Amaterasu, Ra/Anubis, Aquiles/Musashi/Hermes,
+      Sekhmet, Miguel Arcángel/Huitzilopochtli) por un único bloque
+      consolidado de 61 multiplicadores uniformes, calculados por
+      convergencia iterativa (14 iteraciones, más que las 5-6 habituales,
+      necesarias para separar correctamente algunos pares con gaps de
+      poder muy estrechos como Sobek/Tyr o Ragnar/Musashi) sobre una
+      curva lineal de poder base objetivo de 450 (Zeus, #1) a 330
+      (Devorador de Flotas, #61) en pasos de 2. Verificado contra el
+      archivo real ya editado (sin overrides en página): los 61
+      Legendarios caen en el orden exacto pedido, sin empates ni
+      inversiones, y un chequeo de integridad general (609 fighters, 99
+      mobs, 44 bosses, 44 zonas, sin ids duplicados, todas las
+      referencias zona→boss válidas, Torre Prohibida/Salón de los
+      Engaños siguen siendo las 2 últimas zonas) no muestra ninguna
+      regresión — sin errores de página.
 
 ## Notas
 

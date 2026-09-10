@@ -823,27 +823,6 @@ setLeaderSkill('ragnar_legendario', 'def_boost');
 // setStatMult('hercules_epico', { atk: 1.2 });
 // setStatMult('hercules_legendario', { atk: 1.2 });
 
-// Odín (a diferencia del ejemplo de arriba, este SÍ está activo): medido
-// con fighterPowerScore, su forma final (Gurú — reparte casi todo en WIS,
-// que pesa ×0.5) quedaba por detrás de varias Épicas de clase Campeón
-// (que meten casi todo en HP/DEF, con más peso) pese a ser Legendario —
-// nada mal calculado, solo un reparto de clase que no hacía justicia a
-// "el dios que gobierna Asgard". Sube HP/ATK/DEF/AGI para que compita de
-// verdad con el resto de Legendarios de primera fila, sin tocar su WIS
-// (137 base, el más alto del roster — sigue siendo su seña de identidad).
-// ATK subido de nuevo (×1.4 → ×1.7): con curar/bendicion/debilitar ahora
-// usando WIS (ver SKILL_TYPES) su ulti ya no depende de su ATK, pero
-// sigue atacando con él en los turnos SIN ulti — un ATK más alto evita
-// que esos turnos se sientan flojos.
-// Escalado de nuevo (×1.02436 extra sobre el vector de arriba, no
-// reemplazado) al ampliar el top 5 más abajo (ver el bloque de
-// Zeus/Poseidón/Thor/Hércules/Maui) — necesitaba más margen sobre Ares
-// para que el top 5 quedase separado de verdad y no en un empate frágil
-// a merced del redondeo por stat. Multiplicar TODO el vector asimétrico
-// por un mismo factor mantiene su identidad (ATK el más subido, WIS
-// intacto en proporción al resto) mientras sube el total.
-setStatMult('odin_legendario', { hp: 1.22896, atk: 1.74102, def: 1.33137, agi: 1.12654, wis: 1.02413 });
-
 // hombreseisbrazos (Pícaro): a diferencia de Odín, aquí el problema era el
 // contrario — un pico de dificultad, no un bajón. Al fijar el nivel de la
 // Torre Batalla a XP_LEVEL_CAP para todos los rivales (antes escalaba con
@@ -866,119 +845,97 @@ setStatMult('odin_legendario', { hp: 1.22896, atk: 1.74102, def: 1.33137, agi: 1
 // de dificultad progresivamente, no a saltos.
 setStatMult('hombreseisbrazos_epico', { agi: 0.65, atk: 0.75 });
 
-// Zeus/Thor/Fenrir/Sun Wukong: petición explícita del usuario tras
-// preguntarle mi opinión sobre el orden de poder de los Legendarios y
-// contestar con estos 4 — "pon a zeus, thor, fenrir y sun wukong en el
-// orden que has dicho, así que hincha sus estadísticas hasta llegar a
-// esas posiciones". El criterio no es de combate sino de "fantasía de
-// poder" mitológica/pop: Zeus por delante de Poseidón (su hermano, pero
-// menos "rey de los dioses" en la cultura popular), Thor por delante de
-// Hércules, y Sun Wukong/Fenrir — infravalorados por su clase (Pícaro,
-// que reparte casi todo en ATK/AGI en vez de HP/DEF, lo que pesa menos en
-// fighterPowerScore) — subidos a la primera fila junto a ellos.
-// Multiplicador UNIFORME (misma proporción en las 5 stats, no solo una)
-// para no romper la identidad de cada uno, calculado para aterrizar en el
-// poder base (Nv.1, sin equipo) exacto que deja este orden final:
-// Odín(439) > Zeus(437) > Poseidón(433) > Thor(427) > Hércules(424) >
-// ... > Sun Wukong(405) > Fenrir(403) > Leviatán(401) > ...
-// — verificado por simulación antes de aplicarlo, recalculando el ranking
-// completo de los 31 Legendarios con los 4 multiplicadores ya puestos.
-setStatMult('sunwukong_legendario', { hp: 1.095, atk: 1.095, def: 1.095, agi: 1.095, wis: 1.095 });
-setStatMult('fenrir_legendario', { hp: 1.148, atk: 1.148, def: 1.148, agi: 1.148, wis: 1.148 });
-
-// Corrección posterior: al añadir 38 Legendarios/personajes nuevos (ver
-// más abajo), 3 de ellos (Ares, Sobek, Sekhmet) colaron por delante de
-// Zeus/Poseidón/Thor en el ranking — el usuario confirmó que el top 5
-// correcto es Odín > Zeus > Poseidón > Thor > Hércules, así que los 4
-// (más Odín arriba) se recalibran para que ese orden se cumpla con
-// margen de verdad frente a Ares (438.7, el más alto de los 3 intrusos)
-// en vez de un empate a merced del redondeo. Multiplicador uniforme
-// (reemplaza al de Zeus/Thor de arriba, que ya no basta) calculado por
-// convergencia iterativa (el redondeo POR STAT individual hace que un
-// solo cálculo directo target/base se quede corto) para aterrizar en:
-// Odín(450) > Zeus(447) > Poseidón(445) > Thor(443) > Hércules(441) >
-// Ares(438.7) > Sobek(434.2) > Sekhmet(429) — verificado por simulación
-// recalculando el ranking completo de los 45 Legendarios.
-setStatMult('zeus_legendario', { hp: 1.09415, atk: 1.09415, def: 1.09415, agi: 1.09415, wis: 1.09415 });
-setStatMult('poseidon_legendario', { hp: 1.02631, atk: 1.02631, def: 1.02631, agi: 1.02631, wis: 1.02631 });
-setStatMult('thor_legendario', { hp: 1.14467, atk: 1.14467, def: 1.14467, agi: 1.14467, wis: 1.14467 });
-setStatMult('hercules_legendario', { hp: 1.03895, atk: 1.03895, def: 1.03895, agi: 1.03895, wis: 1.03895 });
-
-// Maui (Explorador, tier 3): mismo problema de fondo que Sun Wukong/
-// Fenrir en su momento — Explorador reparte los pesos MÁS bajos de las 5
-// clases (ver CLASS_INFO), así que por mucho que sea Legendario quedaba
-// el ÚLTIMO de los 45 (322.4, por detrás incluso de la Común mejor
-// plantada). Subido a una posición media-alta acorde a su tier y a su
-// peso narrativo ("semidiós de las mil hazañas"), sin intentar competir
-// con el top 5 de dioses mayores — queda entre Shenlong y el resto de
-// Legendarios "sólidos", no entre los más fuertes del roster.
-setStatMult('maui_legendario', { hp: 1.20968, atk: 1.20968, def: 1.20968, agi: 1.20968, wis: 1.20968 });
-
-// Atenea/Amaterasu (petición explícita del usuario, "ajusta atenea y
-// amaterasu" tras verlas demasiado bajas en el ranking para lo que
-// representan — diosas centrales de sus panteones) y Ra/Anubis (el
-// usuario preguntó si no estaban demasiado bajos y pidió subirlos "si
-// así lo consideras" — Ra en concreto, dios sol supremo egipcio, quedaba
-// por detrás incluso de Anubis, lo que no hacía justicia a su peso).
-// Subidos a la franja de Susanoo/Fenrir/Leviatán/Shenlong (~390-400),
-// justo por debajo del top 8 ya fijado arriba, sin tocarlo. Ra queda
-// ligeramente por delante de Anubis (dios sol > guardián de los muertos
-// en peso narrativo egipcio).
-setStatMult('atenea_legendario', { hp: 1.11421, atk: 1.11421, def: 1.11421, agi: 1.11421, wis: 1.11421 });
-setStatMult('amaterasu_legendario', { hp: 1.09559, atk: 1.09559, def: 1.09559, agi: 1.09559, wis: 1.09559 });
-
-// Segunda subida de Ra/Anubis: el usuario, tras ver el primer ajuste
-// (arriba, ~390), preguntó objetivamente si no deberían estar en el top
-// 10 o casi — respuesta sincera: sí. Ra es (en la mayoría de periodos)
-// el dios creador/solar SUPREMO del panteón egipcio, no un dios
-// regional como Sobek ni una diosa de la guerra como Sekhmet — no tenía
-// sentido que quedara por detrás de ambos. Anubis es icónico pero
-// tradicionalmente un guía/guardián, no "rey" del panteón, así que se
-// queda justo en el borde del top 10 en vez de compitiendo con Ra o con
-// el top 6. Multiplicadores que REEMPLAZAN a los de la subida anterior
-// (no se acumulan) — calculados por convergencia igual que el resto de
-// este bloque, para: Ares(438.7) > Ra(436) > Sobek(434.2) > Sekhmet(429)
-// > Anubis(416) > Drakón(411.4) > ...
-setStatMult('ra_legendario', { hp: 1.23518, atk: 1.23518, def: 1.23518, agi: 1.23518, wis: 1.23518 });
-setStatMult('anubis_legendario', { hp: 1.15184, atk: 1.15184, def: 1.15184, agi: 1.15184, wis: 1.15184 });
-
-// Aquiles/Musashi/Hermes: mismo sesgo estructural de clase Pícaro (ver
-// Sun Wukong/Fenrir/Maui más arriba) — el usuario pidió auditar la
-// escala de poder de los guerreros épicos recién añadidos y confirmó
-// arreglarlo tras ver que Aquiles y Musashi caían a las dos ÚLTIMAS
-// posiciones de los 58 Legendarios pese a representar "el guerrero casi
-// invencible de Troya" y "el espadachín invicto en 60 duelos". Subidos
-// a la franja de los guerreros legendarios ya bien situados (junto a
-// Sigurd/Guan Yu y Sun Wukong/Susanoo/Fenrir respectivamente); Hermes
-// (sesgo más leve, no llegaba a caer del todo al fondo) sube a la
-// franja de "segundo escalón de dioses" junto a Freya/Maui.
-setStatMult('aquiles_legendario', { hp: 1.2108, atk: 1.2108, def: 1.2108, agi: 1.2108, wis: 1.2108 });
-setStatMult('musashi_legendario', { hp: 1.16981, atk: 1.16981, def: 1.16981, agi: 1.16981, wis: 1.16981 });
-setStatMult('hermes_legendario', { hp: 1.09455, atk: 1.09455, def: 1.09455, agi: 1.09455, wis: 1.09455 });
-
-// Sekhmet: el usuario preguntó si no debería bajar del top 9 (donde
-// había quedado, sin calibrar, casi empatada con Ra y Sobek) y confirmó
-// que sí. Mitológicamente es una MANIFESTACIÓN de la ira de Ra (nació
-// de su ojo para castigar a la humanidad), no una gobernante suprema
-// por derecho propio como Ra/Isis/Osiris — no tenía sentido que
-// superase a Anubis o compitiera con el trío supremo. Bajada a la
-// franja de Sigurd/Aquiles/Anubis (~415-419): sigue siendo una diosa
-// temible de primera fila, solo que ya no en el top 8.
-setStatMult('sekhmet_legendario', { hp: 0.97087, atk: 0.97087, def: 0.97087, agi: 0.97087, wis: 0.97087 });
-
-// Miguel Arcángel/Huitzilopochtli: el usuario preguntó si no estaban
-// demasiado altos (habían entrado solos en el top 9 por su clase
-// Campeón, sin calibrar) y confirmó bajarlos tras mi opinión. Miguel
-// Arcángel es, en la teología en la que se basa, un SERVIDOR — el
-// comandante de las huestes celestiales, no una deidad soberana con
-// dominio propio — así que no tenía sentido que superase a dioses con
-// culto y templo propio (Sobek, Anubis, Sekhmet...). Bajado a la
-// franja de Sigurd/Anubis/Hefesto (~415-420). Huitzilopochtli sí es
-// dios patrón de un imperio entero (guerra + sol combinados), así que
-// se queda mucho más arriba — solo un pelín por debajo de Sobek en vez
-// de por delante.
-setStatMult('miguelarcangel_legendario', { hp: 0.9564, atk: 0.9564, def: 0.9564, agi: 0.9564, wis: 0.9564 });
-setStatMult('huitzilopochtli_legendario', { hp: 0.9892, atk: 0.9892, def: 0.9892, agi: 0.9892, wis: 0.9892 });
+// Reordenación COMPLETA de los 61 Legendarios (petición explícita del
+// usuario, tras varias rondas de propuestas suyas y análisis mío punto
+// por punto sobre cada salto de posición). Sustituye TODOS los ajustes
+// puntuales anteriores (Zeus/Thor/Fenrir/Sun Wukong, Maui, Atenea/
+// Amaterasu, Ra/Anubis, Aquiles/Musashi/Hermes, Sekhmet, Miguel Arcángel/
+// Huitzilopochtli) por un único bloque que fija el orden de poder exacto
+// pedido, calculado por convergencia iterativa (igual que el resto de
+// este archivo) sobre una curva lineal de poder base (Nv.1, sin equipo)
+// de 450 (Zeus, #1) a 330 (Devorador de Flotas, #61), en pasos de 2.
+// Criterio del orden (aportado por el usuario, contrastado conmigo en
+// varias rondas): dioses "reyes de panteón entero" arriba del todo
+// (Zeus/Odín/Ra/Poseidón/Thor), el panteón egipcio agrupado como
+// segundo bloque más fuerte (Sekhmet/Isis/Horus/Osiris), semidioses y
+// héroes mortales (Sigurd/Aquiles/Guan Yu/Musashi/Atila/Sansón/Ragnar)
+// desplazados a la mitad de tabla por debajo de los dioses plenos, y
+// los jefes genéricos sin identidad divina (Titanes, Señor del
+// Maelström, etc.) al fondo. Orden final verificado por simulación
+// (61/61 en el orden exacto pedido, sin empates ni inversiones):
+// Zeus > Odín > Ra > Poseidón > Thor > Sun Wukong > Shenlong > Fenrir >
+// Hércules > Ares > Quetzalcóatl > Sekhmet > Isis > Horus > Osiris >
+// Leviatán > Kali > Tezcatlipoca > Amaterasu > Coatlicue > Susanoo >
+// Hefesto > Sobek > Tyr > Ganesha > Huitzilopochtli > Pele > Miguel
+// Arcángel > Aquiles > Freya > Sigurd > Guan Yu > Maui > Anubis >
+// Artemisa > Atenea > Hermes > Cerbero > Drácula > Sansón > Pazuzu >
+// Genio > Fénix Inmortal > Ragnar > Musashi > Atila > Drakón Adulto de
+// Fuego > Gran Shinigami > Soberano de las Siete Cabezas > Gengis Kan >
+// Tirano de la Tormenta > Señor del Maelström > Señor de las Cenizas
+// Eternas > Titán de Acero y Rayo > Titán de las Corrientes > Monarca
+// de Piedra Negra > Soberana del Vendaval > Esfinge > Cernunnos >
+// Afrodita > Devorador de Flotas.
+setStatMult('zeus_legendario', { hp: 1.102967, atk: 1.102967, def: 1.102967, agi: 1.102967, wis: 1.102967 });
+setStatMult('odin_legendario', { hp: 1.252095, atk: 1.252095, def: 1.252095, agi: 1.252095, wis: 1.252095 });
+setStatMult('ra_legendario', { hp: 1.262741, atk: 1.262741, def: 1.262741, agi: 1.262741, wis: 1.262741 });
+setStatMult('poseidon_legendario', { hp: 1.024708, atk: 1.024708, def: 1.024708, agi: 1.024708, wis: 1.024708 });
+setStatMult('thor_legendario', { hp: 1.14158, atk: 1.14158, def: 1.14158, agi: 1.14158, wis: 1.14158 });
+setStatMult('sunwukong_legendario', { hp: 1.190985, atk: 1.190985, def: 1.190985, agi: 1.190985, wis: 1.190985 });
+setStatMult('shenlong_legendario', { hp: 1.097669, atk: 1.097669, def: 1.097669, agi: 1.097669, wis: 1.097669 });
+setStatMult('fenrir_legendario', { hp: 1.242519, atk: 1.242519, def: 1.242519, agi: 1.242519, wis: 1.242519 });
+setStatMult('hercules_legendario', { hp: 1.024082, atk: 1.024082, def: 1.024082, agi: 1.024082, wis: 1.024082 });
+setStatMult('ares_legendario', { hp: 0.985476, atk: 0.985476, def: 0.985476, agi: 0.985476, wis: 0.985476 });
+setStatMult('quetzalcoatl_legendario', { hp: 1.141683, atk: 1.141683, def: 1.141683, agi: 1.141683, wis: 1.141683 });
+setStatMult('sekhmet_legendario', { hp: 0.998852, atk: 0.998852, def: 0.998852, agi: 0.998852, wis: 0.998852 });
+setStatMult('isis_legendario', { hp: 1.160335, atk: 1.160335, def: 1.160335, agi: 1.160335, wis: 1.160335 });
+setStatMult('horus_legendario', { hp: 1.055438, atk: 1.055438, def: 1.055438, agi: 1.055438, wis: 1.055438 });
+setStatMult('osiris_legendario', { hp: 1.146588, atk: 1.146588, def: 1.146588, agi: 1.146588, wis: 1.146588 });
+setStatMult('leviatan_legendario', { hp: 1.046353, atk: 1.046353, def: 1.046353, agi: 1.046353, wis: 1.046353 });
+setStatMult('kali_legendario', { hp: 1.098792, atk: 1.098792, def: 1.098792, agi: 1.098792, wis: 1.098792 });
+setStatMult('tezcatlipoca_legendario', { hp: 1.107796, atk: 1.107796, def: 1.107796, agi: 1.107796, wis: 1.107796 });
+setStatMult('amaterasu_legendario', { hp: 1.138305, atk: 1.138305, def: 1.138305, agi: 1.138305, wis: 1.138305 });
+setStatMult('coatlicue_legendario', { hp: 1.087049, atk: 1.087049, def: 1.087049, agi: 1.087049, wis: 1.087049 });
+setStatMult('susanoo_legendario', { hp: 1.015906, atk: 1.015906, def: 1.015906, agi: 1.015906, wis: 1.015906 });
+setStatMult('hefesto_legendario', { hp: 0.982646, atk: 0.982646, def: 0.982646, agi: 0.982646, wis: 0.982646 });
+setStatMult('sobek_legendario', { hp: 0.938066, atk: 0.938066, def: 0.938066, agi: 0.938066, wis: 0.938066 });
+setStatMult('tyr_legendario', { hp: 0.986389, atk: 0.986389, def: 0.986389, agi: 0.986389, wis: 0.986389 });
+setStatMult('ganesha_legendario', { hp: 1.110625, atk: 1.110625, def: 1.110625, agi: 1.110625, wis: 1.110625 });
+setStatMult('huitzilopochtli_legendario', { hp: 0.921096, atk: 0.921096, def: 0.921096, agi: 0.921096, wis: 0.921096 });
+setStatMult('pele_legendario', { hp: 1.063053, atk: 1.063053, def: 1.063053, agi: 1.063053, wis: 1.063053 });
+setStatMult('miguelarcangel_legendario', { hp: 0.910261, atk: 0.910261, def: 0.910261, agi: 0.910261, wis: 0.910261 });
+setStatMult('aquiles_legendario', { hp: 1.137758, atk: 1.137758, def: 1.137758, agi: 1.137758, wis: 1.137758 });
+setStatMult('freya_legendario', { hp: 1.006958, atk: 1.006958, def: 1.006958, agi: 1.006958, wis: 1.006958 });
+setStatMult('sigurd_legendario', { hp: 0.931738, atk: 0.931738, def: 0.931738, agi: 0.931738, wis: 0.931738 });
+setStatMult('guanyu_legendario', { hp: 0.93111, atk: 0.93111, def: 0.93111, agi: 0.93111, wis: 0.93111 });
+setStatMult('maui_legendario', { hp: 1.19727, atk: 1.19727, def: 1.19727, agi: 1.19727, wis: 1.19727 });
+setStatMult('anubis_legendario', { hp: 1.061914, atk: 1.061914, def: 1.061914, agi: 1.061914, wis: 1.061914 });
+setStatMult('artemisa_legendario', { hp: 1.083382, atk: 1.083382, def: 1.083382, agi: 1.083382, wis: 1.083382 });
+setStatMult('atenea_legendario', { hp: 1.058496, atk: 1.058496, def: 1.058496, agi: 1.058496, wis: 1.058496 });
+setStatMult('hermes_legendario', { hp: 1.061605, atk: 1.061605, def: 1.061605, agi: 1.061605, wis: 1.061605 });
+setStatMult('cerbero_legendario', { hp: 0.919636, atk: 0.919636, def: 0.919636, agi: 0.919636, wis: 0.919636 });
+setStatMult('dracula_legendario', { hp: 0.979058, atk: 0.979058, def: 0.979058, agi: 0.979058, wis: 0.979058 });
+setStatMult('sanson_legendario', { hp: 0.90766, atk: 0.90766, def: 0.90766, agi: 0.90766, wis: 0.90766 });
+setStatMult('pazuzu_legendario', { hp: 0.97461, atk: 0.97461, def: 0.97461, agi: 0.97461, wis: 0.97461 });
+setStatMult('genio_legendario', { hp: 1.000009, atk: 1.000009, def: 1.000009, agi: 1.000009, wis: 1.000009 });
+setStatMult('avefenix_legendario', { hp: 1.010798, atk: 1.010798, def: 1.010798, agi: 1.010798, wis: 1.010798 });
+setStatMult('ragnar_legendario', { hp: 0.890297, atk: 0.890297, def: 0.890297, agi: 0.890297, wis: 0.890297 });
+setStatMult('musashi_legendario', { hp: 1.046049, atk: 1.046049, def: 1.046049, agi: 1.046049, wis: 1.046049 });
+setStatMult('atila_legendario', { hp: 0.869651, atk: 0.869651, def: 0.869651, agi: 0.869651, wis: 0.869651 });
+setStatMult('ascua_legendario', { hp: 0.869508, atk: 0.869508, def: 0.869508, agi: 0.869508, wis: 0.869508 });
+setStatMult('shinigami_legendario', { hp: 0.956656, atk: 0.956656, def: 0.956656, agi: 0.956656, wis: 0.956656 });
+setStatMult('hidradragon_legendario', { hp: 0.929985, atk: 0.929985, def: 0.929985, agi: 0.929985, wis: 0.929985 });
+setStatMult('khagan_legendario', { hp: 0.967224, atk: 0.967224, def: 0.967224, agi: 0.967224, wis: 0.967224 });
+setStatMult('chispa_legendario', { hp: 0.931265, atk: 0.931265, def: 0.931265, agi: 0.931265, wis: 0.931265 });
+setStatMult('nigro_legendario', { hp: 0.938808, atk: 0.938808, def: 0.938808, agi: 0.938808, wis: 0.938808 });
+setStatMult('piroman_legendario', { hp: 0.891668, atk: 0.891668, def: 0.891668, agi: 0.891668, wis: 0.891668 });
+setStatMult('armaduratecno_legendario', { hp: 0.97177, atk: 0.97177, def: 0.97177, agi: 0.97177, wis: 0.97177 });
+setStatMult('duende_legendario', { hp: 0.971811, atk: 0.971811, def: 0.971811, agi: 0.971811, wis: 0.971811 });
+setStatMult('lagarto_legendario', { hp: 0.987797, atk: 0.987797, def: 0.987797, agi: 0.987797, wis: 0.987797 });
+setStatMult('brisa_legendario', { hp: 1.02576, atk: 1.02576, def: 1.02576, agi: 1.02576, wis: 1.02576 });
+setStatMult('esfinge_legendario', { hp: 0.945983, atk: 0.945983, def: 0.945983, agi: 0.945983, wis: 0.945983 });
+setStatMult('cernunnos_legendario', { hp: 0.865877, atk: 0.865877, def: 0.865877, agi: 0.865877, wis: 0.865877 });
+setStatMult('afrodita_legendario', { hp: 0.954044, atk: 0.954044, def: 0.954044, agi: 0.954044, wis: 0.954044 });
+setStatMult('kraken_legendario', { hp: 0.911876, atk: 0.911876, def: 0.911876, agi: 0.911876, wis: 0.911876 });
 
 
 // --- 11 jefes nuevos (pedidos explícitamente por el usuario), añadidos
