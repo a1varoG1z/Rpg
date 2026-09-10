@@ -5602,6 +5602,29 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       ninguna rota ni ids duplicados, las 3 formas con `image` asignada
       — sin errores de página.
 
+- [x] El usuario editó `data.js` directamente en GitHub entre sesiones
+      (fuera de este flujo): renombró `khagan` a "Gengis Kan" (su
+      decisión, no se toca), desactivó `fuegofatuo` comentando la línea
+      (su decisión, no se toca), y por accidente renombró los 3 nombres
+      de `foca` a "Morsa" — sin darse cuenta de que ya existía una
+      familia `morsa` distinta de una tanda anterior, dejando dos
+      "Morsa" casi idénticas en el roster. Fusionados esos 4 commits
+      remotos con el trabajo local (merge limpio, sin conflictos) antes
+      de seguir. El usuario confirmó que lo de Foca fue un fallo suyo y
+      pidió deshacerlo — devueltos los 3 nombres de `foca` a "Foca"
+      (mismo lore, que nunca mencionaba "morsa" en el texto, solo en el
+      nombre). `morsa` no se ha tocado en ningún momento.
+
+      Añadidos también 4 personajes más de la lista de sugerencias:
+      Pingüino (tier 1, Agua/Campeón/Barrera — formación de muralla
+      contra el frío) y 3 tier 2 (Guepardo, Viento/Pícaro/Doble Golpe;
+      Canguro, Tierra/Pícaro/Golpe de Gracia — boxeo; Oso Polar,
+      Agua/Campeón/Golpe). Reparto de tiers pasa a 71/67/58 (196
+      familias en total). Verificado contra el archivo real: Foca con
+      sus 3 nombres correctos, Morsa intacta, las 4 nuevas con 3 formas
+      cada una en el tier esperado y `image` asignada, sin ids
+      duplicados — sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
