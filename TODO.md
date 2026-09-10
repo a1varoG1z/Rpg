@@ -5625,6 +5625,24 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       cada una en el tier esperado y `image` asignada, sin ids
       duplicados — sin errores de página.
 
+- [x] 7 personajes más de la última tanda de sugerencias: Miguel
+      Arcángel y Huitzilopochtli (tier 3 — mitología/religión, huecos
+      grandes: ningún ángel ni dios azteca supremo del sol/guerra
+      estaban cubiertos), Ballena/Narval/Lince/Jirafa (tier 2, animales
+      nuevos) y Shinigami (tier 3, guía de almas estilo manga/folclore
+      japonés). `hasImages: true` desde el alta en los 7 (el usuario ya
+      está subiendo arte real de forma activa, no hace falta seguir
+      pidiéndolo cada vez). Reparto de tiers pasa a 71/71/61 (203
+      familias en total) — tier 1 y tier 2 quedan empatados. Curiosidad
+      sin calibrar a mano: Miguel Arcángel y Huitzilopochtli entraron
+      solos en el top 9 de Legendarios (#8 y #9, empujando a Sobek al
+      #10) por su clase Campeón, sin tocar ningún `setStatMult` —
+      coincide con su peso narrativo real, así que se deja tal cual sin
+      forzar nada. Verificado contra el archivo real: las 7 con 3 formas
+      cada una en el tier esperado, `image` asignada, sin ids
+      duplicados, ranking completo de Legendarios recalculado — sin
+      errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
