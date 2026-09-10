@@ -5592,6 +5592,16 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       de personaje, 0 de 99 formas de mob y 0 de 44 jefes sin `image`
       asignada — sin errores de página.
 
+- [x] Hipopótamo humanizado añadido, a propósito en **tier 2** (no tier
+      1, ya sobrerrepresentado desde las dos últimas tandas) — Agua,
+      Campeón, ulti Furia (temperamento agresivo pese a su aspecto
+      tranquilo, uno de los animales más peligrosos de África).
+      `hasImages: true` desde el alta, sin necesidad de arreglarlo
+      después. Verificado contra el archivo real: 3 formas correctas
+      (infrecuente/raro/épico), 193 familias jugables en total sin
+      ninguna rota ni ids duplicados, las 3 formas con `image` asignada
+      — sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos

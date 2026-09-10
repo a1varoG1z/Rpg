@@ -652,6 +652,11 @@ addFamily("ratacallejera", 1, "tierra", "picaro", "veneno", ["Cría de Rata Call
 addFamily("fuegofatuo", 1, "fuego", "brujo", "corromper", ["Chispa Errante","Fuego Fatuo de los Pantanos Nocturnos","Gran Fuego Fatuo, Luz que Guía a Ninguna Parte"], ["Flota sobre los pantanos de noche, tentando a los viajeros a seguirlo.","Su luz ya ha desviado a más de un grupo de viajeros lejos del camino seguro.","Es la luz que guía a ninguna parte, y quien lo sigue rara vez encuentra el camino de vuelta."], true);
 addFamily("ganso", 1, "viento", "campeon", "grito", ["Cría de Ganso","Ganso Guardián de Pico Furioso","Gran Ganso, Terror Emplumado del Corral"], ["Nadie subestima dos veces a un ganso que ya ha decidido perseguirlo.","Su graznido de guerra ya ha puesto en fuga a intrusos mucho más grandes que él.","Es el terror emplumado del corral, y ni el guerrero más curtido se libra de sus picotazos."], true);
 
+// --- Séptima ronda: Hipopótamo humanizado, tier 2 (a propósito, para no
+// seguir engordando el tier 1 ya sobrerrepresentado) — uno de los
+// animales más peligrosos de África pese a su aspecto tranquilo.
+addFamily("hipopotamo", 2, "agua", "campeon", "furia", ["Cría de Hipopótamo", "Hipopótamo Guerrero de Mandíbula Trituradora", "Gran Hipopótamo, Tirano del Río Africano"], ["Su aspecto tranquilo esconde el temperamento más peligroso de cualquier río de Texel.", "Su mordida ya ha partido en dos embarcaciones enteras sin esfuerzo aparente.", "Es el tirano del río africano, y ningún depredador —por temible que sea— se atreve a disputarle su territorio."], true);
+
 // ### Enemigos / mobs normales (14.3)
 addMobFamily('arpia', 1, 'viento', 'picaro', 'furia', ['Arpía Joven', 'Arpía Chillona', 'Arpía Matriarca del Nido'], ['Ataca en bandada, chillando para desorientar a su presa.', 'Su chillido ya basta para desorientar a toda una banda de viajeros.', 'Gobierna el nido entero, y ninguna arpía ataca sin su permiso.'], true);
 addMobFamily('dullahan', 2, 'rayo', 'brujo', 'debilitar', ['Jinete sin Cabeza Menor', 'Dullahan Cabalgante', 'Dullahan, Heraldo de la Muerte'], ['Lleva su propia cabeza bajo el brazo, y donde se detiene, alguien muere.', 'Su montura ya no se detiene ante nada que se cruce en su camino.', 'Es el heraldo de la muerte misma: nadie sobrevive a su visita.'], true);
