@@ -5571,6 +5571,27 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       jugables restantes sin ninguna rota ni ids duplicados — sin
       errores de página.
 
+- [x] "¿todos los personajes, bosses y zonas tienen a true la imagen?" —
+      no del todo: la petición de "pon como que todo lo que has añadido
+      nuevo tiene foto" de varias iteraciones atrás solo se aplicó a lo
+      que existía EN ESE MOMENTO (el primer lote de 38 personajes + 11
+      jefes) — todo lo añadido DESPUÉS de esa petición (los 11 dioses/
+      animales isis-sobek, los 7 guerreros épicos sigurd-khagan, y las
+      24 familias tier 1 de las dos últimas tandas) se había creado con
+      `hasImages: false` por defecto, sin que nadie lo pidiera de nuevo.
+      Localizadas las 42 líneas `addFamily(...)` que aún terminaban en
+      `false);` (verificado que son exactamente esas 42 y ninguna más,
+      ni de `addMobFamily` ni de `addBoss`) y cambiadas a `true);` de
+      una vez. Los 44 jefes ya estaban todos a `true` desde la petición
+      original. Las zonas no tienen ningún flag de imagen que tocar —
+      `zoneBackgroundStyle` (ui.js) intenta cargar
+      `assets/scenery/<id>.jpg` siempre, para cualquier zona, con un
+      degradado de color de respaldo si el archivo no existe todavía —
+      así que ya estaban "a true" en la práctica sin necesidad de nada
+      en el código. Verificado contra el archivo real: 0 de 576 formas
+      de personaje, 0 de 99 formas de mob y 0 de 44 jefes sin `image`
+      asignada — sin errores de página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
