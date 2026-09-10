@@ -966,6 +966,20 @@ setStatMult('hermes_legendario', { hp: 1.09455, atk: 1.09455, def: 1.09455, agi:
 // temible de primera fila, solo que ya no en el top 8.
 setStatMult('sekhmet_legendario', { hp: 0.97087, atk: 0.97087, def: 0.97087, agi: 0.97087, wis: 0.97087 });
 
+// Miguel Arcángel/Huitzilopochtli: el usuario preguntó si no estaban
+// demasiado altos (habían entrado solos en el top 9 por su clase
+// Campeón, sin calibrar) y confirmó bajarlos tras mi opinión. Miguel
+// Arcángel es, en la teología en la que se basa, un SERVIDOR — el
+// comandante de las huestes celestiales, no una deidad soberana con
+// dominio propio — así que no tenía sentido que superase a dioses con
+// culto y templo propio (Sobek, Anubis, Sekhmet...). Bajado a la
+// franja de Sigurd/Anubis/Hefesto (~415-420). Huitzilopochtli sí es
+// dios patrón de un imperio entero (guerra + sol combinados), así que
+// se queda mucho más arriba — solo un pelín por debajo de Sobek en vez
+// de por delante.
+setStatMult('miguelarcangel_legendario', { hp: 0.9564, atk: 0.9564, def: 0.9564, agi: 0.9564, wis: 0.9564 });
+setStatMult('huitzilopochtli_legendario', { hp: 0.9892, atk: 0.9892, def: 0.9892, agi: 0.9892, wis: 0.9892 });
+
 
 // --- 11 jefes nuevos (pedidos explícitamente por el usuario), añadidos
 // DESPUÉS de completar el mapa original de 33 zonas: cada uno vive en su

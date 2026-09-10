@@ -5643,6 +5643,22 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       duplicados, ranking completo de Legendarios recalculado — sin
       errores de página.
 
+- [x] El usuario preguntó si Miguel Arcángel/Huitzilopochtli (que habían
+      entrado solos en el top 9 del punto anterior, sin calibrar) no
+      estaban demasiado altos. Respuesta objetiva: Miguel Arcángel sí —
+      en la teología en la que se basa es un SERVIDOR (comandante de
+      las huestes celestiales), no una deidad soberana con culto y
+      templo propio como Sobek/Anubis/Sekhmet, así que no tenía sentido
+      que los superase. Huitzilopochtli más defendible (dios patrón de
+      todo un imperio, guerra+sol combinados). El usuario confirmó bajar
+      a los dos. `setStatMult`: Miguel Arcángel 435.7→416.4 (baja del #8
+      al #14, junto a Sekhmet/Anubis/Hefesto), Huitzilopochtli
+      434.7→430.3 (del #9 al #9 — se queda cerca, solo por debajo de
+      Sobek en vez de por delante). Verificado contra el archivo real:
+      ranking completo de los 61 Legendarios recalculado con ambos en su
+      nueva posición, top 8 (Odín...Sobek) intacto — sin errores de
+      página.
+
 ## Notas
 
 - Las imágenes de referencia del D.o.T. real que se mencionaban en los puntos
