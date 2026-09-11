@@ -351,6 +351,22 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .reveal-flash.rarity-legendario { box-shadow: 0 0 40px #e8a23c; animation: revealPop 0.5s ease-out, legendaryPulse 1.4s ease-in-out infinite 0.5s, legendaryFlash 0.7s ease-out; }
 @keyframes legendaryFlash { 0% { filter: brightness(1); } 12% { filter: brightness(2.2); } 100% { filter: brightness(1); } }
 .reveal-canvas-wrap { position: relative; display: flex; justify-content: center; margin-bottom: 6px; }
+/* Medallón en la animación de invocación (al abrir cristales), petición
+   del usuario — a diferencia de .creature-canvas-wrap, esta clase no
+   tenía ningún ::before propio. Se pinta ANTES del anillo/chispas de
+   Legendario (.legendary-burst/.legendary-spark, añadidos después como
+   hijos reales vía appendLegendaryFx en ui.js) para quedar detrás de
+   ambos, no delante. Tamaño a juego con el retrato de 120px que usan
+   tanto la revelación de x1 (showSingleReveal) como cada tarjeta del
+   paso a paso de x10/x100 (showMultiReveal). Las revelaciones de
+   evolución (.evolve-old/.evolve-new, más abajo) pisan este tamaño con
+   el suyo propio — misma especificidad, pero van después en la hoja. */
+.reveal-canvas-wrap::before {
+  content: ''; position: absolute; z-index: 0; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 126px; height: 126px; border-radius: 50%;
+  background: #f6f1e4;
+}
+body.hide-medallion .reveal-canvas-wrap::before { display: none; }
 /* Anillo de rayos girando detrás del retrato + chispas que salen
    disparadas — solo para Legendario, ver appendLegendaryFx en ui.js. */
 .legendary-burst {
@@ -384,21 +400,14 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 @keyframes evolveArrowPulse { 0%, 100% { transform: translateX(0); opacity: 0.7; } 50% { transform: translateX(6px); opacity: 1; } }
 .evolve-old { opacity: 0.55; filter: grayscale(0.4); }
 .evolve-new .creature-canvas { animation: evolveNewPop 0.6s ease-out; }
-/* Medallón en la revelación de evolución — .reveal-canvas-wrap (a
-   diferencia de .creature-canvas-wrap) no tenía ::before propio, así que
-   antes de/después de evolucionar se veían sin él aunque el resto de
-   retratos del juego sí lo llevaran. Solo en .evolve-old/.evolve-new (no
-   en .reveal-canvas-wrap a secas), para no afectar a la revelación de
-   invocación, que no se pidió tocar. Tamaño propio por lado, a juego con
-   el retrato más pequeño (74px) de la forma antigua y el más grande
-   (100px) de la nueva. */
-.evolve-old::before, .evolve-new::before {
-  content: ''; position: absolute; z-index: 0; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  border-radius: 50%; background: #f6f1e4;
-}
+/* .evolve-old/.evolve-new ya heredan el medallón base de
+   .reveal-canvas-wrap (arriba, mismo elemento — llevan las dos clases a
+   la vez) — solo hace falta su propio tamaño, a juego con el retrato
+   más pequeño (74px) de la forma antigua y el más grande (100px) de la
+   nueva en vez del 126px genérico pensado para la revelación de
+   invocación. */
 .evolve-old::before { width: 78px; height: 78px; }
 .evolve-new::before { width: 106px; height: 106px; }
-body.hide-medallion .evolve-old::before, body.hide-medallion .evolve-new::before { display: none; }
 @keyframes evolveNewPop { 0% { transform: scale(0.4); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
 
 /* ---------- Inventario / equipo ---------- */

@@ -5810,6 +5810,31 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Verificado con Playwright contra el motor real: 44 niveles, 0 ids
       duplicados, el objetivo "Supera todos los niveles de Tope de Tier"
       ya pide 44 — sin errores de página.
+- [x] **Medallón también en la animación de abrir cristales** (petición del
+      usuario, aclarando/ampliando el punto anterior — esa vez dejé fuera
+      a propósito `.reveal-canvas-wrap` a secas para no tocar la
+      revelación de invocación sin que se hubiera pedido; ahora sí se
+      pide). Añadido un `::before` genérico a `.reveal-canvas-wrap`
+      (126px, a juego con el retrato de 120px que usan tanto
+      `UI.showSingleReveal`, x1, como cada tarjeta del paso a paso de
+      `UI.showMultiReveal`, x10/x100) — cubre así tanto abrir un cristal
+      suelto como la revelación una a una al abrir varios de golpe.
+      Aprovechado para simplificar `.evolve-old`/`.evolve-new` (que ya
+      llevan la clase `.reveal-canvas-wrap` además de la suya propia):
+      ahora solo fijan su tamaño (78px/106px), heredando el círculo base
+      y el apagado por "Mostrar medallón" del ajuste genérico en vez de
+      repetirlo. Cuidado especial con el efecto de Legendario (anillo de
+      rayos + chispas, `.legendary-burst`/`.legendary-spark`, añadidos
+      como hijos reales después vía `appendLegendaryFx`): el medallón se
+      pinta ANTES en el DOM (mismo mecanismo `::before` que en el resto
+      del juego) para quedar detrás del anillo, no delante. Verificado
+      con Playwright + capturas visuales: medallón de 126px presente en
+      revelación x1 normal, en revelación x1 Legendario (con el anillo
+      dorado correctamente por encima, no tapado), y en la tarjeta de
+      revelación x10; los tamaños de evolución (78px/106px) no
+      cambiaron tras la simplificación; el ajuste "Mostrar medallón"
+      sigue ocultándolo también en la revelación de invocación — sin
+      errores de página.
 
 ## Notas
 
