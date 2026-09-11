@@ -5699,6 +5699,60 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       referencias zona→boss válidas, Torre Prohibida/Salón de los
       Engaños siguen siendo las 2 últimas zonas) no muestra ninguna
       regresión — sin errores de página.
+- [x] Gollum pasado de personaje jugable a mob de mapa (petición del
+      usuario): movido de FIGHTERS a MOBS (addFamily -> addMobFamily),
+      mismo id/tier/rareza/lore, sin tocarlos. Añadido al pool de relleno
+      de 3 zonas temáticamente afines a su lore ("Criatura de las
+      Cavernas Profundas"): Minas Sin Fondo, Abismo de los Cien Ojos y
+      Necrópolis Eterna (reemplazando en cada una un slot cuya familia
+      original seguía representada en 3+ zonas más, para no dejar a
+      ninguna otra familia sin ninguna aparición en el mapa). Al aparecer
+      en el pool de una zona, la Torre Batalla lo recoge automáticamente
+      (buildTorreLevels deriva su escalera de MOBS + ZONES, sin necesitar
+      ningún cambio manual aparte) — verificado que sigue sin haber ids
+      duplicados ni referencias rotas tras el cambio.
+- [x] Rinoceronte pasado de tier 1 a tier 2 (petición del usuario): un
+      solo cambio de parámetro en su `addFamily` (1 -> 2), que además
+      recalcula solo el nombre de archivo de imagen esperado por cada
+      forma (común/infrecuente/raro -> infrecuente/raro/épico), sin tocar
+      nombres, lore ni el resto de sus datos. Nota importante para el
+      usuario: no existía NINGÚN sprite de Rinoceronte en
+      `assets/creatures` ni antes ni después del cambio (comprobado con
+      la auditoría del punto siguiente), así que no ha habido ningún
+      archivo que renombrar — cuando subas su arte, debe llamarse
+      `rinoceronte_infrecuente.png` / `_raro.png` / `_epico.png` (ya no
+      `_comun.png`).
+- [x] Eliminados los personajes Mariposa y Pelícano (petición del
+      usuario): comprobado antes de borrar que ninguna otra parte del
+      archivo los referenciaba (ni pools de zona, ni setStatMult, ni
+      setLeaderSkill), así que ha sido una eliminación limpia de su única
+      línea `addFamily` cada uno, sin dejar ids sueltos. Tampoco existía
+      sprite alguno para ninguno de los dos.
+- [x] Auditoría completa de sprites (petición del usuario, "revisa que
+      todos los personajes, mobs, bosses y zonas tengan sus
+      correspondientes sprites"): script contra el motor real que cruza
+      el campo `image` de cada entrada de FIGHTERS/MOBS/BOSSES (y el
+      nombre de archivo `assets/scenery/<zone.id>.jpg` esperado por cada
+      ZONA) con los archivos que existen de verdad en disco. Resultado
+      reportado en detalle al usuario en el chat: 468/746 sprites de
+      personaje existen y están bien referenciados (0 archivos huérfanos
+      — todo lo que existe se usa), pero **278 sprites de personaje
+      siguen faltando** (89 familias completas — prácticamente todas las
+      últimas ~10 tandas de personajes añadidas: Ganesha, Amaterasu,
+      Susanoo, Anansi, Tlaloc, Hanuman, Kali, Cernunnos, Maui, Pele,
+      Xolotl y el resto del lote de mitologías variadas, todo el lote de
+      animales humanizados de tier 1 y 2, Sigurd/Aquiles/Sansón/Musashi/
+      Guan Yu/Atila/Khagan, Miguel Arcángel/Huitzilopochtli/Ballena/
+      Narval/Lince/Jirafa/Shinigami, Isis/Horus/Freya/Tyr/Hermes/Hefesto
+      y más — lista completa dada en el chat), **11 jefes sin imagen**
+      (Jörmungandr, Hades, Hel, Set, Fafnir, Anzu, Simbionte, Titán
+      Colosal, Kaiju, Grendel, Jersey Devil) y **11 zonas sin fondo**
+      (las mismas 11 zonas "segunda vuelta" de esos jefes — ya
+      reportado como pendiente en una ronda anterior). También 7
+      archivos sueltos en `assets/scenery` (campeon.jpg,
+      elemental_agua/fuego/rayo/tierra/viento.jpg) que no corresponden a
+      ninguna zona actual y no están referenciados en ningún .js — no se
+      han tocado, solo se reportan como posible limpieza pendiente.
 
 ## Notas
 
