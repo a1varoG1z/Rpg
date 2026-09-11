@@ -5750,12 +5750,25 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       coincide con la forma intermedia de Cernunnos y corregido con
       `git mv`) y `rinoceronte_epico` (resuelto por el punto anterior).
       Tras ambas correcciones: **743/743 sprites de personaje OK, 0
-      huérfanos, 44/44 zonas con fondo**. Quedan 7 archivos sueltos en
-      `assets/scenery` (campeon.jpg, torre.jpg,
-      elemental_agua/fuego/rayo/tierra/viento.jpg) que no corresponden a
-      ninguna zona actual ni están referenciados en ningún .js — no se
-      han tocado, solo se reportan como posible limpieza pendiente (no
-      son un error, parecen arte de una versión anterior de la UI).
+      huérfanos, 44/44 zonas con fondo**.
+      CORRECCIÓN a lo anterior: el audit inicial marcó 7 archivos de
+      `assets/scenery` (campeon.jpg, torre.jpg, elemental_agua/fuego/
+      rayo/tierra/viento.jpg) como "huérfanos" porque el script solo
+      recorría el array ZONES — el usuario preguntó de qué eran y, al
+      investigar, resultaron SER sprites legítimos en uso: `ui.js` tiene
+      un segundo mecanismo de fondo para pantallas que no son una zona
+      del mapa (Torre Batalla, Prueba del Campeón y las 5 Mazmorras
+      Elementales), cada una con un id de "pseudo-zona" hardcodeado
+      (`runPseudoZone`, y el `zone:` que se le pasa directamente a
+      `UI.openBattle` en la Prueba del Campeón) que reutiliza
+      `zoneBackgroundStyle` para buscar `assets/scenery/<id>.jpg` igual
+      que una zona real — los 7 archivos son exactamente esos fondos y
+      están bien puestos. Revisando el mismo mecanismo se encontraron
+      además otras 3 pantallas que SÍ usan un pseudo-id de este tipo
+      pero cuyo archivo no existe todavía (caen al degradado de color
+      de respaldo): `roguelike.jpg` (modo 🌀 Roguelike), `arena.jpg`
+      (⚔️ Arena) y `tiercap.jpg` (🎯 Tope de Tier) — comunicado al
+      usuario en el chat como pendiente real, no como limpieza.
 
 ## Notas
 
