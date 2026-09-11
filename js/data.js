@@ -1472,6 +1472,37 @@ const TIER_CAP_LEVELS = [
   { id: 'tc_legendario_explorador', label: 'Hasta Legendario · Solo Explorador', constraint: { rarityMax: 'legendario', class: 'explorador' } },
   { id: 'tc_final2', label: 'El Filtro Definitivo: Épico · Agua · Gurú', constraint: { rarityMax: 'epico', element: 'agua', class: 'guru' } },
   { id: 'tc_final3', label: 'El Filtro Absoluto: Legendario · Rayo · Pícaro', constraint: { rarityMax: 'legendario', element: 'rayo', class: 'picaro' } },
+
+  // Segunda ampliación (petición del usuario, "amplía los retos en la
+  // sección Tope de Tier") — tres bloques, siguiendo el mismo patrón que
+  // las dos ampliaciones anteriores:
+  // 1) La escalera de elemento (ya completa en Raro y Épico arriba) sube
+  //    un escalón más a Legendario, el único que le faltaba.
+  // 2) La escalera de clase (ya completa en Épico y Legendario) baja a
+  //    Raro, el único techo de rareza al que le faltaba su propia ronda
+  //    de 5 — antes solo Raro tenía la ronda de elemento sin su
+  //    contrapartida de clase.
+  // 3) Triples elemento+clase: solo existían 3 de los 25 combos posibles
+  //    (fuego+campeón@raro, agua+gurú@épico, rayo+pícaro@legendario) —
+  //    se añaden 6 más, con los 2 elementos (viento, tierra) y clases que
+  //    aún no habían aparecido en ningún triple, repartidos en rareza
+  //    creciente igual que el resto del modo.
+  { id: 'tc_legendario_fuego', label: 'Hasta Legendario · Solo Fuego', constraint: { rarityMax: 'legendario', element: 'fuego' } },
+  { id: 'tc_legendario_viento', label: 'Hasta Legendario · Solo Viento', constraint: { rarityMax: 'legendario', element: 'viento' } },
+  { id: 'tc_legendario_tierra', label: 'Hasta Legendario · Solo Tierra', constraint: { rarityMax: 'legendario', element: 'tierra' } },
+  { id: 'tc_legendario_rayo', label: 'Hasta Legendario · Solo Rayo', constraint: { rarityMax: 'legendario', element: 'rayo' } },
+  { id: 'tc_legendario_agua', label: 'Hasta Legendario · Solo Agua', constraint: { rarityMax: 'legendario', element: 'agua' } },
+  { id: 'tc_raro_campeon', label: 'Hasta Raro · Solo Campeón', constraint: { rarityMax: 'raro', class: 'campeon' } },
+  { id: 'tc_raro_picaro', label: 'Hasta Raro · Solo Pícaro', constraint: { rarityMax: 'raro', class: 'picaro' } },
+  { id: 'tc_raro_guru', label: 'Hasta Raro · Solo Gurú', constraint: { rarityMax: 'raro', class: 'guru' } },
+  { id: 'tc_raro_brujo', label: 'Hasta Raro · Solo Brujo', constraint: { rarityMax: 'raro', class: 'brujo' } },
+  { id: 'tc_raro_explorador', label: 'Hasta Raro · Solo Explorador', constraint: { rarityMax: 'raro', class: 'explorador' } },
+  { id: 'tc_tri_viento_brujo', label: 'Hasta Raro · Solo Viento · Solo Brujo', constraint: { rarityMax: 'raro', element: 'viento', class: 'brujo' } },
+  { id: 'tc_tri_tierra_explorador', label: 'Hasta Épico · Solo Tierra · Solo Explorador', constraint: { rarityMax: 'epico', element: 'tierra', class: 'explorador' } },
+  { id: 'tc_tri_rayo_campeon', label: 'Hasta Épico · Solo Rayo · Solo Campeón', constraint: { rarityMax: 'epico', element: 'rayo', class: 'campeon' } },
+  { id: 'tc_tri_fuego_picaro', label: 'Hasta Legendario · Solo Fuego · Solo Pícaro', constraint: { rarityMax: 'legendario', element: 'fuego', class: 'picaro' } },
+  { id: 'tc_tri_tierra_guru', label: 'Hasta Legendario · Solo Tierra · Solo Gurú', constraint: { rarityMax: 'legendario', element: 'tierra', class: 'guru' } },
+  { id: 'tc_tri_viento_explorador', label: 'El Filtro Postrero: Legendario · Viento · Explorador', constraint: { rarityMax: 'legendario', element: 'viento', class: 'explorador' } },
 ];
 function tierCapConstraintLabel(c) {
   const parts = [rarityInfo(c.rarityMax).label + ' o menos'];

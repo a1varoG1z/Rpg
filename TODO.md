@@ -5769,6 +5769,47 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       de respaldo): `roguelike.jpg` (modo 🌀 Roguelike), `arena.jpg`
       (⚔️ Arena) y `tiercap.jpg` (🎯 Tope de Tier) — comunicado al
       usuario en el chat como pendiente real, no como limpieza.
+- [x] **Medallón (círculo de fondo tras el retrato) añadido a las fotos de
+      perfil y a la revelación de evolución** (petición del usuario).
+      Encontrados 4 sitios que usan el mismo encabezado `.fighter-modal-
+      head` pero añadían el retrato suelto en vez de envuelto en
+      `.creature-canvas-wrap` (la clase que de verdad pinta el círculo vía
+      `::before`), así que ninguno lo mostraba pese a que el resto de
+      retratos del juego sí: la ficha del roster (`UI.openFighterModal`),
+      la ficha de solo lectura de la Pokédex (`UI.showPokedexEntry`), la
+      ficha de un jefe (`UI.showBossEntry`) y la ficha de un luchador
+      durante el combate (`UI.showBattleUnitStats`) — los 4 envueltos
+      ahora, con un `::before` de 92px propio en CSS (el genérico por
+      defecto es de 76px, pensado para una tarjeta normal, no para el
+      retrato más grande de esta cabecera). La revelación de evolución
+      (`UI.showEvolveReveal`) usa una clase distinta (`.reveal-canvas-
+      wrap`, compartida con la revelación de invocación) que no tenía
+      NINGÚN `::before` propio — añadido solo a `.evolve-old`/
+      `.evolve-new` (78px/106px, a juego con el tamaño de cada retrato),
+      sin tocar `.reveal-canvas-wrap` a secas para no afectar a la
+      revelación de invocación, que el usuario no pidió tocar. Verificado
+      con Playwright contra el motor real: los 4 sitios de perfil y
+      ambos lados de la evolución muestran el medallón con el tamaño
+      correcto; el ajuste "Mostrar medallón" de Ajustes lo oculta
+      correctamente en los 5 sitios nuevos igual que en el resto del
+      juego; la revelación de invocación sigue sin medallón (no se tocó).
+- [x] **Ampliados los retos de Tope de Tier** (petición del usuario, "amplía
+      los retos"), de 28 a 44 niveles — mismo patrón que las dos rondas de
+      ampliación anteriores (ver comentario en `TIER_CAP_LEVELS`, data.js):
+      la escalera de elemento (ya completa en Raro y Épico) sube un
+      escalón más a Legendario (5 niveles nuevos); la escalera de clase
+      (ya completa en Épico y Legendario) baja a Raro, el único techo que
+      le faltaba (5 niveles nuevos); y de los 25 combos triples posibles
+      de elemento+clase solo existían 3 — se añaden 6 más, con rareza
+      creciente y los elementos/clases que todavía no habían aparecido en
+      ningún triple. Al ser una lista 100% dinámica (`TIER_CAP_LEVELS.
+      forEach` en `UI.renderTierCap`, `state.tierCap.clears` indexado por
+      `level.id`, el objetivo "supera todos" usa `TIER_CAP_LEVELS.length`)
+      no hizo falta tocar nada más para que los 16 niveles nuevos
+      aparezcan en la escalera secuencial y cuenten para el objetivo.
+      Verificado con Playwright contra el motor real: 44 niveles, 0 ids
+      duplicados, el objetivo "Supera todos los niveles de Tope de Tier"
+      ya pide 44 — sin errores de página.
 
 ## Notas
 

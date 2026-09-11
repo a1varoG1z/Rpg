@@ -281,7 +281,9 @@ UI.showPokedexEntry = function (def) {
   const body = $('pokedexEntryModalBody');
   body.innerHTML = '';
   const head = el('div', 'fighter-modal-head');
-  head.appendChild(creatureCanvas(def.id, 90));
+  const portraitWrap = el('div', 'creature-canvas-wrap');
+  portraitWrap.appendChild(creatureCanvas(def.id, 90));
+  head.appendChild(portraitWrap);
   const info = el('div');
   info.innerHTML = `<div class="item-modal-name" style="color:${rarity.color}">${def.name}</div>
     <div class="item-modal-rarity">${rarity.label} · ${ELEMENT_INFO[def.element].label} ${ELEMENT_INFO[def.element].icon} · ${CLASS_INFO[def.class].label} ${CLASS_INFO[def.class].icon}</div>
@@ -556,7 +558,9 @@ UI.showBossEntry = function (entry) {
   const body = $('bossEntryModalBody');
   body.innerHTML = '';
   const head = el('div', 'fighter-modal-head');
-  head.appendChild(creatureCanvas(def.id, 90));
+  const portraitWrap = el('div', 'creature-canvas-wrap');
+  portraitWrap.appendChild(creatureCanvas(def.id, 90));
+  head.appendChild(portraitWrap);
   const info = el('div');
   info.innerHTML = `<div class="item-modal-name" style="color:${rarity.color}">${def.name}</div>
     <div class="item-modal-rarity">${rarity.label} · ${ELEMENT_INFO[def.element].label} ${ELEMENT_INFO[def.element].icon} · ${CLASS_INFO[def.class].label} ${CLASS_INFO[def.class].icon}</div>
@@ -2594,8 +2598,9 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   const body = $('fighterModalBody');
   body.innerHTML = '';
   const head = el('div', 'fighter-modal-head');
-  const portrait = creatureCanvas(entry.defId, 90);
-  head.appendChild(portrait);
+  const portraitWrap = el('div', 'creature-canvas-wrap');
+  portraitWrap.appendChild(creatureCanvas(entry.defId, 90));
+  head.appendChild(portraitWrap);
   const info = el('div');
   const vuln = TYPE_VULNERABILITY[def.class];
   const bandPos = bandPositionOf(state, uid);
@@ -4134,7 +4139,9 @@ UI.showBattleUnitStats = function (u) {
   const body = $('pickerModalBody');
   body.innerHTML = '';
   const head = el('div', 'fighter-modal-head');
-  head.appendChild(creatureCanvas(u.defId, 80));
+  const portraitWrap = el('div', 'creature-canvas-wrap');
+  portraitWrap.appendChild(creatureCanvas(u.defId, 80));
+  head.appendChild(portraitWrap);
   const info = el('div');
   // El nivel mostrado es el NOMINAL (capado en XP_LEVEL_CAP) — a partir de
   // ahí el rival puede llevar un refuerzo extra (lateZoneMult del camino en

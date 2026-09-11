@@ -312,6 +312,15 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .item-modal-rarity { font-size: 0.75rem; color: var(--cream-dim); }
 
 .fighter-modal-head { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+/* Medallón en la "foto de perfil" de las 4 fichas que usan este
+   encabezado (roster, Pokédex, jefe, ficha de combate) — antes solo se
+   pintaba en las rejillas (Colección, Formación, Torre...), no aquí,
+   porque el retrato se añadía suelto sin pasar por .creature-canvas-wrap
+   (ver openFighterModal/showPokedexEntry/showBossEntry/
+   showBattleUnitStats en ui.js). Tamaño propio (92px) en vez del 76px
+   por defecto, a juego con el retrato más grande (80-90px) de esta
+   cabecera en vez del ~72px de una tarjeta normal. */
+.fighter-modal-head .creature-canvas-wrap::before { width: 92px; height: 92px; }
 .xp-bar { height: 9px; background: #1a1410; border: 1px solid #000; border-radius: 5px; overflow: hidden; }
 .xp-fill { height: 100%; background: linear-gradient(90deg, #3f7fd0, var(--blue)); }
 .xp-text { font-size: 0.7rem; color: var(--cream-dim); margin-top: 3px; }
@@ -375,6 +384,21 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 @keyframes evolveArrowPulse { 0%, 100% { transform: translateX(0); opacity: 0.7; } 50% { transform: translateX(6px); opacity: 1; } }
 .evolve-old { opacity: 0.55; filter: grayscale(0.4); }
 .evolve-new .creature-canvas { animation: evolveNewPop 0.6s ease-out; }
+/* Medallón en la revelación de evolución — .reveal-canvas-wrap (a
+   diferencia de .creature-canvas-wrap) no tenía ::before propio, así que
+   antes de/después de evolucionar se veían sin él aunque el resto de
+   retratos del juego sí lo llevaran. Solo en .evolve-old/.evolve-new (no
+   en .reveal-canvas-wrap a secas), para no afectar a la revelación de
+   invocación, que no se pidió tocar. Tamaño propio por lado, a juego con
+   el retrato más pequeño (74px) de la forma antigua y el más grande
+   (100px) de la nueva. */
+.evolve-old::before, .evolve-new::before {
+  content: ''; position: absolute; z-index: 0; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  border-radius: 50%; background: #f6f1e4;
+}
+.evolve-old::before { width: 78px; height: 78px; }
+.evolve-new::before { width: 106px; height: 106px; }
+body.hide-medallion .evolve-old::before, body.hide-medallion .evolve-new::before { display: none; }
 @keyframes evolveNewPop { 0% { transform: scale(0.4); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
 
 /* ---------- Inventario / equipo ---------- */
