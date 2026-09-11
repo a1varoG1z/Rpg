@@ -5713,15 +5713,19 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       duplicados ni referencias rotas tras el cambio.
 - [x] Rinoceronte pasado de tier 1 a tier 2 (petición del usuario): un
       solo cambio de parámetro en su `addFamily` (1 -> 2), que además
-      recalcula solo el nombre de archivo de imagen esperado por cada
-      forma (común/infrecuente/raro -> infrecuente/raro/épico), sin tocar
-      nombres, lore ni el resto de sus datos. Nota importante para el
-      usuario: no existía NINGÚN sprite de Rinoceronte en
-      `assets/creatures` ni antes ni después del cambio (comprobado con
-      la auditoría del punto siguiente), así que no ha habido ningún
-      archivo que renombrar — cuando subas su arte, debe llamarse
-      `rinoceronte_infrecuente.png` / `_raro.png` / `_epico.png` (ya no
-      `_comun.png`).
+      recalcula el nombre de archivo de imagen esperado por cada forma
+      (común/infrecuente/raro -> infrecuente/raro/épico), sin tocar
+      nombres, lore ni el resto de sus datos. El usuario pidió además
+      renombrar los pngs para que se ajustaran: en el momento del cambio
+      no existía ningún sprite todavía, pero un `git merge` posterior
+      (ver más abajo) trajo 3 archivos subidos por el usuario con el
+      naming ANTIGUO (`rinoceronte_comun/infrecuente/raro.png`, arte de
+      cría/adulto/forma final en ese orden). Renombrados a mano con
+      `git mv` para conservar el desplazamiento correcto (comprobado
+      visualmente que el contenido de cada imagen encaja con su nueva
+      rareza): `_raro`->`_epico` (forma final), `_infrecuente`->`_raro`
+      (adulto), `_comun`->`_infrecuente` (cría) — hecho en ese orden para
+      no pisar ningún archivo a mitad de camino.
 - [x] Eliminados los personajes Mariposa y Pelícano (petición del
       usuario): comprobado antes de borrar que ninguna otra parte del
       archivo los referenciaba (ni pools de zona, ni setStatMult, ni
@@ -5733,26 +5737,25 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       correspondientes sprites"): script contra el motor real que cruza
       el campo `image` de cada entrada de FIGHTERS/MOBS/BOSSES (y el
       nombre de archivo `assets/scenery/<zone.id>.jpg` esperado por cada
-      ZONA) con los archivos que existen de verdad en disco. Resultado
-      reportado en detalle al usuario en el chat: 468/746 sprites de
-      personaje existen y están bien referenciados (0 archivos huérfanos
-      — todo lo que existe se usa), pero **278 sprites de personaje
-      siguen faltando** (89 familias completas — prácticamente todas las
-      últimas ~10 tandas de personajes añadidas: Ganesha, Amaterasu,
-      Susanoo, Anansi, Tlaloc, Hanuman, Kali, Cernunnos, Maui, Pele,
-      Xolotl y el resto del lote de mitologías variadas, todo el lote de
-      animales humanizados de tier 1 y 2, Sigurd/Aquiles/Sansón/Musashi/
-      Guan Yu/Atila/Khagan, Miguel Arcángel/Huitzilopochtli/Ballena/
-      Narval/Lince/Jirafa/Shinigami, Isis/Horus/Freya/Tyr/Hermes/Hefesto
-      y más — lista completa dada en el chat), **11 jefes sin imagen**
-      (Jörmungandr, Hades, Hel, Set, Fafnir, Anzu, Simbionte, Titán
-      Colosal, Kaiju, Grendel, Jersey Devil) y **11 zonas sin fondo**
-      (las mismas 11 zonas "segunda vuelta" de esos jefes — ya
-      reportado como pendiente en una ronda anterior). También 7
-      archivos sueltos en `assets/scenery` (campeon.jpg,
+      ZONA) con los archivos que existen de verdad en disco. La primera
+      pasada (antes de sincronizar con GitHub) encontró 278 sprites de
+      personaje y 11 fondos de zona todavía sin subir — pero al hacer
+      `git fetch`/`git merge` para poder pushear (el usuario había subido
+      cientos de imágenes directamente por GitHub mientras tanto, más un
+      commit suyo comentando la familia Anansi) el merge trajo casi todo
+      ese arte de golpe. Repetida la auditoría tras el merge: de 743
+      sprites de personaje esperados solo faltaban 2 — `cernunnos_epico`
+      (el archivo existía pero se había subido con el nombre genérico
+      `epico.png` sin renombrar; comprobado visualmente que el contenido
+      coincide con la forma intermedia de Cernunnos y corregido con
+      `git mv`) y `rinoceronte_epico` (resuelto por el punto anterior).
+      Tras ambas correcciones: **743/743 sprites de personaje OK, 0
+      huérfanos, 44/44 zonas con fondo**. Quedan 7 archivos sueltos en
+      `assets/scenery` (campeon.jpg, torre.jpg,
       elemental_agua/fuego/rayo/tierra/viento.jpg) que no corresponden a
-      ninguna zona actual y no están referenciados en ningún .js — no se
-      han tocado, solo se reportan como posible limpieza pendiente.
+      ninguna zona actual ni están referenciados en ningún .js — no se
+      han tocado, solo se reportan como posible limpieza pendiente (no
+      son un error, parecen arte de una versión anterior de la UI).
 
 ## Notas
 
