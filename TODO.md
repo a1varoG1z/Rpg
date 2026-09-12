@@ -5835,6 +5835,43 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       cambiaron tras la simplificación; el ajuste "Mostrar medallón"
       sigue ocultándolo también en la revelación de invocación — sin
       errores de página.
+- [x] **Guía del juego (`UI.openGuide`) puesta al día** (petición del
+      usuario, "actualiza la guía con todos los cambios que ha habido
+      desde la última vez que la modificaste"). Localizado el último
+      commit que tocó de verdad su contenido (`git log -L` sobre el
+      rango de líneas de la función): `6f31936`, el mismo de "Permitir
+      deshacer el trazo de línea y ampliar mucho las estadísticas" — ese
+      commit añadió la mención del deshacer-trazo a "Formación y
+      combate" pero, pese a construir en el mismo commit la pantalla de
+      "📊 Estadísticas en profundidad", nunca llegó a documentarla en la
+      guía. Revisados todos los commits desde entonces (toda esta
+      sesión: decenas de personajes/jefes nuevos, 3 reordenaciones del
+      ranking de Legendarios, Gollum/Rinoceronte/Mariposa/Pelícano,
+      auditorías de sprites, medallón) para separar lo que es contenido/
+      balance (no cambia ninguna mecánica que la guía explique, así que
+      no necesita entrada) de lo que sí es una mecánica nueva o ampliada
+      sin documentar. Dos secciones añadidas:
+      - **📊 Estadísticas en profundidad**: la pantalla que faltaba
+        documentar desde su creación — resumen global, progreso por
+        modo, actividad, desglose por elemento/clase, récords y el
+        listado buscable/ordenable por luchador.
+      - **🎯 Tope de Tier**: modo entero sin ninguna mención previa en la
+        guía (existía ya antes de esta sesión, pero la ampliación de 28
+        a 44 niveles de hoy mismo era la ocasión para por fin
+        documentarlo) — mecánica de restricción de Formación (Fase 1,
+        con `${TIER_CAP_LEVELS.length}` en vez de un número fijo para
+        que nunca vuelva a quedarse desactualizado) y Trials de Familia
+        (Fase 2, `${FAMILY_TRIALS.length}` igual de dinámico).
+      Quedan fuera a propósito Arena y Roguelike — huecos ya existentes
+      en la guía desde antes de `6f31936`, no tocados en ninguna de las
+      dos sesiones, así que no son "un cambio desde la última vez" y
+      señalarlos aquí sería una limpieza distinta a lo que se pidió; se
+      lo aviso al usuario en el chat por si quiere pedirlo aparte.
+      Verificado con Playwright contra el motor real: las 18 secciones
+      de la guía cargan en el orden esperado, las dos nuevas muestran
+      44 y 199 (los conteos reales ahora mismo, vía las mismas
+      variables que ya usa el resto de la guía) en vez de un número
+      escrito a mano — sin errores de página.
 
 ## Notas
 

@@ -742,6 +742,20 @@ UI.openGuide = function () {
     Formación, equipar y evolucionar. Los niveles son rejugables para conseguir más copias, y se
     desbloquean en orden, superando siempre el anterior.</p>`));
 
+  body.appendChild(guideSection('🎯 Tope de Tier', `
+    <p class="settings-info">Reto de restricción de Formación, disponible desde el principio (no hace
+    falta desbloquearlo): antes de cada nivel, TODA tu Formación (los huecos vacíos no cuentan) debe
+    cumplir el filtro indicado — un techo de rareza (p.ej. "hasta Raro"), a veces combinado con un
+    único elemento y/o una única clase permitidos. El rival de cada nivel se saca del MISMO filtro
+    que tú, así que el combate sigue siendo justo dentro de esa restricción.</p>
+    <p class="settings-info">Una escalera fija de ${TIER_CAP_LEVELS.length} niveles, del filtro más
+    laxo al más estricto — se desbloquean en orden y son rejugables después de superarlos.</p>
+    <p class="settings-info">🧬 <b>Trials de Familia</b> (botón aparte, dentro de la misma pantalla):
+    un combate rápido de 1 sola oleada por cada una de las ${FAMILY_TRIALS.length} familias jugables
+    del juego — a diferencia de la escalera de arriba, no tienen orden ni desbloqueo entre sí, pero
+    exigen tener fichada al menos 1 copia de esa familia colocada en tu Formación para poder
+    intentarlo.</p>`));
+
   body.appendChild(guideSection('⚔️ Prueba del Campeón', `
     <p class="settings-info">Disponible desde el principio, sin desbloqueo: elige UN único luchador
     de tu Colección para encadenar duelos 1 contra 1 cada vez más difíciles, sin curarse ni recargar
@@ -765,6 +779,16 @@ UI.openGuide = function () {
     🎯 <b>Objetivos</b>: resumen general de tu progreso — zonas, etapas, Pokédex, jefes, banda,
     equipo y más, incluidas las <b>estadísticas históricas</b> de toda la partida (combates,
     daño hecho/recibido, Texel y XP ganados en combate...), acumuladas en todos los modos.</p>`));
+
+  body.appendChild(guideSection('📊 Estadísticas en profundidad', `
+    <p class="settings-info">Pantalla aparte (Ajustes → "📊 Estadísticas en profundidad") con todo el
+    historial de combate de la partida: resumen global (combates, % de victorias, daño hecho/
+    recibido, curación, críticos, ultis desatadas, daño medio por combate...), progreso de cada modo
+    de juego, actividad (días jugados y racha actual), desglose por elemento y por clase, y un top 3
+    de récords en 9 categorías distintas (más daño, más bajas, golpe más fuerte...).</p>
+    <p class="settings-info">Más abajo, un listado de TODOS los luchadores de tu Colección con su
+    propio historial individual — buscable por nombre y ordenable por cualquier estadística, para ver
+    de un vistazo quién es tu mejor luchador en cada faceta del combate.</p>`));
 
   body.appendChild(guideSection('💾 Copia de seguridad y acciones en lote', `
     <p class="settings-info">Desde Ajustes puedes <b>exportar tu partida</b> a un código de texto
