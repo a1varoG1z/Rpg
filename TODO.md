@@ -5899,6 +5899,31 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       lista los 5 correctamente formateados, y con un luchador recién
       creado sin efectos muestra el aviso de vacío — sin errores de
       página.
+- [x] **Bug real: un luchador revivido a mitad de ronda no actuaba nunca en
+      esa ronda, ni siquiera siendo más ágil que quien lo revivió**
+      (reportado por el usuario: "el personaje revivido no ataca, está
+      mal, debería atacar, no?" — sí, tenía razón). Causa raíz en
+      `simulateOneRound` (combat.js): el orden de turnos de la ronda
+      (`order`) se calculaba UNA VEZ al principio filtrando solo a los
+      vivos en ESE instante — un aliado caído revivido a mitad de ronda
+      (ulti `revivir`) pasaba a `alive = true` pero nunca se añadía a
+      `order`, así que se quedaba sin actuar hasta la ronda siguiente
+      pasase lo que pasase, independientemente de su Agilidad. Arreglado
+      insertándolo en lo que queda de la ronda actual justo después de
+      revivirlo, en la posición que le correspondería por Agilidad entre
+      los que todavía no han actuado (antes del primero más lento que él)
+      — igual que si hubiera estado vivo desde el principio. Cambio
+      genérico a nivel del bucle de turnos (detecta a CUALQUIER unidad
+      que pase de caída a viva tras un turno, no solo vía la ulti
+      `revivir` en concreto), así que cubre también cualquier otro efecto
+      de revivir que pueda añadirse más adelante. Verificado con
+      Playwright contra el motor real: ronda de prueba con un revividor
+      lento (Agilidad 5) y un aliado caído mucho más ágil (Agilidad 999)
+      — tras el evento de `revive` en el registro de combate, el aliado
+      revivido SÍ aparece actuando (`charge`) en la misma ronda; y una
+      ronda normal de 3 contra 3 sin ningún revivido (regresión) sigue
+      dando exactamente 1 turno por unidad, sin duplicados ni omisiones —
+      sin errores de página.
 
 ## Notas
 

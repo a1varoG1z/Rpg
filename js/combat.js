@@ -1159,14 +1159,33 @@ function rowAlive(row) { return row.some(u => u.alive); }
 // usaron las 3, volver a elegir entre ellas otra vez.
 function simulateOneRound(playerRow, enemyRow) {
   const log = [];
-  const order = [...playerRow, ...enemyRow].filter(u => u.alive).sort((a, b) => effectiveAgi(b) - effectiveAgi(a) || Math.random() - 0.5);
-  for (const unit of order) {
+  const allUnits = [...playerRow, ...enemyRow];
+  const order = allUnits.filter(u => u.alive).sort((a, b) => effectiveAgi(b) - effectiveAgi(a) || Math.random() - 0.5);
+  const seen = new Set(order.map(u => u.id));
+  for (let i = 0; i < order.length; i++) {
+    const unit = order[i];
     if (!unit.alive) continue;
     tickTimers(unit, log);
     const ownRow = unit.side === 'player' ? playerRow : enemyRow;
     const foeRow = unit.side === 'player' ? enemyRow : playerRow;
     if (!rowAlive(ownRow) || !rowAlive(foeRow)) break;
     performTurn(log, unit, ownRow, foeRow);
+    // Un aliado revivido a mitad de ronda (ver kind:'revive' en
+    // performTurn) estaba muerto cuando se calculó `order` arriba, así
+    // que se quedaba sin actuar hasta la ronda siguiente aunque fuera
+    // más ágil que quien lo revivió — insertado ahora en lo que queda de
+    // ESTA ronda, en la posición que le tocaría por agilidad como a
+    // cualquier otro (antes del primero más lento que él entre los que
+    // todavía no han actuado).
+    allUnits.forEach(u => {
+      if (!u.alive || seen.has(u.id)) return;
+      seen.add(u.id);
+      let insertAt = order.length;
+      for (let j = i + 1; j < order.length; j++) {
+        if (effectiveAgi(order[j]) < effectiveAgi(u)) { insertAt = j; break; }
+      }
+      order.splice(insertAt, 0, u);
+    });
     if (!rowAlive(playerRow) || !rowAlive(enemyRow)) break;
   }
   const result = !rowAlive(enemyRow) ? 'enemigo_derrotado' : !rowAlive(playerRow) ? 'combo_derrotada' : 'continua';
