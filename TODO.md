@@ -5872,6 +5872,33 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       44 y 199 (los conteos reales ahora mismo, vía las mismas
       variables que ya usa el resto de la guía) en vez de un número
       escrito a mano — sin errores de página.
+- [x] **Ver los buffs/debuffs activos de un luchador durante el combate**
+      (petición del usuario: "al hacer click en un personaje, tengo que
+      poder ver los buffos que tiene en ese momento"). La ficha que ya se
+      abría al tocar una tarjeta en combate (`UI.showBattleUnitStats`,
+      tanto propias como rivales) solo mostraba nombre/rareza/stats
+      base/ulti — nada de su estado activo. Todos los campos ya existían
+      en el objeto del luchador desde antes (`buffs`/`debuffs`/`dots`/
+      `stunTurns`/`shield`, ver makeUnit en combat.js), pero no se
+      mostraban en ningún sitio — de hecho el propio registro de combate
+      ni siquiera escribe una línea al aplicarse un buff o debuff (los
+      casos 'buff'/'debuff' de `UI.applyBattleEvent` están vacíos), así
+      que hasta ahora la única forma de saber que un efecto seguía activo
+      era intuirlo por el número de daño. Añadido un panel nuevo
+      "🌀 Estado actual" (función `battleUnitStatusPanel`, reutilizada
+      igual para unidades propias y rivales) entre las estadísticas y la
+      ulti, con una fila por cada buff (⬆️ verde, stat + % + turnos
+      restantes), debuff (⬇️ rojo, igual), veneno/quemadura (☠️ rojo,
+      daño/turno + turnos), aturdimiento (😵 rojo, turnos) y escudo (🛡️
+      verde, cantidad + turnos) — o un aviso de "Sin efectos activos
+      ahora mismo" cuando no hay ninguno, en vez de dejar el panel vacío.
+      Verificado con Playwright contra el motor real: con un luchador
+      real de la partida (`makePlayerUnit`) al que se le fuerzan a mano
+      los 5 tipos de efecto a la vez, el panel (tanto la función suelta
+      como ya insertado en el modal real de `UI.showBattleUnitStats`)
+      lista los 5 correctamente formateados, y con un luchador recién
+      creado sin efectos muestra el aviso de vacío — sin errores de
+      página.
 
 ## Notas
 

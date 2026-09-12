@@ -4153,6 +4153,34 @@ function ultTurnsText(u) {
   return t === 0 ? '⚡ ¡LISTA!' : '⚡ ' + t;
 }
 
+// Panel de estado (buffs/debuffs/veneno-quemadura/aturdimiento/escudo) de un
+// luchador EN COMBATE — petición explícita del usuario ("al hacer click en
+// un personaje, tengo que poder ver los buffos que tiene en ese momento").
+// Antes no había forma de consultar esto: el registro de combate ni
+// siquiera escribe una línea al aplicar un buff/debuff (ver el 'break' vacío
+// de esos casos en UI.applyBattleEvent), así que la única pista era intuir
+// el efecto por el número de daño. Todos estos campos ya existían en el
+// propio objeto `u` desde antes (buffs/debuffs/dots/stunTurns/shield, ver
+// makeUnit en combat.js) — el panel solo los lee y los lista, no toca
+// ninguna mecánica de combate.
+function battleUnitStatusPanel(u) {
+  const panel = el('div', 'panel');
+  const turnsLabel = (n) => n + ' turno' + (n === 1 ? '' : 's');
+  const rows = [];
+  (u.buffs || []).forEach(b => rows.push(
+    `<div class="stat-row"><span class="status-buff">⬆️ ${SKILL_STAT_LABEL[b.stat]} +${Math.round(b.pct * 100)}%</span><span>${turnsLabel(b.turnsLeft)}</span></div>`));
+  (u.debuffs || []).forEach(b => rows.push(
+    `<div class="stat-row"><span class="status-debuff">⬇️ ${SKILL_STAT_LABEL[b.stat]} -${Math.round(b.pct * 100)}%</span><span>${turnsLabel(b.turnsLeft)}</span></div>`));
+  (u.dots || []).forEach(d => rows.push(
+    `<div class="stat-row"><span class="status-debuff">☠️ ${d.label}</span><span>${d.amount}/turno · ${turnsLabel(d.turnsLeft)}</span></div>`));
+  if (u.stunTurns > 0) rows.push(
+    `<div class="stat-row"><span class="status-debuff">😵 Aturdido</span><span>${turnsLabel(u.stunTurns)}</span></div>`);
+  if (u.shield) rows.push(
+    `<div class="stat-row"><span class="status-buff">🛡️ Escudo</span><span>${u.shield.amount} · ${turnsLabel(u.shield.turnsLeft)}</span></div>`);
+  panel.innerHTML = `<h3>🌀 Estado actual</h3>` + (rows.length ? rows.join('') : '<p class="settings-info">Sin efectos activos ahora mismo.</p>');
+  return panel;
+}
+
 // Ficha de estadísticas de un luchador EN COMBATE (tanto propio como
 // rival) — se abre al tocar su tarjeta durante la batalla. Reutiliza el
 // modal genérico de picker; el CSS del modal va por encima del overlay de
@@ -4186,6 +4214,8 @@ UI.showBattleUnitStats = function (u) {
     <div class="stat-row"><span>💨 Agilidad</span><span>${u.agi}</span></div>
     <div class="stat-row"><span>🧠 Sabiduría</span><span>${u.wis}</span></div>`;
   body.appendChild(statsPanel);
+
+  body.appendChild(battleUnitStatusPanel(u));
 
   const skillPanel = el('div', 'panel');
   skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p><p class="settings-info"><b>Efecto exacto:</b> ${skillMechanicsText(skill)}</p>
