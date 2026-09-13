@@ -1160,12 +1160,29 @@ function rowAlive(row) { return row.some(u => u.alive); }
 function simulateOneRound(playerRow, enemyRow) {
   const log = [];
   const allUnits = [...playerRow, ...enemyRow];
+  // Efectos de varios turnos (buffs/debuffs/veneno-quemadura/escudo) decaen
+  // UNA VEZ POR RONDA, aquí al principio para TODO el mundo a la vez —
+  // antes se ticaban dentro del bucle de abajo, en el turno individual de
+  // cada uno, lo que dejaba duraciones asimétricas para un efecto aplicado
+  // a la vez a varias unidades por la misma ulti de fila (reportado por el
+  // usuario: un escudo de fila mostraba "2 turnos" en un luchador y "1
+  // turno" en otro que lo recibió en el mismo instante). La causa: quien
+  // actuara DESPUÉS del lanzador dentro de esa misma ronda recibía un tic
+  // de más (el de su propio turno, de camino) que quien ya hubiera
+  // actuado ANTES no recibía hasta la ronda siguiente. Tickando aquí,
+  // antes de que nadie actúe todavía, cualquier efecto aplicado DURANTE
+  // esta ronda (por una ulti que actúe más tarde) queda intacto hasta el
+  // principio de la ronda siguiente, para todos por igual, sin importar
+  // el orden de turnos. El aturdimiento (stunTurns) se queda fuera a
+  // propósito: su cuenta atrás significa literalmente "sáltate tus
+  // próximos N turnos", así que sigue consumiéndose en el turno propio de
+  // cada uno (ver performTurn), no aquí.
+  allUnits.forEach(u => { if (u.alive) tickTimers(u, log); });
   const order = allUnits.filter(u => u.alive).sort((a, b) => effectiveAgi(b) - effectiveAgi(a) || Math.random() - 0.5);
   const seen = new Set(order.map(u => u.id));
   for (let i = 0; i < order.length; i++) {
     const unit = order[i];
     if (!unit.alive) continue;
-    tickTimers(unit, log);
     const ownRow = unit.side === 'player' ? playerRow : enemyRow;
     const foeRow = unit.side === 'player' ? enemyRow : playerRow;
     if (!rowAlive(ownRow) || !rowAlive(foeRow)) break;

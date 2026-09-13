@@ -5924,6 +5924,38 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       ronda normal de 3 contra 3 sin ningún revivido (regresión) sigue
       dando exactamente 1 turno por unidad, sin duplicados ni omisiones —
       sin errores de página.
+- [x] **Bug real: un escudo/buff/veneno aplicado a la vez a varios
+      luchadores por la misma ulti de fila mostraba turnos restantes
+      distintos entre ellos** (reportado por el usuario con capturas: la
+      ulti de fila "Barrera de Piedra" de Tyr daba escudo a Ra y a
+      Leviatán en el mismo instante, pero la ficha de Ra mostraba
+      "2 turnos" y la de Leviatán "1 turno"). Causa raíz, la misma familia
+      de bug que el de revivir de la entrada anterior: `tickTimers`
+      (buffs/debuffs/veneno-quemadura/escudo) se llamaba dentro del turno
+      individual de cada unidad, no una vez por ronda para todos — quien
+      actuara DESPUÉS del lanzador de la ulti de fila DENTRO de esa misma
+      ronda (caso de Leviatán, Agilidad 244, más lento que Ra con 698)
+      recibía un tic de más (el de su propio turno, de camino) que quien
+      ya hubiera actuado antes (Ra) no recibía hasta la ronda siguiente —
+      mismo instante de aplicación, duraciones asimétricas. Arreglado
+      moviendo el ticado de estos 4 efectos a un único paso al PRINCIPIO
+      de `simulateOneRound`, antes de que nadie actúe todavía — así
+      cualquier efecto aplicado DURANTE la ronda por una ulti que actúe
+      más tarde queda intacto hasta el principio de la ronda siguiente,
+      para todos por igual, sin importar quién es más rápido. El
+      aturdimiento (stunTurns) se deja aparte a propósito: su cuenta
+      atrás significa "sáltate tus propios próximos N turnos", así que
+      sigue consumiéndose en el turno propio de cada uno, no en este paso
+      — no sufre esta misma inconsistencia porque no se compara entre
+      unidades. Verificado con Playwright contra el motor real: una ulti
+      de fila (`barrera`) que da escudo simultáneo a un aliado más rápido
+      y a uno más lento que el lanzador deja a ambos con los mismos
+      turnos restantes (2, el valor real de la ulti) tras esa ronda, y
+      siguen bajando sincronizados en la ronda siguiente (ambos a 1);
+      regresión de veneno (3 unidades de agilidad distinta envenenadas a
+      la vez siguen todas en 2/3 turnos tras una ronda) y de aturdimiento
+      (sigue saltándose exactamente sus 2 turnos propios y actuando en el
+      3º) sin cambios de comportamiento — sin errores de página.
 
 ## Notas
 
