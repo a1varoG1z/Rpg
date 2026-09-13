@@ -5956,6 +5956,30 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       la vez siguen todas en 2/3 turnos tras una ronda) y de aturdimiento
       (sigue saltándose exactamente sus 2 turnos propios y actuando en el
       3º) sin cambios de comportamiento — sin errores de página.
+- [x] **7 sprites de jefe se veían muy pequeños en su ficha** (reportado
+      por el usuario con una captura de Hel — sospechaba que eran de los
+      últimos jefes añadidos, y tenía razón). Ya hubo una pasada de
+      recorte para este mismo problema antes de esta sesión (commit
+      "Recorta sprites con margen excesivo", 24 sprites con hasta 40% de
+      relleno) pero los 11 jefes de la última ronda (Jörmungandr, Hades,
+      Hel, Set, Fafnir, Anzu, Simbionte, Titán Colosal, Kaiju, Grendel,
+      Jersey Devil) se subieron después y no pasaron por ella. Medido el
+      "ratio de relleno" (área del personaje ÷ área total del lienzo
+      transparente) de los 743 sprites de personaje del juego: la mayoría
+      está en 0.66-0.9, y exactamente 7 de esos 11 jefes se salían muy
+      por debajo — Hel (0.29, la peor con diferencia), Hades (0.39), Set
+      (0.41), Grendel (0.41), Titán Colosal (0.42), Simbionte (0.51) y
+      Jersey Devil (0.53); los otros 4 (Jörmungandr 0.91, Anzu 0.86,
+      Kaiju 0.80, Fafnir 0.74) ya estaban en línea con el resto y no se
+      han tocado. Recortados los 7 a su recuadro real de contenido con un
+      4% de margen (mismo criterio que la pasada anterior), sin tocar el
+      arte en sí — resultado 0.83-0.87 de relleno en los 7, comprobado
+      visualmente que ningún recorte corta ninguna parte del personaje
+      (incluidas puntas como el tridente de Hades, el bastón/humo de Set
+      o las alas del Jersey Devil). Sanity check general tras el cambio
+      (743/743 personajes, 597 fighters/102 mobs/44 bosses/44 zonas, sin
+      ids duplicados) sin errores de página — solo se tocaron archivos de
+      imagen, ningún .js.
 
 ## Notas
 
