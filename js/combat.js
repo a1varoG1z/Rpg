@@ -374,16 +374,27 @@ function buildTorreEncounters(level) {
 // jugador (ver formationMeetsConstraint en state.js) — así el combate
 // queda "en igualdad de condiciones" dentro de esa restricción, en vez de
 // ser un muro fijo sin relación con lo que se le permite traer al
-// jugador. Nivel y nº de rivales crecen suavemente con la posición en la
-// escalera (idx), igual que el resto de escaleras de Retos.
+// jugador.
+//
+// Petición explícita del usuario: "que haya más de una pelea, varios
+// escenarios diferentes que superar... con una dificultad en subida" —
+// antes cada nivel era una única oleada (o hasta 3 en los últimos, pero
+// todas al MISMO nivel fijo: ni un solo nivel subía de dificultad por
+// dentro). Ahora cada nivel es siempre un recorrido de VARIAS oleadas
+// SEGUIDAS sin curarse entre ellas (como una etapa del Mapa), y cada
+// oleada dentro del mismo nivel sube unos puntos de nivel de rival
+// respecto a la anterior — una escalera de dificultad propia DENTRO de
+// cada reto, además de la escalera ya existente ENTRE unos retos y
+// otros (idx).
 function buildTierCapEncounters(level, idx) {
   const pool = FIGHTERS.filter(f => rarityIndex(f.rarity) <= rarityIndex(level.constraint.rarityMax)
     && (!level.constraint.element || f.element === level.constraint.element)
     && (!level.constraint.class || f.class === level.constraint.class));
-  const enemyLevel = Math.min(XP_LEVEL_CAP, 6 + idx * 3);
-  const rowCount = idx < 5 ? 1 : (idx < 10 ? 2 : 3);
+  const baseLevel = Math.min(XP_LEVEL_CAP, 6 + idx * 3);
+  const waveCount = idx < 10 ? 3 : (idx < 25 ? 4 : 5);
   const rows = [];
-  for (let r = 0; r < rowCount; r++) {
+  for (let w = 0; w < waveCount; w++) {
+    const enemyLevel = Math.min(XP_LEVEL_CAP, baseLevel + w * 3);
     const row = [];
     for (let i = 0; i < 3; i++) {
       const def = pool[Math.floor(Math.random() * pool.length)];

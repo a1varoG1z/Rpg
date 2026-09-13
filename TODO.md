@@ -5980,6 +5980,32 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       (743/743 personajes, 597 fighters/102 mobs/44 bosses/44 zonas, sin
       ids duplicados) sin errores de página — solo se tocaron archivos de
       imagen, ningún .js.
+- [x] **Cada nivel de Tope de Tier pasa de 1-3 oleadas idénticas a un
+      recorrido de 3-5 oleadas con dificultad en subida** (petición del
+      usuario: "para cada reto... que haya varios escenarios diferentes
+      que superar... con una dificultad en subida"). Antes
+      `buildTierCapEncounters` daba 1 sola oleada a los primeros 5
+      niveles (literalmente "Solo Común" era un único combate) y hasta 3
+      a partir del nivel 10, pero SIEMPRE al mismo nivel de rival fijo
+      dentro de un mismo reto — ningún nivel subía de dificultad por
+      dentro, solo entre unos retos y otros. Ahora todo nivel es un
+      recorrido de 3 oleadas SEGUIDAS sin curarse entre ellas (4 a partir
+      del nivel 10, 5 a partir del 25 — mismo patrón de "más oleadas
+      según se avanza" que ya usa el Mapa), y cada oleada dentro del
+      mismo nivel sube el nivel del rival +3 respecto a la anterior
+      (capado en el tope de nivel del juego) — una escalera de
+      dificultad propia dentro de cada reto, no solo entre ellos.
+      Reutiliza el mismo recorrido de "Encuentro X/Y" que ya usan el
+      Mapa/Torre/Mazmorra Elemental (`encounters`/`nodeIdx` en
+      `window.__stageRun`), así que no hizo falta tocar la UI, solo la
+      función que genera las oleadas. De paso, añadida una frase a la
+      Guía del juego mencionando el recorrido de varias oleadas. Verificado
+      con Playwright contra el motor real (10 niveles muestreados de los
+      44): "Solo Común" (nivel 0) pasa de 1 a 3 oleadas con el rival
+      subiendo de nivel 6→9→12; niveles intermedios (10-24) dan 4 oleadas,
+      los últimos (25+) dan 5; todas las oleadas de todos los niveles
+      muestreados respetan de verdad el filtro rareza/elemento/clase del
+      reto — sin errores de página.
 
 ## Notas
 

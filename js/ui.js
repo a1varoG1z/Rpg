@@ -749,7 +749,10 @@ UI.openGuide = function () {
     único elemento y/o una única clase permitidos. El rival de cada nivel se saca del MISMO filtro
     que tú, así que el combate sigue siendo justo dentro de esa restricción.</p>
     <p class="settings-info">Una escalera fija de ${TIER_CAP_LEVELS.length} niveles, del filtro más
-    laxo al más estricto — se desbloquean en orden y son rejugables después de superarlos.</p>
+    laxo al más estricto — se desbloquean en orden y son rejugables después de superarlos. Cada nivel
+    es a su vez un recorrido de 3 a 5 oleadas SEGUIDAS sin curarte entre ellas, cada una un poco más
+    dura que la anterior — varios combates distintos que superar dentro de un mismo nivel, no solo
+    uno.</p>
     <p class="settings-info">🧬 <b>Trials de Familia</b> (botón aparte, dentro de la misma pantalla):
     un combate rápido de 1 sola oleada por cada una de las ${FAMILY_TRIALS.length} familias jugables
     del juego — a diferencia de la escalera de arriba, no tienen orden ni desbloqueo entre sí, pero
