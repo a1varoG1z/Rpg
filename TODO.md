@@ -6019,3 +6019,311 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
   y `combate-elegir-linea.jpg`. Con esto quedan desbloqueados los puntos de
   "pulido visual" y el sistema de tipos/tribus — solo falta decidir cuándo
   abordarlos (son sistemas grandes, ver más arriba).
+
+## Roster completo del juego
+
+Inventario generado directamente desde el motor real (FIGHTERS/MOBS/BOSSES en
+js/data.js), a petición del usuario. Cada familia jugable o de mob tiene 3 formas
+(evoluciona 2 veces); se listan las 3 en orden común→legendario según su tier. Los
+jefes son combates únicos sin evolución, ordenados según su posición real en el mapa
+(ZONES). Total: **597 formas de personaje jugable** (199 familias),
+**102 formas de mob** (34 familias) y **44 jefes de zona**.
+
+### Personajes jugables — 199 familias / 597 formas
+
+#### Tier 3 (Raro → Épico → Legendario) — 61 familias
+
+- **afrodita** (💧 🔮 Gurú): Doncella Nacida del Mar → Afrodita en Flor → Afrodita, Diosa del Amor
+- **amaterasu** (🔥 🔮 Gurú): Joven Diosa del Alba → Amaterasu en Vuelo → Amaterasu, Diosa del Sol Naciente
+- **anubis** (⛰️ 💀 Brujo): Chacal del Desierto → Sacerdote de Anubis → Anubis, Guardián de los Muertos
+- **aquiles** (💧 🗡️ Pícaro): Joven de Pies Ligeros → Aquiles, Azote de Troya → Aquiles, el Casi Invencible
+- **ares** (🔥 🛡️ Campeón): Joven de la Lanza Ardiente → Ares, Heraldo de la Guerra → Ares, Dios de la Guerra sin Cuartel
+- **armaduratecno** (⚡ 🏹 Explorador): Prototipo de Armadura → Piloto de Armadura de Combate → Titán de Acero y Rayo
+- **artemisa** (🌪️ 🏹 Explorador): Joven Cazadora de la Luna → Artemisa, Señora de la Caza → Artemisa, Diosa de la Luna y los Bosques Salvajes
+- **ascua** (🔥 🛡️ Campeón): Cachorro de Ascua → Fénix Centinela → Drakón Adulto de Fuego
+- **atenea** (⛰️ 🔮 Gurú): Joven Estratega del Olimpo → Atenea, Señora de la Guerra Justa → Atenea, Diosa de la Sabiduría y la Estrategia
+- **atila** (🔥 🛡️ Campeón): Joven Príncipe de las Estepas → Atila, el que Cabalga al Frente → Atila, Azote de Dios
+- **avefenix** (🔥 🔮 Gurú): Polluelo de Cenizas → Ave de Fuego Eterno → Fénix Inmortal
+- **brisa** (🌪️ 🏹 Explorador): Exploradora de las Corrientes → Arquera de las Nubes → Soberana del Vendaval
+- **cerbero** (🔥 🛡️ Campeón): Cachorro de Tres Cabezas → Guardián del Umbral → Cerbero, Custodio del Inframundo
+- **cernunnos** (⛰️ 🔮 Gurú): Joven de la Cornamenta → Cernunnos, Señor de los Bosques Salvajes → Cernunnos, Guardián de Todo lo Vivo
+- **chispa** (⚡ 🔮 Gurú): Chispa Errante → Oráculo de Tormenta → Tirano de la Tormenta
+- **coatlicue** (⛰️ 💀 Brujo): Hija de la Falda de Serpientes → Coatlicue en Vigilia → Coatlicue, Madre de Todo lo que Nace y Muere
+- **dracula** (⚡ 💀 Brujo): Vástago de la Noche → Noble de Sangre Oscura → Drácula, Señor de la Noche
+- **duende** (🌪️ 🗡️ Pícaro): Duende del Vendaval → Sombra del Ciclón → Titán de las Corrientes
+- **esfinge** (⛰️ 🔮 Gurú): Cachorra de Esfinge → Esfinge Guardiana → Esfinge, Guardiana de Enigmas
+- **fenrir** (🌪️ 🗡️ Pícaro): Lobezno de Hierro → Fenrir Encadenado → Fenrir, el Lobo del Fin del Mundo
+- **freya** (⚡ 💀 Brujo): Joven Señora de los Gatos → Freya, Elegidora de los Caídos → Freya, Diosa del Amor y la Guerra
+- **ganesha** (⛰️ 🔮 Gurú): Cría de Ganesha → Ganesha, Portador de Sabiduría → Ganesha, Señor de los Nuevos Comienzos
+- **genio** (🔥 💀 Brujo): Genio Encerrado → Genio Liberado → Genio, Señor de los Tres Deseos
+- **guanyu** (⚡ 🛡️ Campeón): Joven Portador de la Alabarda → Guan Yu, el de la Barba Larga → Guan Yu, Dios de la Guerra y la Lealtad
+- **hefesto** (🔥 🛡️ Campeón): Joven Aprendiz de la Fragua → Hefesto, Maestro del Yunque → Hefesto, Señor de la Forja Divina
+- **hercules** (⛰️ 🛡️ Campeón): Joven de Fuerza Divina → Hércules en sus Trabajos → Hércules, el Semidiós
+- **hermes** (🌪️ 🗡️ Pícaro): Joven de Sandalias Aladas → Hermes, el más Veloz del Olimpo → Hermes, Mensajero de los Dioses
+- **hidradragon** (⚡ 💀 Brujo): Cría de Mil Fauces → Dragón de Tres Cabezas → Soberano de las Siete Cabezas
+- **horus** (🌪️ 🛡️ Campeón): Joven Halcón del Cielo → Horus, Vengador del Trono → Horus, Señor del Cielo y la Realeza
+- **huitzilopochtli** (🔥 🛡️ Campeón): Joven Colibrí de Guerra → Huitzilopochtli, Señor de la Guerra Florida → Huitzilopochtli, Dios del Sol y la Guerra
+- **isis** (💧 🔮 Gurú): Joven Guardiana de la Magia → Isis en Vuelo de Alas Doradas → Isis, Señora de la Magia y la Vida
+- **kali** (⛰️ 💀 Brujo): Sombra de la Destructora → Kali en Danza de Guerra → Kali, Devoradora del Tiempo
+- **khagan** (⚡ 🗡️ Pícaro): Joven Jinete de las Llanuras → Kan de la Horda Interminable → Gengis Kan, Señor de Todas las Estepas
+- **kraken** (💧 💀 Brujo): Cría de Kraken → Kraken de las Profundidades → Devorador de Flotas
+- **lagarto** (⛰️ 🏹 Explorador): Lagarto de Cuarzo → Guardián de Obsidiana → Monarca de Piedra Negra
+- **leviatan** (💧 🛡️ Campeón): Serpiente de Mar Joven → Leviatán de las Mareas → Leviatán, Terror del Océano
+- **maui** (⚡ 🏹 Explorador): Joven Semidiós Embaucador → Maui, Domador del Sol → Maui, Semidiós de las Mil Hazañas
+- **miguelarcangel** (🔥 🛡️ Campeón): Joven Guerrero Alado → Miguel, Portador de la Espada Llameante → Miguel Arcángel, Príncipe de las Huestes Celestiales
+- **musashi** (🌪️ 🗡️ Pícaro): Joven Ronin Errante → Musashi, el de las Dos Espadas → Musashi, el Espadachín Invicto
+- **nigro** (💧 💀 Brujo): Cría de las Mareas → Nigromante de las Mareas → Señor del Maelström
+- **odin** (⚡ 🔮 Gurú): Joven Vidente → Odín, el Errante → Odín, Padre de Todo
+- **osiris** (⛰️ 🔮 Gurú): Aprendiz del Nilo → Sacerdote de Osiris → Osiris, Señor de la Resurrección
+- **pazuzu** (🌪️ 💀 Brujo): Espíritu Menor del Viento → Heraldo de Pazuzu → Pazuzu, Señor de los Vientos del Sur
+- **pele** (🔥 🔮 Gurú): Joven del Fuego Sagrado → Pele, Señora de las Cenizas Vivas → Pele, Diosa del Volcán Eterno
+- **piroman** (🔥 💀 Brujo): Aprendiz de las Pavesas → Piromante Maldito → Señor de las Cenizas Eternas
+- **poseidon** (💧 🛡️ Campeón): Joven del Tridente → Guardián de las Mareas → Poseidón, Señor de los Mares
+- **quetzalcoatl** (🌪️ 🔮 Gurú): Serpiente Emplumada Joven → Quetzalcóatl Ascendente → Quetzalcóatl, Señor del Viento
+- **ra** (🔥 🔮 Gurú): Disco Solar Joven → Heraldo de Ra → Ra, Señor del Sol
+- **ragnar** (⛰️ 🛡️ Campeón): Ragnar Lothbrok → Ragnar, Rey Vikingo → Ragnar Lothbrok, Leyenda del Norte
+- **sanson** (⛰️ 🛡️ Campeón): Joven de Cabello Sagrado → Sansón, el Nazareo → Sansón, el de la Fuerza Sin Límite
+- **sekhmet** (🔥 🛡️ Campeón): Cachorra de la Diosa Leona → Sekhmet, Guerrera del Desierto Ardiente → Sekhmet, Diosa de la Guerra y la Peste
+- **shenlong** (⚡ 💀 Brujo): Dragoncillo de las Nubes → Shenlong Danzante → Shenlong, Dragón de la Lluvia
+- **shinigami** (🌪️ 💀 Brujo): Aprendiz de la Guadaña → Shinigami de las Almas Erradas → Gran Shinigami, Segador de los Mil Mundos
+- **sigurd** (🔥 🛡️ Campeón): Joven Escudero del Norte → Sigurd, Portador de Gram → Sigurd, el que Mató al Dragón
+- **sobek** (💧 🛡️ Campeón): Cría de Sobek → Sobek, Guardián del Nilo → Sobek, Dios Cocodrilo del Río Sagrado
+- **sunwukong** (🌪️ 🗡️ Pícaro): Mono de Piedra → Rey Mono → Sun Wukong, el Sabio Igualado al Cielo
+- **susanoo** (⚡ 🛡️ Campeón): Joven Dios de la Tormenta → Susanoo, Señor de los Mares y Tormentas → Susanoo, Domador de la Serpiente de Ocho Cabezas
+- **tezcatlipoca** (⛰️ 💀 Brujo): Sombra del Espejo Humeante → Tezcatlipoca, Señor de la Noche → Tezcatlipoca, Dueño del Destino de los Hombres
+- **thor** (⚡ 🛡️ Campeón): Joven del Martillo → Guerrero de Asgard → Thor, Dios del Trueno
+- **tyr** (⛰️ 🛡️ Campeón): Joven Guardián del Juramento → Tyr, el de la Mano Perdida → Tyr, Dios de la Guerra y la Justicia
+- **zeus** (⚡ 🛡️ Campeón): Joven del Olimpo → Heredero del Rayo → Zeus, Señor del Trueno
+
+#### Tier 2 (Infrecuente → Raro → Épico) — 70 familias
+
+- **amazona** (🌪️ 🗡️ Pícaro): Joven Amazona → Guerrera Amazona → Reina de las Amazonas
+- **babayaga** (⛰️ 💀 Brujo): Aprendiz de Baba Yaga → Baba Yaga Errante → Baba Yaga, Señora del Bosque Negro
+- **baihu** (⛰️ 🛡️ Campeón): Cachorro del Tigre Blanco → Baihu, Guardián del Oeste → Gran Baihu, Tigre Celeste de Colmillos de Acero
+- **ballena** (💧 🛡️ Campeón): Cría de Ballena → Ballena Guerrera de Canto Profundo → Gran Ballena, Soberana de las Profundidades Abisales
+- **basajaun** (⛰️ 🛡️ Campeón): Joven Basajaun → Basajaun del Bosque → Basajaun, Señor de los Bosques Vascos
+- **bastet** (🔥 🔮 Gurú): Gatita Sagrada → Sacerdotisa de Bastet → Bastet, Diosa Felina
+- **bufalo** (⛰️ 🛡️ Campeón): Cría de Búfalo → Búfalo de la Manada → Gran Búfalo, Muralla de la Llanura
+- **camazotz** (🌪️ 🗡️ Pícaro): Cría de Camazotz → Camazotz, Murciélago de la Noche Maya → Gran Camazotz, Señor de la Casa del Murciélago
+- **canguro** (⛰️ 🗡️ Pícaro): Cría de Canguro → Canguro Boxeador de Patada Certera → Gran Canguro, Campeón Invicto del Ring de Tierra Roja
+- **cazadordemonios** (🔥 🗡️ Pícaro): Aprendiz de la Hoja Sagrada → Cazador de Demonios → Gran Cazador, Verdugo de lo que Acecha en la Sombra
+- **cecaelia** (💧 💀 Brujo): Joven Cecaelia → Cecaelia de los Arrecifes → Cecaelia, Bruja del Coral
+- **centauro** (⛰️ 🏹 Explorador): Potrillo Centauro → Centauro Arquero → Jefe de la Manada Salvaje
+- **ciclope** (⛰️ 🛡️ Campeón): Cíclope Pastor → Cíclope Forjador → Cíclope, Ojo del Trueno
+- **cocodrilo** (💧 🛡️ Campeón): Guerrero Cocodrilo → Centurión del Pantano → Señor de las Aguas Turbias
+- **davyjones** (💧 💀 Brujo): Marinero Maldito → Davy Jones, el Maldito → Davy Jones, Capitán del Abismo
+- **deerwoman** (⛰️ 🗡️ Pícaro): Joven del Bosque → Deer Woman → Deer Woman, Espíritu Vengador
+- **dientesdesable** (⛰️ 🛡️ Campeón): Cría Dientes de Sable → Guerrero Dientes de Sable → Señor de la Era del Hielo
+- **dragonkomodo** (⛰️ 💀 Brujo): Cría de Dragón de Komodo → Guerrero Dragón de Komodo → Gran Dragón de Komodo, Señor de la Isla Perdida
+- **elefante** (⛰️ 🛡️ Campeón): Cría de Elefante → Elefante de Guerra → Gran Elefante, Coloso Imparable de la Sabana
+- **ent** (⛰️ 🛡️ Campeón): Retoño Andante → Ent Guardián → Ent Ancestral del Bosque Viejo
+- **escorpionhumanoide** (⛰️ 🗡️ Pícaro): Joven Escorpión → Guerrero Escorpión → Señor del Aguijón Mortal
+- **estatua** (⛰️ 🛡️ Campeón): Estatua Agrietada → Estatua Animada → Coloso de Piedra Viviente
+- **garuda** (🌪️ 🏹 Explorador): Polluelo de Garuda → Garuda Cazadora → Garuda, Montura de los Dioses
+- **gatubela** (🌪️ 🗡️ Pícaro): Aprendiz Felina → Gatúbela → Reina de los Tejados
+- **gea** (⛰️ 🔮 Gurú): Aprendiza de Gea → Chamana de Raíces → Druida Ancestral
+- **genbu** (💧 🛡️ Campeón): Tortuga Joven de Genbu → Genbu, Guardián del Norte → Genbu, Escudo de las Profundidades
+- **golem** (⛰️ 🛡️ Campeón): Golem de Barro → Golem de Piedra → Golem de Hierro Ancestral
+- **grifo** (🌪️ 🏹 Explorador): Polluelo de Grifo → Grifo Cazador → Grifo, Rey de las Alturas
+- **guepardo** (🌪️ 🗡️ Pícaro): Cría de Guepardo → Guepardo Cazador de Velocidad Pura → Gran Guepardo, Relámpago de la Sabana
+- **guerreroleopardo** (⛰️ 🗡️ Pícaro): Joven Leopardo → Guerrero Leopardo → Señor de las Manchas Doradas
+- **hanuman** (🔥 🛡️ Campeón): Joven Devoto de Cola Larga → Hanuman, Guerrero Leal → Hanuman, Protector Eterno de los Suyos
+- **hidraserpiente** (💧 💀 Brujo): Hidra Recién Nacida → Hidra de Pantano → Hidra de las Nueve Cabezas
+- **hipogrifo** (🌪️ 🏹 Explorador): Potro Alado → Hipogrifo Salvaje → Señor de los Cielos Altos
+- **hipopotamo** (💧 🛡️ Campeón): Cría de Hipopótamo → Hipopótamo Guerrero de Mandíbula Trituradora → Gran Hipopótamo, Tirano del Río Africano
+- **hombrelobo** (🌪️ 🗡️ Pícaro): Joven Maldito → Hombre Lobo → Alfa de la Luna Llena
+- **hombretigre** (⛰️ 🗡️ Pícaro): Cachorro Tigre → Guerrero Tigre → Señor de las Rayas Doradas
+- **jirafa** (⛰️ 🛡️ Campeón): Cría de Jirafa → Jirafa Guerrera de Cuello Alto → Gran Jirafa, Centinela de las Llanuras Doradas
+- **lamasu** (⛰️ 🛡️ Campeón): Guardián Menor Lamasu → Lamasu de las Puertas → Lamasu, Custodio de Palacios
+- **leonhumanizado** (⛰️ 🛡️ Campeón): Cachorro de León → Guerrero León → Rey de la Sabana Dorada
+- **lince** (⛰️ 🗡️ Pícaro): Cría de Lince → Lince Cazador de Mirada Aguda → Gran Lince, Fantasma de los Bosques Nevados
+- **mamiwata** (💧 🔮 Gurú): Joven Espíritu del Río → Mami Wata, Señora de las Aguas → Mami Wata, Madre de Todos los Ríos
+- **marejada** (💧 🛡️ Campeón): Escudero de Coral → Caballero de las Mareas → Guardián del Abismo
+- **minotauro** (⛰️ 🛡️ Campeón): Toro Joven del Laberinto → Minotauro Furioso → Amo del Laberinto Eterno
+- **mujercisne** (💧 🔮 Gurú): Doncella Cisne → Mujer Cisne → Reina de los Lagos Blancos
+- **naga** (💧 💀 Brujo): Joven de Sangre Serpentina → Naga de las Aguas Profundas → Reina Naga del Río Sagrado
+- **nahual** (⛰️ 💀 Brujo): Aprendiz de Nahual → Nahual Cambiapieles → Gran Brujo Nahual
+- **narval** (💧 🗡️ Pícaro): Cría de Narval → Narval de Colmillo Certero → Gran Narval, el Unicornio de los Mares Helados
+- **nessie** (💧 🛡️ Campeón): Cría del Lago → Monstruo del Lago → Nessie, Leyenda de las Aguas Frías
+- **ninjasombra** (🌪️ 🗡️ Pícaro): Aprendiz de las Sombras → Ninja de los Clones Fantasma → Gran Ninja, Maestro de las Mil Sombras
+- **orcahumanoide** (💧 🛡️ Campeón): Joven Orca → Guerrera Orca → Matriarca de las Orcas
+- **osopolar** (💧 🛡️ Campeón): Cría de Oso Polar → Oso Polar Guerrero de Garra Helada → Gran Oso Polar, Soberano del Hielo Eterno
+- **panteranegra** (⛰️ 🗡️ Pícaro): Cachorro de Pantera → Guerrero Pantera Negra → Rey de la Pantera Negra
+- **pegaso** (🌪️ 🏹 Explorador): Potrillo Alado → Pegaso Veloz → Pegaso, Corcel de las Nubes
+- **qinglong** (🌪️ 💀 Brujo): Cría del Dragón Azur → Qinglong, Guardián del Este → Gran Qinglong, Dragón Celeste del Amanecer
+- **rinoceronte** (⛰️ 🛡️ Campeón): Cría de Rinoceronte → Rinoceronte Acorazado → Gran Rinoceronte, Muralla de la Sabana
+- **samurai** (⚡ 🗡️ Pícaro): Aprendiz de Samurái → Samurái Errante → Maestro Espadachín del Trueno
+- **satiromusico** (🌪️ 🔮 Gurú): Sátiro Flautista → Sátiro de la Fiesta Eterna → Sumo Sátiro de Dioniso
+- **simurgh** (🌪️ 🔮 Gurú): Cría de Ave Sabia → Simurgh de las Alturas Eternas → Gran Simurgh, Guardiana de la Sabiduría del Mundo
+- **sirena** (💧 💀 Brujo): Sirena de Voz Dulce → Sirena Encantadora → Reina de las Profundidades
+- **tiburonmartillo** (💧 🗡️ Pícaro): Grumete Martillo → Pirata Tiburón Martillo → Capitán de los Siete Mares
+- **tikbalang** (⛰️ 🗡️ Pícaro): Potrillo de Dos Piernas → Tikbalang de los Caminos Perdidos → Gran Tikbalang, Señor de las Sendas que Engañan
+- **tlaloc** (💧 🔮 Gurú): Portador de Lluvia Menor → Tlaloc, Señor de la Tormenta → Tlaloc, Dueño de las Cuatro Lluvias
+- **triton** (💧 🏹 Explorador): Renacuajo Ágil → Tritón Errante → Tritón Abisal
+- **unicornio** (🌪️ 🔮 Gurú): Potrillo con Cuerno → Unicornio Radiante → Unicornio de Luz Pura
+- **valquiria** (⚡ 🛡️ Campeón): Escudera Valquiria → Valquiria de Combate → Elegidora de los Caídos
+- **vidente** (🔥 🔮 Gurú): Aprendiz de Cenizas → Vidente de Cenizas → Profeta de Brasas
+- **wyvern** (🌪️ 🗡️ Pícaro): Cría de Wyvern → Wyvern Cazador → Wyvern, Terror de los Cielos
+- **xolotl** (⚡ 🏹 Explorador): Cachorro del Ocaso → Xolotl, Guía del Inframundo → Xolotl, Señor de las Almas que Vuelven
+- **yeti** (💧 🛡️ Campeón): Cría de Yeti → Yeti de las Cumbres → Yeti, Señor de las Nieves Eternas
+- **zhuque** (🔥 🔮 Gurú): Cría del Fénix Bermellón → Zhuque, Guardiana del Sur → Gran Zhuque, Fénix Celeste de Llamas Eternas
+
+#### Tier 1 (Común → Infrecuente → Raro) — 68 familias
+
+- **abeja** (🌪️ 🗡️ Pícaro): Abeja Obrera → Abeja Guerrera del Aguijón Certero → Gran Abeja Reina, Señora del Enjambre Infinito
+- **apsara** (🌪️ 🏹 Explorador): Aprendiz de Danza Celestial → Apsara de los Salones Eternos → Gran Apsara, Danzarina del Cielo Mismo
+- **ardilla** (🌪️ 🗡️ Pícaro): Cría de Ardilla → Ardilla Saltarina de Garras Rápidas → Gran Ardilla, Relámpago de las Copas
+- **bigfoot** (⛰️ 🛡️ Campeón): Rastro en el Bosque → Bigfoot Solitario → Bigfoot, Leyenda del Bosque
+- **buhosabio** (🌪️ 🔮 Gurú): Polluelo Curioso → Búho Sabio de la Noche → Gran Búho, Vidente de las Sombras del Bosque
+- **cabramontes** (⛰️ 🛡️ Campeón): Cría de Cabra Montés → Cabra Montés de Cuernos de Piedra → Gran Cabra Montés, Señora de los Riscos Imposibles
+- **cadejo** (⛰️ 🗡️ Pícaro): Cadejo Blanco → Cadejo Guardián → Cadejo Protector de Caminantes
+- **camaleon** (⛰️ 🏹 Explorador): Cría de Camaleón → Camaleón Sigiloso → Gran Camaleón, Fantasma de Mil Colores
+- **cangrejo** (💧 🛡️ Campeón): Cangrejo Pequeño → Cangrejo Acorazado → Rey Cangrejo de las Rocas
+- **caracol** (💧 🛡️ Campeón): Cría de Caracol → Caracol de Concha Reforzada → Gran Caracol, Fortaleza que Nunca se Apresura
+- **castor** (💧 🛡️ Campeón): Cría de Castor → Castor Ingeniero de Diques Firmes → Gran Castor, Maestro Constructor del Río
+- **colibri** (🌪️ 🗡️ Pícaro): Cría de Colibrí → Colibrí Guerrero de Alas Veloces → Gran Colibrí, Destello que Nadie Alcanza
+- **comadreja** (⛰️ 🗡️ Pícaro): Cría de Comadreja → Comadreja Escurridiza de Colmillos Finos → Gran Comadreja, Sombra que se Cuela por Cualquier Hueco
+- **cuervo** (🌪️ 💀 Brujo): Cría de Cuervo → Cuervo Susurrador de Malos Augurios → Gran Cuervo, Heraldo de las Sombras Aladas
+- **driada** (⛰️ 🔮 Gurú): Brote de Dríada → Dríada del Bosque → Dríada Madre del Bosque Ancestral
+- **duendehogar** (🔥 🔮 Gurú): Duendecillo del Hogar → Duende del Hogar, Guardián de la Chimenea → Gran Duende del Hogar, Protector de Cada Techo
+- **duendetravieso** (🌪️ 🗡️ Pícaro): Duende Travieso → Duende Embaucador → Duende Rey de las Bromas
+- **electro** (⚡ 🏹 Explorador): Corredor Eléctrico → Cazador de Tormentas → Rastreador del Trueno
+- **enano** (⛰️ 🛡️ Campeón): Enano Aprendiz → Enano Herrero → Enano Rey de la Montaña
+- **erizo** (⛰️ 🛡️ Campeón): Cría de Erizo → Erizo Guerrero de Púas → Gran Erizo, Fortaleza de Espinas Vivientes
+- **escarabajo** (⛰️ 🛡️ Campeón): Cría de Escarabajo → Escarabajo de Caparazón de Hierro → Gran Escarabajo, Coraza Viviente Indestructible
+- **escualo** (💧 🗡️ Pícaro): Aprendiz Tiburón → Escualo de Combate → Depredador de los Siete Mares
+- **espantapajaros** (⛰️ 💀 Brujo): Espantapájaros Roto → Espantapájaros Animado → Guardián del Campo Maldito
+- **foca** (💧 🛡️ Campeón): Cría de Foca → Foca Guerrera de Piel Gruesa → Gran Foca, Centinela de las Rocas Heladas
+- **ganso** (🌪️ 🛡️ Campeón): Cría de Ganso → Ganso Guardián de Pico Furioso → Gran Ganso, Terror Emplumado del Corral
+- **gladiador** (⛰️ 🛡️ Campeón): Esclavo de la Arena → Gladiador Veterano → Campeón del Coliseo
+- **gnomojardin** (⛰️ 🏹 Explorador): Gnomo de Jardín Travieso → Gnomo de Jardín, Guardián de las Macetas → Gran Gnomo, Señor de Todos los Jardines Secretos
+- **gorila** (⛰️ 🛡️ Campeón): Gorila Montaraz → Gorila de Espalda Plateada → Rey de la Jungla de Piedra
+- **guerreromedieval** (⛰️ 🛡️ Campeón): Recluta de Armadura → Caballero de Armas → Comandante de la Guardia
+- **hada** (🌪️ 🔮 Gurú): Hada Menor → Hada del Bosque → Reina de las Hadas
+- **heraldo** (⚡ 💀 Brujo): Heraldo Menor → Heraldo del Relámpago → Heraldo del Trueno
+- **hiena** (⛰️ 🗡️ Pícaro): Cría de Hiena → Hiena Embaucadora → Gran Hiena, Reina de la Carcajada Cazadora
+- **hipocampo** (💧 🏹 Explorador): Hipocampo Joven → Hipocampo de las Corrientes → Hipocampo, Corcel del Mar
+- **hombrefuego** (🔥 💀 Brujo): Chispa Viviente → Hombre de Fuego → Avatar de las Llamas
+- **hombrehielo** (💧 💀 Brujo): Escarcha Viviente → Hombre de Hielo → Avatar del Invierno Eterno
+- **hombreoso** (⛰️ 🛡️ Campeón): Joven Oso → Guerrero Oso → Gran Oso de las Montañas
+- **hombrepez** (💧 🏹 Explorador): Joven Hombre Pez → Hombre Pez de las Profundidades → Ancestro de las Profundidades
+- **icaro** (🌪️ 🏹 Explorador): Aprendiz de Alas de Cera → Ícaro en Vuelo → Ícaro, el que Desafió al Sol
+- **kappa** (💧 🗡️ Pícaro): Kappa Juguetón → Kappa de las Corrientes → Kappa Maestro del Estanque
+- **leprechaun** (⛰️ 🏹 Explorador): Duende de Bolsillos Llenos → Leprechaun Escurridizo → Leprechaun, Guardián del Oro al Final del Arcoíris
+- **libelula** (🌪️ 🗡️ Pícaro): Cría de Libélula → Libélula de Vuelo Errático → Gran Libélula, Espíritu de las Cuatro Alas
+- **mandragora** (⛰️ 💀 Brujo): Brote de Mandrágora → Mandrágora Chillona → Mandrágora Ancestral
+- **mapache** (⛰️ 🏹 Explorador): Cría de Mapache → Mapache Ladrón de Sombras → Gran Mapache, Maestro de los Mil Bolsillos
+- **marina** (💧 🗡️ Pícaro): Grumete Marina → Pirata de las Mareas → Corsaria Abisal
+- **mofeta** (⛰️ 💀 Brujo): Cría de Mofeta → Mofeta del Hedor Insoportable → Gran Mofeta, Terror de Nariz Sensible
+- **morsa** (💧 🛡️ Campeón): Cría de Morsa → Morsa Guerrera de los Hielos → Gran Morsa, Patriarca de las Costas Heladas
+- **mujerconejo** (⛰️ 🗡️ Pícaro): Joven Conejo → Mujer Conejo → Gran Coneja de la Luna
+- **musarana** (⛰️ 🗡️ Pícaro): Cría de Musaraña → Musaraña Frenética de Mordisco Rápido → Gran Musaraña, Furia en Miniatura
+- **nutria** (💧 🏹 Explorador): Cría de Nutria → Nutria Juguetona de Manos Hábiles → Gran Nutria, Guardiana del Río en Calma
+- **orangutan** (⛰️ 🛡️ Campeón): Cría de Orangután → Orangután de la Selva → Sabio Orangután de la Jungla
+- **pangolin** (⛰️ 🛡️ Campeón): Cría de Pangolín → Pangolín Acorazado → Gran Pangolín, Escudo Viviente de Escamas
+- **pinguino** (💧 🛡️ Campeón): Cría de Pingüino → Pingüino Guerrero de Aleta Firme → Gran Pingüino, General de la Muralla de Hielo
+- **plantacarnivora** (⛰️ 💀 Brujo): Brote Carnívoro → Planta Carnívora → Devoradora de las Profundidades del Bosque
+- **puca** (🌪️ 🏹 Explorador): Sombra Cambiante → Púca de las Encrucijadas → Gran Púca, Señor de las Mil Formas de la Noche
+- **rana** (💧 💀 Brujo): Renacuajo Curioso → Rana Venenosa de Colores Vivos → Gran Rana, Reina del Estanque Ponzoñoso
+- **ratacallejera** (⛰️ 🗡️ Pícaro): Cría de Rata Callejera → Rata Callejera de Callejones Sin Ley → Gran Rata, Reina de las Alcantarillas Olvidadas
+- **sacerdote** (⛰️ 🔮 Gurú): Acólito → Sacerdote Bendecido → Sumo Sacerdote de Texel
+- **salamandraignea** (🔥 💀 Brujo): Cría de Salamandra → Salamandra de Brasas → Salamandra del Corazón del Volcán
+- **selkie** (💧 🔮 Gurú): Cría de Selkie → Selkie de las Mareas → Selkie Guardiana de su Piel
+- **silfide** (🌪️ 🔮 Gurú): Brisa Menor → Sílfide del Viento → Sílfide, Espíritu del Aire Puro
+- **tanuki** (⛰️ 🏹 Explorador): Tanuki Curioso → Tanuki Embaucador → Gran Tanuki de las Mil Formas
+- **tejonmielero** (⛰️ 🛡️ Campeón): Cría de Tejón Mielero → Guerrero Tejón Mielero → Gran Tejón, el que Nunca Retrocede
+- **thunderbird** (⚡ 🏹 Explorador): Cría de Thunderbird → Thunderbird Joven → Thunderbird de las Tormentas
+- **topo** (⛰️ 🛡️ Campeón): Topo Acorazado → Topo de Granito → Coloso de Raíces
+- **tortugahumanoide** (💧 🛡️ Campeón): Tortuga Guerrera Novata → Tortuga Guerrera Veterana → Maestra Tortuga del Caparazón Eterno
+- **velociraptor** (⛰️ 🗡️ Pícaro): Cría de Velocirraptor → Velocirraptor Cazador → Líder de la Manada de Raptores
+- **zapador** (⛰️ 🏹 Explorador): Zapador Novato → Zapador de Túneles → Maestro Zapador de las Profundidades
+- **zarigueya** (⛰️ 💀 Brujo): Cría de Zarigüeya → Zarigüeya que Finge su Propia Muerte → Gran Zarigüeya, Engañadora de Mil Caras
+
+### Mobs de mapa (Torre Batalla / encuentros) — 34 familias / 102 formas
+
+#### Tier 2 (Infrecuente → Raro → Épico) — 14 familias
+
+- **banshee** (🌪️ 💀 Brujo): Banshee Susurrante → Banshee Lamentosa → Gran Banshee, Heraldo de la Muerte
+- **dementor** (🌪️ 💀 Brujo): Sombra Menor → Dementor Errante → Dementor, Ladrón de Almas
+- **demonio** (🔥 💀 Brujo): Demonio Menor → Demonio de las Llamas → Archidemonio del Abismo
+- **draugr** (💧 🛡️ Campeón): Draugr Recién Alzado → Draugr Vikingo → Rey Draugr del Túmulo
+- **dullahan** (⚡ 💀 Brujo): Jinete sin Cabeza Menor → Dullahan Cabalgante → Dullahan, Heraldo de la Muerte
+- **frankenstein** (⚡ 🛡️ Campeón): Criatura Recién Cosida → Criatura de Frankenstein → Monstruo Perfeccionado
+- **gargola** (⛰️ 🛡️ Campeón): Gárgola Dormida → Gárgola Vigilante → Gárgola Ancestral de Piedra
+- **gigante** (⛰️ 🛡️ Campeón): Joven Gigante → Gigante de las Colinas → Gigante de las Montañas Rotas
+- **gollum** (⛰️ 🗡️ Pícaro): Criatura Consumida → Criatura de las Cavernas Profundas → El que Susurra en la Oscuridad
+- **hombreseisbrazos** (⚡ 🗡️ Pícaro): Aprendiz de Seis Brazos → Guerrero de Seis Brazos → Maestro de las Seis Espadas
+- **kitsune** (🔥 💀 Brujo): Kitsune de Una Cola → Kitsune de Tres Colas → Kitsune de Nueve Colas
+- **lamia** (⛰️ 💀 Brujo): Lamia Joven → Lamia Serpentina → Reina Lamia del Oasis Maldito
+- **ondina** (💧 🔮 Gurú): Ondina Menor → Ondina de las Corrientes → Gran Ondina del Río Eterno
+- **troll** (⛰️ 🛡️ Campeón): Troll de Puente Menor → Troll de las Cavernas → Gran Troll Regenerador
+
+#### Tier 1 (Común → Infrecuente → Raro) — 20 familias
+
+- **arana** (⛰️ 🗡️ Pícaro): Araña Pequeña → Araña Venenosa → Reina Araña del Nido
+- **arpia** (🌪️ 🗡️ Pícaro): Arpía Joven → Arpía Chillona → Arpía Matriarca del Nido
+- **babosa** (💧 🛡️ Campeón): Babosa Pequeña → Babosa Gigante → Reina Babosa del Pantano
+- **chupacabra** (🌪️ 🗡️ Pícaro): Chupacabras Joven → Chupacabras Nocturno → Terror de los Rebaños
+- **esqueleto** (⛰️ 🛡️ Campeón): Esqueleto Andante → Esqueleto Guerrero → Comandante de Huesos
+- **estirge** (🌪️ 🗡️ Pícaro): Estirge Menor → Estirge Sedienta → Enjambre de Estirges
+- **goblin** (⛰️ 🗡️ Pícaro): Goblin Novato → Goblin Saqueador → Jefe de la Horda Goblin
+- **hombrearena** (⛰️ 💀 Brujo): Remolino de Arena → Hombre de Arena → Señor de las Dunas Eternas
+- **insectogigante** (⛰️ 🗡️ Pícaro): Insecto Pequeño → Insecto Gigante → Enjambre Alfa
+- **jabali** (⛰️ 🛡️ Campeón): Jabatillo → Jabalí Salvaje → Gran Jabalí del Bosque Oscuro
+- **momia** (⛰️ 💀 Brujo): Momia Menor → Momia Vendada → Faraón Momificado
+- **ogro** (⛰️ 🛡️ Campeón): Ogro Pequeño → Ogro Garrotero → Gran Ogro del Pantano
+- **orco** (⛰️ 🛡️ Campeón): Orco Recluta → Orco Guerrero → Jefe de Guerra Orco
+- **sapo** (💧 🔮 Gurú): Renacuajo → Sapo Venenoso → Gran Sapo del Pantano Sagrado
+- **satirosalvaje** (🌪️ 🗡️ Pícaro): Sátiro Salvaje → Sátiro del Bosque Profundo → Señor de los Sátiros Salvajes
+- **serpiente** (⛰️ 🗡️ Pícaro): Serpiente Joven → Serpiente Venenosa → Gran Serpiente del Desierto
+- **setahumanoide** (⛰️ 💀 Brujo): Seta Pequeña → Seta Humanoide → Gran Seta Ancestral del Bosque
+- **tengu** (🌪️ 🗡️ Pícaro): Tengu Travieso → Tengu Guerrero → Gran Tengu de la Montaña
+- **trasgo** (🌪️ 🗡️ Pícaro): Trasgo Menor → Trasgo Revoltoso → Trasgo Rey de las Travesuras
+- **zombi** (⛰️ 🛡️ Campeón): Zombi Recién Alzado → Zombi Putrefacto → Zombi Alfa de la Horda
+
+### Jefes de zona — 44 (orden real del mapa)
+
+- **guardianbosque** (⛰️ 🛡️ Campeón, Linde del Bosque): Guardián del Bosque Ancestral
+- **brujapantano** (💧 💀 Brujo, Pantano Oscuro): Bruja del Pantano Eterno
+- **colosocristal** (⛰️ 🛡️ Campeón, Cuevas de Cristal): Coloso de Cristal
+- **titanhielo** (💧 🛡️ Campeón, Picos Helados): Titán de Hielo Eterno
+- **reyruinas** (⛰️ 💀 Brujo, Ruinas Abisales): Rey Espectral de las Ruinas
+- **dragonguarida** (🔥 🛡️ Campeón, Guarida del Dragón): Dracorex, Señor de la Guarida
+- **garn** (⛰️ 🛡️ Campeón, Cantera Devorada): Garn, el Devorador de Piedra
+- **nian** (🔥 🛡️ Campeón, Aldea del Año Nuevo): Nian, la Bestia del Año Nuevo
+- **medusa** (⛰️ 💀 Brujo, Jardín de Piedra): Medusa, la Gorgona de Mirada Pétrea
+- **ammit** (⛰️ 🛡️ Campeón, Salón del Juicio): Ammit, Devoradora de Corazones
+- **leondenemea** (⛰️ 🛡️ Campeón, Sabana Ardiente): León de Nemea, Piel Impenetrable
+- **pajaroroc** (🌪️ 🏹 Explorador, Desfiladero del Roc): Roc, el Ave que Oscurece el Cielo
+- **torodecreta** (⛰️ 🛡️ Campeón, Laberinto de Creta): Toro de Creta, Furia Desatada
+- **basilisco** (⛰️ 💀 Brujo, Cripta Serpentina): Basilisco, Rey de las Serpientes
+- **ettin** (⛰️ 🛡️ Campeón, Paso de los Gigantes): Ettin, el Gigante de Dos Cabezas
+- **gorgonas** (⛰️ 💀 Brujo, Templo de las Hermanas): Las Gorgonas, Hermanas de Piedra
+- **manticora** (🔥 🗡️ Pícaro, Desierto de Espinas): Mantícora, la Devoradora de Hombres
+- **joker** (🌪️ 🗡️ Pícaro, Circo Maldito): El Bufón de la Locura
+- **acromantula** (⛰️ 🗡️ Pícaro, Nido Colosal): Acromántula, Madre de la Colonia
+- **wendigo** (🌪️ 💀 Brujo, Tundra Helada): Wendigo, Hambre sin Fin
+- **mantisreligiosa** (🌪️ 🗡️ Pícaro, Jungla Silenciosa): Mantis, la Segadora Silenciosa
+- **magooscuro** (⚡ 💀 Brujo, Abismo de los Cien Ojos): El Mago Oscuro sin Nombre
+- **quimera** (🔥 🛡️ Campeón, Cima Quimérica): Quimera, la Bestia de Tres Cabezas
+- **tiamat** (💧 💀 Brujo, Caos Primordial): Tiamat, Madre del Caos
+- **surtr** (🔥 🛡️ Campeón, Forja del Fin del Mundo): Surtr, Señor de las Llamas de Muspelheim
+- **behemoth** (⛰️ 🛡️ Campeón, Llanura del Titán): Behemoth, la Bestia Primigenia
+- **apofis** (⛰️ 💀 Brujo, Templo del Sol Eclipsado): Apofis, la Serpiente del Caos
+- **cthulhu** (💧 💀 Brujo, Fosa de R'lyeh): Cthulhu, el que Duerme en las Profundidades
+- **loki** (⚡ 💀 Brujo, Minas Sin Fondo): Loki, el Dios del Engaño
+- **rakshasa** (🔥 💀 Brujo, Palacio de Espejos): Rakshasa, el Cambiante Maldito
+- **liche** (⚡ 💀 Brujo, Necrópolis Eterna): Liche, Señor de los No-Muertos
+- **jerseydevil** (🌪️ 💀 Brujo, Bosque de los Pinos Malditos): El Jersey Devil
+- **grendel** (⛰️ 🛡️ Campeón, Salón de los Huesos): Grendel, el Devorador de Salones
+- **anzu** (🌪️ 💀 Brujo, Nido de la Tempestad): Anzu, el Ave-Demonio de la Tormenta
+- **simbionte** (⚡ 💀 Brujo, Cráter del Impacto): El Simbionte Devorador
+- **fafnir** (🔥 🛡️ Campeón, Guarida de la Avaricia): Fafnir, el Dragón de la Avaricia
+- **set** (⛰️ 💀 Brujo, Tormenta Roja del Desierto): Set, Señor de las Tormentas y el Caos
+- **hel** (💧 💀 Brujo, Reino de Hel): Hel, Soberana de los Muertos sin Honor
+- **hades** (⛰️ 💀 Brujo, Inframundo de las Sombras Eternas): Hades, Señor del Inframundo
+- **jormungandr** (💧 💀 Brujo, Océano sin Fondo): Jörmungandr, la Serpiente que Rodea el Mundo
+- **kaiju** (💧 🛡️ Campeón, Costa Devastada): El Kaiju de las Profundidades
+- **titancolosal** (⛰️ 🛡️ Campeón, Murallas Caídas): El Titán Colosal
+- **balrog** (🔥 💀 Brujo, Torre Prohibida): Balrog, Demonio de Sombra y Fuego
+- **tifon** (⚡ 💀 Brujo, Salón de los Engaños): Tifón, Padre de los Monstruos
