@@ -6006,6 +6006,45 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       los últimos (25+) dan 5; todas las oleadas de todos los niveles
       muestreados respetan de verdad el filtro rareza/elemento/clase del
       reto — sin errores de página.
+- [x] **Añadidos 6 personajes jugables y 1 jefe nuevos** (petición del
+      usuario, con los nombres/tiers exactos ya decididos):
+      - Tier 3: **Morrigan** (viento/brujo/debilitar — diosa soberana
+        irlandesa de la guerra y la muerte) y **Rey Arturo** (rayo/
+        campeón/grito — rey legendario, Excalibur y Camelot).
+      - Tier 2: **Jaguar** (tierra/pícaro/golpeGracia), **Mandril**
+        (tierra/campeón/grito) y **Robin Hood** (viento/explorador/
+        perforar — un arquero legendario con Golpe Perforante encajaba
+        de manera perfecta).
+      - Tier 1: **Coyote** (tierra/explorador/sabotaje — el embaucador
+        de la mitología de Norteamérica).
+      - Jefe: **Gashadokuro** (tierra/campeón/furia — el yokai
+        esqueleto gigante japonés), con su propia zona nueva **Llanura
+        de los Huesos Olvidados**, insertada entre Guarida de la
+        Avaricia (Fafnir) y Tormenta Roja del Desierto (Set) — el mismo
+        método de siempre: ordenada por poder nativo del jefe (1350,
+        calibrado a mano en `fixedStats` para caer justo ahí) dentro de
+        la tanda de zonas de "segunda vuelta", sin tocar a Balrog/Tifón
+        como las dos últimas zonas del mapa.
+      Los dos Legendarios de tier 3 se calibraron con cuidado dentro del
+      ranking de poder existente, tal y como pidió el usuario, en vez de
+      dejarlos sin calibrar: **Morrigan** (399) entre Huitzilopochtli
+      (400.1) y Pele (397.9) — diosa soberana de la guerra/muerte,
+      comparable a Freya/Kali, no una "reina de panteón entero" como
+      Zeus/Odín. **Rey Arturo** (392) justo por encima de Sigurd (389.5)
+      y Guan Yu (387.9) — rey legendario MORTAL (no un dios), pero el más
+      icónico de todos, así que se queda a la cabeza de ese grupo de
+      reyes/héroes legendarios en vez de entre ellos. Verificado con
+      Playwright contra el motor real: 205 familias/615 formas de
+      personaje jugable (antes 199/597), 45 jefes/45 zonas (antes 44/44),
+      sin ids duplicados, Torre Prohibida/Salón de los Engaños siguen
+      siendo las 2 últimas zonas, la zona de Gashadokuro cae exactamente
+      entre Fafnir y Set en `ZONES`, y el ranking de los ya 63 Legendarios
+      recalculado coloca a Morrigan en el puesto #27 y a Arturo en el #31
+      — sin errores de página. Todos marcados con `hasImages: true` (el
+      usuario subirá el arte real a continuación).
+      Actualizada también la sección "Roster completo del juego" (más
+      abajo) con las 7 entradas nuevas en su sitio alfabético/de mapa
+      correspondiente.
 
 ## Notas
 
@@ -6026,12 +6065,12 @@ Inventario generado directamente desde el motor real (FIGHTERS/MOBS/BOSSES en
 js/data.js), a petición del usuario. Cada familia jugable o de mob tiene 3 formas
 (evoluciona 2 veces); se listan las 3 en orden común→legendario según su tier. Los
 jefes son combates únicos sin evolución, ordenados según su posición real en el mapa
-(ZONES). Total: **597 formas de personaje jugable** (199 familias),
-**102 formas de mob** (34 familias) y **44 jefes de zona**.
+(ZONES). Total: **615 formas de personaje jugable** (205 familias),
+**102 formas de mob** (34 familias) y **45 jefes de zona**.
 
-### Personajes jugables — 199 familias / 597 formas
+### Personajes jugables — 205 familias / 615 formas
 
-#### Tier 3 (Raro → Épico → Legendario) — 61 familias
+#### Tier 3 (Raro → Épico → Legendario) — 63 familias
 
 - **afrodita** (💧 🔮 Gurú): Doncella Nacida del Mar → Afrodita en Flor → Afrodita, Diosa del Amor
 - **amaterasu** (🔥 🔮 Gurú): Joven Diosa del Alba → Amaterasu en Vuelo → Amaterasu, Diosa del Sol Naciente
@@ -6040,6 +6079,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **ares** (🔥 🛡️ Campeón): Joven de la Lanza Ardiente → Ares, Heraldo de la Guerra → Ares, Dios de la Guerra sin Cuartel
 - **armaduratecno** (⚡ 🏹 Explorador): Prototipo de Armadura → Piloto de Armadura de Combate → Titán de Acero y Rayo
 - **artemisa** (🌪️ 🏹 Explorador): Joven Cazadora de la Luna → Artemisa, Señora de la Caza → Artemisa, Diosa de la Luna y los Bosques Salvajes
+- **arturo** (⚡ 🛡️ Campeón): Joven Arturo → Caballero de Camelot → Rey Arturo, Portador de Excalibur
 - **ascua** (🔥 🛡️ Campeón): Cachorro de Ascua → Fénix Centinela → Drakón Adulto de Fuego
 - **atenea** (⛰️ 🔮 Gurú): Joven Estratega del Olimpo → Atenea, Señora de la Guerra Justa → Atenea, Diosa de la Sabiduría y la Estrategia
 - **atila** (🔥 🛡️ Campeón): Joven Príncipe de las Estepas → Atila, el que Cabalga al Frente → Atila, Azote de Dios
@@ -6071,6 +6111,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **leviatan** (💧 🛡️ Campeón): Serpiente de Mar Joven → Leviatán de las Mareas → Leviatán, Terror del Océano
 - **maui** (⚡ 🏹 Explorador): Joven Semidiós Embaucador → Maui, Domador del Sol → Maui, Semidiós de las Mil Hazañas
 - **miguelarcangel** (🔥 🛡️ Campeón): Joven Guerrero Alado → Miguel, Portador de la Espada Llameante → Miguel Arcángel, Príncipe de las Huestes Celestiales
+- **morrigan** (🌪️ 💀 Brujo): Joven Mórrigan → Dama de los Cuervos → Morrigan, Reina de la Guerra
 - **musashi** (🌪️ 🗡️ Pícaro): Joven Ronin Errante → Musashi, el de las Dos Espadas → Musashi, el Espadachín Invicto
 - **nigro** (💧 💀 Brujo): Cría de las Mareas → Nigromante de las Mareas → Señor del Maelström
 - **odin** (⚡ 🔮 Gurú): Joven Vidente → Odín, el Errante → Odín, Padre de Todo
@@ -6095,7 +6136,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **tyr** (⛰️ 🛡️ Campeón): Joven Guardián del Juramento → Tyr, el de la Mano Perdida → Tyr, Dios de la Guerra y la Justicia
 - **zeus** (⚡ 🛡️ Campeón): Joven del Olimpo → Heredero del Rayo → Zeus, Señor del Trueno
 
-#### Tier 2 (Infrecuente → Raro → Épico) — 70 familias
+#### Tier 2 (Infrecuente → Raro → Épico) — 73 familias
 
 - **amazona** (🌪️ 🗡️ Pícaro): Joven Amazona → Guerrera Amazona → Reina de las Amazonas
 - **babayaga** (⛰️ 💀 Brujo): Aprendiz de Baba Yaga → Baba Yaga Errante → Baba Yaga, Señora del Bosque Negro
@@ -6133,11 +6174,13 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **hipopotamo** (💧 🛡️ Campeón): Cría de Hipopótamo → Hipopótamo Guerrero de Mandíbula Trituradora → Gran Hipopótamo, Tirano del Río Africano
 - **hombrelobo** (🌪️ 🗡️ Pícaro): Joven Maldito → Hombre Lobo → Alfa de la Luna Llena
 - **hombretigre** (⛰️ 🗡️ Pícaro): Cachorro Tigre → Guerrero Tigre → Señor de las Rayas Doradas
+- **jaguar** (⛰️ 🗡️ Pícaro): Cría de Jaguar → Jaguar Guerrero → Jaguar Supremo de la Selva
 - **jirafa** (⛰️ 🛡️ Campeón): Cría de Jirafa → Jirafa Guerrera de Cuello Alto → Gran Jirafa, Centinela de las Llanuras Doradas
 - **lamasu** (⛰️ 🛡️ Campeón): Guardián Menor Lamasu → Lamasu de las Puertas → Lamasu, Custodio de Palacios
 - **leonhumanizado** (⛰️ 🛡️ Campeón): Cachorro de León → Guerrero León → Rey de la Sabana Dorada
 - **lince** (⛰️ 🗡️ Pícaro): Cría de Lince → Lince Cazador de Mirada Aguda → Gran Lince, Fantasma de los Bosques Nevados
 - **mamiwata** (💧 🔮 Gurú): Joven Espíritu del Río → Mami Wata, Señora de las Aguas → Mami Wata, Madre de Todos los Ríos
+- **mandril** (⛰️ 🛡️ Campeón): Mandril Común → Mandril de Combate → Mandril, Comandante Supremo
 - **marejada** (💧 🛡️ Campeón): Escudero de Coral → Caballero de las Mareas → Guardián del Abismo
 - **minotauro** (⛰️ 🛡️ Campeón): Toro Joven del Laberinto → Minotauro Furioso → Amo del Laberinto Eterno
 - **mujercisne** (💧 🔮 Gurú): Doncella Cisne → Mujer Cisne → Reina de los Lagos Blancos
@@ -6152,6 +6195,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **pegaso** (🌪️ 🏹 Explorador): Potrillo Alado → Pegaso Veloz → Pegaso, Corcel de las Nubes
 - **qinglong** (🌪️ 💀 Brujo): Cría del Dragón Azur → Qinglong, Guardián del Este → Gran Qinglong, Dragón Celeste del Amanecer
 - **rinoceronte** (⛰️ 🛡️ Campeón): Cría de Rinoceronte → Rinoceronte Acorazado → Gran Rinoceronte, Muralla de la Sabana
+- **robinhood** (🌪️ 🏹 Explorador): Arquero del Bosque → Forajido de Sherwood → Robin Hood, Príncipe de los Ladrones
 - **samurai** (⚡ 🗡️ Pícaro): Aprendiz de Samurái → Samurái Errante → Maestro Espadachín del Trueno
 - **satiromusico** (🌪️ 🔮 Gurú): Sátiro Flautista → Sátiro de la Fiesta Eterna → Sumo Sátiro de Dioniso
 - **simurgh** (🌪️ 🔮 Gurú): Cría de Ave Sabia → Simurgh de las Alturas Eternas → Gran Simurgh, Guardiana de la Sabiduría del Mundo
@@ -6168,7 +6212,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **yeti** (💧 🛡️ Campeón): Cría de Yeti → Yeti de las Cumbres → Yeti, Señor de las Nieves Eternas
 - **zhuque** (🔥 🔮 Gurú): Cría del Fénix Bermellón → Zhuque, Guardiana del Sur → Gran Zhuque, Fénix Celeste de Llamas Eternas
 
-#### Tier 1 (Común → Infrecuente → Raro) — 68 familias
+#### Tier 1 (Común → Infrecuente → Raro) — 69 familias
 
 - **abeja** (🌪️ 🗡️ Pícaro): Abeja Obrera → Abeja Guerrera del Aguijón Certero → Gran Abeja Reina, Señora del Enjambre Infinito
 - **apsara** (🌪️ 🏹 Explorador): Aprendiz de Danza Celestial → Apsara de los Salones Eternos → Gran Apsara, Danzarina del Cielo Mismo
@@ -6183,6 +6227,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **castor** (💧 🛡️ Campeón): Cría de Castor → Castor Ingeniero de Diques Firmes → Gran Castor, Maestro Constructor del Río
 - **colibri** (🌪️ 🗡️ Pícaro): Cría de Colibrí → Colibrí Guerrero de Alas Veloces → Gran Colibrí, Destello que Nadie Alcanza
 - **comadreja** (⛰️ 🗡️ Pícaro): Cría de Comadreja → Comadreja Escurridiza de Colmillos Finos → Gran Comadreja, Sombra que se Cuela por Cualquier Hueco
+- **coyote** (⛰️ 🏹 Explorador): Pequeño Coyote → Coyote Explorador → Coyote Señor de las Llanuras
 - **cuervo** (🌪️ 💀 Brujo): Cría de Cuervo → Cuervo Susurrador de Malos Augurios → Gran Cuervo, Heraldo de las Sombras Aladas
 - **driada** (⛰️ 🔮 Gurú): Brote de Dríada → Dríada del Bosque → Dríada Madre del Bosque Ancestral
 - **duendehogar** (🔥 🔮 Gurú): Duendecillo del Hogar → Duende del Hogar, Guardián de la Chimenea → Gran Duende del Hogar, Protector de Cada Techo
@@ -6281,7 +6326,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **trasgo** (🌪️ 🗡️ Pícaro): Trasgo Menor → Trasgo Revoltoso → Trasgo Rey de las Travesuras
 - **zombi** (⛰️ 🛡️ Campeón): Zombi Recién Alzado → Zombi Putrefacto → Zombi Alfa de la Horda
 
-### Jefes de zona — 44 (orden real del mapa)
+### Jefes de zona — 45 (orden real del mapa)
 
 - **guardianbosque** (⛰️ 🛡️ Campeón, Linde del Bosque): Guardián del Bosque Ancestral
 - **brujapantano** (💧 💀 Brujo, Pantano Oscuro): Bruja del Pantano Eterno
@@ -6319,6 +6364,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **anzu** (🌪️ 💀 Brujo, Nido de la Tempestad): Anzu, el Ave-Demonio de la Tormenta
 - **simbionte** (⚡ 💀 Brujo, Cráter del Impacto): El Simbionte Devorador
 - **fafnir** (🔥 🛡️ Campeón, Guarida de la Avaricia): Fafnir, el Dragón de la Avaricia
+- **gashadokuro** (⛰️ 🛡️ Campeón, Llanura de los Huesos Olvidados): Gashadokuro, Devorador de Caminantes
 - **set** (⛰️ 💀 Brujo, Tormenta Roja del Desierto): Set, Señor de las Tormentas y el Caos
 - **hel** (💧 💀 Brujo, Reino de Hel): Hel, Soberana de los Muertos sin Honor
 - **hades** (⛰️ 💀 Brujo, Inframundo de las Sombras Eternas): Hades, Señor del Inframundo
