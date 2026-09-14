@@ -6045,6 +6045,34 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Actualizada también la sección "Roster completo del juego" (más
       abajo) con las 7 entradas nuevas en su sitio alfabético/de mapa
       correspondiente.
+- [x] **Añadidos 12 personajes jugables nuevos** (petición del usuario,
+      con los nombres/tiers exactos ya decididos):
+      - Tier 3: **Shango** (rayo/campeón/aturdir — dios yoruba del rayo
+        y la justicia, deificado como rey) y **Beowulf** (agua/campeón/
+        golpe — héroe legendario mortal, matador de Grendel).
+      - Tier 2: **Berserker** (rayo/campeón/furia), **Domador de
+        Dragones** (fuego/campeón/grito), **Efrit** (fuego/brujo/
+        arrasar), **Guerrero de Jade** (tierra/campeón/escudo), **Domador
+        de Bestias** (viento/explorador/grito), **Verdugo Enmascarado**
+        (tierra/pícaro/golpeGracia), **Smoker** (viento/brujo/aturdir) y
+        **Mulan** (rayo/pícaro/dobleGolpe).
+      - Tier 1: **Puercoespín** (tierra/campeón/escudo) y **Perezoso**
+        (tierra/gurú/curar).
+      Los dos Legendarios de tier 3 se calibraron con cuidado dentro del
+      ranking de poder existente, tal y como pidió el usuario. **Shango**
+      (407→405.6) se colocó junto a Hefesto/Sobek, justo por debajo de
+      Susanoo: un dios nacional del rayo/tormenta de primer orden dentro
+      de su propio culto, pero no un "rey del panteón entero" como Zeus/
+      Thor. **Beowulf** (388→387.1) se colocó junto a Sigurd/Guan Yu/
+      Morrigan: héroe legendario MORTAL matador de monstruos, el mismo
+      arquetipo narrativo que Sigurd (mata a Fafnir), así que se sitúa
+      justo entre ambos. Verificado con Playwright contra el motor real:
+      217 familias/651 formas de personaje jugable (antes 205/615), sin
+      ids duplicados, Torre Prohibida/Salón de los Engaños siguen siendo
+      las 2 últimas zonas. Todos marcados con `hasImages: true` (el
+      usuario subirá el arte real a continuación). Actualizada también la
+      sección "Roster completo del juego" (más abajo) con las 12 entradas
+      nuevas en su sitio alfabético correspondiente.
 
 ## Notas
 
@@ -6065,12 +6093,12 @@ Inventario generado directamente desde el motor real (FIGHTERS/MOBS/BOSSES en
 js/data.js), a petición del usuario. Cada familia jugable o de mob tiene 3 formas
 (evoluciona 2 veces); se listan las 3 en orden común→legendario según su tier. Los
 jefes son combates únicos sin evolución, ordenados según su posición real en el mapa
-(ZONES). Total: **615 formas de personaje jugable** (205 familias),
+(ZONES). Total: **651 formas de personaje jugable** (217 familias),
 **102 formas de mob** (34 familias) y **45 jefes de zona**.
 
-### Personajes jugables — 205 familias / 615 formas
+### Personajes jugables — 217 familias / 651 formas
 
-#### Tier 3 (Raro → Épico → Legendario) — 63 familias
+#### Tier 3 (Raro → Épico → Legendario) — 65 familias
 
 - **afrodita** (💧 🔮 Gurú): Doncella Nacida del Mar → Afrodita en Flor → Afrodita, Diosa del Amor
 - **amaterasu** (🔥 🔮 Gurú): Joven Diosa del Alba → Amaterasu en Vuelo → Amaterasu, Diosa del Sol Naciente
@@ -6084,6 +6112,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **atenea** (⛰️ 🔮 Gurú): Joven Estratega del Olimpo → Atenea, Señora de la Guerra Justa → Atenea, Diosa de la Sabiduría y la Estrategia
 - **atila** (🔥 🛡️ Campeón): Joven Príncipe de las Estepas → Atila, el que Cabalga al Frente → Atila, Azote de Dios
 - **avefenix** (🔥 🔮 Gurú): Polluelo de Cenizas → Ave de Fuego Eterno → Fénix Inmortal
+- **beowulf** (💧 🛡️ Campeón): Joven Guerrero de los Gauta → Beowulf, el que Mató a Grendel → Beowulf, Rey Legendario de los Gauta
 - **brisa** (🌪️ 🏹 Explorador): Exploradora de las Corrientes → Arquera de las Nubes → Soberana del Vendaval
 - **cerbero** (🔥 🛡️ Campeón): Cachorro de Tres Cabezas → Guardián del Umbral → Cerbero, Custodio del Inframundo
 - **cernunnos** (⛰️ 🔮 Gurú): Joven de la Cornamenta → Cernunnos, Señor de los Bosques Salvajes → Cernunnos, Guardián de Todo lo Vivo
@@ -6125,6 +6154,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **ragnar** (⛰️ 🛡️ Campeón): Ragnar Lothbrok → Ragnar, Rey Vikingo → Ragnar Lothbrok, Leyenda del Norte
 - **sanson** (⛰️ 🛡️ Campeón): Joven de Cabello Sagrado → Sansón, el Nazareo → Sansón, el de la Fuerza Sin Límite
 - **sekhmet** (🔥 🛡️ Campeón): Cachorra de la Diosa Leona → Sekhmet, Guerrera del Desierto Ardiente → Sekhmet, Diosa de la Guerra y la Peste
+- **shango** (⚡ 🛡️ Campeón): Joven Portador del Hacha Doble → Shango, Rey que Domó el Rayo → Shango, Dios del Rayo y la Justicia Yoruba
 - **shenlong** (⚡ 💀 Brujo): Dragoncillo de las Nubes → Shenlong Danzante → Shenlong, Dragón de la Lluvia
 - **shinigami** (🌪️ 💀 Brujo): Aprendiz de la Guadaña → Shinigami de las Almas Erradas → Gran Shinigami, Segador de los Mil Mundos
 - **sigurd** (🔥 🛡️ Campeón): Joven Escudero del Norte → Sigurd, Portador de Gram → Sigurd, el que Mató al Dragón
@@ -6136,7 +6166,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **tyr** (⛰️ 🛡️ Campeón): Joven Guardián del Juramento → Tyr, el de la Mano Perdida → Tyr, Dios de la Guerra y la Justicia
 - **zeus** (⚡ 🛡️ Campeón): Joven del Olimpo → Heredero del Rayo → Zeus, Señor del Trueno
 
-#### Tier 2 (Infrecuente → Raro → Épico) — 73 familias
+#### Tier 2 (Infrecuente → Raro → Épico) — 81 familias
 
 - **amazona** (🌪️ 🗡️ Pícaro): Joven Amazona → Guerrera Amazona → Reina de las Amazonas
 - **babayaga** (⛰️ 💀 Brujo): Aprendiz de Baba Yaga → Baba Yaga Errante → Baba Yaga, Señora del Bosque Negro
@@ -6144,6 +6174,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **ballena** (💧 🛡️ Campeón): Cría de Ballena → Ballena Guerrera de Canto Profundo → Gran Ballena, Soberana de las Profundidades Abisales
 - **basajaun** (⛰️ 🛡️ Campeón): Joven Basajaun → Basajaun del Bosque → Basajaun, Señor de los Bosques Vascos
 - **bastet** (🔥 🔮 Gurú): Gatita Sagrada → Sacerdotisa de Bastet → Bastet, Diosa Felina
+- **berserker** (⚡ 🛡️ Campeón): Joven Guerrero del Norte → Berserker de Furia Incontenible → Gran Berserker, el que Lucha sin Sentir Dolor
 - **bufalo** (⛰️ 🛡️ Campeón): Cría de Búfalo → Búfalo de la Manada → Gran Búfalo, Muralla de la Llanura
 - **camazotz** (🌪️ 🗡️ Pícaro): Cría de Camazotz → Camazotz, Murciélago de la Noche Maya → Gran Camazotz, Señor de la Casa del Murciélago
 - **canguro** (⛰️ 🗡️ Pícaro): Cría de Canguro → Canguro Boxeador de Patada Certera → Gran Canguro, Campeón Invicto del Ring de Tierra Roja
@@ -6155,7 +6186,10 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **davyjones** (💧 💀 Brujo): Marinero Maldito → Davy Jones, el Maldito → Davy Jones, Capitán del Abismo
 - **deerwoman** (⛰️ 🗡️ Pícaro): Joven del Bosque → Deer Woman → Deer Woman, Espíritu Vengador
 - **dientesdesable** (⛰️ 🛡️ Campeón): Cría Dientes de Sable → Guerrero Dientes de Sable → Señor de la Era del Hielo
+- **domadordebestias** (🌪️ 🏹 Explorador): Aprendiz de la Jaula → Domador de Bestias del Circo Itinerante → Gran Domador, el que Ninguna Fiera Desobedece
+- **domadordragones** (🔥 🛡️ Campeón): Aprendiz de las Cadenas → Domador de Dragones de Escamas Cicatrizadas → Gran Domador, Señor de las Bestias Aladas
 - **dragonkomodo** (⛰️ 💀 Brujo): Cría de Dragón de Komodo → Guerrero Dragón de Komodo → Gran Dragón de Komodo, Señor de la Isla Perdida
+- **efrit** (🔥 💀 Brujo): Espíritu Menor de las Arenas → Efrit de las Dunas Ardientes → Gran Efrit, Señor del Fuego del Desierto
 - **elefante** (⛰️ 🛡️ Campeón): Cría de Elefante → Elefante de Guerra → Gran Elefante, Coloso Imparable de la Sabana
 - **ent** (⛰️ 🛡️ Campeón): Retoño Andante → Ent Guardián → Ent Ancestral del Bosque Viejo
 - **escorpionhumanoide** (⛰️ 🗡️ Pícaro): Joven Escorpión → Guerrero Escorpión → Señor del Aguijón Mortal
@@ -6167,6 +6201,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **golem** (⛰️ 🛡️ Campeón): Golem de Barro → Golem de Piedra → Golem de Hierro Ancestral
 - **grifo** (🌪️ 🏹 Explorador): Polluelo de Grifo → Grifo Cazador → Grifo, Rey de las Alturas
 - **guepardo** (🌪️ 🗡️ Pícaro): Cría de Guepardo → Guepardo Cazador de Velocidad Pura → Gran Guepardo, Relámpago de la Sabana
+- **guerrerodejade** (⛰️ 🛡️ Campeón): Aprendiz de la Espada Verde → Guerrero de Jade Inquebrantable → Gran Guerrero, Armadura que Nunca se Agrieta
 - **guerreroleopardo** (⛰️ 🗡️ Pícaro): Joven Leopardo → Guerrero Leopardo → Señor de las Manchas Doradas
 - **hanuman** (🔥 🛡️ Campeón): Joven Devoto de Cola Larga → Hanuman, Guerrero Leal → Hanuman, Protector Eterno de los Suyos
 - **hidraserpiente** (💧 💀 Brujo): Hidra Recién Nacida → Hidra de Pantano → Hidra de las Nueve Cabezas
@@ -6184,6 +6219,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **marejada** (💧 🛡️ Campeón): Escudero de Coral → Caballero de las Mareas → Guardián del Abismo
 - **minotauro** (⛰️ 🛡️ Campeón): Toro Joven del Laberinto → Minotauro Furioso → Amo del Laberinto Eterno
 - **mujercisne** (💧 🔮 Gurú): Doncella Cisne → Mujer Cisne → Reina de los Lagos Blancos
+- **mulan** (⚡ 🗡️ Pícaro): Joven Recluta Disfrazada → Mulan, la Guerrera del Ejército del Norte → Mulan, la que Salvó un Imperio
 - **naga** (💧 💀 Brujo): Joven de Sangre Serpentina → Naga de las Aguas Profundas → Reina Naga del Río Sagrado
 - **nahual** (⛰️ 💀 Brujo): Aprendiz de Nahual → Nahual Cambiapieles → Gran Brujo Nahual
 - **narval** (💧 🗡️ Pícaro): Cría de Narval → Narval de Colmillo Certero → Gran Narval, el Unicornio de los Mares Helados
@@ -6200,19 +6236,21 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **satiromusico** (🌪️ 🔮 Gurú): Sátiro Flautista → Sátiro de la Fiesta Eterna → Sumo Sátiro de Dioniso
 - **simurgh** (🌪️ 🔮 Gurú): Cría de Ave Sabia → Simurgh de las Alturas Eternas → Gran Simurgh, Guardiana de la Sabiduría del Mundo
 - **sirena** (💧 💀 Brujo): Sirena de Voz Dulce → Sirena Encantadora → Reina de las Profundidades
+- **smoker** (🌪️ 💀 Brujo): Soldado de Humo → Cazador de Bruma → General del Humo
 - **tiburonmartillo** (💧 🗡️ Pícaro): Grumete Martillo → Pirata Tiburón Martillo → Capitán de los Siete Mares
 - **tikbalang** (⛰️ 🗡️ Pícaro): Potrillo de Dos Piernas → Tikbalang de los Caminos Perdidos → Gran Tikbalang, Señor de las Sendas que Engañan
 - **tlaloc** (💧 🔮 Gurú): Portador de Lluvia Menor → Tlaloc, Señor de la Tormenta → Tlaloc, Dueño de las Cuatro Lluvias
 - **triton** (💧 🏹 Explorador): Renacuajo Ágil → Tritón Errante → Tritón Abisal
 - **unicornio** (🌪️ 🔮 Gurú): Potrillo con Cuerno → Unicornio Radiante → Unicornio de Luz Pura
 - **valquiria** (⚡ 🛡️ Campeón): Escudera Valquiria → Valquiria de Combate → Elegidora de los Caídos
+- **verdugoenmascarado** (⛰️ 🗡️ Pícaro): Aprendiz del Hacha → Verdugo Enmascarado de Sentencias Finales → Gran Verdugo, el que Ejecuta el Destino
 - **vidente** (🔥 🔮 Gurú): Aprendiz de Cenizas → Vidente de Cenizas → Profeta de Brasas
 - **wyvern** (🌪️ 🗡️ Pícaro): Cría de Wyvern → Wyvern Cazador → Wyvern, Terror de los Cielos
 - **xolotl** (⚡ 🏹 Explorador): Cachorro del Ocaso → Xolotl, Guía del Inframundo → Xolotl, Señor de las Almas que Vuelven
 - **yeti** (💧 🛡️ Campeón): Cría de Yeti → Yeti de las Cumbres → Yeti, Señor de las Nieves Eternas
 - **zhuque** (🔥 🔮 Gurú): Cría del Fénix Bermellón → Zhuque, Guardiana del Sur → Gran Zhuque, Fénix Celeste de Llamas Eternas
 
-#### Tier 1 (Común → Infrecuente → Raro) — 69 familias
+#### Tier 1 (Común → Infrecuente → Raro) — 71 familias
 
 - **abeja** (🌪️ 🗡️ Pícaro): Abeja Obrera → Abeja Guerrera del Aguijón Certero → Gran Abeja Reina, Señora del Enjambre Infinito
 - **apsara** (🌪️ 🏹 Explorador): Aprendiz de Danza Celestial → Apsara de los Salones Eternos → Gran Apsara, Danzarina del Cielo Mismo
@@ -6266,9 +6304,11 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **nutria** (💧 🏹 Explorador): Cría de Nutria → Nutria Juguetona de Manos Hábiles → Gran Nutria, Guardiana del Río en Calma
 - **orangutan** (⛰️ 🛡️ Campeón): Cría de Orangután → Orangután de la Selva → Sabio Orangután de la Jungla
 - **pangolin** (⛰️ 🛡️ Campeón): Cría de Pangolín → Pangolín Acorazado → Gran Pangolín, Escudo Viviente de Escamas
+- **perezoso** (⛰️ 🔮 Gurú): Cría de Perezoso → Perezoso de Garras Firmes → Gran Perezoso, Sabio Lento del Dosel
 - **pinguino** (💧 🛡️ Campeón): Cría de Pingüino → Pingüino Guerrero de Aleta Firme → Gran Pingüino, General de la Muralla de Hielo
 - **plantacarnivora** (⛰️ 💀 Brujo): Brote Carnívoro → Planta Carnívora → Devoradora de las Profundidades del Bosque
 - **puca** (🌪️ 🏹 Explorador): Sombra Cambiante → Púca de las Encrucijadas → Gran Púca, Señor de las Mil Formas de la Noche
+- **puercoespin** (⛰️ 🛡️ Campeón): Cría de Puercoespín → Puercoespín de Púas Afiladas → Gran Puercoespín, Fortaleza de Espinas
 - **rana** (💧 💀 Brujo): Renacuajo Curioso → Rana Venenosa de Colores Vivos → Gran Rana, Reina del Estanque Ponzoñoso
 - **ratacallejera** (⛰️ 🗡️ Pícaro): Cría de Rata Callejera → Rata Callejera de Callejones Sin Ley → Gran Rata, Reina de las Alcantarillas Olvidadas
 - **sacerdote** (⛰️ 🔮 Gurú): Acólito → Sacerdote Bendecido → Sumo Sacerdote de Texel
