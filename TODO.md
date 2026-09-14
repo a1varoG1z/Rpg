@@ -6045,17 +6045,17 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Actualizada también la sección "Roster completo del juego" (más
       abajo) con las 7 entradas nuevas en su sitio alfabético/de mapa
       correspondiente.
-- [x] **Añadidos 10 personajes jugables nuevos** (petición del usuario,
+- [x] **Añadidos 9 personajes jugables nuevos** (petición del usuario,
       con los nombres/tiers exactos ya decididos; se implementaron 12
-      inicialmente pero **Domador de Dragones** y **Domador de Bestias**
-      se eliminaron después a petición del usuario):
+      inicialmente pero **Domador de Dragones**, **Domador de Bestias**
+      y **Mulan** se eliminaron después a petición del usuario):
       - Tier 3: **Shango** (rayo/campeón/aturdir — dios yoruba del rayo
         y la justicia, deificado como rey) y **Beowulf** (agua/campeón/
         golpe — héroe legendario mortal, matador de Grendel).
       - Tier 2: **Berserker** (rayo/campeón/furia), **Efrit** (fuego/
         brujo/arrasar), **Guerrero de Jade** (tierra/campeón/escudo),
-        **Verdugo Enmascarado** (tierra/pícaro/golpeGracia), **Smoker**
-        (viento/brujo/aturdir) y **Mulan** (rayo/pícaro/dobleGolpe).
+        **Verdugo Enmascarado** (tierra/pícaro/golpeGracia) y **Smoker**
+        (viento/brujo/aturdir).
       - Tier 1: **Puercoespín** (tierra/campeón/escudo) y **Perezoso**
         (tierra/gurú/curar).
       Los dos Legendarios de tier 3 se calibraron con cuidado dentro del
@@ -6067,11 +6067,11 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Morrigan: héroe legendario MORTAL matador de monstruos, el mismo
       arquetipo narrativo que Sigurd (mata a Fafnir), así que se sitúa
       justo entre ambos. Verificado con Playwright contra el motor real:
-      215 familias/645 formas de personaje jugable (antes 205/615), sin
+      214 familias/642 formas de personaje jugable (antes 205/615), sin
       ids duplicados, Torre Prohibida/Salón de los Engaños siguen siendo
       las 2 últimas zonas. Todos marcados con `hasImages: true` (el
       usuario subirá el arte real a continuación). Actualizada también la
-      sección "Roster completo del juego" (más abajo) con las 10 entradas
+      sección "Roster completo del juego" (más abajo) con las 9 entradas
       nuevas en su sitio alfabético correspondiente.
 
 ## Notas
@@ -6093,10 +6093,10 @@ Inventario generado directamente desde el motor real (FIGHTERS/MOBS/BOSSES en
 js/data.js), a petición del usuario. Cada familia jugable o de mob tiene 3 formas
 (evoluciona 2 veces); se listan las 3 en orden común→legendario según su tier. Los
 jefes son combates únicos sin evolución, ordenados según su posición real en el mapa
-(ZONES). Total: **645 formas de personaje jugable** (215 familias),
+(ZONES). Total: **642 formas de personaje jugable** (214 familias),
 **102 formas de mob** (34 familias) y **45 jefes de zona**.
 
-### Personajes jugables — 215 familias / 645 formas
+### Personajes jugables — 214 familias / 642 formas
 
 #### Tier 3 (Raro → Épico → Legendario) — 65 familias
 
@@ -6166,7 +6166,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **tyr** (⛰️ 🛡️ Campeón): Joven Guardián del Juramento → Tyr, el de la Mano Perdida → Tyr, Dios de la Guerra y la Justicia
 - **zeus** (⚡ 🛡️ Campeón): Joven del Olimpo → Heredero del Rayo → Zeus, Señor del Trueno
 
-#### Tier 2 (Infrecuente → Raro → Épico) — 79 familias
+#### Tier 2 (Infrecuente → Raro → Épico) — 78 familias
 
 - **amazona** (🌪️ 🗡️ Pícaro): Joven Amazona → Guerrera Amazona → Reina de las Amazonas
 - **babayaga** (⛰️ 💀 Brujo): Aprendiz de Baba Yaga → Baba Yaga Errante → Baba Yaga, Señora del Bosque Negro
@@ -6217,7 +6217,6 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **marejada** (💧 🛡️ Campeón): Escudero de Coral → Caballero de las Mareas → Guardián del Abismo
 - **minotauro** (⛰️ 🛡️ Campeón): Toro Joven del Laberinto → Minotauro Furioso → Amo del Laberinto Eterno
 - **mujercisne** (💧 🔮 Gurú): Doncella Cisne → Mujer Cisne → Reina de los Lagos Blancos
-- **mulan** (⚡ 🗡️ Pícaro): Joven Recluta Disfrazada → Mulan, la Guerrera del Ejército del Norte → Mulan, la que Salvó un Imperio
 - **naga** (💧 💀 Brujo): Joven de Sangre Serpentina → Naga de las Aguas Profundas → Reina Naga del Río Sagrado
 - **nahual** (⛰️ 💀 Brujo): Aprendiz de Nahual → Nahual Cambiapieles → Gran Brujo Nahual
 - **narval** (💧 🗡️ Pícaro): Cría de Narval → Narval de Colmillo Certero → Gran Narval, el Unicornio de los Mares Helados
