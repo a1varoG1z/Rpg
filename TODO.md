@@ -6073,6 +6073,17 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       usuario subirá el arte real a continuación). Actualizada también la
       sección "Roster completo del juego" (más abajo) con las 9 entradas
       nuevas en su sitio alfabético correspondiente.
+- [x] **Robin Hood pasa de tier 2 a tier 1** (petición del usuario): la
+      cadena de rareza cambia de infrecuente→raro→épico a comun→
+      infrecuente→raro (misma familia, mismos 3 nombres/lores, solo
+      cambia el parámetro `tier` de `addFamily`). Los ids de sus formas
+      cambian en consecuencia: `robinhood_epico` desaparece y aparece
+      `robinhood_comun`; sin referencias a los ids antiguos en ninguna
+      otra parte del código. Verificado con Playwright: 214 familias/642
+      formas de personaje jugable (sin cambio en el total, solo se movió
+      de tier), sin ids duplicados, sin errores de página. Actualizada
+      también la sección "Roster completo del juego" moviendo la entrada
+      de Robin Hood del bloque Tier 2 al Tier 1 en su sitio alfabético.
 
 ## Notas
 
@@ -6166,7 +6177,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **tyr** (⛰️ 🛡️ Campeón): Joven Guardián del Juramento → Tyr, el de la Mano Perdida → Tyr, Dios de la Guerra y la Justicia
 - **zeus** (⚡ 🛡️ Campeón): Joven del Olimpo → Heredero del Rayo → Zeus, Señor del Trueno
 
-#### Tier 2 (Infrecuente → Raro → Épico) — 78 familias
+#### Tier 2 (Infrecuente → Raro → Épico) — 77 familias
 
 - **amazona** (🌪️ 🗡️ Pícaro): Joven Amazona → Guerrera Amazona → Reina de las Amazonas
 - **babayaga** (⛰️ 💀 Brujo): Aprendiz de Baba Yaga → Baba Yaga Errante → Baba Yaga, Señora del Bosque Negro
@@ -6228,7 +6239,6 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **pegaso** (🌪️ 🏹 Explorador): Potrillo Alado → Pegaso Veloz → Pegaso, Corcel de las Nubes
 - **qinglong** (🌪️ 💀 Brujo): Cría del Dragón Azur → Qinglong, Guardián del Este → Gran Qinglong, Dragón Celeste del Amanecer
 - **rinoceronte** (⛰️ 🛡️ Campeón): Cría de Rinoceronte → Rinoceronte Acorazado → Gran Rinoceronte, Muralla de la Sabana
-- **robinhood** (🌪️ 🏹 Explorador): Arquero del Bosque → Forajido de Sherwood → Robin Hood, Príncipe de los Ladrones
 - **samurai** (⚡ 🗡️ Pícaro): Aprendiz de Samurái → Samurái Errante → Maestro Espadachín del Trueno
 - **satiromusico** (🌪️ 🔮 Gurú): Sátiro Flautista → Sátiro de la Fiesta Eterna → Sumo Sátiro de Dioniso
 - **simurgh** (🌪️ 🔮 Gurú): Cría de Ave Sabia → Simurgh de las Alturas Eternas → Gran Simurgh, Guardiana de la Sabiduría del Mundo
@@ -6247,7 +6257,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **yeti** (💧 🛡️ Campeón): Cría de Yeti → Yeti de las Cumbres → Yeti, Señor de las Nieves Eternas
 - **zhuque** (🔥 🔮 Gurú): Cría del Fénix Bermellón → Zhuque, Guardiana del Sur → Gran Zhuque, Fénix Celeste de Llamas Eternas
 
-#### Tier 1 (Común → Infrecuente → Raro) — 71 familias
+#### Tier 1 (Común → Infrecuente → Raro) — 72 familias
 
 - **abeja** (🌪️ 🗡️ Pícaro): Abeja Obrera → Abeja Guerrera del Aguijón Certero → Gran Abeja Reina, Señora del Enjambre Infinito
 - **apsara** (🌪️ 🏹 Explorador): Aprendiz de Danza Celestial → Apsara de los Salones Eternos → Gran Apsara, Danzarina del Cielo Mismo
@@ -6308,6 +6318,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **puercoespin** (⛰️ 🛡️ Campeón): Cría de Puercoespín → Puercoespín de Púas Afiladas → Gran Puercoespín, Fortaleza de Espinas
 - **rana** (💧 💀 Brujo): Renacuajo Curioso → Rana Venenosa de Colores Vivos → Gran Rana, Reina del Estanque Ponzoñoso
 - **ratacallejera** (⛰️ 🗡️ Pícaro): Cría de Rata Callejera → Rata Callejera de Callejones Sin Ley → Gran Rata, Reina de las Alcantarillas Olvidadas
+- **robinhood** (🌪️ 🏹 Explorador): Arquero del Bosque → Forajido de Sherwood → Robin Hood, Príncipe de los Ladrones
 - **sacerdote** (⛰️ 🔮 Gurú): Acólito → Sacerdote Bendecido → Sumo Sacerdote de Texel
 - **salamandraignea** (🔥 💀 Brujo): Cría de Salamandra → Salamandra de Brasas → Salamandra del Corazón del Volcán
 - **selkie** (💧 🔮 Gurú): Cría de Selkie → Selkie de las Mareas → Selkie Guardiana de su Piel
