@@ -6045,17 +6045,17 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Actualizada también la sección "Roster completo del juego" (más
       abajo) con las 7 entradas nuevas en su sitio alfabético/de mapa
       correspondiente.
-- [x] **Añadidos 12 personajes jugables nuevos** (petición del usuario,
-      con los nombres/tiers exactos ya decididos):
+- [x] **Añadidos 10 personajes jugables nuevos** (petición del usuario,
+      con los nombres/tiers exactos ya decididos; se implementaron 12
+      inicialmente pero **Domador de Dragones** y **Domador de Bestias**
+      se eliminaron después a petición del usuario):
       - Tier 3: **Shango** (rayo/campeón/aturdir — dios yoruba del rayo
         y la justicia, deificado como rey) y **Beowulf** (agua/campeón/
         golpe — héroe legendario mortal, matador de Grendel).
-      - Tier 2: **Berserker** (rayo/campeón/furia), **Domador de
-        Dragones** (fuego/campeón/grito), **Efrit** (fuego/brujo/
-        arrasar), **Guerrero de Jade** (tierra/campeón/escudo), **Domador
-        de Bestias** (viento/explorador/grito), **Verdugo Enmascarado**
-        (tierra/pícaro/golpeGracia), **Smoker** (viento/brujo/aturdir) y
-        **Mulan** (rayo/pícaro/dobleGolpe).
+      - Tier 2: **Berserker** (rayo/campeón/furia), **Efrit** (fuego/
+        brujo/arrasar), **Guerrero de Jade** (tierra/campeón/escudo),
+        **Verdugo Enmascarado** (tierra/pícaro/golpeGracia), **Smoker**
+        (viento/brujo/aturdir) y **Mulan** (rayo/pícaro/dobleGolpe).
       - Tier 1: **Puercoespín** (tierra/campeón/escudo) y **Perezoso**
         (tierra/gurú/curar).
       Los dos Legendarios de tier 3 se calibraron con cuidado dentro del
@@ -6067,11 +6067,11 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Morrigan: héroe legendario MORTAL matador de monstruos, el mismo
       arquetipo narrativo que Sigurd (mata a Fafnir), así que se sitúa
       justo entre ambos. Verificado con Playwright contra el motor real:
-      217 familias/651 formas de personaje jugable (antes 205/615), sin
+      215 familias/645 formas de personaje jugable (antes 205/615), sin
       ids duplicados, Torre Prohibida/Salón de los Engaños siguen siendo
       las 2 últimas zonas. Todos marcados con `hasImages: true` (el
       usuario subirá el arte real a continuación). Actualizada también la
-      sección "Roster completo del juego" (más abajo) con las 12 entradas
+      sección "Roster completo del juego" (más abajo) con las 10 entradas
       nuevas en su sitio alfabético correspondiente.
 
 ## Notas
@@ -6093,10 +6093,10 @@ Inventario generado directamente desde el motor real (FIGHTERS/MOBS/BOSSES en
 js/data.js), a petición del usuario. Cada familia jugable o de mob tiene 3 formas
 (evoluciona 2 veces); se listan las 3 en orden común→legendario según su tier. Los
 jefes son combates únicos sin evolución, ordenados según su posición real en el mapa
-(ZONES). Total: **651 formas de personaje jugable** (217 familias),
+(ZONES). Total: **645 formas de personaje jugable** (215 familias),
 **102 formas de mob** (34 familias) y **45 jefes de zona**.
 
-### Personajes jugables — 217 familias / 651 formas
+### Personajes jugables — 215 familias / 645 formas
 
 #### Tier 3 (Raro → Épico → Legendario) — 65 familias
 
@@ -6166,7 +6166,7 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **tyr** (⛰️ 🛡️ Campeón): Joven Guardián del Juramento → Tyr, el de la Mano Perdida → Tyr, Dios de la Guerra y la Justicia
 - **zeus** (⚡ 🛡️ Campeón): Joven del Olimpo → Heredero del Rayo → Zeus, Señor del Trueno
 
-#### Tier 2 (Infrecuente → Raro → Épico) — 81 familias
+#### Tier 2 (Infrecuente → Raro → Épico) — 79 familias
 
 - **amazona** (🌪️ 🗡️ Pícaro): Joven Amazona → Guerrera Amazona → Reina de las Amazonas
 - **babayaga** (⛰️ 💀 Brujo): Aprendiz de Baba Yaga → Baba Yaga Errante → Baba Yaga, Señora del Bosque Negro
@@ -6186,8 +6186,6 @@ jefes son combates únicos sin evolución, ordenados según su posición real en
 - **davyjones** (💧 💀 Brujo): Marinero Maldito → Davy Jones, el Maldito → Davy Jones, Capitán del Abismo
 - **deerwoman** (⛰️ 🗡️ Pícaro): Joven del Bosque → Deer Woman → Deer Woman, Espíritu Vengador
 - **dientesdesable** (⛰️ 🛡️ Campeón): Cría Dientes de Sable → Guerrero Dientes de Sable → Señor de la Era del Hielo
-- **domadordebestias** (🌪️ 🏹 Explorador): Aprendiz de la Jaula → Domador de Bestias del Circo Itinerante → Gran Domador, el que Ninguna Fiera Desobedece
-- **domadordragones** (🔥 🛡️ Campeón): Aprendiz de las Cadenas → Domador de Dragones de Escamas Cicatrizadas → Gran Domador, Señor de las Bestias Aladas
 - **dragonkomodo** (⛰️ 💀 Brujo): Cría de Dragón de Komodo → Guerrero Dragón de Komodo → Gran Dragón de Komodo, Señor de la Isla Perdida
 - **efrit** (🔥 💀 Brujo): Espíritu Menor de las Arenas → Efrit de las Dunas Ardientes → Gran Efrit, Señor del Fuego del Desierto
 - **elefante** (⛰️ 🛡️ Campeón): Cría de Elefante → Elefante de Guerra → Gran Elefante, Coloso Imparable de la Sabana
