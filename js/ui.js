@@ -1754,8 +1754,21 @@ UI.renderTierCap = function (state, wrap) {
   });
   wrap.appendChild(list);
 
+  // Fase 2 de Tope de Tier — se explicaba mal: antes era un botón suelto
+  // sin más texto que su propia etiqueta, pegado justo debajo de la lista
+  // de niveles de la Fase 1 de arriba (con la que no tiene relación
+  // directa), así que no quedaba claro qué era ni por qué. Cabecera +
+  // descripción propias, con el mismo patrón que el resto de secciones de
+  // Retos (Tope de Tier arriba, Torneo de Bracket, Cacería del Tesoro...).
+  wrap.appendChild(el('h3', null, '🧬 Trials de Familia (Fase 2)'));
+  wrap.appendChild(el('p', 'settings-info', `A diferencia de la lista de arriba (una restricción sobre TODA
+    la Formación), aquí cada familia jugable del juego tiene su propio reto individual: para intentar el de
+    una familia, ficha al menos 1 copia de ESA familia concreta en tu Formación (el resto de huecos puede ser
+    cualquier cosa) y libra un combate rápido de una sola oleada contra un "guardián" de su misma rareza
+    tope. No hay orden que desbloquear — puedes intentar cualquiera que ya tengas fichada, cuando quieras, y
+    son rejugables. Superarlos todos completa el Tope de Tier al 100%.`));
   const trialsCleared = Object.values(state.tierCap.familyTrialClears).filter(v => v > 0).length;
-  const trialsBtn = el('button', 'primary-btn', `🧬 Trials de Familia (${trialsCleared}/${FAMILY_TRIALS.length})`);
+  const trialsBtn = el('button', 'primary-btn', `🧬 Ver Trials de Familia (${trialsCleared}/${FAMILY_TRIALS.length})`);
   trialsBtn.addEventListener('click', () => UI.openFamilyTrials(state));
   wrap.appendChild(trialsBtn);
 };
