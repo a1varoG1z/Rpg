@@ -224,8 +224,16 @@ function sortRosterEntries(state, roster, mode, variant) {
 // vez de solo cambiar de color (petición del usuario tras ver el primer
 // intento: "en cada decoración más, meter más efectos") — 1 aro -> +2º aro
 // a contragiro +4 chispas -> +destello starburst +4 chispas más.
-function applyPrestigeDecoration(wrap, tier) {
+// sizePx (el mismo que se le pasa a creatureCanvas, 46 en la Formación, 90
+// en la ficha...) decide a qué distancia del centro orbitan las chispas:
+// antes era una distancia fija (34-38px) que en la Formación (wrap de
+// 46px con overflow:hidden, ver .formation-slot .creature-canvas-wrap en
+// style.css) quedaba FUERA del recorte y no se veían nunca — ahora es
+// siempre una fracción del tamaño real, así que sea cual sea el sitio de
+// la interfaz, la chispa cae dentro del wrap.
+function applyPrestigeDecoration(wrap, tier, sizePx) {
   if (!tier) return;
+  const size = sizePx || 76;
   wrap.classList.add('prestige-' + tier);
   if (tier >= 3) wrap.appendChild(el('div', 'prestige-burst'));
   wrap.appendChild(el('div', 'prestige-ring ring-a'));
@@ -235,7 +243,7 @@ function applyPrestigeDecoration(wrap, tier) {
     const spark = el('div', 'prestige-spark');
     const angle = (360 / sparkCount) * i;
     spark.style.setProperty('--ang', angle + 'deg');
-    spark.style.setProperty('--dist', (tier >= 3 ? 38 : 34) + 'px');
+    spark.style.setProperty('--dist', Math.round(size * (tier >= 3 ? 0.4 : 0.37)) + 'px');
     spark.style.setProperty('--delay', (i * 0.18) + 's');
     wrap.appendChild(spark);
   }
@@ -251,7 +259,7 @@ function creatureCard(state, entry, opts) {
   if (entry.isNew) card.appendChild(el('div', 'new-badge', '¡Nuevo!'));
   const wrap = el('div', 'creature-canvas-wrap');
   wrap.appendChild(creatureCanvas(entry.defId));
-  applyPrestigeDecoration(wrap, entry.prestige);
+  applyPrestigeDecoration(wrap, entry.prestige, 76);
   card.appendChild(wrap);
   const badge = el('div', 'creature-elclass');
   badge.textContent = ELEMENT_INFO[def.element].icon + CLASS_INFO[def.class].icon;
@@ -2797,7 +2805,7 @@ UI.renderBanda = function (state) {
           slot.style.setProperty('--rg', rarity.glow);
           const wrap = el('div', 'creature-canvas-wrap');
           wrap.appendChild(creatureCanvas(entry.defId, 46));
-          applyPrestigeDecoration(wrap, entry.prestige);
+          applyPrestigeDecoration(wrap, entry.prestige, 46);
           slot.appendChild(wrap);
           slot.appendChild(el('div', 'formation-lvl', 'Nv.' + entry.level));
           if (isCenter && def.leaderSkillId) slot.appendChild(el('div', 'leader-crown', '👑'));
@@ -3160,7 +3168,7 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   const head = el('div', 'fighter-modal-head');
   const portraitWrap = el('div', 'creature-canvas-wrap');
   portraitWrap.appendChild(creatureCanvas(entry.defId, 90));
-  applyPrestigeDecoration(portraitWrap, entry.prestige);
+  applyPrestigeDecoration(portraitWrap, entry.prestige, 90);
   head.appendChild(portraitWrap);
   const info = el('div');
   const vuln = TYPE_VULNERABILITY[def.class];

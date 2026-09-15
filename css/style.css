@@ -219,22 +219,29 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
   opacity: 0.85;
 }
 
-/* Chispas — puntitos que orbitan y titilan alrededor del sprite, 4 desde
-   el nivel 2 (spark-0..3) y 4 más desde el nivel 3 (spark-4..7), cada una
-   en un ángulo/retardo distinto (ver --ang en ui.js) para que no titilen
-   todas a la vez. */
+/* Chispas — puntitos dorados que orbitan y titilan alrededor del sprite, 4
+   desde el nivel 2 y 4 más desde el nivel 3, cada una en un ángulo/retardo
+   distinto (--ang/--dist/--delay, ver applyPrestigeDecoration en ui.js —
+   --dist es proporcional al tamaño real del sprite en ese sitio, para caer
+   siempre dentro del wrap y no recortarse en la Formación). Feedback del
+   usuario ("casi no se ven, se tienen que ver más"): más grandes, con
+   halo/box-shadow propio (antes solo un radial-gradient sin más brillo
+   alrededor) y sin bajar tanto de opacidad/tamaño en el valle del
+   parpadeo — antes llegaban casi a desaparecer (15% opacidad, 60% tamaño)
+   la mayor parte del ciclo. */
 .prestige-spark {
-  position: absolute; z-index: 3; top: 50%; left: 50%; width: 5px; height: 5px; border-radius: 50%;
-  background: radial-gradient(circle, #fff 0%, #ffd450 55%, rgba(255,212,80,0) 75%);
-  transform: rotate(var(--ang, 0deg)) translate(var(--dist, 34px)) rotate(calc(var(--ang, 0deg) * -1));
+  position: absolute; z-index: 3; top: 50%; left: 50%; width: 8px; height: 8px; border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #ffe27a 45%, #ffb52e 75%, rgba(255,181,46,0) 100%);
+  box-shadow: 0 0 6px 2px rgba(255,195,70,0.85);
+  transform: rotate(var(--ang, 0deg)) translate(var(--dist, 28px)) rotate(calc(var(--ang, 0deg) * -1));
   animation: prestigeTwinkle 1.6s ease-in-out infinite;
   animation-delay: var(--delay, 0s);
   pointer-events: none;
 }
-.prestige-3 .prestige-spark { width: 6px; height: 6px; }
+.prestige-3 .prestige-spark { width: 9px; height: 9px; box-shadow: 0 0 8px 2px rgba(255,195,70,0.95); }
 @keyframes prestigeTwinkle {
-  0%, 100% { opacity: 0.15; transform: rotate(var(--ang, 0deg)) translate(var(--dist, 34px)) rotate(calc(var(--ang, 0deg) * -1)) scale(0.6); }
-  50% { opacity: 1; transform: rotate(var(--ang, 0deg)) translate(var(--dist, 34px)) rotate(calc(var(--ang, 0deg) * -1)) scale(1.3); }
+  0%, 100% { opacity: 0.6; transform: rotate(var(--ang, 0deg)) translate(var(--dist, 28px)) rotate(calc(var(--ang, 0deg) * -1)) scale(0.85); }
+  50% { opacity: 1; transform: rotate(var(--ang, 0deg)) translate(var(--dist, 28px)) rotate(calc(var(--ang, 0deg) * -1)) scale(1.4); }
 }
 /* .battle-unit no usa --rc/--rg (nunca los necesitó para rareza normal),
    así que el marco de jefe en combate se declara directo, sin depender
