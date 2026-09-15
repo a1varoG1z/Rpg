@@ -220,7 +220,7 @@ function creatureCard(state, entry, opts) {
   opts = opts || {};
   const def = fighterDef(entry.defId);
   const rarity = rarityInfoFor(def);
-  const card = el('div', 'creature-card rarity-' + rarity.id);
+  const card = el('div', 'creature-card rarity-' + rarity.id + (entry.prestige ? ' prestige-' + entry.prestige : ''));
   card.style.setProperty('--rc', rarity.color);
   card.style.setProperty('--rg', rarity.glow);
   if (entry.isNew) card.appendChild(el('div', 'new-badge', '¡Nuevo!'));
@@ -2525,7 +2525,7 @@ UI.renderBanda = function (state) {
           slot.classList.add('rarity-' + rarity.id);
           slot.style.setProperty('--rc', rarity.color);
           slot.style.setProperty('--rg', rarity.glow);
-          const wrap = el('div', 'creature-canvas-wrap');
+          const wrap = el('div', 'creature-canvas-wrap' + (entry.prestige ? ' prestige-' + entry.prestige : ''));
           wrap.appendChild(creatureCanvas(entry.defId, 46));
           slot.appendChild(wrap);
           slot.appendChild(el('div', 'formation-lvl', 'Nv.' + entry.level));
@@ -2815,6 +2815,55 @@ UI.openFormationPicker = function (state, row, col) {
   $('pickerModal').classList.remove('hidden');
 };
 
+// Panel de Prestigio (ver PRESTIGE_TIERS en data.js), usado dentro de
+// UI.openFighterModal — separado en su propia función porque se
+// re-renderiza entero tras cada compra (el botón de "Mejorar" vuelve a
+// llamar a UI.openFighterModal para refrescar barras/coste del siguiente
+// nivel, más simple que mutar el DOM a mano).
+function prestigePanel(state, entry, def) {
+  const panel = el('div', 'panel');
+  const current = entry.prestige || 0;
+  const tierNames = ['Sin decorar', 'Decoración', 'Decoración intermedia', 'Decoración máxima'];
+  let html = `<h3>✨ Prestigio de carta <span class="badge">${tierNames[current]}</span></h3>
+    <p class="settings-info">Personalización puramente visual para esta carta en su forma final — no cambia
+    ninguna estadística, solo un marco cada vez más vistoso alrededor de su arte.</p>`;
+  if (current >= PRESTIGE_TIERS.length - 1) {
+    html += `<p class="settings-info">🏆 Ya tiene la decoración máxima.</p>`;
+    panel.innerHTML = html;
+    return panel;
+  }
+  const nextTier = PRESTIGE_TIERS[current + 1];
+  const s = entry.stats || {};
+  panel.innerHTML = html;
+  panel.appendChild(el('div', null, `<p class="settings-info">Para desbloquear <b>${nextTier.label}</b>:</p>`));
+  panel.appendChild(objRow('⚔️ Combates jugados con esta copia', Math.min(s.battles || 0, nextTier.require.battles), nextTier.require.battles));
+  panel.appendChild(objRow('💀 Víctimas', Math.min(s.kills || 0, nextTier.require.kills), nextTier.require.kills));
+  panel.appendChild(objRow('🔥 Daño infligido', Math.min(s.dmgDealt || 0, nextTier.require.dmgDealt), nextTier.require.dmgDealt));
+  panel.appendChild(objRow('⚡ Ultis usadas', Math.min(s.ultsUsed || 0, nextTier.require.ultsUsed), nextTier.require.ultsUsed));
+  const costParts = Object.keys(nextTier.cost).map(k => {
+    const icon = k === 'texel' ? '🪙' : k === 'gemas' ? '💎' : CRYSTALS[k].icon;
+    return icon + ' ' + nextTier.cost[k];
+  });
+  panel.appendChild(el('p', 'settings-info', 'Coste: ' + costParts.join(' · ')));
+  const meetsReq = prestigeRequirementMet(entry, nextTier);
+  const canAfford = canAffordPrestigeCost(state, nextTier.cost);
+  const btn = el('button', 'primary-btn', '✨ Mejorar a ' + nextTier.label);
+  btn.disabled = !meetsReq || !canAfford;
+  if (!meetsReq) btn.title = 'Todavía no cumples los requisitos de uso de arriba.';
+  else if (!canAfford) btn.title = 'No tienes suficiente de alguna de las monedas del coste.';
+  btn.addEventListener('click', () => {
+    const result = upgradeFighterPrestige(state, entry.uid);
+    if (!result.ok) return;
+    saveGame(state);
+    UI.renderTopbar(state);
+    if (activeScreen === 'banda') UI.renderBanda(state);
+    UI.showToast('✨ ' + def.name + ' ahora tiene ' + tierNames[result.tier] + '.');
+    UI.openFighterModal(state, entry.uid);
+  });
+  panel.appendChild(btn);
+  return panel;
+}
+
 // formationCtx (opcional): { row, col } cuando se abre la ficha desde un
 // hueco ya ocupado de la Formación — añade un panel para quitarlo o
 // sustituirlo sin salir de la ficha normal del luchador.
@@ -2838,7 +2887,7 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   const body = $('fighterModalBody');
   body.innerHTML = '';
   const head = el('div', 'fighter-modal-head');
-  const portraitWrap = el('div', 'creature-canvas-wrap');
+  const portraitWrap = el('div', 'creature-canvas-wrap' + (entry.prestige ? ' prestige-' + entry.prestige : ''));
   portraitWrap.appendChild(creatureCanvas(entry.defId, 90));
   head.appendChild(portraitWrap);
   const info = el('div');
@@ -3037,6 +3086,14 @@ UI.openFighterModal = function (state, uid, formationCtx) {
     const superBtn = el('button', 'primary-btn', 'Superfusionar (sacrificar otro luchador)');
     superBtn.addEventListener('click', () => UI.openSuperFusePicker(state, uid));
     body.appendChild(superBtn);
+  }
+
+  // Prestigio (ver PRESTIGE_TIERS en data.js): solo aparece en forma final
+  // — antes de eso ni siquiera tiene sentido enseñar la promesa, porque
+  // vuelve a resetearse el razonamiento de "esta ES la carta definitiva de
+  // este luchador" en cada evolución.
+  if (!def.evolvesTo) {
+    body.appendChild(prestigePanel(state, entry, def));
   }
 
   const gearPanel = el('div', 'panel');

@@ -1440,6 +1440,53 @@ function torreRepeatBossRewards(level) {
   };
 }
 
+// ---------- Prestigio de carta ----------
+// Personalización puramente visual para las cartas en su forma MÁS
+// EVOLUCIONADA (evolvesTo === null, ver isFighterFinalForm) — no da NINGUNA
+// ventaja de combate, solo un marco/aura cada vez más vistoso alrededor del
+// sprite (ver .prestige-1/2/3 en style.css), la misma idea que el brillo
+// dorado que ya tiene una Legendaria al salir de un cristal (ver
+// UI.showSummonReveal) pero permanente en la ficha en vez de solo un
+// instante. 4 niveles (0 = como ahora, sin nada especial) — cada uno exige
+// haber jugado DE VERDAD con ESA copia concreta (sus propias entry.stats,
+// ver newFighterStats en state.js — no se puede comprar sin haberla usado
+// en combate) Y pagar una cantidad de monedas cada vez mayor, para que sea
+// una muestra real de dedicación con esa carta y no solo de tener recursos.
+// Los umbrales son un primer calibrado razonable (no hay datos reales de
+// cuánto se acumulan battles/kills/dmgDealt/ultsUsed jugando a fondo) —
+// fáciles de retocar más adelante si se notan muy lejos o muy cerca.
+const PRESTIGE_TIERS = [
+  null, // índice 0 = sin prestigio, no se usa como requisito de nada
+  {
+    tier: 1, label: 'Decoración', className: 'prestige-1',
+    require: { battles: 30, kills: 20, dmgDealt: 15000, ultsUsed: 15 },
+    cost: { texel: 500, pixite: 5 },
+  },
+  {
+    tier: 2, label: 'Decoración intermedia', className: 'prestige-2',
+    require: { battles: 100, kills: 75, dmgDealt: 60000, ultsUsed: 50 },
+    cost: { texel: 2000, voxite: 10 },
+  },
+  {
+    tier: 3, label: 'Decoración máxima', className: 'prestige-3',
+    require: { battles: 250, kills: 200, dmgDealt: 200000, ultsUsed: 150 },
+    cost: { texel: 8000, doxite: 15 },
+  },
+];
+function isFighterFinalForm(defId) {
+  const def = fighterDef(defId);
+  return !!def && !def.evolvesTo;
+}
+function prestigeRequirementMet(entry, tierDef) {
+  const s = entry.stats || {};
+  const r = tierDef.require;
+  return (s.battles || 0) >= r.battles && (s.kills || 0) >= r.kills
+    && (s.dmgDealt || 0) >= r.dmgDealt && (s.ultsUsed || 0) >= r.ultsUsed;
+}
+function canAffordPrestigeCost(state, cost) {
+  return Object.keys(cost).every(k => (state.currencies[k] || 0) >= cost[k]);
+}
+
 // ---------- Tope de Tier ----------
 // Reto de Retos (Fase 1, ver TODO.md): antes de empezar cada nivel, la
 // Formación ENTERA (todos los huecos ocupados, los vacíos no cuentan) debe

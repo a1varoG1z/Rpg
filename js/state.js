@@ -23,9 +23,9 @@ function newFighterStats() {
 
 function createNewState() {
   const roster = [
-    { uid: newUid('f'), defId: 'topo_comun', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats() },
-    { uid: newUid('f'), defId: 'heraldo_comun', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats() },
-    { uid: newUid('f'), defId: 'triton_infrecuente', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats() },
+    { uid: newUid('f'), defId: 'topo_comun', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats(), prestige: 0 },
+    { uid: newUid('f'), defId: 'heraldo_comun', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats(), prestige: 0 },
+    { uid: newUid('f'), defId: 'triton_infrecuente', level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats(), prestige: 0 },
   ];
   const band = [
     [roster[0].uid, roster[1].uid, roster[2].uid],
@@ -534,7 +534,7 @@ function applySummonResult(state, defId) {
   // evolucionar) se quedan en la Colección como copias sueltas: sirven de
   // material para Superfusión (ver fuseMaterials/superFuse) o se pueden
   // vender manualmente por Texel — nunca se convierten solos.
-  const entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats(), isNew: !everDiscovered, readyToEvolve: false };
+  const entry = { uid: newUid('f'), defId, level: 1, xp: 0, sef: 0, stars: 0, gear: emptyGearSet(), stats: newFighterStats(), isNew: !everDiscovered, readyToEvolve: false, prestige: 0 };
   state.roster.push(entry);
   return { defId, outcome: everDiscovered ? 'duplicado' : 'nuevo', uid: entry.uid };
 }
@@ -1120,6 +1120,21 @@ function recordBracketRun(state, roundsWon) {
 }
 function bracketWonToday(state) { return state.bracket.lastWonKey === merchantTodayKey(); }
 
+// --- Prestigio de carta (ver PRESTIGE_TIERS en data.js) ---
+function upgradeFighterPrestige(state, uid) {
+  const entry = rosterEntry(state, uid);
+  if (!entry) return { ok: false, reason: 'no-entry' };
+  if (!isFighterFinalForm(entry.defId)) return { ok: false, reason: 'not-final-form' };
+  const nextTier = (entry.prestige || 0) + 1;
+  if (nextTier > PRESTIGE_TIERS.length - 1) return { ok: false, reason: 'max' };
+  const tierDef = PRESTIGE_TIERS[nextTier];
+  if (!prestigeRequirementMet(entry, tierDef)) return { ok: false, reason: 'requirements' };
+  if (!canAffordPrestigeCost(state, tierDef.cost)) return { ok: false, reason: 'cost' };
+  Object.keys(tierDef.cost).forEach(k => { state.currencies[k] -= tierDef.cost[k]; });
+  entry.prestige = nextTier;
+  return { ok: true, tier: nextTier };
+}
+
 // --- Cacería del Tesoro (ver treasureHunt* en combat.js) ---
 // Traspasa el botín local de la expedición (run.pool, ver
 // UI.startTreasureHunt) a la cuenta permanente — el único punto en el que
@@ -1432,6 +1447,9 @@ function migrateState(state) {
     if (!state.roguelike) state.roguelike = { bestRound: 0 };
     if (!state.bracket) state.bracket = { bestRound: 0, lastWonKey: null };
     if (!state.treasureHunt) state.treasureHunt = { runsCompleted: 0, bestHaul: 0 };
+    // Prestigio de carta (ver PRESTIGE_TIERS en data.js): partidas
+    // anteriores a esta feature no tienen el campo en ningún roster entry.
+    state.roster.forEach(entry => { if (entry.prestige === undefined) entry.prestige = 0; });
     if (!state.merchant) state.merchant = { lastRedeemedKey: null };
     if (!state.objectivesClaimed) state.objectivesClaimed = [];
     if (!state.formationPresets) state.formationPresets = [];
