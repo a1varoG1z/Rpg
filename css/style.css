@@ -219,29 +219,33 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
   opacity: 0.85;
 }
 
-/* Chispas — puntitos dorados que orbitan y titilan alrededor del sprite, 4
-   desde el nivel 2 y 4 más desde el nivel 3, cada una en un ángulo/retardo
-   distinto (--ang/--dist/--delay, ver applyPrestigeDecoration en ui.js —
-   --dist es proporcional al tamaño real del sprite en ese sitio, para caer
-   siempre dentro del wrap y no recortarse en la Formación). Feedback del
-   usuario ("casi no se ven, se tienen que ver más"): más grandes, con
-   halo/box-shadow propio (antes solo un radial-gradient sin más brillo
-   alrededor) y sin bajar tanto de opacidad/tamaño en el valle del
-   parpadeo — antes llegaban casi a desaparecer (15% opacidad, 60% tamaño)
-   la mayor parte del ciclo. */
+/* Chispas — mini-estrellas de 4 puntas (✦, como un destello/brillo real,
+   no una bola) que orbitan y titilan alrededor del sprite, 4 desde el
+   nivel 2 y 4 más desde el nivel 3, cada una en un ángulo/retardo distinto
+   (--ang/--dist/--delay, ver applyPrestigeDecoration en ui.js — --dist es
+   proporcional al tamaño real del sprite en ese sitio, para caer siempre
+   dentro del wrap y no recortarse en la Formación). La forma de estrella
+   sale de un clip-path (un octógono con vértices alternos largos/cortos,
+   el truco CSS habitual para un "sparkle" de 4 puntas) — el halo alrededor
+   usa filter:drop-shadow en vez de box-shadow porque drop-shadow sigue la
+   silueta YA RECORTADA por el clip-path (box-shadow seguiría el cuadrado
+   original invisible, no la estrella). Pedido del usuario tras verlas como
+   simples puntos redondos: "que se vean como destellos/brillos/puntos de
+   luz/mini estrellas brillantes". */
 .prestige-spark {
-  position: absolute; z-index: 3; top: 50%; left: 50%; width: 8px; height: 8px; border-radius: 50%;
-  background: radial-gradient(circle, #fff 0%, #ffe27a 45%, #ffb52e 75%, rgba(255,181,46,0) 100%);
-  box-shadow: 0 0 6px 2px rgba(255,195,70,0.85);
-  transform: rotate(var(--ang, 0deg)) translate(var(--dist, 28px)) rotate(calc(var(--ang, 0deg) * -1));
+  position: absolute; z-index: 3; top: 50%; left: 50%; width: 12px; height: 12px;
+  background: radial-gradient(circle, #fff 0%, #fff6d8 30%, #ffdd80 55%, #ffb52e 85%, #ff9d1f 100%);
+  clip-path: polygon(50% 0%, 63% 37%, 100% 50%, 63% 63%, 50% 100%, 37% 63%, 0% 50%, 37% 37%);
+  filter: drop-shadow(0 0 3px rgba(255,205,90,0.95)) drop-shadow(0 0 6px rgba(255,180,50,0.6));
+  transform: rotate(var(--ang, 0deg)) translate(var(--dist, 28px)) rotate(calc(var(--ang, 0deg) * -1)) rotate(0deg);
   animation: prestigeTwinkle 1.6s ease-in-out infinite;
   animation-delay: var(--delay, 0s);
   pointer-events: none;
 }
-.prestige-3 .prestige-spark { width: 9px; height: 9px; box-shadow: 0 0 8px 2px rgba(255,195,70,0.95); }
+.prestige-3 .prestige-spark { width: 14px; height: 14px; }
 @keyframes prestigeTwinkle {
-  0%, 100% { opacity: 0.6; transform: rotate(var(--ang, 0deg)) translate(var(--dist, 28px)) rotate(calc(var(--ang, 0deg) * -1)) scale(0.85); }
-  50% { opacity: 1; transform: rotate(var(--ang, 0deg)) translate(var(--dist, 28px)) rotate(calc(var(--ang, 0deg) * -1)) scale(1.4); }
+  0%, 100% { opacity: 0.55; transform: rotate(var(--ang, 0deg)) translate(var(--dist, 28px)) rotate(calc(var(--ang, 0deg) * -1)) rotate(0deg) scale(0.6); }
+  50% { opacity: 1; transform: rotate(var(--ang, 0deg)) translate(var(--dist, 28px)) rotate(calc(var(--ang, 0deg) * -1)) rotate(90deg) scale(1.15); }
 }
 /* .battle-unit no usa --rc/--rg (nunca los necesitó para rareza normal),
    así que el marco de jefe en combate se declara directo, sin depender
