@@ -6084,6 +6084,138 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       de tier), sin ids duplicados, sin errores de página. Actualizada
       también la sección "Roster completo del juego" moviendo la entrada
       de Robin Hood del bloque Tier 2 al Tier 1 en su sitio alfabético.
+- [x] **Auto-combate configurable desde Ajustes**: antes solo se podía
+      activar/desactivar dentro de una batalla ya empezada (botón "🤖
+      Auto"), y como el valor se recordaba entre combates ("si lo
+      activas, el siguiente combate siempre aparece activado aunque no
+      quieras"), no había forma de desactivarlo ANTES de entrar a uno.
+      Nuevo `state.settings.autoBattleEnabled` persistido, con checkbox
+      en Ajustes sincronizado en ambos sentidos con el botón de dentro
+      del combate (tocar cualquiera de los dos dispara el otro).
+      Verificado con Playwright: togglear desde Ajustes cambia
+      `UI.autoBattleEnabled` al momento y sobrevive a un recargo de
+      página.
+- [x] **Torneo de Bracket** (nuevo Reto, petición del usuario):
+      eliminatoria de 3 combates seguidos con la Formación curada al
+      completo entre cruces (a diferencia del Roguelike, que no cura) —
+      rareza/nivel rival creciente por ronda (`BRACKET_ROUNDS` en
+      combat.js). Ganar el torneo COMPLETO da 10 cristales Doxite (el
+      mejor tier, tal y como pidió el usuario), limitado a una vez al
+      día (misma clave por fecha que el Mercader Itinerante) para que no
+      sea farmeable en bucle — el resto del día se puede seguir jugando
+      solo por Texel/XP. Verificado con Playwright: progresión de rondas,
+      derrota, y la puerta diaria de cristales (segunda victoria el mismo
+      día no vuelve a dar Doxite) funcionando correctamente.
+- [x] **Cacería del Tesoro** (nuevo Reto, petición del usuario):
+      expedición de 5 nodos elegidos por el jugador (🪙 cofre pequeño, 💰
+      cofre grande, ⚔️ emboscada, 🕳️ trampa — 2 opciones distintas por
+      paso) más un guardián final. Las recompensas se acumulan en un
+      botín LOCAL de la expedición (no en la cuenta permanente al
+      momento) que solo se cobra de verdad al volver — con éxito o tras
+      una emboscada perdida, que corta la expedición pero no borra lo ya
+      encontrado antes. Solo la trampa puede REDUCIR ese botín, el resto
+      de nodos solo suman. Verificado con Playwright: recorrido completo
+      de nodos vía el mismo pickerModal que el resto de selectores del
+      juego, combate de emboscada, guardián final, y banking correcto del
+      botín en ambos desenlaces (victoria y derrota).
+- [x] **Tope de Tier ampliado y mejorado** (petición del usuario, "mejora
+      y aumenta"):
+      - **Cristales por nivel**: `tierCapRewards` antes solo daba Texel/
+        XP — el único reto largo del juego sin ninguna recompensa de
+        invocación. Ahora cada nivel suelta un cristal acorde a cuántos
+        ejes extra exige su restricción (Pixite solo rareza, Voxite un
+        eje, Doxite los "Filtro" triples de rareza+elemento+clase).
+      - **16 triples nuevos**: de los 25 combos posibles de
+        elemento×clase para un nivel triple, solo 9 existían — se
+        añaden los 16 restantes (matriz 5×5 completa), con la rareza
+        tope repartida en ciclo raro/épico/legendario. Tope de Tier pasa
+        de 44 a 60 niveles.
+      Verificado con Playwright: 60 niveles sin ids duplicados, 25/25
+      combos elemento×clase cubiertos exactamente una vez, y un nivel
+      jugado de verdad (tc_comun) aplicando Texel+Pixite a la cuenta.
+- [x] **Sistema de Prestigio visual para cartas en forma final**
+      (petición del usuario: "que la carta parezca más especial y más
+      única"): nuevo `entry.prestige` (0-3) por copia de roster, solo en
+      la forma MÁS evolucionada de la familia. Cada nivel exige haber
+      jugado de verdad con ESA copia concreta (sus propias
+      `entry.stats`: combates, víctimas, daño infligido, ultis usadas —
+      ya se llevaban registrando, sin tracking nuevo) MÁS pagar monedas
+      crecientes (Pixite → Voxite → Doxite). Panel nuevo en la ficha del
+      luchador con barras de progreso hacia el siguiente nivel + coste +
+      botón de mejora. Efecto visual con drop-shadow escalando en 3
+      pasos (bronce sutil → plata con pulso → oro con barrido giratorio),
+      aplicado sobre el propio `<img>` para funcionar en cualquier
+      tamaño de `creatureCanvas` — visible en Formación, Colección y
+      ficha. Verificado con Playwright (requisitos/coste rechazan
+      correctamente, compra deduce el coste exacto, formas no finales
+      bloqueadas) y con una captura de pantalla confirmando los 3
+      niveles visualmente distintos y escalonados.
+- [x] **Rediseño completo del Roguelike** (petición explícita del
+      usuario: "necesita un resultado mucho más profesional, que parezca
+      un roguelike real"). Antes era una lista lineal de rondas sin fin
+      contra un pool plano ponderado por rareza, con "bonos" elegidos
+      entre ronda y ronda que eran solo variaciones de "+X% de una
+      estadística". Ahora:
+      - **Actos con jefe final**: la campaña se divide en 5 Actos, cada
+        uno un tramo contiguo de 9 zonas reales del Mapa (`ROGUELIKE_ACTS`
+        en data.js) — su jefe es el de la ÚLTIMA zona del tramo, el
+        mismo jefe real fichable en la Torre Batalla. Más allá del Acto
+        5, la campaña sigue en modo sin techo (actos generados al vuelo
+        ciclando por todas las zonas, dificultad creciente) para quien
+        quiera seguir subiendo de Acto sin límite — el mismo espíritu
+        "sin fin" que tenía el modo original, ahora con estructura real
+        alrededor.
+      - **Encuentros diseñados por tramo**: cada Acto pesca sus
+        encuentros normales de los MOBS reales de las zonas de su propio
+        tramo, y sus nodos Élite del JEFE de una de esas zonas (que no
+        sea el jefe final del Acto) — nada aleatorio fuera de ese
+        "bioma", así cada Acto tiene identidad propia de verdad.
+      - **Mapa de nodos**: sustituye la lista lineal por un grafo por
+        capas de verdad (`generateRoguelikeMap`) — 4 capas de 3 nodos
+        más el nodo de Jefe, varias entradas posibles en la capa 0,
+        aristas variables entre capas (cada nodo de una capa se conecta
+        a 1-2 nodos de la siguiente, con reparación automática si algún
+        nodo se queda sin entrada) — mismo principio que los
+        generadores de mapa de roguelikes reales tipo Slay the Spire.
+        Tipos de nodo: ⚔️ Combate, 💀 Élite, 💰 Tesoro, ❓ Evento, 🏕️
+        Descanso, 📯 Recluta y 👑 Jefe de Acto.
+      - **Reliquias con identidad propia**: 14 reliquias
+        (`ROGUELIKE_RELICS`) que se quedan para el resto de la run,
+        elegidas tras vencer a un Élite o al Jefe de Acto — más allá de
+        los 7 bonos de stat plano (con identidad, no solo "+X%"), 7
+        mecanismos propios: revivir a la banda entera una vez por Acto
+        (Amuleto del Superviviente), empezar cada combate con la ulti al
+        50% cargada, doblar el Texel de cada nodo, +3 Doxite extra al
+        matar al jefe de Acto, +40% de más curación en Descanso, mejor
+        resultado garantizado en nodos de Evento, y una opción extra de
+        recluta en los nodos de Recluta.
+      - **Reparto propio con nodos de recluta**: la run ya NO usa la
+        Formación completa — se elige un reparto inicial de solo 3
+        luchadores (picker nuevo, `UI.openRoguelikeSquadPicker`) y se va
+        haciendo crecer con los nodos 📯 Recluta (2-3 candidatos al azar
+        de la Colección que no estén ya en el reparto), hasta un máximo
+        de 9. La vida y la carga de ulti se arrastran de nodo en nodo
+        DENTRO de un mismo Acto (solo se cura en nodos de Descanso/
+        Evento o con la reliquia de revivir) — la run se reinicia con
+        Formación completa como antes, ahora es "construir algo desde
+        cero" de verdad.
+      - **Presentación**: pantalla de mapa dedicada (reutiliza
+        `stageRunView`) con el nombre/tema del Acto, una fila de chips
+        de reliquias con tooltip, el estado de vida del reparto, y el
+        grafo de nodos con iconos por tipo y estados disponible/superado/
+        bloqueado. Resumen de fin de run (Acto y nº de nodos alcanzados)
+        en la pantalla de resultado del combate. Guía del juego
+        actualizada con las 3 modalidades nuevas (Torneo de Bracket,
+        Cacería del Tesoro, Roguelike).
+      Verificado con Playwright de principio a fin: estructura de datos
+      (5 actos con jefes reales válidos, 14 reliquias sin ids
+      duplicados, mapa generado sin nodos huérfanos), una run completa
+      jugada de verdad con auto-combate (reparto inicial → recluta →
+      combates → élite con reliquia → jefe de Acto con transición al
+      siguiente Acto y bonus de Doxite → Acto 5 → Acto 6 "sin techo") sin
+      ningún error de página, y mecánica de retirada/revivir verificadas
+      por separado. Sanity check general limpio (642/102/45/45, sin ids
+      duplicados) en todo momento durante el desarrollo.
 
 ## Notas
 

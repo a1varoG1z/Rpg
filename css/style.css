@@ -255,6 +255,31 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .fainted-icon { position: absolute; top: 0; right: 0; font-size: 0.9rem; }
 .stage-run-items { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; }
 
+/* ---------- Roguelike v2: mapa de nodos ---------- */
+.roguelike-squad { display: flex; justify-content: center; gap: 6px; padding: 6px 0; flex-wrap: wrap; }
+.roguelike-relic-row { display: flex; justify-content: center; gap: 6px; padding: 2px 0 10px; flex-wrap: wrap; }
+.roguelike-relic-chip {
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--gold); border-radius: 50%; background: #241a10; font-size: 1rem; cursor: help;
+}
+.roguelike-map { display: flex; flex-direction: column; gap: 12px; padding: 10px 4px 28px; }
+.roguelike-layer { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.roguelike-node {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  width: 66px; height: 66px; border-radius: 10px; border: 2px solid var(--gold-dim); background: #1f1811;
+  opacity: 0.4; text-align: center; transition: opacity 0.2s, box-shadow 0.2s;
+}
+.roguelike-node-icon { font-size: 1.25rem; }
+.roguelike-node-label { font-size: 0.52rem; color: var(--cream-dim); line-height: 1.1; }
+.roguelike-node.available {
+  opacity: 1; cursor: pointer; border-color: var(--gold); box-shadow: 0 0 10px rgba(212,175,55,0.55);
+  animation: legendaryPulse 1.8s ease-in-out infinite;
+}
+.roguelike-node.cleared { opacity: 0.65; border-color: var(--green); background: #1c2a19; }
+.roguelike-node.type-elite.available { border-color: #b866e0; box-shadow: 0 0 10px rgba(184,102,224,0.6); }
+.roguelike-node.type-boss { width: 84px; height: 84px; }
+.roguelike-node.type-boss.available { border-color: var(--red); box-shadow: 0 0 14px rgba(192,57,43,0.6); }
+
 /* ---------- Formación ---------- */
 .formation-grid { display: flex; flex-direction: column; gap: 8px; }
 .formation-row { display: flex; gap: 8px; justify-content: center; }

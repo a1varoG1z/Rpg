@@ -94,7 +94,7 @@ function createNewState() {
     // Roguelike: mejor ronda alcanzada (una "run" en sí — window.__roguelikeRun,
     // ver ui.js — vive solo en memoria, como window.__championRun, así que no
     // sobrevive a un recargo de página; solo se guarda el récord).
-    roguelike: { bestRound: 0 },
+    roguelike: { bestRound: 0, bestAct: 0 },
     // Torneo de Bracket: mejor ronda ganada (0-3) y clave del día de la
     // última vez que se completó el torneo entero (ver bracketWonToday) —
     // el bonus de 10 cristales Doxite solo se puede cobrar una vez al día,
@@ -1100,18 +1100,19 @@ function recordChampionStreak(state, duelsWon) {
   if (duelsWon > state.champion.bestStreak) state.champion.bestStreak = duelsWon;
 }
 
-// --- Roguelike (ver buildRoguelikeEnemyRow en combat.js) ---
-// Extensión de la Torre Batalla para cuando ya se ha superado del todo (66
-// niveles fijos) — un modo survival sin fin, con dificultad creciente sin
-// tope (a propósito, como Arena: la gracia es ver hasta dónde se puede
-// llegar, no que sea siempre superable — ver la auditoría de dificultad en
-// TODO.md) y bonos elegidos a mano entre ronda y ronda que sí se quedan
-// para el resto de la run.
+// --- Roguelike (ver ROGUELIKE_ACTS/generateRoguelikeMap en data.js) ---
+// Campaña de actos con mapa de nodos, reliquias y reparto propio — se
+// desbloquea al superar la Torre Batalla entera (o desde Ajustes, modo de
+// prueba), igual que antes del rediseño. bestRound cuenta nodos superados
+// en la mejor run (mismo significado que antes, para no romper los Logros
+// ya existentes que apuntan a él); bestAct es nuevo, el acto más alto
+// alcanzado alguna vez.
 function roguelikeUnlocked(state) {
   return !!state.settings.enableRoguelike || TORRE_LEVELS.every(level => torreClearCount(state, level) > 0);
 }
-function recordRoguelikeRun(state, roundsCleared) {
-  if (roundsCleared > state.roguelike.bestRound) state.roguelike.bestRound = roundsCleared;
+function recordRoguelikeRun(state, nodesCleared, actIdx) {
+  if (nodesCleared > state.roguelike.bestRound) state.roguelike.bestRound = nodesCleared;
+  if (actIdx > state.roguelike.bestAct) state.roguelike.bestAct = actIdx;
 }
 
 // --- Torneo de Bracket (ver buildBracketOpponentRow en combat.js) ---
@@ -1444,7 +1445,8 @@ function migrateState(state) {
     if (!state.elementalTeams) state.elementalTeams = { fuego: [], viento: [], tierra: [], rayo: [], agua: [] };
     if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
     if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };
-    if (!state.roguelike) state.roguelike = { bestRound: 0 };
+    if (!state.roguelike) state.roguelike = { bestRound: 0, bestAct: 0 };
+    if (state.roguelike.bestAct === undefined) state.roguelike.bestAct = 0;
     if (!state.bracket) state.bracket = { bestRound: 0, lastWonKey: null };
     if (!state.treasureHunt) state.treasureHunt = { runsCompleted: 0, bestHaul: 0 };
     // Prestigio de carta (ver PRESTIGE_TIERS en data.js): partidas

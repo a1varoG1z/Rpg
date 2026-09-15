@@ -765,6 +765,37 @@ UI.openGuide = function () {
     ulti entre uno y otro — perder termina el intento donde esté. Cada duelo ganado da Texel y XP
     crecientes, y se guarda tu mejor racha de duelos seguidos.</p>`));
 
+  body.appendChild(guideSection('🏆 Torneo de Bracket', `
+    <p class="settings-info">Disponible desde el principio: eliminatoria de ${BRACKET_ROUNDS.length}
+    combates seguidos contra IA cada vez más fuerte, con tu Formación curada al completo entre cruces
+    (a diferencia del Roguelike o la Prueba del Campeón, aquí sí descansas entre combates). Ganar el
+    torneo COMPLETO da ${BRACKET_WIN_CRYSTAL_AMOUNT} cristales ${CRYSTALS[BRACKET_WIN_CRYSTAL_TYPE].label}
+    — limitado a una vez al día, aunque puedes seguir jugando el resto del día solo por Texel/XP.</p>`));
+
+  body.appendChild(guideSection('🗺️ Cacería del Tesoro', `
+    <p class="settings-info">Expedición corta de ${TREASURE_HUNT_STEPS} nodos elegidos por ti (cofres,
+    emboscadas, trampas) más un guardián final. Las recompensas se acumulan en un botín de la
+    expedición que se cobra al volver — con éxito o tras una emboscada perdida, que corta la
+    expedición pero no borra lo ya encontrado. Solo la trampa puede reducir ese botín.</p>`));
+
+  body.appendChild(guideSection('🌀 Roguelike', `
+    <p class="settings-info">Se desbloquea al superar los ${TORRE_LEVELS.length} niveles de la Torre
+    Batalla (o antes, desde Ajustes). Una campaña de verdad, no una simple lista de rondas: empiezas
+    eligiendo un reparto de solo ${ROGUELIKE_SQUAD_START} luchadores (el resto de tu Colección no
+    participa hasta que lo vayas reclutando) y avanzas por un <b>mapa de nodos</b> ramificado dentro
+    de cada Acto — combates, élites, tesoros, eventos, descanso y nodos de recluta — hasta el jefe del
+    Acto, que siempre es un jefe real del Mapa. Hay ${ROGUELIKE_ACTS.length} Actos de campaña (cada
+    uno el "bioma" de un tramo del Mapa, con sus propios mobs y jefes); más allá del último, la run
+    sigue en modo sin techo para quien quiera seguir subiendo de Acto.</p>
+    <p class="settings-info">No te curas entre nodos salvo en los de 🏕️ Descanso o algún ❓ Evento —
+    la vida y la carga de ulti se arrastran de combate en combate dentro del mismo Acto. Al vencer a
+    un 💀 Élite o al 👑 Jefe del Acto eliges una <b>reliquia</b> de entre varias — quedan contigo el
+    resto de la run y tienen efectos con identidad propia (revivir a la banda entera una vez por Acto,
+    empezar los combates con la ulti ya cargada, doblar el Texel de cada nodo...), no solo subir una
+    estadística. Caer termina la run (se guarda tu mejor Acto y nº de nodos superados), pero lo que
+    ya hayas ganado por el camino es tuyo — también puedes retirarte voluntariamente en cualquier
+    momento desde el propio mapa.</p>`));
+
   body.appendChild(guideSection('🧳 Mercader Itinerante', `
     <p class="settings-info">En la Tienda: una oferta nueva cada día que cambia varias copias sueltas
     de una rareza por una pieza de equipo o un puñado de cristales — solo se puede canjear una vez al
@@ -1838,15 +1869,12 @@ UI.startTorreLevel = function (state, idx) {
   UI.renderStageRun(state);
 };
 
-// ---------- Roguelike ----------
-// Extensión de la Torre Batalla para cuando ya se ha superado del todo —
-// una única fila rival por ronda (como la Prueba del Campeón, pero con la
-// Formación entera y sus 8 líneas en vez de un solo luchador), sin curarse
-// entre rondas y con dificultad sin techo (ver buildRoguelikeEnemyRow en
-// combat.js — a propósito, como Arena: la gracia es ver hasta dónde se
-// llega). Entre ronda y ronda se elige un bono (ver ROGUELIKE_BOONS en
-// combat.js) que se queda para el resto de la run. Termina al perder (no
-// afecta a la Colección, solo a esta run) — se guarda la mejor ronda.
+// ---------- Roguelike v2 ----------
+// Rediseño completo a petición del usuario ("necesita un resultado mucho
+// más profesional, que parezca un roguelike real") — ver ROGUELIKE_ACTS/
+// ROGUELIKE_RELICS/generateRoguelikeMap en data.js para el diseño de datos.
+// Panel de entrada en Retos: elige un reparto inicial pequeño (no la
+// Formación completa) y arranca en el Acto 1 con un mapa de nodos nuevo.
 UI.renderRoguelike = function (state, wrap) {
   wrap.appendChild(el('h3', null, '🌀 Roguelike'));
   if (!roguelikeUnlocked(state)) {
@@ -1860,18 +1888,56 @@ UI.renderRoguelike = function (state, wrap) {
     return;
   }
   const panel = el('div', 'panel');
-  panel.innerHTML = `<p class="settings-info">Rondas sin fin, cada vez más difíciles, sin curarte entre
-    ellas — pierdes y se acaba la run (tu Colección no se ve afectada). Entre ronda y ronda eliges un
-    bono que se queda contigo para el resto de la run.</p>
-    <div class="stat-row"><span>Mejor ronda alcanzada</span><span>${state.roguelike.bestRound}</span></div>`;
+  panel.innerHTML = `<p class="settings-info">Una campaña de verdad: empiezas con un reparto pequeño (3
+    luchadores a tu elección) y avanzas por el mapa de nodos de cada Acto — combates, élites, tesoros,
+    eventos, descanso y nodos de recluta para ir sumando más luchadores — hasta el jefe del Acto (un jefe
+    real del Mapa). Las reliquias que consigas en élites y jefes se quedan para el resto de la run. Caer
+    termina la run — lo que hayas ganado por el camino (Texel, Gemas, XP) ya es tuyo.</p>
+    <div class="stat-row"><span>Mejor Acto alcanzado</span><span>${state.roguelike.bestAct + 1}</span></div>
+    <div class="stat-row"><span>Mejor nº de nodos superados</span><span>${state.roguelike.bestRound}</span></div>`;
   const startBtn = el('button', 'primary-btn', '🌀 Empezar run');
-  startBtn.addEventListener('click', () => UI.startRoguelikeRun(state));
+  startBtn.addEventListener('click', () => UI.openRoguelikeSquadPicker(state));
   panel.appendChild(startBtn);
   wrap.appendChild(panel);
 };
 
-UI.startRoguelikeRun = function (state) {
-  if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
+const ROGUELIKE_SQUAD_START = 3;
+const ROGUELIKE_SQUAD_MAX = 9;
+UI.openRoguelikeSquadPicker = function (state) {
+  if (state.roster.length < ROGUELIKE_SQUAD_START) { UI.showToast('⚠️ Necesitas al menos ' + ROGUELIKE_SQUAD_START + ' luchadores en tu Colección.'); return; }
+  if (!state.settings.infiniteEnergy && state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+  const body = $('pickerModalBody');
+  body.innerHTML = `<h3>🌀 Elige tu reparto inicial (${ROGUELIKE_SQUAD_START})</h3>
+    <p class="settings-info">El resto de tu Colección no participa hasta que la vayas reclutando por el
+    camino, en los nodos 📯 Recluta del propio mapa.</p>`;
+  const selected = [];
+  const grid = el('div', 'picker-grid');
+  const confirmBtn = el('button', 'primary-btn', 'Empezar (0/' + ROGUELIKE_SQUAD_START + ')');
+  confirmBtn.disabled = true;
+  state.roster.forEach(entry => {
+    const card = creatureCard(state, entry, {});
+    card.addEventListener('click', () => {
+      const i = selected.indexOf(entry.uid);
+      if (i >= 0) { selected.splice(i, 1); card.classList.remove('selected'); }
+      else {
+        if (selected.length >= ROGUELIKE_SQUAD_START) return;
+        selected.push(entry.uid); card.classList.add('selected');
+      }
+      confirmBtn.disabled = selected.length !== ROGUELIKE_SQUAD_START;
+      confirmBtn.textContent = 'Empezar (' + selected.length + '/' + ROGUELIKE_SQUAD_START + ')';
+    });
+    grid.appendChild(card);
+  });
+  body.appendChild(grid);
+  confirmBtn.addEventListener('click', () => {
+    $('pickerModal').classList.add('hidden');
+    UI.startRoguelikeRun(state, selected);
+  });
+  body.appendChild(confirmBtn);
+  $('pickerModal').classList.remove('hidden');
+};
+
+UI.startRoguelikeRun = function (state, squad) {
   if (!state.settings.infiniteEnergy) {
     if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
     state.currencies.energy -= STAGE_ENERGY_COST;
@@ -1879,34 +1945,210 @@ UI.startRoguelikeRun = function (state) {
     UI.renderTopbar(state);
   }
   window.__championRun = null;
+  window.__bracketRun = null;
+  window.__treasureRun = null;
   window.__stageRun = null;
-  window.__roguelikeRun = { round: 1, hpMap: {}, chargeMap: {}, shieldMap: {}, faintedSet: new Set(), buffs: {}, doubleRewardNext: false };
-  UI.fightRoguelikeRound(state);
+  window.__roguelikeRun = {
+    actIdx: 0, map: generateRoguelikeMap(0), squad: [...squad], relics: [],
+    hpMap: {}, chargeMap: {}, shieldMap: {}, faintedSet: new Set(),
+    nodesCleared: 0, actRevivedUsed: false,
+  };
+  UI.renderRoguelikeMap(state);
 };
 
-UI.fightRoguelikeRound = function (state) {
+function buildRunSquadCombinations(state, run) {
+  const units = run.squad.map(uid => makePlayerUnit(state, uid));
+  const rows = [];
+  for (let i = 0; i < units.length; i += 3) rows.push(units.slice(i, i + 3));
+  return rows;
+}
+function applyRoguelikeRelicStats(u, relics) {
+  relics.forEach(id => {
+    const relic = ROGUELIKE_RELICS.find(r => r.id === id);
+    if (!relic) return;
+    if (relic.kind === 'stat') {
+      if (relic.stat === 'hp') { const pctLeft = u.hp / u.maxHp; u.maxHp = Math.round(u.maxHp * (1 + relic.pct)); u.hp = Math.round(u.maxHp * pctLeft); }
+      else u[relic.stat] = Math.round(u[relic.stat] * (1 + relic.pct));
+    } else if (relic.kind === 'statTradeoff') {
+      u[relic.statUp] = Math.round(u[relic.statUp] * (1 + relic.pctUp));
+      u[relic.statDown] = Math.round(u[relic.statDown] * (1 - relic.pctDown));
+    }
+  });
+}
+
+UI.renderRoguelikeMap = function (state) {
+  $('zoneList').classList.add('hidden');
+  $('stageList').classList.add('hidden');
   const run = window.__roguelikeRun;
-  const enemyRow = buildRoguelikeEnemyRow(run.round);
-  const playerCombos = buildPlayerCombinations(state);
-  // Mismo patrón de persistencia entre combates que un recorrido de etapa
-  // (ver UI.fightStageRunNode): ni la vida ni la carga de ulti se
-  // restablecen de una ronda a otra, y los bonos elegidos (run.buffs) se
-  // aplican de cero cada vez sobre las stats ya recalculadas. El escudo
-  // del bono "shield" (run.shieldMap) sigue el mismo patrón — se aplica al
-  // reconstruir la unidad y se recoge de vuelta al terminar, igual que
-  // hp/carga de ulti, así que decae solo con los turnos como cualquier
-  // escudo de combate (ver tickTimers en combat.js).
+  const act = roguelikeActForIdx(run.actIdx);
+  const wrap = $('stageRunView');
+  wrap.classList.remove('hidden');
+  wrap.innerHTML = '';
+  wrap.style.background = zoneBackgroundStyle({ id: 'roguelike', color: act.themeColor || '#241a33' });
+
+  const back = el('button', 'mini-btn', '« Retirarse');
+  back.addEventListener('click', () => UI.retireRoguelikeRun(state));
+  wrap.appendChild(back);
+  wrap.appendChild(el('h3', null, `${act.themeEmoji || '🌀'} ${act.label} — ${act.themeName || ''}`));
+
+  if (run.relics.length) {
+    const relicRow = el('div', 'roguelike-relic-row');
+    run.relics.forEach(id => {
+      const relic = ROGUELIKE_RELICS.find(r => r.id === id);
+      if (!relic) return;
+      const chip = el('div', 'roguelike-relic-chip', relic.icon);
+      chip.title = relic.label + ' — ' + relic.desc;
+      relicRow.appendChild(chip);
+    });
+    wrap.appendChild(relicRow);
+  }
+
+  const squadRow = el('div', 'roguelike-squad');
+  run.squad.forEach(uid => {
+    const entry = rosterEntry(state, uid);
+    if (!entry) return;
+    const stats = fighterStats(state, entry);
+    const hp = run.faintedSet.has(uid) ? 0 : (run.hpMap[uid] !== undefined ? run.hpMap[uid] : stats.hp);
+    const card = el('div', 'stage-run-fighter' + (run.faintedSet.has(uid) ? ' fainted' : ''));
+    card.appendChild(creatureCanvas(entry.defId, 40));
+    const hpBar = el('div', 'hp-bar small');
+    const fill = el('div', 'hp-fill');
+    fill.style.width = Math.max(0, hp / stats.hp * 100) + '%';
+    hpBar.appendChild(fill);
+    card.appendChild(hpBar);
+    if (run.faintedSet.has(uid)) card.appendChild(el('div', 'fainted-icon', '💀'));
+    squadRow.appendChild(card);
+  });
+  wrap.appendChild(squadRow);
+
+  const mapEl = el('div', 'roguelike-map');
+  run.map.layers.forEach(layer => {
+    const layerEl = el('div', 'roguelike-layer');
+    layer.forEach(node => layerEl.appendChild(roguelikeNodeButton(state, run, node)));
+    mapEl.appendChild(layerEl);
+  });
+  const bossLayerEl = el('div', 'roguelike-layer');
+  bossLayerEl.appendChild(roguelikeNodeButton(state, run, run.map.bossNode));
+  mapEl.appendChild(bossLayerEl);
+  wrap.appendChild(mapEl);
+};
+
+function roguelikeNodeButton(state, run, node) {
+  const typeInfo = ROGUELIKE_NODE_TYPES[node.type];
+  const available = run.map.availableIds.includes(node.id) && !node.cleared;
+  const btn = el('div', 'roguelike-node' + (node.cleared ? ' cleared' : available ? ' available' : ' locked') + ' type-' + node.type);
+  btn.innerHTML = `<div class="roguelike-node-icon">${node.cleared ? '✓' : typeInfo.icon}</div><div class="roguelike-node-label">${typeInfo.label}</div>`;
+  if (available) btn.addEventListener('click', () => UI.selectRoguelikeNode(state, node.id));
+  return btn;
+}
+
+UI.selectRoguelikeNode = function (state, nodeId) {
+  const run = window.__roguelikeRun;
+  const node = roguelikeMapNode(run.map, nodeId);
+  if (!node || node.cleared || !run.map.availableIds.includes(nodeId)) return;
+  if (node.type === 'combat' || node.type === 'elite' || node.type === 'boss') UI.fightRoguelikeNode(state, node);
+  else if (node.type === 'recruit') UI.openRoguelikeRecruitPicker(state, node);
+  else UI.resolveRoguelikeInstantNode(state, node);
+};
+
+UI.resolveRoguelikeInstantNode = function (state, node) {
+  const run = window.__roguelikeRun;
+  const mult = roguelikeActDifficultyMult(run.actIdx);
+  if (node.type === 'treasure') {
+    const reward = roguelikeTreasureNodeReward(mult);
+    const texel = Math.round(reward.texel * (run.relics.includes('r_texel') ? 2 : 1));
+    state.currencies.texel += texel;
+    state.currencies.gemas += reward.gemas;
+    UI.showToast(`💰 +${texel} 🪙 · +${reward.gemas} 💎`);
+  } else if (node.type === 'rest') {
+    const bonus = run.relics.includes('r_restheal') ? 0.4 : 0;
+    run.squad.forEach(uid => {
+      if (run.faintedSet.has(uid)) return;
+      const stats = fighterStats(state, rosterEntry(state, uid));
+      const current = run.hpMap[uid] !== undefined ? run.hpMap[uid] : stats.hp;
+      run.hpMap[uid] = Math.min(stats.hp, Math.round(current + stats.hp * (0.4 + bonus)));
+    });
+    UI.showToast('🏕️ Tu banda descansa y recupera vida.');
+  } else if (node.type === 'event') {
+    const outcome = roguelikeEventNodeOutcome(run.relics.includes('r_eventluck'));
+    if (outcome.kind === 'gemas') { state.currencies.gemas += outcome.gemas; UI.showToast(`❓ Encuentras +${outcome.gemas} 💎`); }
+    else if (outcome.kind === 'heal') {
+      run.squad.forEach(uid => {
+        if (run.faintedSet.has(uid)) return;
+        const stats = fighterStats(state, rosterEntry(state, uid));
+        const current = run.hpMap[uid] !== undefined ? run.hpMap[uid] : stats.hp;
+        run.hpMap[uid] = Math.min(stats.hp, Math.round(current + stats.hp * outcome.pct));
+      });
+      UI.showToast('❓ Un manantial cura a tu banda.');
+    } else {
+      const loss = Math.round(state.currencies.texel * outcome.lossPct);
+      state.currencies.texel -= loss;
+      UI.showToast(`❓ Una trampa te cuesta ${loss} 🪙.`);
+    }
+  }
+  node.cleared = true;
+  run.map.availableIds = run.map.edges[node.id] || [];
+  run.nodesCleared++;
+  saveGame(state);
+  UI.renderRoguelikeMap(state);
+};
+
+UI.openRoguelikeRecruitPicker = function (state, node) {
+  const run = window.__roguelikeRun;
+  if (run.squad.length >= ROGUELIKE_SQUAD_MAX) {
+    UI.showToast('📯 Tu reparto ya está al máximo — el nodo se resuelve como un pequeño tesoro.');
+    UI.resolveRoguelikeInstantNode(state, { ...node, type: 'treasure' });
+    return;
+  }
+  const candidates = state.roster.filter(e => !run.squad.includes(e.uid));
+  if (!candidates.length) {
+    UI.showToast('📯 No te queda nadie más en la Colección para reclutar.');
+    UI.resolveRoguelikeInstantNode(state, { ...node, type: 'treasure' });
+    return;
+  }
+  const choiceCount = Math.min(candidates.length, run.relics.includes('r_recruit') ? 4 : 3);
+  const choices = [...candidates].sort(() => Math.random() - 0.5).slice(0, choiceCount);
+  const body = $('pickerModalBody');
+  body.innerHTML = `<h3>📯 Elige un recluta</h3><p class="settings-info">Se une a tu reparto para el resto de la run.</p>`;
+  const grid = el('div', 'picker-grid');
+  choices.forEach(entry => {
+    const card = creatureCard(state, entry, {});
+    card.addEventListener('click', () => {
+      run.squad.push(entry.uid);
+      node.cleared = true;
+      run.map.availableIds = run.map.edges[node.id] || [];
+      run.nodesCleared++;
+      $('pickerModal').classList.add('hidden');
+      saveGame(state);
+      UI.showToast('📯 ' + fighterDef(entry.defId).name + ' se une a tu reparto.');
+      UI.renderRoguelikeMap(state);
+    });
+    grid.appendChild(card);
+  });
+  body.appendChild(grid);
+  $('pickerModal').classList.remove('hidden');
+};
+
+UI.fightRoguelikeNode = function (state, node) {
+  const run = window.__roguelikeRun;
+  const act = roguelikeActForIdx(run.actIdx);
+  const mult = roguelikeActDifficultyMult(run.actIdx);
+  const enemyRow = node.type === 'combat' ? buildRoguelikeCombatRow(act, mult)
+    : node.type === 'elite' ? buildRoguelikeEliteRow(act, mult)
+    : buildRoguelikeBossRow(act, mult);
+  const playerCombos = buildRunSquadCombinations(state, run);
   playerCombos.forEach(row => row.forEach(u => {
     if (!u.sourceUid) return;
     if (run.faintedSet.has(u.sourceUid)) { u.hp = 0; u.alive = false; }
     else if (run.hpMap[u.sourceUid] !== undefined) u.hp = Math.min(u.maxHp, run.hpMap[u.sourceUid]);
+    if (run.relics.includes('r_ultcharge')) u.ultCharge = Math.max(u.ultCharge, 50);
     if (run.chargeMap[u.sourceUid] !== undefined) u.ultCharge = run.chargeMap[u.sourceUid];
     if (run.shieldMap[u.sourceUid]) u.shield = run.shieldMap[u.sourceUid];
-    applyRoguelikeBuffs(u, run.buffs);
+    applyRoguelikeRelicStats(u, run.relics);
   }));
   UI.openBattle(state, playerCombos, [enemyRow], {
-    title: '🌀 Roguelike · Ronda ' + run.round,
-    zone: { id: 'roguelike', color: '#241a33' },
+    title: `${act.themeEmoji || '🌀'} ${act.label} · ${ROGUELIKE_NODE_TYPES[node.type].label}`,
+    zone: { id: 'roguelike', color: act.themeColor || '#241a33' },
     onEnd: (result, view) => {
       if (view) {
         view.playerGroups.forEach(g => g.row.forEach(u => {
@@ -1918,98 +2160,100 @@ UI.fightRoguelikeRound = function (state) {
         }));
       }
       if (result !== 'victoria') {
-        const roundsCleared = run.round - 1;
-        recordRoguelikeRun(state, roundsCleared);
+        // Amuleto del Superviviente (r_revive): salva la RUN una vez por
+        // acto, pero no ese combate en concreto — el nodo se queda sin
+        // superar (puede reintentarse), no hay recompensa de este intento.
+        if (run.relics.includes('r_revive') && !run.actRevivedUsed) {
+          run.actRevivedUsed = true;
+          run.squad.forEach(uid => {
+            const stats = fighterStats(state, rosterEntry(state, uid));
+            run.faintedSet.delete(uid);
+            run.hpMap[uid] = Math.round(stats.hp * 0.3);
+          });
+          run.pendingMapReturn = true;
+          saveGame(state);
+          return { roguelikeRevived: true };
+        }
+        recordRoguelikeRun(state, run.nodesCleared, run.actIdx);
         window.__roguelikeRun = null;
         saveGame(state);
-        return { roguelikeDefeat: true, roundsCleared, bestRound: state.roguelike.bestRound };
+        return { roguelikeDefeat: true, nodesCleared: run.nodesCleared, actLabel: act.label };
       }
-      const clearedRound = run.round;
-      const rewards = roguelikeRoundRewards(clearedRound);
-      if (run.doubleRewardNext) {
-        rewards.texel *= 2;
-        rewards.fighterXp *= 2;
-        run.doubleRewardNext = false;
+      run.nodesCleared++;
+      if (node.type === 'boss') {
+        const rewards = roguelikeActRewards(run.actIdx);
+        if (run.relics.includes('r_bossreward')) { rewards.texel *= 2; rewards.fighterXp *= 2; }
+        state.currencies.texel += rewards.texel;
+        if (run.relics.includes('r_bossdoxite')) state.currencies.doxite += 3;
+        const leveled = [];
+        run.squad.forEach(uid => {
+          const entry = rosterEntry(state, uid);
+          if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
+        });
+        const finishedActLabel = act.label;
+        run.actIdx++;
+        run.map = generateRoguelikeMap(run.actIdx);
+        run.actRevivedUsed = false;
+        recordRoguelikeRun(state, run.nodesCleared, run.actIdx);
+        run.pendingRelicPick = true;
+        saveGame(state);
+        return { roguelikeActWon: true, actLabel: finishedActLabel, rewards, leveled, gotDoxite: run.relics.includes('r_bossdoxite') };
       }
+      node.cleared = true;
+      run.map.availableIds = run.map.edges[node.id] || [];
+      const rewards = node.type === 'elite' ? roguelikeActRewards(run.actIdx) : { texel: Math.round(40 * mult), fighterXp: Math.round(35 * mult) };
+      if (node.type === 'elite') { rewards.texel = Math.round(rewards.texel * 0.4); rewards.fighterXp = Math.round(rewards.fighterXp * 0.4); }
       state.currencies.texel += rewards.texel;
       const leveled = [];
-      state.band.flat().filter(Boolean).forEach(uid => {
+      run.squad.forEach(uid => {
         const entry = rosterEntry(state, uid);
         if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
       });
-      recordRoguelikeRun(state, clearedRound);
-      run.pendingBoon = true;
+      if (node.type === 'elite') run.pendingRelicPick = true; else run.pendingMapReturn = true;
       saveGame(state);
-      return { rewards, leveled, roguelikeContinue: true, roundsCleared: clearedRound };
+      return { roguelikeNodeWon: true, nodeLabel: ROGUELIKE_NODE_TYPES[node.type].label, rewards, leveled };
     },
   });
 };
 
-UI.openRoguelikeBoonPicker = function (state) {
+UI.openRoguelikeRelicPicker = function (state) {
   const run = window.__roguelikeRun;
+  const available = ROGUELIKE_RELICS.filter(r => !run.relics.includes(r.id));
   const body = $('pickerModalBody');
-  body.innerHTML = `<h3>🌀 Elige un bono — Ronda ${run.round + 1}</h3>
-    <p class="settings-info">Se queda para el resto de esta run.</p>`;
-  // Único punto seguro de la run para salir a propósito (entre rondas, sin
-  // combate en curso) — petición explícita: "hay que poder salir del modo
-  // roguelike". Antes la única forma de terminar una run era perder; las
-  // recompensas de las rondas ya superadas se quedan (ya se aplicaron y
-  // guardaron al ganar cada ronda, ver UI.fightRoguelikeRound), así que
-  // retirarse no pierde nada de lo ya ganado.
-  const retireBtn = el('button', 'mini-btn', '🚪 Retirarse (conservar lo ya ganado)');
-  retireBtn.addEventListener('click', () => {
-    window.__roguelikeRun = null;
-    $('pickerModal').classList.add('hidden');
-    UI.switchScreen('torre');
-    UI.showToast(`🌀 Run terminada — mejor ronda: ${state.roguelike.bestRound}`);
-  });
-  body.appendChild(retireBtn);
-  const options = [...ROGUELIKE_BOONS].sort(() => Math.random() - 0.5).slice(0, 3);
-  options.forEach(boon => {
-    const btn = el('button', 'primary-btn', boon.icon + ' ' + boon.label);
-    btn.style.display = 'block';
-    btn.style.width = '100%';
-    btn.style.marginBottom = '8px';
+  body.innerHTML = `<h3>✨ Elige una reliquia</h3><p class="settings-info">Se queda contigo para el resto de esta run.</p>`;
+  if (!available.length) {
+    body.innerHTML += '<p class="settings-info">Ya tienes todas las reliquias posibles.</p>';
+    const closeBtn = el('button', 'primary-btn', 'Continuar');
+    closeBtn.addEventListener('click', () => { $('pickerModal').classList.add('hidden'); UI.renderRoguelikeMap(state); });
+    body.appendChild(closeBtn);
+    $('pickerModal').classList.remove('hidden');
+    return;
+  }
+  const options = [...available].sort(() => Math.random() - 0.5).slice(0, Math.min(3, available.length));
+  options.forEach(relic => {
+    const btn = el('button', 'primary-btn', relic.icon + ' ' + relic.label);
+    btn.style.display = 'block'; btn.style.width = '100%'; btn.style.marginBottom = '2px';
     btn.addEventListener('click', () => {
-      if (boon.id === 'heal') {
-        state.band.flat().filter(Boolean).forEach(uid => {
-          const entry = rosterEntry(state, uid);
-          const stats = fighterStats(state, entry);
-          if (run.faintedSet.has(uid)) {
-            run.faintedSet.delete(uid);
-            run.hpMap[uid] = Math.round(stats.hp * 0.3);
-          } else {
-            const current = run.hpMap[uid] !== undefined ? run.hpMap[uid] : stats.hp;
-            run.hpMap[uid] = Math.min(stats.hp, current + Math.round(stats.hp * 0.5));
-          }
-        });
-      } else if (boon.id === 'ult') {
-        state.band.flat().filter(Boolean).forEach(uid => { if (!run.faintedSet.has(uid)) run.chargeMap[uid] = 100; });
-      } else if (boon.id === 'shield') {
-        state.band.flat().filter(Boolean).forEach(uid => {
-          if (run.faintedSet.has(uid)) return;
-          const stats = fighterStats(state, rosterEntry(state, uid));
-          run.shieldMap[uid] = { amount: Math.round(stats.hp * 0.25), turnsLeft: 3 };
-        });
-      } else if (boon.id === 'reviveall') {
-        state.band.flat().filter(Boolean).forEach(uid => {
-          if (!run.faintedSet.has(uid)) return;
-          run.faintedSet.delete(uid);
-          const stats = fighterStats(state, rosterEntry(state, uid));
-          run.hpMap[uid] = Math.round(stats.hp * 0.4);
-        });
-      } else if (boon.id === 'doublereward') {
-        run.doubleRewardNext = true;
-      } else {
-        run.buffs[boon.stat] = (run.buffs[boon.stat] || 0) + boon.pct;
-      }
-      run.round++;
+      run.relics.push(relic.id);
       $('pickerModal').classList.add('hidden');
-      UI.fightRoguelikeRound(state);
+      saveGame(state);
+      UI.showToast('✨ Nueva reliquia: ' + relic.label);
+      UI.renderRoguelikeMap(state);
     });
     body.appendChild(btn);
+    body.appendChild(el('p', 'settings-info', relic.desc));
   });
   $('pickerModal').classList.remove('hidden');
+};
+
+UI.retireRoguelikeRun = function (state) {
+  const run = window.__roguelikeRun;
+  if (run) recordRoguelikeRun(state, run.nodesCleared, run.actIdx);
+  window.__roguelikeRun = null;
+  saveGame(state);
+  $('stageRunView').classList.add('hidden');
+  UI.renderTorre(state);
+  UI.showToast(`🌀 Run terminada — mejor Acto: ${state.roguelike.bestAct + 1}, mejor nº de nodos: ${state.roguelike.bestRound}.`);
 };
 
 // ---------- Prueba del Campeón ----------
@@ -4820,15 +5064,21 @@ UI.endBattle = function (view, result) {
   } else if (outcome && outcome.championDefeat) {
     html = `<h3>💀 Fin de la Prueba</h3><p class="settings-info">Caíste en el duelo ${outcome.duelsWon + 1}, tras ganar ${outcome.duelsWon}. Mejor racha: ${view.state.champion.bestStreak}.</p>`;
     html += championLiveCreatureHtml(view.state);
-  } else if (outcome && outcome.roguelikeContinue) {
-    html = `<h3>🌀 ¡Ronda ${outcome.roundsCleared} superada!</h3><p class="settings-info">Sigues sin curarte a la siguiente ronda. Elige un bono al continuar.</p>`;
-    if (outcome.rewards) {
-      html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>
-        <div class="stat-row"><span>⭐ XP</span><span>+${outcome.rewards.fighterXp}</span></div>`;
-    }
+  } else if (outcome && outcome.roguelikeActWon) {
+    html = `<h3>👑 ¡${outcome.actLabel} completado!</h3><p class="settings-info">Elige una reliquia y sigue al siguiente Acto.</p>
+      <div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>
+      <div class="stat-row"><span>⭐ XP</span><span>+${outcome.rewards.fighterXp}</span></div>`;
+    if (outcome.gotDoxite) html += `<div class="stat-row"><span>🟡 Doxite</span><span>+3</span></div>`;
     if (outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
+  } else if (outcome && outcome.roguelikeNodeWon) {
+    html = `<h3>🌀 ${outcome.nodeLabel} superado</h3><p class="settings-info">Vuelves al mapa del Acto.</p>
+      <div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>
+      <div class="stat-row"><span>⭐ XP</span><span>+${outcome.rewards.fighterXp}</span></div>`;
+    if (outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
+  } else if (outcome && outcome.roguelikeRevived) {
+    html = `<h3>💠 ¡El Amuleto del Superviviente te salva!</h3><p class="settings-info">Tu banda revive al 30% de vida — el nodo sigue sin superar, puedes reintentarlo o probar otro camino.</p>`;
   } else if (outcome && outcome.roguelikeDefeat) {
-    html = `<h3>💀 Fin de la run</h3><p class="settings-info">Caíste en la ronda ${outcome.roundsCleared + 1}, tras superar ${outcome.roundsCleared}. Mejor ronda: ${outcome.bestRound}.</p>`;
+    html = `<h3>💀 Fin de la run</h3><p class="settings-info">Caíste en ${outcome.actLabel}, tras superar ${outcome.nodesCleared} nodo${outcome.nodesCleared === 1 ? '' : 's'} en total. Mejor Acto: ${view.state.roguelike.bestAct + 1}, mejor nº de nodos: ${view.state.roguelike.bestRound}.</p>`;
   } else if (outcome && outcome.bracketWon) {
     html = `<h3>🏆 ¡Torneo ganado!</h3><p class="settings-info">Superaste las ${BRACKET_ROUNDS.length} rondas del Torneo de Bracket.</p>`;
     html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>

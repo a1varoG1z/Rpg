@@ -1487,6 +1487,165 @@ function canAffordPrestigeCost(state, cost) {
   return Object.keys(cost).every(k => (state.currencies[k] || 0) >= cost[k]);
 }
 
+// ---------- Roguelike v2: Actos, Reliquias, Mapa de nodos ----------
+// Rediseño completo a petición del usuario ("necesita un resultado mucho
+// más profesional, que parezca un roguelike real") — antes era una simple
+// lista de rondas sin fin contra un pool plano ponderado por rareza; ahora
+// es una campaña de actos reales (uno por tramo del propio Mapa, cada uno
+// terminando en un jefe real ya derrotable en la Torre Batalla), con un
+// mapa de nodos ramificado por acto, reliquias de la run con identidad
+// propia y un reparto que empieza pequeño y crece con nodos de recluta —
+// ver UI.renderRoguelikeMap (ui.js) para la presentación.
+
+// Un acto = un tramo contiguo de ZONES (ya es una progresión de dificultad
+// pensada de antemano) — 45 zonas / 9 por acto = 5 actos de campaña. Su
+// jefe es el de la ÚLTIMA zona del tramo (el mismo jefe real que se puede
+// fichar en la Torre Batalla); sus encuentros normales/élite salen de los
+// MOBS y jefes de las zonas del propio tramo (ver roguelikeActMobPool /
+// roguelikeActEliteBossIds en combat.js) — nada aleatorio fuera de ese
+// "bioma", así cada acto tiene identidad propia de verdad en vez de ser
+// una ronda más de un pool genérico.
+const ROGUELIKE_ACT_SIZE = 9;
+function buildRoguelikeActs() {
+  const acts = [];
+  for (let i = 0; i < ZONES.length; i += ROGUELIKE_ACT_SIZE) {
+    const zoneSlice = ZONES.slice(i, i + ROGUELIKE_ACT_SIZE);
+    if (zoneSlice.length === 0) continue;
+    const lastZone = zoneSlice[zoneSlice.length - 1];
+    acts.push({
+      idx: acts.length,
+      label: 'Acto ' + (acts.length + 1),
+      zoneIds: zoneSlice.map(z => z.id),
+      bossDefId: lastZone.pool[2],
+      themeColor: lastZone.color,
+      themeEmoji: zoneSlice[0].emoji,
+      themeName: lastZone.name,
+    });
+  }
+  return acts;
+}
+const ROGUELIKE_ACTS = buildRoguelikeActs();
+// Más allá del último acto definido, la campaña se acaba pero la run puede
+// seguir en modo sin techo (mismo espíritu que el Roguelike original: "la
+// gracia es ver hasta dónde se llega") — reutiliza actos generados al vuelo
+// ciclando por todas las zonas del juego, cada vez más difíciles.
+function roguelikeActForIdx(actIdx) {
+  if (actIdx < ROGUELIKE_ACTS.length) return ROGUELIKE_ACTS[actIdx];
+  const cycled = ROGUELIKE_ACTS[actIdx % ROGUELIKE_ACTS.length];
+  return { ...cycled, idx: actIdx, label: 'Acto ' + (actIdx + 1) + ' (sin techo)' };
+}
+function roguelikeActDifficultyMult(actIdx) {
+  return actIdx < ROGUELIKE_ACTS.length ? 1 + actIdx * 0.35 : 1 + ROGUELIKE_ACTS.length * 0.35 + Math.pow((actIdx - ROGUELIKE_ACTS.length + 1) / 3, 2) * 0.3;
+}
+
+// Reliquias: identidad propia (no solo "+X% stat", petición explícita del
+// usuario) — `kind` distingue el mecanismo real que las aplica (ver
+// aplicación en ui.js: applyRoguelikeRelicStats para las de stat plano, y
+// puntos de enganche específicos para el resto — auto-revivir, doblar
+// recompensa, carga inicial de Ulti, recluta extra, curación de descanso,
+// bonus de jefe de acto, mejor resultado de evento garantizado).
+const ROGUELIKE_RELICS = [
+  { id: 'r_revive', icon: '💠', label: 'Amuleto del Superviviente', kind: 'autoRevive',
+    desc: 'La primera vez que tu banda caiga entera en un acto, en vez de terminar la run revives al 30% de vida y continúas (una vez por acto).' },
+  { id: 'r_ultcharge', icon: '🔋', label: 'Brazalete de Ímpetu', kind: 'startCharge',
+    desc: 'Empiezas cada combate con la barra de Ulti al 50% ya cargada.' },
+  { id: 'r_def', icon: '🛡️', label: 'Escamas Templadas', kind: 'stat', stat: 'def', pct: 0.25,
+    desc: '+25% Defensa para toda la banda.' },
+  { id: 'r_atk', icon: '⚔️', label: 'Colmillo Voraz', kind: 'stat', stat: 'atk', pct: 0.25,
+    desc: '+25% Ataque para toda la banda.' },
+  { id: 'r_agi', icon: '💨', label: 'Pulso Veloz', kind: 'stat', stat: 'agi', pct: 0.20,
+    desc: '+20% Agilidad para toda la banda.' },
+  { id: 'r_wis', icon: '🧠', label: 'Ojo Omnisciente', kind: 'stat', stat: 'wis', pct: 0.20,
+    desc: '+20% Sabiduría para toda la banda.' },
+  { id: 'r_hp', icon: '❤️', label: 'Corazón Robusto', kind: 'stat', stat: 'hp', pct: 0.30,
+    desc: '+30% Vida máxima para toda la banda.' },
+  { id: 'r_texel', icon: '💰', label: 'Bolsa sin Fondo', kind: 'rewardMult', mult: 2,
+    desc: 'Las recompensas de Texel de cada nodo superado se doblan.' },
+  { id: 'r_bossdoxite', icon: '🟡', label: 'Vena de Doxite', kind: 'bossBonusCrystal', crystalType: 'doxite', amount: 3,
+    desc: 'Al derrotar al jefe de un acto, +3 cristales Doxite extra.' },
+  { id: 'r_restheal', icon: '🏕️', label: 'Manto del Retirado', kind: 'restHealBonus', pct: 0.40,
+    desc: 'Los nodos de Descanso curan un 40% adicional.' },
+  { id: 'r_eventluck', icon: '🍀', label: 'Brújula Rota', kind: 'eventBestOutcome',
+    desc: 'Los nodos de Evento nunca te dan el peor resultado posible.' },
+  { id: 'r_recruit', icon: '📯', label: 'Ánfora Inagotable', kind: 'extraRecruit',
+    desc: 'Los nodos de Recluta ofrecen 1 opción más entre la que elegir.' },
+  { id: 'r_bossreward', icon: '👑', label: 'Talismán Doble', kind: 'bossRewardMult', mult: 2,
+    desc: 'Recompensa de Texel y XP ×2 al derrotar al jefe de un acto.' },
+  { id: 'r_glasscannon', icon: '🗡️', label: 'Guantelete Temerario', kind: 'statTradeoff',
+    statUp: 'atk', pctUp: 0.35, statDown: 'def', pctDown: 0.15,
+    desc: '+35% Ataque, -15% Defensa para toda la banda.' },
+];
+
+// Nodos del mapa por acto — el de Jefe nunca sale aquí, es un nodo aparte
+// fijo al final de cada acto (ver generateRoguelikeMap).
+const ROGUELIKE_NODE_TYPES = {
+  combat: { icon: '⚔️', label: 'Combate' },
+  elite: { icon: '💀', label: 'Élite' },
+  treasure: { icon: '💰', label: 'Tesoro' },
+  event: { icon: '❓', label: 'Evento' },
+  rest: { icon: '🏕️', label: 'Descanso' },
+  recruit: { icon: '📯', label: 'Recluta' },
+  boss: { icon: '👑', label: 'Jefe de acto' },
+};
+const ROGUELIKE_MAP_LAYERS = 4;
+const ROGUELIKE_NODES_PER_LAYER = 3;
+// Genera un pequeño grafo dirigido por capas — varias entradas posibles en
+// la capa 0, aristas variables entre capas siguientes, todo converge en un
+// único nodo de Jefe al final. Mismo principio que usan los generadores de
+// mapa de roguelikes de verdad (tipo Slay the Spire), simplificado a 3
+// nodos por capa — la pieza central que pedía el usuario ("mapa de
+// nodos"), no una lista lineal como el resto de Retos.
+function generateRoguelikeMap(actIdx) {
+  const layers = [];
+  for (let l = 0; l < ROGUELIKE_MAP_LAYERS; l++) {
+    const nodes = [];
+    for (let n = 0; n < ROGUELIKE_NODES_PER_LAYER; n++) {
+      let type;
+      if (l === 0) type = 'combat'; // primera capa siempre segura, como cualquier roguelike de verdad
+      else {
+        const roll = Math.random();
+        type = roll < 0.35 ? 'combat' : roll < 0.5 ? 'elite' : roll < 0.65 ? 'treasure'
+          : roll < 0.8 ? 'event' : roll < 0.9 ? 'rest' : 'recruit';
+      }
+      nodes.push({ id: 'n' + l + '_' + n, layer: l, slot: n, type, cleared: false });
+    }
+    layers.push(nodes);
+  }
+  // Garantiza al menos 1 nodo de Recluta en las 2 primeras capas (crecer el
+  // reparto pronto) y al menos 1 Élite en las 2 últimas (un pulso de
+  // dificultad real justo antes del jefe).
+  if (!layers[0].concat(layers[1]).some(n => n.type === 'recruit')) layers[1][0].type = 'recruit';
+  if (!layers[2].concat(layers[3]).some(n => n.type === 'elite')) layers[3][0].type = 'elite';
+
+  // Aristas: cada nodo de la capa L se conecta a 1-2 nodos de la capa L+1;
+  // luego se asegura que todo nodo de L+1 tenga alguna arista entrante (si
+  // no, se le fuerza una desde un nodo aleatorio de L).
+  const edges = {};
+  for (let l = 0; l < ROGUELIKE_MAP_LAYERS - 1; l++) {
+    layers[l].forEach(node => {
+      const nextLayer = layers[l + 1];
+      const count = 1 + (Math.random() < 0.5 ? 1 : 0);
+      const targets = [...nextLayer].sort(() => Math.random() - 0.5).slice(0, count);
+      edges[node.id] = targets.map(t => t.id);
+    });
+    const reached = new Set(Object.values(edges).flat());
+    layers[l + 1].forEach(node => {
+      if (!reached.has(node.id)) {
+        const source = layers[l][Math.floor(Math.random() * layers[l].length)];
+        edges[source.id].push(node.id);
+      }
+    });
+  }
+  const bossNode = { id: 'boss', layer: ROGUELIKE_MAP_LAYERS, slot: 0, type: 'boss', cleared: false };
+  layers[ROGUELIKE_MAP_LAYERS - 1].forEach(node => { edges[node.id] = [bossNode.id]; });
+  return { actIdx, layers, bossNode, edges, currentNodeId: null, availableIds: layers[0].map(n => n.id) };
+}
+function roguelikeMapNode(map, nodeId) {
+  if (nodeId === 'boss') return map.bossNode;
+  for (const layer of map.layers) { const found = layer.find(n => n.id === nodeId); if (found) return found; }
+  return null;
+}
+
 // ---------- Tope de Tier ----------
 // Reto de Retos (Fase 1, ver TODO.md): antes de empezar cada nivel, la
 // Formación ENTERA (todos los huecos ocupados, los vacíos no cuentan) debe

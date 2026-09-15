@@ -237,10 +237,14 @@ function difficultyLabelText(mult) { return Math.round(mult * 100) + '%'; }
       return;
     }
     if (window.__roguelikeRun) {
-      // Ronda superada (pendingBoon): elegir bono antes de la siguiente
-      // ronda. Derrota: onEnd ya puso window.__roguelikeRun a null, así que
-      // este bloque no se alcanza — cae al render normal de más abajo.
-      if (window.__roguelikeRun.pendingBoon) { window.__roguelikeRun.pendingBoon = false; UI.openRoguelikeBoonPicker(state); }
+      // Élite/jefe ganado (pendingRelicPick): elegir reliquia antes de
+      // volver al mapa. Nodo normal ganado, o revivido por el Amuleto del
+      // Superviviente (pendingMapReturn): vuelve directo al mapa del Acto.
+      // Derrota sin reliquia de revivir: onEnd ya puso window.__roguelikeRun
+      // a null, así que este bloque no se alcanza — cae al render normal.
+      const run = window.__roguelikeRun;
+      if (run.pendingRelicPick) { run.pendingRelicPick = false; UI.openRoguelikeRelicPicker(state); }
+      else if (run.pendingMapReturn) { run.pendingMapReturn = false; UI.renderRoguelikeMap(state); }
       return;
     }
     const run = window.__stageRun;
