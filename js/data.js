@@ -1520,6 +1520,31 @@ const TIER_CAP_LEVELS = [
   { id: 'tc_tri_fuego_picaro', label: 'Hasta Legendario · Solo Fuego · Solo Pícaro', constraint: { rarityMax: 'legendario', element: 'fuego', class: 'picaro' } },
   { id: 'tc_tri_tierra_guru', label: 'Hasta Legendario · Solo Tierra · Solo Gurú', constraint: { rarityMax: 'legendario', element: 'tierra', class: 'guru' } },
   { id: 'tc_tri_viento_explorador', label: 'El Filtro Postrero: Legendario · Viento · Explorador', constraint: { rarityMax: 'legendario', element: 'viento', class: 'explorador' } },
+
+  // Tercera ampliación (petición del usuario, "mejora y aumenta Tope de
+  // Tier"): de los 25 combos posibles de elemento+clase para un triple
+  // (5 elementos × 5 clases), solo 9 existían hasta ahora — se añaden los
+  // 16 restantes para completar la matriz entera, con la rareza tope
+  // repartida en ciclo (raro/épico/legendario) igual que el resto de
+  // ampliaciones, para que no se acumulen todos en el mismo escalón de
+  // dificultad. El último (Agua · Explorador) cierra la matriz completa,
+  // así que se deja en Legendario como capstone de verdad.
+  { id: 'tc_tri_fuego_guru', label: 'Hasta Raro · Solo Fuego · Solo Gurú', constraint: { rarityMax: 'raro', element: 'fuego', class: 'guru' } },
+  { id: 'tc_tri_fuego_brujo', label: 'Hasta Épico · Solo Fuego · Solo Brujo', constraint: { rarityMax: 'epico', element: 'fuego', class: 'brujo' } },
+  { id: 'tc_tri_fuego_explorador', label: 'Hasta Legendario · Solo Fuego · Solo Explorador', constraint: { rarityMax: 'legendario', element: 'fuego', class: 'explorador' } },
+  { id: 'tc_tri_viento_campeon', label: 'Hasta Raro · Solo Viento · Solo Campeón', constraint: { rarityMax: 'raro', element: 'viento', class: 'campeon' } },
+  { id: 'tc_tri_viento_picaro', label: 'Hasta Épico · Solo Viento · Solo Pícaro', constraint: { rarityMax: 'epico', element: 'viento', class: 'picaro' } },
+  { id: 'tc_tri_viento_guru', label: 'Hasta Legendario · Solo Viento · Solo Gurú', constraint: { rarityMax: 'legendario', element: 'viento', class: 'guru' } },
+  { id: 'tc_tri_tierra_campeon', label: 'Hasta Raro · Solo Tierra · Solo Campeón', constraint: { rarityMax: 'raro', element: 'tierra', class: 'campeon' } },
+  { id: 'tc_tri_tierra_picaro', label: 'Hasta Épico · Solo Tierra · Solo Pícaro', constraint: { rarityMax: 'epico', element: 'tierra', class: 'picaro' } },
+  { id: 'tc_tri_tierra_brujo', label: 'Hasta Legendario · Solo Tierra · Solo Brujo', constraint: { rarityMax: 'legendario', element: 'tierra', class: 'brujo' } },
+  { id: 'tc_tri_rayo_guru', label: 'Hasta Raro · Solo Rayo · Solo Gurú', constraint: { rarityMax: 'raro', element: 'rayo', class: 'guru' } },
+  { id: 'tc_tri_rayo_brujo', label: 'Hasta Épico · Solo Rayo · Solo Brujo', constraint: { rarityMax: 'epico', element: 'rayo', class: 'brujo' } },
+  { id: 'tc_tri_rayo_explorador', label: 'Hasta Legendario · Solo Rayo · Solo Explorador', constraint: { rarityMax: 'legendario', element: 'rayo', class: 'explorador' } },
+  { id: 'tc_tri_agua_campeon', label: 'Hasta Raro · Solo Agua · Solo Campeón', constraint: { rarityMax: 'raro', element: 'agua', class: 'campeon' } },
+  { id: 'tc_tri_agua_picaro', label: 'Hasta Épico · Solo Agua · Solo Pícaro', constraint: { rarityMax: 'epico', element: 'agua', class: 'picaro' } },
+  { id: 'tc_tri_agua_brujo', label: 'Hasta Legendario · Solo Agua · Solo Brujo', constraint: { rarityMax: 'legendario', element: 'agua', class: 'brujo' } },
+  { id: 'tc_tri_agua_explorador', label: 'El Filtro Total: Legendario · Agua · Explorador', constraint: { rarityMax: 'legendario', element: 'agua', class: 'explorador' } },
 ];
 function tierCapConstraintLabel(c) {
   const parts = [rarityInfo(c.rarityMax).label + ' o menos'];
@@ -1527,8 +1552,21 @@ function tierCapConstraintLabel(c) {
   if (c.class) parts.push(CLASS_INFO[c.class].icon + ' ' + CLASS_INFO[c.class].label);
   return parts.join(' · ');
 }
+// Cristales (petición del usuario, "mejora y aumenta Tope de Tier"): antes
+// este era el único reto largo del juego que no soltaba NINGÚN cristal de
+// invocación por muy alto que se llegara en la escalera — ahora cada nivel
+// da un cristal del tier acorde a lo exigente que sea su PROPIA
+// restricción (no del progreso idx, que ya se nota en texel/XP): Pixite en
+// los niveles solo de rareza (sin elemento/clase), Voxite en los de un
+// único eje extra (elemento O clase), Doxite en los "Filtro" triples
+// (rareza + elemento + clase a la vez), los más duros de montar de todo el
+// modo.
 function tierCapRewards(idx) {
-  return { texel: Math.round(50 + idx * 25), fighterXp: Math.round(30 + idx * 12) };
+  const level = TIER_CAP_LEVELS[idx];
+  const axes = (level.constraint.element ? 1 : 0) + (level.constraint.class ? 1 : 0);
+  const crystalType = axes >= 2 ? 'doxite' : axes === 1 ? 'voxite' : 'pixite';
+  const crystalAmount = axes >= 2 ? 2 : 1;
+  return { texel: Math.round(50 + idx * 25), fighterXp: Math.round(30 + idx * 12), drops: { [crystalType]: crystalAmount } };
 }
 
 // ---------- Tope de Tier — Fase 2: Trials de Familia ----------

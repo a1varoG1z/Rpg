@@ -1560,6 +1560,7 @@ UI.fightStageRunNode = function (state) {
       if (run.isTierCap) {
         const rewards = tierCapRewards(run.tierCapIdx);
         state.currencies.texel += rewards.texel;
+        Object.keys(rewards.drops || {}).forEach(type => { state.currencies[type] += rewards.drops[type]; });
         const leveled = [];
         state.band.flat().filter(Boolean).forEach(uid => {
           const entry = rosterEntry(state, uid);
