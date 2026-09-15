@@ -17,6 +17,7 @@ function difficultyLabelText(mult) { return Math.round(mult * 100) + '%'; }
   });
 
   document.body.classList.toggle('hide-medallion', !state.settings.showMedallion);
+  UI.autoBattleEnabled = state.settings.autoBattleEnabled;
 
   UI.rosterSortMode = 'reciente';
   UI.rosterStatVariant = 'current';
@@ -46,6 +47,7 @@ function difficultyLabelText(mult) { return Math.round(mult * 100) + '%'; }
     $('enableTorreToggle').checked = state.settings.enableTorreBatalla;
     $('enableElementalToggle').checked = state.settings.enableElementalDungeon;
     $('enableRoguelikeToggle').checked = state.settings.enableRoguelike;
+    $('autoBattleToggle').checked = state.settings.autoBattleEnabled;
     $('difficultyValueLabel').textContent = difficultyLabelText(state.settings.difficultyMult);
     $('settingsModal').classList.remove('hidden');
   });
@@ -142,6 +144,17 @@ function difficultyLabelText(mult) { return Math.round(mult * 100) + '%'; }
     if (activeScreen === 'torre') UI.renderTorre(state);
     UI.showToast(state.settings.enableRoguelike ? '🌀 Roguelike activado (modo de prueba)' : '🌀 Roguelike desactivado');
   });
+  // Se guarda en state.settings (a diferencia de UI.battleSpeed, que no se
+  // persiste) precisamente porque la petición era poder fijarlo ANTES de
+  // entrar a un combate — UI.autoBattleEnabled (ui.js) sigue siendo la
+  // variable que de verdad lee UI.openBattle, esto solo la mantiene en
+  // sincronía con el ajuste guardado en los dos sentidos.
+  $('autoBattleToggle').addEventListener('change', (e) => {
+    state.settings.autoBattleEnabled = e.target.checked;
+    UI.autoBattleEnabled = e.target.checked;
+    saveGame(state);
+    UI.showToast(state.settings.autoBattleEnabled ? '🤖 Auto-combate activado' : '🤖 Auto-combate desactivado');
+  });
   $('cheatGemasBtn').addEventListener('click', () => {
     state.currencies.gemas += 1000;
     saveGame(state);
@@ -200,6 +213,20 @@ function difficultyLabelText(mult) { return Math.round(mult * 100) + '%'; }
     // si sigue viva (ganó el duelo), el siguiente duelo empieza ya mismo; si acabó
     // (perdió), UI.fightChampionDuel ya la puso a null dentro de onEnd.
     if (window.__championRun) { UI.fightChampionDuel(state); return; }
+    // Torneo de Bracket: mismo patrón que la Prueba del Campeón — si sigue
+    // vivo (ronda ganada, torneo no terminado todavía), el siguiente cruce
+    // empieza ya mismo; onEnd ya lo puso a null tras perder o tras ganar el
+    // torneo entero, así que este bloque no se alcanza en esos casos.
+    if (window.__bracketRun) { UI.fightBracketRound(state); return; }
+    // Cacería del Tesoro: tras ganar una emboscada (pendingContinue), sigue
+    // con el siguiente nodo o el guardián final — igual que el pendingBoon
+    // del Roguelike. Una emboscada perdida o el guardián (ganado o perdido)
+    // ya ponen window.__treasureRun a null dentro de onEnd, así que este
+    // bloque no se alcanza en esos casos.
+    if (window.__treasureRun) {
+      if (window.__treasureRun.pendingContinue) { window.__treasureRun.pendingContinue = false; UI.continueTreasureRun(state); }
+      return;
+    }
     if (window.__familyTrialActive) {
       // Trial de familia: combate único (sin window.__stageRun propio, ver
       // UI.startFamilyTrial) — al cerrar el resultado, de vuelta a la

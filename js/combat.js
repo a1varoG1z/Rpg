@@ -672,6 +672,118 @@ function championDuelRewards(duelIdx) {
   return { texel: Math.round(30 + duelIdx * 10), fighterXp: Math.round(60 + duelIdx * 45) };
 }
 
+// ---------- Torneo de Bracket (Retos) ----------
+// Eliminatoria de 3 combates seguidos contra IA cada vez más fuerte —
+// mismo patrón de rareza creciente que buildChampionOpponent, pero con una
+// FILA de hasta 3 rivales (como el Roguelike) en vez de 1 contra 1, y con
+// solo 3 rondas fijas (no sin techo) así que la escalada es mucho más
+// brusca ronda a ronda. A diferencia del Roguelike, cada ronda se juega con
+// la banda curada al completo (ver UI.fightBracketRound) — un torneo real
+// con descanso entre cruces, no una supervivencia.
+const BRACKET_ROUNDS = [
+  { level: 22, count: 2, epicChance: 0.15, legendaryChance: 0.02 },
+  { level: 34, count: 2, epicChance: 0.35, legendaryChance: 0.10 },
+  { level: 46, count: 3, epicChance: 0.55, legendaryChance: 0.25 },
+];
+function buildBracketOpponentRow(round) {
+  const cfg = BRACKET_ROUNDS[round];
+  const row = [];
+  for (let i = 0; i < cfg.count; i++) {
+    const roll = Math.random();
+    const pool = roll < cfg.legendaryChance
+      ? FIGHTERS.filter(f => f.rarity === 'legendario')
+      : roll < cfg.legendaryChance + cfg.epicChance
+        ? FIGHTERS.filter(f => f.rarity === 'epico')
+        : FIGHTERS.filter(f => f.rarity === 'comun' || f.rarity === 'infrecuente' || f.rarity === 'raro');
+    const def = pool[Math.floor(Math.random() * pool.length)];
+    row.push(makeUnit('enemy', def.id, cfg.level));
+  }
+  return row;
+}
+function bracketRoundRewards(round) {
+  return { texel: Math.round(60 + round * 40), fighterXp: Math.round(50 + round * 35) };
+}
+// Recompensa de ganar el torneo COMPLETO (las 3 rondas): 10 cristales del
+// mejor tier, pedido explícito del usuario ("10 del mejor tier" = Doxite,
+// ver CRYSTALS en data.js — 0% común, 20% legendario). Limitada a una vez
+// al día (mismo mecanismo de clave por fecha que el Mercader Itinerante,
+// ver merchantTodayKey/bracketWonToday) para que no se pueda farmear en
+// bucle — el torneo se puede seguir jugando las veces que se quiera para
+// practicar/Texel/XP, solo el bonus de cristales se limita.
+const BRACKET_WIN_CRYSTAL_TYPE = 'doxite';
+const BRACKET_WIN_CRYSTAL_AMOUNT = 10;
+
+// ---------- Cacería del Tesoro (Retos) ----------
+// Recorrido corto de nodos elegidos por el jugador (ver
+// TREASURE_HUNT_NODE_TYPES) más un guardián final fijo. A diferencia del
+// Torneo de Bracket y el Roguelike, las recompensas de cada nodo NO se
+// suman a la cuenta permanente al momento — se acumulan en un "botín" local
+// de la expedición (run.pool, ver UI.startTreasureHunt) que solo se cobra
+// de verdad al terminar la expedición (guardián derrotado O una emboscada
+// perdida), igual que quien vuelve de una cacería real con lo que ha
+// encontrado hasta el momento en que tiene que retirarse. El único nodo que
+// puede REDUCIR ese botín es la trampa — el resto solo suma, así que el
+// único riesgo real de perder algo ya ganado es la trampa, nunca un combate
+// perdido (una emboscada perdida corta la expedición ahí, pero no borra lo
+// ya encontrado antes).
+const TREASURE_HUNT_STEPS = 5;
+const TREASURE_HUNT_NODE_TYPES = [
+  { id: 'chest_small', icon: '🪙', label: 'Cofre pequeño', weight: 35 },
+  { id: 'chest_large', icon: '💰', label: 'Cofre grande', weight: 20 },
+  { id: 'ambush', icon: '⚔️', label: 'Emboscada', weight: 25 },
+  { id: 'trap', icon: '🕳️', label: 'Trampa', weight: 20 },
+];
+// 2 tipos DISTINTOS (sin repetir del mismo pool), para que la elección
+// entre ambos sea una decisión real y no dos iconos iguales.
+function rollTreasureNodeChoices() {
+  const pool = [...TREASURE_HUNT_NODE_TYPES];
+  const pick = [];
+  for (let i = 0; i < 2 && pool.length; i++) {
+    const totalWeight = pool.reduce((s, n) => s + n.weight, 0);
+    let roll = Math.random() * totalWeight;
+    let idx = 0;
+    for (; idx < pool.length - 1; idx++) { roll -= pool[idx].weight; if (roll <= 0) break; }
+    pick.push(pool.splice(idx, 1)[0]);
+  }
+  return pick;
+}
+function treasureHuntEnemyRow(step) {
+  const level = Math.min(XP_LEVEL_CAP, 10 + step * 8);
+  const count = step < 2 ? 1 : 2;
+  const epicChance = Math.min(0.3, step * 0.06);
+  const row = [];
+  for (let i = 0; i < count; i++) {
+    const roll = Math.random();
+    const pool = roll < epicChance
+      ? FIGHTERS.filter(f => f.rarity === 'epico' || f.rarity === 'raro')
+      : FIGHTERS.filter(f => f.rarity === 'comun' || f.rarity === 'infrecuente');
+    const def = pool[Math.floor(Math.random() * pool.length)];
+    row.push(makeUnit('enemy', def.id, level));
+  }
+  return row;
+}
+function treasureHuntGuardianRow() {
+  const pool = FIGHTERS.filter(f => f.rarity === 'epico' || f.rarity === 'legendario');
+  const def = pool[Math.floor(Math.random() * pool.length)];
+  return [makeUnit('enemy', def.id, 40, 1.15)];
+}
+function treasureHuntNodeReward(nodeId, step) {
+  const scale = 1 + step * 0.25;
+  if (nodeId === 'chest_small') return { texel: Math.round((30 + Math.random() * 30) * scale), gemas: Math.round(1 + Math.random() * 2) };
+  if (nodeId === 'chest_large') return { texel: Math.round((80 + Math.random() * 70) * scale), gemas: Math.round(3 + Math.random() * 3) };
+  if (nodeId === 'ambush') return { texel: Math.round((50 + Math.random() * 50) * scale), gemas: Math.round(2 + Math.random() * 3) };
+  return { texel: 0, gemas: 0 };
+}
+function treasureHuntTrapResult(pool) {
+  if (Math.random() < 0.5) return { kind: 'find', gemas: Math.round(2 + Math.random() * 3) };
+  const lost = Math.min(pool.texel, Math.round(pool.texel * (0.15 + Math.random() * 0.15)));
+  return { kind: 'lose', texel: lost };
+}
+function treasureHuntGuardianReward() {
+  const crystalType = ['pixite', 'voxite', 'doxite'][Math.floor(Math.random() * 3)];
+  return { texel: 150 + Math.round(Math.random() * 100), gemas: 8 + Math.round(Math.random() * 6), crystalType, crystalAmount: 2 + Math.round(Math.random() * 2) };
+}
+
 // ---------- Roguelike (Retos) ----------
 // Rival de una ronda: mismo patrón de rareza creciente que buildArenaBand/
 // buildChampionOpponent (nivel y rareza sin techo — es survival, la gracia

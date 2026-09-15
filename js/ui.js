@@ -1602,6 +1602,8 @@ UI.renderTorre = function (state) {
   wrap.innerHTML = '';
   UI.renderChampionTrial(state, wrap);
   UI.renderTierCap(state, wrap);
+  UI.renderBracket(state, wrap);
+  UI.renderTreasureHunt(state, wrap);
   UI.renderElementalDungeons(state, wrap);
 
   if (!torreUnlocked(state)) {
@@ -2151,6 +2153,216 @@ UI.fightChampionDuel = function (state) {
       recordChampionStreak(state, run.duelIdx);
       saveGame(state);
       return { rewards, championContinue: true, duelsWon: run.duelIdx };
+    },
+  });
+};
+
+// ---------- Torneo de Bracket ----------
+// Eliminatoria de 3 combates seguidos con la Formación al completo, curada
+// entre rondas (a diferencia del Roguelike, que no cura) — ver
+// BRACKET_ROUNDS/buildBracketOpponentRow en combat.js. Sin desbloqueo
+// aparte (disponible desde el principio, como Prueba del Campeón/Tope de
+// Tier): no es una escalera de contenido superado, es un reto de fuerza
+// bruta que cualquiera puede intentar cuando quiera.
+UI.renderBracket = function (state, wrap) {
+  wrap.appendChild(el('h3', null, '🏆 Torneo de Bracket'));
+  const wonToday = bracketWonToday(state);
+  wrap.appendChild(el('p', 'settings-info', `Eliminatoria de 3 combates seguidos contra rivales cada vez
+    más fuertes, con tu Formación curada al completo entre cruces — pierdes y el torneo termina ahí.
+    Ganar el torneo COMPLETO da ${BRACKET_WIN_CRYSTAL_AMOUNT} ${CRYSTALS[BRACKET_WIN_CRYSTAL_TYPE].icon}
+    ${CRYSTALS[BRACKET_WIN_CRYSTAL_TYPE].label} — una vez al día (el resto de intentos del día siguen
+    dando Texel y XP, solo el bonus de cristales se limita).`));
+  const panel = el('div', 'panel');
+  panel.innerHTML = `<div class="stat-row"><span>Mejor ronda ganada</span><span>${state.bracket.bestRound}/${BRACKET_ROUNDS.length}</span></div>
+    <div class="stat-row"><span>Recompensa de hoy</span><span>${wonToday ? '✅ ya reclamada' : '🎁 disponible'}</span></div>`;
+  const startBtn = el('button', 'primary-btn', '🏆 Empezar torneo');
+  startBtn.addEventListener('click', () => UI.startBracketRun(state));
+  panel.appendChild(startBtn);
+  wrap.appendChild(panel);
+};
+
+UI.startBracketRun = function (state) {
+  if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
+  if (!state.settings.infiniteEnergy) {
+    if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+    state.currencies.energy -= STAGE_ENERGY_COST;
+    saveGame(state);
+    UI.renderTopbar(state);
+  }
+  window.__championRun = null;
+  window.__stageRun = null;
+  window.__roguelikeRun = null;
+  window.__bracketRun = { round: 0 };
+  UI.fightBracketRound(state);
+};
+
+UI.fightBracketRound = function (state) {
+  const run = window.__bracketRun;
+  const enemyRow = buildBracketOpponentRow(run.round);
+  const playerCombos = buildPlayerCombinations(state);
+  UI.openBattle(state, playerCombos, [enemyRow], {
+    title: '🏆 Torneo de Bracket · Ronda ' + (run.round + 1) + '/' + BRACKET_ROUNDS.length,
+    zone: { id: 'bracket', color: '#3a2a1a' },
+    onEnd: (result) => {
+      if (result !== 'victoria') {
+        recordBracketRun(state, run.round);
+        window.__bracketRun = null;
+        saveGame(state);
+        return { bracketDefeat: true, roundsWon: run.round };
+      }
+      const rewards = bracketRoundRewards(run.round);
+      state.currencies.texel += rewards.texel;
+      const leveled = [];
+      state.band.flat().filter(Boolean).forEach(uid => {
+        const entry = rosterEntry(state, uid);
+        if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
+      });
+      run.round++;
+      let wonTournament = false, crystalReward = 0;
+      if (run.round >= BRACKET_ROUNDS.length) {
+        recordBracketRun(state, BRACKET_ROUNDS.length);
+        wonTournament = true;
+        if (!bracketWonToday(state)) {
+          state.currencies[BRACKET_WIN_CRYSTAL_TYPE] += BRACKET_WIN_CRYSTAL_AMOUNT;
+          state.bracket.lastWonKey = merchantTodayKey();
+          crystalReward = BRACKET_WIN_CRYSTAL_AMOUNT;
+        }
+        window.__bracketRun = null;
+      }
+      saveGame(state);
+      return { rewards, leveled, bracketContinue: !wonTournament, bracketWon: wonTournament, crystalReward, roundsWon: run.round };
+    },
+  });
+};
+
+// ---------- Cacería del Tesoro ----------
+// Recorrido corto de nodos elegidos por el jugador (ver TREASURE_HUNT_* en
+// combat.js) — reutiliza el mismo pickerModal que el selector de bono del
+// Roguelike para presentar los 2 nodos entre los que elegir en cada paso.
+// Sin desbloqueo aparte, igual que Prueba del Campeón/Tope de Tier/Torneo
+// de Bracket.
+UI.renderTreasureHunt = function (state, wrap) {
+  wrap.appendChild(el('h3', null, '🗺️ Cacería del Tesoro'));
+  wrap.appendChild(el('p', 'settings-info', `Expedición corta de ${TREASURE_HUNT_STEPS} nodos: elige entre
+    2 opciones en cada paso (cofres, emboscadas, trampas) y termina contra un guardián. Solo la trampa
+    puede reducir el botín ya encontrado — una emboscada perdida corta la expedición ahí, pero no borra lo
+    que ya llevabas. El botín entero se cobra al volver, con éxito o en retirada.`));
+  const panel = el('div', 'panel');
+  panel.innerHTML = `<div class="stat-row"><span>Expediciones completadas</span><span>${state.treasureHunt.runsCompleted}</span></div>
+    <div class="stat-row"><span>Mejor botín de Texel</span><span>${state.treasureHunt.bestHaul}</span></div>`;
+  const startBtn = el('button', 'primary-btn', '🗺️ Empezar expedición');
+  startBtn.addEventListener('click', () => UI.startTreasureHunt(state));
+  panel.appendChild(startBtn);
+  wrap.appendChild(panel);
+};
+
+UI.startTreasureHunt = function (state) {
+  if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
+  if (!state.settings.infiniteEnergy) {
+    if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+    state.currencies.energy -= STAGE_ENERGY_COST;
+    saveGame(state);
+    UI.renderTopbar(state);
+  }
+  window.__championRun = null;
+  window.__stageRun = null;
+  window.__roguelikeRun = null;
+  window.__bracketRun = null;
+  window.__treasureRun = { step: 0, pool: { texel: 0, gemas: 0, pixite: 0, voxite: 0, doxite: 0 } };
+  UI.continueTreasureRun(state);
+};
+
+// Punto único de avance de la expedición: decide si toca el siguiente nodo
+// elegible o ya el guardián final, según cuántos nodos se llevan resueltos
+// — llamado tanto tras elegir un cofre/trampa (sin combate) como tras ganar
+// una emboscada (ver el pendingContinue que resuelve battleCloseBtn en
+// main.js, mismo patrón que el pendingBoon del Roguelike).
+UI.continueTreasureRun = function (state) {
+  const run = window.__treasureRun;
+  if (!run) return;
+  if (run.step >= TREASURE_HUNT_STEPS) UI.fightTreasureGuardian(state);
+  else UI.openTreasureNodeChoice(state);
+};
+
+UI.openTreasureNodeChoice = function (state) {
+  const run = window.__treasureRun;
+  const choices = rollTreasureNodeChoices();
+  const body = $('pickerModalBody');
+  body.innerHTML = `<h3>🗺️ Nodo ${run.step + 1}/${TREASURE_HUNT_STEPS}</h3>
+    <p class="settings-info">Botín acumulado: 🪙 ${run.pool.texel} · 💎 ${run.pool.gemas}</p>
+    <p class="settings-info">Elige uno de los dos nodos.</p>`;
+  choices.forEach(node => {
+    const btn = el('button', 'primary-btn', node.icon + ' ' + node.label);
+    btn.style.display = 'block';
+    btn.style.width = '100%';
+    btn.style.marginBottom = '8px';
+    btn.addEventListener('click', () => {
+      $('pickerModal').classList.add('hidden');
+      UI.resolveTreasureNode(state, node);
+    });
+    body.appendChild(btn);
+  });
+  $('pickerModal').classList.remove('hidden');
+};
+
+UI.resolveTreasureNode = function (state, node) {
+  const run = window.__treasureRun;
+  if (node.id === 'ambush') {
+    UI.openBattle(state, buildPlayerCombinations(state), [treasureHuntEnemyRow(run.step)], {
+      title: '🗺️ Cacería del Tesoro · Emboscada',
+      zone: { id: 'tesoro', color: '#2a2412' },
+      onEnd: (result) => {
+        if (result !== 'victoria') {
+          const pool = run.pool;
+          bankTreasureHuntPool(state, pool);
+          window.__treasureRun = null;
+          saveGame(state);
+          return { treasureRetreat: true, pool };
+        }
+        const reward = treasureHuntNodeReward('ambush', run.step);
+        run.pool.texel += reward.texel; run.pool.gemas += reward.gemas;
+        run.step++;
+        run.pendingContinue = true;
+        saveGame(state);
+        return { treasureNodeWon: true, nodeLabel: '⚔️ Emboscada', reward };
+      },
+    });
+    return;
+  }
+  if (node.id === 'trap') {
+    const outcome = treasureHuntTrapResult(run.pool);
+    if (outcome.kind === 'find') { run.pool.gemas += outcome.gemas; UI.showToast(`🕳️ Trampa esquivada — encuentras +${outcome.gemas} 💎 escondidas.`); }
+    else { run.pool.texel -= outcome.texel; UI.showToast(`🕳️ ¡Trampa! Pierdes ${outcome.texel} 🪙 del botín acumulado.`); }
+    run.step++;
+    saveGame(state);
+    UI.continueTreasureRun(state);
+    return;
+  }
+  // Cofres: sin combate, recompensa instantánea.
+  const reward = treasureHuntNodeReward(node.id, run.step);
+  run.pool.texel += reward.texel; run.pool.gemas += reward.gemas;
+  UI.showToast(`${node.icon} +${reward.texel} 🪙 · +${reward.gemas} 💎`);
+  run.step++;
+  saveGame(state);
+  UI.continueTreasureRun(state);
+};
+
+UI.fightTreasureGuardian = function (state) {
+  const run = window.__treasureRun;
+  UI.openBattle(state, buildPlayerCombinations(state), [treasureHuntGuardianRow()], {
+    title: '🗺️ Cacería del Tesoro · Guardián del tesoro',
+    zone: { id: 'tesoro', color: '#2a2412' },
+    onEnd: (result) => {
+      const pool = run.pool;
+      if (result === 'victoria') {
+        const reward = treasureHuntGuardianReward();
+        pool.texel += reward.texel; pool.gemas += reward.gemas; pool[reward.crystalType] += reward.crystalAmount;
+        state.treasureHunt.runsCompleted++;
+      }
+      bankTreasureHuntPool(state, pool);
+      window.__treasureRun = null;
+      saveGame(state);
+      return { treasureEnd: true, won: result === 'victoria', pool };
     },
   });
 };
@@ -3839,6 +4051,13 @@ UI.updateBattleSpeedBtn = function () {
 UI.toggleAutoBattle = function () {
   const view = window.__battleView;
   UI.autoBattleEnabled = !UI.autoBattleEnabled;
+  // Mantiene en sincronía el ajuste persistido y su checkbox en Ajustes
+  // (ver autoBattleToggle en main.js) con el botón "🤖 Auto" de dentro del
+  // combate — cualquiera de los dos sitios donde se puede tocar deja al
+  // otro coherente, así el valor guardado siempre es el real.
+  if (window.STATE) { window.STATE.settings.autoBattleEnabled = UI.autoBattleEnabled; saveGame(window.STATE); }
+  const toggleEl = document.getElementById('autoBattleToggle');
+  if (toggleEl) toggleEl.checked = UI.autoBattleEnabled;
   if (!view) return;
   view.autoBattle = UI.autoBattleEnabled;
   UI.updateAutoBattleBtn(view);
@@ -4552,6 +4771,37 @@ UI.endBattle = function (view, result) {
     if (outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
   } else if (outcome && outcome.roguelikeDefeat) {
     html = `<h3>💀 Fin de la run</h3><p class="settings-info">Caíste en la ronda ${outcome.roundsCleared + 1}, tras superar ${outcome.roundsCleared}. Mejor ronda: ${outcome.bestRound}.</p>`;
+  } else if (outcome && outcome.bracketWon) {
+    html = `<h3>🏆 ¡Torneo ganado!</h3><p class="settings-info">Superaste las ${BRACKET_ROUNDS.length} rondas del Torneo de Bracket.</p>`;
+    html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>
+      <div class="stat-row"><span>⭐ XP por luchador</span><span>+${outcome.rewards.fighterXp}</span></div>`;
+    if (outcome.crystalReward) html += `<div class="stat-row"><span>${CRYSTALS[BRACKET_WIN_CRYSTAL_TYPE].icon} ${CRYSTALS[BRACKET_WIN_CRYSTAL_TYPE].label}</span><span>+${outcome.crystalReward}</span></div>`;
+    else html += `<p class="settings-info">Ya reclamaste el bonus de cristales de hoy — vuelve mañana a por otros ${BRACKET_WIN_CRYSTAL_AMOUNT}.</p>`;
+    if (outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
+  } else if (outcome && outcome.bracketContinue) {
+    html = `<h3>🏆 ¡Ronda ${outcome.roundsWon}/${BRACKET_ROUNDS.length} superada!</h3><p class="settings-info">Tu Formación se cura del todo antes del siguiente cruce.</p>`;
+    html += `<div class="stat-row"><span>🪙 Texel</span><span>+${outcome.rewards.texel}</span></div>
+      <div class="stat-row"><span>⭐ XP por luchador</span><span>+${outcome.rewards.fighterXp}</span></div>`;
+    if (outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
+  } else if (outcome && outcome.bracketDefeat) {
+    html = `<h3>💀 Fin del torneo</h3><p class="settings-info">Caíste en la ronda ${outcome.roundsWon + 1}, tras ganar ${outcome.roundsWon}. Mejor ronda: ${view.state.bracket.bestRound}/${BRACKET_ROUNDS.length}.</p>`;
+  } else if (outcome && outcome.treasureNodeWon) {
+    html = `<h3>${outcome.nodeLabel} superada</h3><p class="settings-info">La expedición continúa.</p>
+      <div class="stat-row"><span>🪙 Texel</span><span>+${outcome.reward.texel}</span></div>
+      <div class="stat-row"><span>💎 Gemas</span><span>+${outcome.reward.gemas}</span></div>`;
+  } else if (outcome && outcome.treasureRetreat) {
+    html = `<h3>💀 Emboscada perdida — expedición retirada</h3><p class="settings-info">Te retiras con lo que ya habías encontrado antes de la emboscada.</p>
+      <div class="stat-row"><span>🪙 Texel cobrado</span><span>+${outcome.pool.texel}</span></div>
+      <div class="stat-row"><span>💎 Gemas cobradas</span><span>+${outcome.pool.gemas}</span></div>`;
+  } else if (outcome && outcome.treasureEnd) {
+    html = outcome.won
+      ? `<h3>🏆 ¡Guardián derrotado!</h3><p class="settings-info">Expedición completada — cobras todo el botín encontrado.</p>`
+      : `<h3>💀 El guardián te derrota</h3><p class="settings-info">Te retiras con lo que ya habías encontrado antes del guardián.</p>`;
+    html += `<div class="stat-row"><span>🪙 Texel cobrado</span><span>+${outcome.pool.texel}</span></div>
+      <div class="stat-row"><span>💎 Gemas cobradas</span><span>+${outcome.pool.gemas}</span></div>`;
+    ['pixite', 'voxite', 'doxite'].forEach(type => {
+      if (outcome.pool[type]) html += `<div class="stat-row"><span>${CRYSTALS[type].icon} ${CRYSTALS[type].label}</span><span>+${outcome.pool[type]}</span></div>`;
+    });
   } else if (outcome && outcome.wagerWon !== undefined) {
     html = `<h3>🏆 ¡Apuesta ganada!</h3><div class="stat-row"><span>🪙 Texel</span><span>+${outcome.wagerWon}</span></div>`;
   } else if (outcome && outcome.wagerLost !== undefined) {

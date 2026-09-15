@@ -72,7 +72,7 @@ function createNewState() {
     // Ajustes (ver playerDifficultyMult en state.js) — 1 = sin cambio
     // (la dificultad ya calibrada), gradual en pasos de 10% hacia arriba o
     // abajo.
-    settings: { infiniteEnergy: false, showMedallion: true, enableTorreBatalla: false, enableElementalDungeon: false, enableRoguelike: false, difficultyMult: 1 },
+    settings: { infiniteEnergy: false, showMedallion: true, enableTorreBatalla: false, enableElementalDungeon: false, enableRoguelike: false, difficultyMult: 1, autoBattleEnabled: false },
     // Torre Batalla: cuántas veces se ha superado cada nivel (clave =
     // level.key de TORRE_LEVELS en data.js) — 0/ausente = nivel no
     // superado todavía (y por tanto el siguiente sigue bloqueado).
@@ -95,8 +95,16 @@ function createNewState() {
     // ver ui.js — vive solo en memoria, como window.__championRun, así que no
     // sobrevive a un recargo de página; solo se guarda el récord).
     roguelike: { bestRound: 0 },
+    // Torneo de Bracket: mejor ronda ganada (0-3) y clave del día de la
+    // última vez que se completó el torneo entero (ver bracketWonToday) —
+    // el bonus de 10 cristales Doxite solo se puede cobrar una vez al día,
+    // mismo mecanismo de clave por fecha que el Mercader Itinerante.
+    bracket: { bestRound: 0, lastWonKey: null },
+    // Cacería del Tesoro: nº de expediciones completadas (guardián final
+    // derrotado) y el mayor botín de Texel cobrado de una sola expedición.
+    treasureHunt: { runsCompleted: 0, bestHaul: 0 },
     // Mercader Itinerante: la clave (fecha) de la última oferta ya
-    // canjeada, para no poder repetirla hasta que cambie la oferta del día.
+    // canjeada, para no poder repetirla dos veces la misma oferta del día.
     merchant: { lastRedeemedKey: null },
     // Objetivos (ver OBJECTIVES en data.js) ya reclamados — lista de ids,
     // para no poder cobrar dos veces la misma recompensa de Gemas aunque
@@ -1106,6 +1114,24 @@ function recordRoguelikeRun(state, roundsCleared) {
   if (roundsCleared > state.roguelike.bestRound) state.roguelike.bestRound = roundsCleared;
 }
 
+// --- Torneo de Bracket (ver buildBracketOpponentRow en combat.js) ---
+function recordBracketRun(state, roundsWon) {
+  if (roundsWon > state.bracket.bestRound) state.bracket.bestRound = roundsWon;
+}
+function bracketWonToday(state) { return state.bracket.lastWonKey === merchantTodayKey(); }
+
+// --- Cacería del Tesoro (ver treasureHunt* en combat.js) ---
+// Traspasa el botín local de la expedición (run.pool, ver
+// UI.startTreasureHunt) a la cuenta permanente — el único punto en el que
+// las recompensas de la Cacería se vuelven de verdad tuyas, se llame al
+// terminar con éxito o al retirarse tras una emboscada perdida.
+function bankTreasureHuntPool(state, pool) {
+  state.currencies.texel += pool.texel;
+  state.currencies.gemas += pool.gemas;
+  ['pixite', 'voxite', 'doxite'].forEach(type => { if (pool[type]) state.currencies[type] += pool[type]; });
+  if (pool.texel > state.treasureHunt.bestHaul) state.treasureHunt.bestHaul = pool.texel;
+}
+
 // --- Mercader Itinerante (ver merchantOffer en data.js) ---
 function merchantOfferRedeemedToday(state) { return state.merchant.lastRedeemedKey === merchantOffer().key; }
 
@@ -1385,6 +1411,7 @@ function migrateState(state) {
     if (state.settings.enableElementalDungeon === undefined) state.settings.enableElementalDungeon = false;
     if (state.settings.enableRoguelike === undefined) state.settings.enableRoguelike = false;
     if (state.settings.difficultyMult === undefined) state.settings.difficultyMult = 1;
+    if (state.settings.autoBattleEnabled === undefined) state.settings.autoBattleEnabled = false;
     if (!state.items) state.items = { pocion_menor: 0, pocion_mayor: 0, pluma_fenix: 0 };
     if (!state.homunculos) state.homunculos = { homunculo_t1: 0, homunculo_t2: 0, homunculo_t3: 0 };
     if (!state.torre) state.torre = { clears: {} };
@@ -1403,6 +1430,8 @@ function migrateState(state) {
     if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
     if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };
     if (!state.roguelike) state.roguelike = { bestRound: 0 };
+    if (!state.bracket) state.bracket = { bestRound: 0, lastWonKey: null };
+    if (!state.treasureHunt) state.treasureHunt = { runsCompleted: 0, bestHaul: 0 };
     if (!state.merchant) state.merchant = { lastRedeemedKey: null };
     if (!state.objectivesClaimed) state.objectivesClaimed = [];
     if (!state.formationPresets) state.formationPresets = [];
