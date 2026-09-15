@@ -1494,6 +1494,33 @@ function migrateState(state) {
       state.prestigeRebalancedVersion = PRESTIGE_REBALANCE_VERSION;
       delete state.prestigeRebalanced;
     }
+    // finalStretchMult/el tramo lineal de lateZoneMult (data.js) son
+    // NUEVOS, pero bossDifficultyLock/mobDifficultyLock (arriba) se
+    // calculan una sola vez, la primera vez que se entra a cada zona, y
+    // se quedan fijos para siempre en el save — así que cualquier zona
+    // del tramo final ya visitada ANTES de este cambio se quedaría con
+    // un multiplicador calculado bajo la fórmula vieja, sin enterarse
+    // nunca del endurecido nuevo (aunque el código ya esté actualizado).
+    // Reportado por el usuario tras el propio endurecido: "en murallas
+    // caídas los mobs salen a x2.48, sin embargo en torre prohibida
+    // salen a x1.81" — exactamente esta inconsistencia (Torre Prohibida
+    // va DESPUÉS de Murallas Caídas, así que su multiplicador nuevo
+    // debería ser más alto, no más bajo — el bloqueo antiguo lo estaba
+    // tapando). Se borra el bloqueo de mobs/jefe SOLO de las zonas del
+    // tramo final (las últimas FINAL_STRETCH_ZONES) una vez, con su
+    // propia versión — subir FINAL_STRETCH_LOCK_RESET_VERSION en el
+    // futuro (si el ritmo del tramo final se vuelve a tocar) repite el
+    // reseteo sin afectar al resto del Mapa, ya estable.
+    if ((state.finalStretchLockResetVersion || 0) < FINAL_STRETCH_LOCK_RESET_VERSION) {
+      const finalStretchZoneIds = new Set(ZONES.slice(ZONES.length - FINAL_STRETCH_ZONES).map(z => z.id));
+      if (state.progress.mobDifficultyLock) {
+        finalStretchZoneIds.forEach(id => { delete state.progress.mobDifficultyLock[id]; });
+      }
+      if (state.progress.bossDifficultyLock) {
+        finalStretchZoneIds.forEach(id => { delete state.progress.bossDifficultyLock[id]; });
+      }
+      state.finalStretchLockResetVersion = FINAL_STRETCH_LOCK_RESET_VERSION;
+    }
     if (!state.merchant) state.merchant = { lastRedeemedKey: null };
     if (!state.objectivesClaimed) state.objectivesClaimed = [];
     if (!state.formationPresets) state.formationPresets = [];

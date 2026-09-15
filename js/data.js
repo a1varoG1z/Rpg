@@ -1365,6 +1365,12 @@ const FINAL_STRETCH_ADD_RATE = 0.06;
 // / 41868 recibido) — de "reto real" a "imposible". 0.05 sube el jefe lo
 // bastante para notarse sin cruzar esa línea.
 const FINAL_STRETCH_BOSS_RATE = 0.05;
+// Sube este número cada vez que se retoque el ritmo del tramo final de
+// forma que invalide bossDifficultyLock/mobDifficultyLock ya calculados
+// bajo una versión anterior (ver migrateState, state.js) — fuerza un
+// reseteo retroactivo SOLO de las zonas del tramo final, sin tocar el
+// resto del Mapa.
+const FINAL_STRETCH_LOCK_RESET_VERSION = 1;
 // Aparte de lateZoneMult (de donde sale — ver arriba), expuesto también
 // como multiplicador independiente: bossAdaptiveMult (state.js) NO puede
 // limitarse a subir el techo de su ajuste por overpower como hacen los

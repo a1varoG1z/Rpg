@@ -6403,6 +6403,31 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       casi siempre con margen), sin llegar a ser un muro imposible.
       Verificado con Playwright/combate real repetido varias veces en
       cada escenario. Sanity check general limpio (642/102/45/45).
+- [x] **Reseteo de bloqueos de dificultad ya calculados del tramo final**
+      (petición explícita del usuario, jugando ya con el endurecido
+      anterior a 110% de dificultad: "en murallas caidas los mobs salen
+      a x2.48, sin embargo en torre prohibida salen a x1.81" — Torre
+      Prohibida va DESPUÉS de Murallas Caídas, así que debería salir más
+      alto, no más bajo). Causa: bossDifficultyLock/mobDifficultyLock
+      (state.js) se calculan UNA sola vez, la primera vez que se entra a
+      cada zona, y se quedan fijos en el save para siempre — cualquier
+      zona del tramo final ya visitada ANTES del endurecido se quedaba
+      con un multiplicador calculado bajo la fórmula vieja, sin
+      enterarse nunca del cambio aunque el código ya estuviera
+      actualizado (el propio código nuevo nunca se ejecutaba para esa
+      zona en ese save). migrateState borra ahora, una sola vez
+      (`finalStretchLockResetVersion`, mismo patrón que
+      `prestigeRebalancedVersion`), el bloqueo de mobs Y de jefe SOLO de
+      las últimas `FINAL_STRETCH_ZONES` (4) — el resto del Mapa, ya
+      estable, no se toca. Subir `FINAL_STRETCH_LOCK_RESET_VERSION` en
+      el futuro repite el reseteo sin tocar este bloque.
+      Verificado con Playwright: bloqueos "inventados" que reproducían
+      el caso reportado (Murallas Caídas 3.0, Torre Prohibida 1.6, el
+      orden invertido) se borran en la primera carga tras el cambio, y
+      el valor recalculado queda correctamente ordenado (Torre Prohibida
+      2.48 > Murallas Caídas 2.33); un bloqueo de una zona FUERA del
+      tramo final (Llanura del Titán) sobrevive intacto. Sanity check
+      general limpio (642/102/45/45).
 
 ## Notas
 
