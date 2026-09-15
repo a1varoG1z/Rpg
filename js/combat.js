@@ -391,7 +391,7 @@ function buildTierCapEncounters(level, idx) {
     && (!level.constraint.element || f.element === level.constraint.element)
     && (!level.constraint.class || f.class === level.constraint.class));
   const baseLevel = Math.min(XP_LEVEL_CAP, 6 + idx * 3);
-  const waveCount = idx < 10 ? 3 : (idx < 25 ? 4 : 5);
+  const waveCount = tierCapWaveCount(idx);
   const rows = [];
   for (let w = 0; w < waveCount; w++) {
     const enemyLevel = Math.min(XP_LEVEL_CAP, baseLevel + w * 3);

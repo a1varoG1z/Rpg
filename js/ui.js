@@ -1585,6 +1585,23 @@ UI.fightStageRunNode = function (state) {
       }
       run.nodeIdx++;
       if (run.nodeIdx < run.encounters.length) {
+        // Tope de Tier: cada nivel es un recorrido de 3-5 oleadas seguidas
+        // sin curarse — antes solo se pagaba XP si se superaba el nivel
+        // ENTERO, así que perder a media escalera (nada raro contra un
+        // rival cada vez más duro oleada a oleada) no daba nada por las
+        // ya ganadas. Petición explícita del usuario: "tiene que dar
+        // experiencia al ganar combates" — cada oleada ganada da ya su
+        // ración de XP (tierCapWaveXp, data.js), no solo la última.
+        if (run.isTierCap) {
+          const waveXp = tierCapWaveXp(run.tierCapIdx);
+          const leveled = [];
+          state.band.flat().filter(Boolean).forEach(uid => {
+            const entry = rosterEntry(state, uid);
+            if (entry && fighterAddXp(entry, waveXp)) leveled.push(fighterDef(entry.defId).name);
+          });
+          saveGame(state);
+          return { intermediate: true, waveXp, leveled };
+        }
         saveGame(state);
         return { intermediate: true };
       }
@@ -1639,14 +1656,18 @@ UI.fightStageRunNode = function (state) {
         const rewards = tierCapRewards(run.tierCapIdx);
         state.currencies.texel += rewards.texel;
         Object.keys(rewards.drops || {}).forEach(type => { state.currencies[type] += rewards.drops[type]; });
+        // El fighterXp de tierCapRewards ya se ha repartido oleada a
+        // oleada (ver el bloque `intermediate` de arriba) — esta última
+        // oleada da su misma ración, no el total otra vez encima.
+        const waveXp = tierCapWaveXp(run.tierCapIdx);
         const leveled = [];
         state.band.flat().filter(Boolean).forEach(uid => {
           const entry = rosterEntry(state, uid);
-          if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
+          if (entry && fighterAddXp(entry, waveXp)) leveled.push(fighterDef(entry.defId).name);
         });
         recordTierCapClear(state, run.tierCapIdx);
         saveGame(state);
-        return { rewards, leveled };
+        return { rewards: { ...rewards, fighterXp: waveXp }, leveled };
       }
       const isFirstClear = run.stageIdx > highestClearedStage(state, ZONES[run.zoneIdx].id);
       const rewards = stageRewards(run.zoneIdx, run.stageIdx, run.isBoss, isFirstClear);
@@ -5265,6 +5286,10 @@ UI.endBattle = function (view, result) {
     html = `<h3>💀 Apuesta perdida</h3><p class="settings-info">Perdiste los ${outcome.wagerLost} 🪙 Texel apostados.</p>`;
   } else if (outcome && outcome.intermediate) {
     html = `<h3>✅ Encuentro superado</h3><p class="settings-info">Continúa por el resto de la etapa.</p>`;
+    if (outcome.waveXp) {
+      html += `<div class="stat-row"><span>⭐ XP por luchador</span><span>+${outcome.waveXp}</span></div>`;
+      if (outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
+    }
   } else if (result === 'victoria') {
     html = outcome && outcome.championBeaten ? `<h3>👑 ¡Campeón de ${outcome.championBeaten} derrotado!</h3>` : `<h3>🏆 ¡Victoria!</h3>`;
     if (outcome && outcome.rewards) {

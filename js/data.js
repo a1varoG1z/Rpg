@@ -1788,6 +1788,16 @@ function tierCapRewards(idx) {
   const crystalAmount = axes >= 2 ? 2 : 1;
   return { texel: Math.round(50 + idx * 25), fighterXp: Math.round(30 + idx * 12), drops: { [crystalType]: crystalAmount } };
 }
+// Nº de oleadas SEGUIDAS de un nivel (ver buildTierCapEncounters, combat.js
+// — comparte esta misma fórmula, no la repite) — necesario aquí también
+// para repartir el fighterXp de tierCapRewards entre oleadas (ver
+// tierCapWaveXp) en vez de darlo todo de golpe solo al superar el nivel
+// ENTERO. Petición explícita del usuario: "en retos tope de tier tiene
+// que dar experiencia al ganar combates" — antes, perder a media escalera
+// de 3-5 oleadas (nada raro contra un rival cada vez más duro dentro del
+// propio nivel) no daba NADA de XP por las oleadas ya ganadas.
+function tierCapWaveCount(idx) { return idx < 10 ? 3 : (idx < 25 ? 4 : 5); }
+function tierCapWaveXp(idx) { return Math.max(1, Math.round(tierCapRewards(idx).fighterXp / tierCapWaveCount(idx))); }
 
 // ---------- Tope de Tier — Fase 2: Trials de Familia ----------
 // Objetivo (ver TODO.md, diseño acordado con el usuario): un Trial ligero

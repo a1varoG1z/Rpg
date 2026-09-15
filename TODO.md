@@ -6343,6 +6343,25 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       recompensa escalan juntos, run completo jugado de principio a fin
       con Auto + velocidad 3×). Sanity check general limpio (642/102/45/45)
       en todo momento.
+- [x] **Tope de Tier: XP por oleada, no solo al superar el nivel entero**
+      (petición explícita del usuario: "en retos tope de tier tiene que
+      dar experiencia al ganar combates"). Cada nivel es un recorrido de
+      3-5 oleadas SEGUIDAS sin curarse — antes el fighterXp de
+      `tierCapRewards` solo se pagaba al superar el nivel COMPLETO, así
+      que perder a media escalera (nada raro contra un rival cada vez más
+      duro oleada a oleada) no daba nada de XP por las oleadas ya
+      ganadas. Ahora `tierCapWaveXp` (data.js) reparte ese mismo total
+      entre `tierCapWaveCount` oleadas, y CADA oleada ganada —
+      intermedia o la última— da su ración de inmediato, con su propia
+      línea "⭐ XP por luchador" en la pantalla de resultado (antes la
+      pantalla intermedia ("✅ Encuentro superado") no mostraba ninguna
+      recompensa). El total acumulado ganando el nivel entero es
+      prácticamente el mismo que antes (redondeo aparte) — solo cambia
+      CUÁNDO se cobra, no CUÁNTO.
+      Verificado con Playwright: cada oleada intermedia muestra +10 XP
+      (nivel 0, 3 oleadas de 10 = 30, el mismo total que daba antes solo
+      al final); un roster de nivel 10 (no tope) acumula 10→20→30 de xp
+      real oleada a oleada. Sanity check general limpio (642/102/45/45).
 
 ## Notas
 
