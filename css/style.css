@@ -91,7 +91,7 @@ h3.panel-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wr
 .nav-btn.active { color: var(--gold); }
 
 /* ---------- Tarjeta de criatura ---------- */
-.creature-canvas { image-rendering: pixelated; width: 72px; height: 81px; object-fit: contain; display: block; margin: 0 auto; opacity: 1; transition: opacity 0.25s ease; position: relative; z-index: 1; }
+.creature-canvas { image-rendering: pixelated; width: 72px; height: 81px; object-fit: contain; display: block; margin: 0 auto; opacity: 1; transition: opacity 0.25s ease; position: relative; z-index: 5; }
 .creature-canvas-loading { opacity: 0; }
 
 .gear-icon { object-fit: contain; display: inline-block; vertical-align: middle; opacity: 1; transition: opacity 0.25s ease; }
@@ -174,17 +174,29 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 }
 
 /* Aros giratorios — ring-a en todos los niveles (1+), ring-b (a contragiro,
-   más ancho, tono frío) solo desde el nivel 2. */
+   más ancho, tono frío) solo desde el nivel 2. Petición del usuario tras
+   verlos en el juego ("tapan demasiado al personaje, deberían ser casi
+   transparentes en el centro"): un conic-gradient normal rellena el
+   círculo ENTERO desde el centro, así que se veía como un disco de color
+   tapando el sprite en vez de un aro — se enmascara con un radial-gradient
+   (mask-image) para vaciar el centro y que el color solo se vea cerca del
+   borde, a modo de marco. El <img> del sprite también sube a z-index 5
+   (por encima de estas capas, que van de 1 a 3) para que ni el degradado
+   de la máscara se note nunca por encima del personaje. */
 .prestige-ring {
   position: absolute; z-index: 2; inset: -10%; border-radius: 50%; pointer-events: none; mix-blend-mode: screen;
 }
 .prestige-ring.ring-a {
-  background: conic-gradient(from 0deg, rgba(255,215,90,0) 0%, rgba(255,215,90,0.7) 50%, rgba(255,215,90,0) 100%);
+  background: conic-gradient(from 0deg, rgba(255,215,90,0) 0%, rgba(255,215,90,0.85) 50%, rgba(255,215,90,0) 100%);
+  -webkit-mask-image: radial-gradient(circle, transparent 0%, transparent 78%, black 90%, black 100%);
+  mask-image: radial-gradient(circle, transparent 0%, transparent 78%, black 90%, black 100%);
   animation: prestigeSpinCW 3s linear infinite;
 }
 .prestige-ring.ring-b {
   inset: -18%;
-  background: conic-gradient(from 90deg, rgba(140,215,255,0) 0%, rgba(140,215,255,0.6) 50%, rgba(140,215,255,0) 100%);
+  background: conic-gradient(from 90deg, rgba(140,215,255,0) 0%, rgba(140,215,255,0.75) 50%, rgba(140,215,255,0) 100%);
+  -webkit-mask-image: radial-gradient(circle, transparent 0%, transparent 68%, black 82%, black 100%);
+  mask-image: radial-gradient(circle, transparent 0%, transparent 68%, black 82%, black 100%);
   animation: prestigeSpinCCW 4.2s linear infinite;
 }
 @keyframes prestigeSpinCW { to { transform: rotate(360deg); } }
@@ -193,14 +205,18 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 /* Destello tipo starburst — solo nivel 3, capa más ancha detrás de los
    aros con rayos de luz girando despacio, tono arcoíris tenue para dar
    sensación de "premium" sin recolorear el sprite en sí (eso viviría en el
-   propio <img>, esto es una capa aparte con mix-blend-mode: screen). */
+   propio <img>, esto es una capa aparte con mix-blend-mode: screen).
+   Mismo hueco central que los aros, un poco más generoso al ser la capa
+   más ancha de las tres. */
 .prestige-burst {
   position: absolute; z-index: 1; inset: -34%; border-radius: 50%; pointer-events: none; mix-blend-mode: screen;
   background: repeating-conic-gradient(from 0deg,
-    rgba(255,215,90,0.35) 0deg 4deg, rgba(255,215,90,0) 4deg 18deg,
-    rgba(160,220,255,0.28) 18deg 22deg, rgba(160,220,255,0) 22deg 36deg);
+    rgba(255,215,90,0.4) 0deg 4deg, rgba(255,215,90,0) 4deg 18deg,
+    rgba(160,220,255,0.32) 18deg 22deg, rgba(160,220,255,0) 22deg 36deg);
+  -webkit-mask-image: radial-gradient(circle, transparent 0%, transparent 55%, black 72%, black 100%);
+  mask-image: radial-gradient(circle, transparent 0%, transparent 55%, black 72%, black 100%);
   animation: prestigeSpinCW 9s linear infinite;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 /* Chispas — puntitos que orbitan y titilan alrededor del sprite, 4 desde
