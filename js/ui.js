@@ -709,6 +709,21 @@ UI.openGuide = function () {
     Superfusión de OTRO luchador (en la forma máxima) para darle una ⭐ permanente — hasta 3
     estrellas, cada una da <b>+8% a todas sus estadísticas</b> para siempre.</p>`));
 
+  body.appendChild(guideSection('✨ Prestigio de carta', `
+    <p class="settings-info">Personalización puramente visual (dentro de la ficha de cualquier
+    luchador en su forma MÁS evolucionada, sin evolución pendiente): un marco/aura cada vez más
+    vistoso alrededor de su arte — no cambia ninguna estadística de combate, es solo una muestra de
+    dedicación con ESA copia concreta.</p>
+    <p class="settings-info">4 niveles (el actual, sin decoración, cuenta como 0): cada uno exige
+    haber jugado DE VERDAD con esa copia — combates, víctimas, daño infligido y ultis usadas,
+    acumulados en sus propias estadísticas — Y pagar una cantidad de monedas/cristales cada vez
+    mayor. Contenido pensado para el endgame de verdad: el tramo máximo pide decenas de miles de
+    combates con la misma copia, así que hace falta dedicar mucho tiempo a un mismo luchador a
+    propósito, no solo tenerlo.</p>
+    <p class="settings-info">Los requisitos y el coste exactos de cada nivel se ven en la propia
+    ficha del luchador, con una barra de progreso hacia el siguiente — ahí mismo está el botón para
+    mejorar en cuanto se cumplan.</p>`));
+
   body.appendChild(guideSection('📈 Nivel, XP y Homúnculos', `
     <p class="settings-info">Los luchadores suben de nivel (hasta el tope de nivel ${XP_LEVEL_CAP})
     ganando experiencia al ganar combates — cada nivel sube todas sus estadísticas un poco.</p>
@@ -794,7 +809,12 @@ UI.openGuide = function () {
     laxo al más estricto — se desbloquean en orden y son rejugables después de superarlos. Cada nivel
     es a su vez un recorrido de 3 a 5 oleadas SEGUIDAS sin curarte entre ellas, cada una un poco más
     dura que la anterior — varios combates distintos que superar dentro de un mismo nivel, no solo
-    uno.</p>
+    uno. Cada oleada ganada (no solo la última) da ya su ración de XP al momento.</p>
+    <p class="settings-info">Texel y XP suben en cada uno de los ${TIER_CAP_LEVELS.length} niveles, y el
+    cristal que sueltan escala con lo exigente que sea su PROPIO filtro (no con el nivel en sí): 🟤
+    Pixite en los que solo piden un techo de rareza, ⚪ Voxite en los que además piden un único
+    elemento O una única clase, 🟡 Doxite — el mejor cristal del juego — en los "Filtro Total" que
+    piden rareza + elemento + clase a la vez. Todos rejugables sin límite.</p>
     <p class="settings-info">🧬 <b>Trials de Familia</b> (botón aparte, dentro de la misma pantalla):
     un combate rápido de 1 sola oleada por cada una de las ${FAMILY_TRIALS.length} familias jugables
     del juego — a diferencia de la escalera de arriba, no tienen orden ni desbloqueo entre sí. El
