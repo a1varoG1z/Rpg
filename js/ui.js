@@ -388,7 +388,11 @@ UI.openPokedex = function (state) {
 function objRow(label, current, total) {
   const pct = total > 0 ? Math.min(100, Math.round(current / total * 100)) : 0;
   const row = el('div', 'obj-row');
-  row.innerHTML = `<div class="obj-row-top"><span>${label}</span><span>${current}/${total}</span></div>
+  // toLocaleString separa miles (p.ej. "80.000/5.000.000") — sin efecto en
+  // los contadores pequeños ya existentes (zonas, formas...), pero
+  // necesario para que los requisitos de Prestigio (hasta 5.000.000) se
+  // puedan leer de un vistazo.
+  row.innerHTML = `<div class="obj-row-top"><span>${label}</span><span>${current.toLocaleString('es-ES')}/${total.toLocaleString('es-ES')}</span></div>
     <div class="obj-bar"><div class="obj-fill" style="width:${pct}%"></div></div>`;
   return row;
 }
@@ -3121,7 +3125,7 @@ function prestigePanel(state, entry, def) {
   panel.appendChild(objRow('⚡ Ultis usadas', Math.min(s.ultsUsed || 0, nextTier.require.ultsUsed), nextTier.require.ultsUsed));
   const costParts = Object.keys(nextTier.cost).map(k => {
     const icon = k === 'texel' ? '🪙' : k === 'gemas' ? '💎' : CRYSTALS[k].icon;
-    return icon + ' ' + nextTier.cost[k];
+    return icon + ' ' + nextTier.cost[k].toLocaleString('es-ES');
   });
   panel.appendChild(el('p', 'settings-info', 'Coste: ' + costParts.join(' · ')));
   const meetsReq = prestigeRequirementMet(entry, nextTier);

@@ -1452,25 +1452,32 @@ function torreRepeatBossRewards(level) {
 // ver newFighterStats en state.js — no se puede comprar sin haberla usado
 // en combate) Y pagar una cantidad de monedas cada vez mayor, para que sea
 // una muestra real de dedicación con esa carta y no solo de tener recursos.
-// Los umbrales son un primer calibrado razonable (no hay datos reales de
-// cuánto se acumulan battles/kills/dmgDealt/ultsUsed jugando a fondo) —
-// fáciles de retocar más adelante si se notan muy lejos o muy cerca.
+// Umbrales endurecidos a petición explícita del usuario: "tiene que ser
+// muchísimo más difícil... algo casi exclusivo del endgame... que requiera
+// de muchos días de juego y miles de interacciones y batallas" (el primer
+// calibrado, pensado solo como punto de partida, se quedaba corto — 250
+// batallas se alcanzan en una sola sesión larga). Ahora cada tier exige
+// cientos o miles de combates jugados DE VERDAD con ESA copia concreta
+// (entry.stats, ver newFighterStats en state.js), no con la banda en
+// general, así que hace falta dedicar muchas sesiones a un mismo luchador
+// a propósito — y el coste en monedas escala igual de fuerte para que el
+// tier máximo sea un verdadero hito de fin de partida.
 const PRESTIGE_TIERS = [
   null, // índice 0 = sin prestigio, no se usa como requisito de nada
   {
     tier: 1, label: 'Decoración', className: 'prestige-1',
-    require: { battles: 30, kills: 20, dmgDealt: 15000, ultsUsed: 15 },
-    cost: { texel: 500, pixite: 5 },
+    require: { battles: 400, kills: 300, dmgDealt: 250000, ultsUsed: 150 },
+    cost: { texel: 15000, pixite: 40 },
   },
   {
     tier: 2, label: 'Decoración intermedia', className: 'prestige-2',
-    require: { battles: 100, kills: 75, dmgDealt: 60000, ultsUsed: 50 },
-    cost: { texel: 2000, voxite: 10 },
+    require: { battles: 1500, kills: 1200, dmgDealt: 1200000, ultsUsed: 600 },
+    cost: { texel: 60000, voxite: 80 },
   },
   {
     tier: 3, label: 'Decoración máxima', className: 'prestige-3',
-    require: { battles: 250, kills: 200, dmgDealt: 200000, ultsUsed: 150 },
-    cost: { texel: 8000, doxite: 15 },
+    require: { battles: 5000, kills: 4000, dmgDealt: 5000000, ultsUsed: 2000 },
+    cost: { texel: 250000, doxite: 150 },
   },
 ];
 function isFighterFinalForm(defId) {

@@ -6216,6 +6216,39 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       ningún error de página, y mecánica de retirada/revivir verificadas
       por separado. Sanity check general limpio (642/102/45/45, sin ids
       duplicados) en todo momento durante el desarrollo.
+- [x] **Prestigio de carta: requisitos endurecidos + reseteo de partidas
+      antiguas** (petición explícita del usuario: "tiene que ser
+      muchísimo más difícil sacar las decoraciones... algo casi
+      exclusivo del endgame... que requiera de muchos días de juego y
+      miles de interacciones y batallas" — el primer calibrado de
+      `PRESTIGE_TIERS` en data.js se quedaba corto, 250 combates se
+      alcanzaban en una sola sesión larga). Nuevos umbrales por copia de
+      roster (`entry.stats`, no la banda en general):
+      - Decoración: 400 combates, 300 víctimas, 250.000 de daño, 150
+        ultis (antes 30/20/15.000/15) — coste 15.000 Texel + 40 Pixite.
+      - Decoración intermedia: 1.500 combates, 1.200 víctimas, 1.200.000
+        de daño, 600 ultis (antes 100/75/60.000/50) — coste 60.000 Texel
+        + 80 Voxite.
+      - Decoración máxima: 5.000 combates, 4.000 víctimas, 5.000.000 de
+        daño, 2.000 ultis (antes 250/200/200.000/150) — coste 250.000
+        Texel + 150 Doxite.
+      **Reseteo retroactivo**: cualquier `entry.prestige` conseguido bajo
+      los umbrales antiguos, mucho más blandos, no representa la
+      dedicación que exige el sistema nuevo — `migrateState` (state.js)
+      pone todo el prestigio del roster a 0 una única vez (flag
+      `state.prestigeRebalanced`, para no repetir el reseteo en cada
+      carga y no borrar prestigio legítimamente re-ganado después bajo
+      las reglas nuevas). También se añade separador de miles
+      (`toLocaleString('es-ES')`) a `objRow` y al coste del panel de
+      Prestigio, ya que los requisitos nuevos son ilegibles como números
+      corridos (antes ningún otro uso de `objRow` pasaba de unos pocos
+      cientos).
+      Verificado con Playwright: una partida simulada con
+      `entry.prestige = 3` bajo los umbrales antiguos se resetea a 0 en
+      la primera carga tras el cambio, un segundo reseteo NO ocurre en
+      cargas posteriores (el flag lo impide), y el panel de Prestigio
+      muestra los números grandes con separador de miles sin errores de
+      página. Sanity check general limpio (642/102/45/45).
 
 ## Notas
 

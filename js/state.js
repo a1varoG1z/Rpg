@@ -1452,6 +1452,17 @@ function migrateState(state) {
     // Prestigio de carta (ver PRESTIGE_TIERS en data.js): partidas
     // anteriores a esta feature no tienen el campo en ningún roster entry.
     state.roster.forEach(entry => { if (entry.prestige === undefined) entry.prestige = 0; });
+    // Los requisitos de Prestigio se endurecieron muchísimo (petición del
+    // usuario: tenía que ser "casi exclusivo del endgame", no algo que se
+    // sacara en una sesión). Cualquier decoración ya comprada con los
+    // umbrales antiguos, mucho más blandos, no representa esa dedicación —
+    // se resetea a 0 una única vez; el flag evita repetirlo en cada carga
+    // y borrar prestigio legítimamente re-ganado después bajo las reglas
+    // nuevas.
+    if (!state.prestigeRebalanced) {
+      state.roster.forEach(entry => { entry.prestige = 0; });
+      state.prestigeRebalanced = true;
+    }
     if (!state.merchant) state.merchant = { lastRedeemedKey: null };
     if (!state.objectivesClaimed) state.objectivesClaimed = [];
     if (!state.formationPresets) state.formationPresets = [];
