@@ -769,7 +769,9 @@ UI.openGuide = function () {
     <p class="settings-info">Eliges hasta 3 luchadores del MISMO elemento (se guardan para la
     próxima vez) y se enfrentan a 2 oleadas y un Guardián Elemental del elemento que CONTRARRESTA
     al tuyo — desventaja elemental de partida a propósito, así que hace falta buen nivel y equipo
-    para ganar. Recompensa mejor que una etapa normal, con una pieza de equipo garantizada.</p>`));
+    para ganar. Recompensa mejor que una etapa normal, con una pieza de equipo garantizada. Cada
+    repetición sube de dificultad SIN TECHO y da Doxite garantizado en cantidad creciente — cuantas
+    más veces se supera una mazmorra, más dura y más rentable se vuelve.</p>`));
 
   body.appendChild(guideSection('🗼 Torre Batalla', `
     <p class="settings-info">Modo endgame: se desbloquea al completar el mapa entero (derrotar al
@@ -795,9 +797,9 @@ UI.openGuide = function () {
     uno.</p>
     <p class="settings-info">🧬 <b>Trials de Familia</b> (botón aparte, dentro de la misma pantalla):
     un combate rápido de 1 sola oleada por cada una de las ${FAMILY_TRIALS.length} familias jugables
-    del juego — a diferencia de la escalera de arriba, no tienen orden ni desbloqueo entre sí, pero
-    exigen tener fichada al menos 1 copia de esa familia colocada en tu Formación para poder
-    intentarlo.</p>`));
+    del juego — a diferencia de la escalera de arriba, no tienen orden ni desbloqueo entre sí. El
+    equipo se elige DENTRO del propio Trial (no hace falta tocar tu Formación normal) y exige poseer
+    AHORA MISMO una copia real de las 3 formas de esa familia a la vez — sin genéricas de relleno.</p>`));
 
   body.appendChild(guideSection('⚔️ Prueba del Campeón', `
     <p class="settings-info">Disponible desde el principio, sin desbloqueo: elige UN único luchador
@@ -808,15 +810,19 @@ UI.openGuide = function () {
   body.appendChild(guideSection('🏆 Torneo de Bracket', `
     <p class="settings-info">Disponible desde el principio: eliminatoria de ${BRACKET_ROUNDS.length}
     combates seguidos contra IA cada vez más fuerte, con tu Formación curada al completo entre cruces
-    (a diferencia del Roguelike o la Prueba del Campeón, aquí sí descansas entre combates). Ganar el
-    torneo COMPLETO da ${BRACKET_WIN_CRYSTAL_AMOUNT} cristales ${CRYSTALS[BRACKET_WIN_CRYSTAL_TYPE].label}
-    — limitado a una vez al día, aunque puedes seguir jugando el resto del día solo por Texel/XP.</p>`));
+    (a diferencia del Roguelike o la Prueba del Campeón, aquí sí descansas entre combates). Contenido de
+    endgame — la última ronda es casi enteramente Legendaria y con stats muy por encima de lo normal, un
+    filo real incluso para una banda bien equipada. Ganar el torneo COMPLETO da ${BRACKET_WIN_CRYSTAL_AMOUNT}
+    cristales ${CRYSTALS[BRACKET_WIN_CRYSTAL_TYPE].label} — limitado a una vez al día, aunque puedes seguir
+    jugando el resto del día solo por Texel/XP.</p>`));
 
   body.appendChild(guideSection('🗺️ Cacería del Tesoro', `
-    <p class="settings-info">Expedición corta de ${TREASURE_HUNT_STEPS} nodos elegidos por ti (cofres,
-    emboscadas, trampas) más un guardián final. Las recompensas se acumulan en un botín de la
-    expedición que se cobra al volver — con éxito o tras una emboscada perdida, que corta la
-    expedición pero no borra lo ya encontrado. Solo la trampa puede reducir ese botín.</p>`));
+    <p class="settings-info">Contenido de endgame: expedición de ${TREASURE_HUNT_STEPS} nodos elegidos por
+    ti entre 3 opciones (cofres, emboscadas normales o de élite, el Mercader furtivo que cambia parte del
+    botín por cristales, trampas) más un guardián final de 3 Legendarios. Los combates escalan mucho más
+    allá del nivel tope — hace falta un equipo bien equipado, no solo de rareza alta. Las recompensas se
+    acumulan en un botín de la expedición que se cobra al volver — con éxito o tras una emboscada perdida,
+    que corta la expedición pero no borra lo ya encontrado. Solo la trampa puede reducir ese botín.</p>`));
 
   body.appendChild(guideSection('🌀 Roguelike', `
     <p class="settings-info">Se desbloquea al superar los ${TORRE_LEVELS.length} niveles de la Torre
@@ -1583,8 +1589,9 @@ UI.fightStageRunNode = function (state) {
         return { intermediate: true };
       }
       if (run.isElemental) {
-        const isFirstClear = !state.elementalClears[run.elementId];
-        const rewards = elementalDungeonRewards(isFirstClear);
+        const iteration = state.elementalClears[run.elementId] || 0;
+        const isFirstClear = !iteration;
+        const rewards = elementalDungeonRewards(isFirstClear, iteration);
         state.currencies.texel += rewards.texel;
         if (rewards.drops.voxite) state.currencies.voxite += rewards.drops.voxite;
         if (rewards.drops.doxite) state.currencies.doxite += rewards.drops.doxite;
@@ -1762,11 +1769,11 @@ UI.renderTierCap = function (state, wrap) {
   // Retos (Tope de Tier arriba, Torneo de Bracket, Cacería del Tesoro...).
   wrap.appendChild(el('h3', null, '🧬 Trials de Familia (Fase 2)'));
   wrap.appendChild(el('p', 'settings-info', `A diferencia de la lista de arriba (una restricción sobre TODA
-    la Formación), aquí cada familia jugable del juego tiene su propio reto individual: para intentar el de
-    una familia, ficha al menos 1 copia de ESA familia concreta en tu Formación (el resto de huecos puede ser
-    cualquier cosa) y libra un combate rápido de una sola oleada contra un "guardián" de su misma rareza
-    tope. No hay orden que desbloquear — puedes intentar cualquiera que ya tengas fichada, cuando quieras, y
-    son rejugables. Superarlos todos completa el Tope de Tier al 100%.`));
+    la Formación), aquí cada familia jugable del juego tiene su propio reto individual, con su propio
+    equipo: se elige DENTRO del Trial (no hace falta tocar tu Formación normal) y exige poseer AHORA MISMO
+    una copia real de las 3 formas de esa familia a la vez — sin genéricas de relleno — contra varios
+    "guardianes" de la rareza tope de la familia. No hay orden que desbloquear — puedes intentar cualquiera
+    que ya cumplas, cuando quieras, y son rejugables. Superarlos todos completa el Tope de Tier al 100%.`));
   const trialsCleared = Object.values(state.tierCap.familyTrialClears).filter(v => v > 0).length;
   const trialsBtn = el('button', 'primary-btn', `🧬 Ver Trials de Familia (${trialsCleared}/${FAMILY_TRIALS.length})`);
   trialsBtn.addEventListener('click', () => UI.openFamilyTrials(state));
@@ -1801,16 +1808,18 @@ UI.startTierCapLevel = function (state, idx) {
 // Modal aparte (como la Pokédex) en vez de una lista dentro de Retos — 112
 // filas no caben razonablemente en la pantalla principal. Reutiliza el
 // mismo patrón visual de tarjeta que pokedexCard (bloqueada/???/con arte),
-// con dos estados añadidos propios de este Trial: superado (✅) y "no está
-// en tu Formación ahora mismo" (⚠️, se puede intentar cuando se coloque).
+// con un estado añadido propio de este Trial: superado (✅). Al tocar una
+// tarjeta ya no se lucha directamente — se abre UI.openFamilyTrialSquad,
+// la pantalla de elección de equipo del propio Trial.
 UI.familyTrialFilter = 'all'; // 'all' | 'pending' | 'cleared' | 'undiscovered'
 UI.openFamilyTrials = function (state) {
   const body = $('familyTrialsModalBody');
   const cleared = Object.values(state.tierCap.familyTrialClears).filter(v => v > 0).length;
   body.innerHTML = `<h3>🧬 Trials de Familia ${cleared}/${FAMILY_TRIALS.length}</h3>
-    <p class="settings-info">Un combate rápido (1 sola oleada) por cada familia jugable del juego — para
-    intentarlo necesitas tener al menos 1 copia de esa familia colocada en tu Formación ahora mismo (el resto
-    de la Formación puede ser cualquier cosa). Superarlos todos completa Retos al 100%.</p>`;
+    <p class="settings-info">Un combate rápido (1 sola oleada) por cada familia jugable del juego, con su
+    propio equipo elegido dentro del Trial: siempre las 3 formas de esa familia a la vez, y hace falta
+    poseer una copia real de cada una ahora mismo — sin genéricas de relleno. Superarlos todos completa
+    Retos al 100%.</p>`;
   const filterRow = el('div', 'roster-filter-row');
   const select = document.createElement('select');
   [['all', 'Todas'], ['pending', 'Sin superar'], ['cleared', 'Superadas'], ['undiscovered', 'No conseguidas']].forEach(([v, label]) => {
@@ -1859,40 +1868,104 @@ function familyTrialCard(state, trial) {
   card.appendChild(el('div', 'creature-tier-icon', rarity.icon));
   card.appendChild(el('div', 'creature-name', def.name));
   if (cleared) card.appendChild(el('div', 'in-band-tag', '✅ Superado'));
-  else if (!formationHasFamily(state, trial.family)) card.appendChild(el('div', 'new-badge', '⚠️ No está en tu Formación'));
-  card.addEventListener('click', () => UI.startFamilyTrial(state, trial.id));
+  else if (!familyTrialOwnsAllForms(state, trial)) card.appendChild(el('div', 'new-badge', '⚠️ Faltan evoluciones'));
+  card.addEventListener('click', () => UI.openFamilyTrialSquad(state, trial.id));
   return card;
 }
 
-UI.startFamilyTrial = function (state, trialId) {
+// Pantalla de elección de equipo DENTRO del propio Trial (petición
+// explícita del usuario: "que el equipo se elija en el propio reto y que
+// se participe con los tres miembros de la familia" — antes bastaba con
+// tener 1 copia de la familia fichada en la Formación normal). Reutiliza
+// pickerModal (mismo patrón que UI.openRoguelikeSquadPicker).
+//
+// Revisión sobre la primera versión (petición explícita del usuario tras
+// probarla: "realmente prefiero que solo se pueda si posees las 3
+// evoluciones, te saldrán en un desplegable las que tienes disponibles"):
+// ya NO se rellena un hueco sin copia propia con una genérica — el Trial
+// exige poseer AHORA MISMO al menos 1 copia real de cada una de las 3
+// formas (ver familyTrialOwnsAllForms, state.js), y cada eslabón se elige
+// con un <select> (no una rejilla de tarjetas) listando las copias
+// propias de esa forma exacta por nivel — más compacto para el caso
+// normal de "una o pocas copias por forma".
+UI.openFamilyTrialSquad = function (state, trialId) {
   const trial = FAMILY_TRIALS.find(t => t.id === trialId);
   if (!trial) return;
   if (!familyTrialDiscovered(state, trial)) { UI.showToast('⚠️ Todavía no has conseguido ningún ' + trial.family); return; }
-  if (!formationHasFamily(state, trial.family)) {
-    UI.showToast('⚠️ Coloca a un luchador de esa familia en tu Formación para intentarlo.');
-    return;
-  }
+  $('familyTrialsModal').classList.add('hidden');
+  const picks = trial.formIds.map(formId => {
+    const owned = ownedCopiesOfForm(state, formId);
+    return owned.length ? owned[0].uid : null;
+  });
+  const body = $('pickerModalBody');
+  const render = () => {
+    body.innerHTML = '';
+    body.appendChild(el('h3', null, '🧬 Elige tu trío: ' + fighterDef(trial.displayDefId).name));
+    const missing = trial.formIds.some((formId, i) => !picks[i]);
+    body.appendChild(el('p', 'settings-info', `Este Trial se libra SIEMPRE con las 3 formas de la familia
+      juntas, y exige poseer una copia real de cada una ahora mismo — sin genéricas de relleno.${missing
+      ? ' Te falta al menos una forma: consíguela (invocación, fusión) antes de poder intentarlo.' : ''}`));
+    trial.formIds.forEach((formId, i) => {
+      const formDef = fighterDef(formId);
+      const rarity = rarityInfo(formDef.rarity);
+      const owned = ownedCopiesOfForm(state, formId);
+      const row = el('div', 'settings-info');
+      row.innerHTML = `<b>${rarity.icon} ${rarity.label}: ${formDef.name}</b>`;
+      if (owned.length === 0) {
+        row.innerHTML += ' <span class="new-badge">❌ No la tienes</span>';
+      } else {
+        const select = document.createElement('select');
+        owned.forEach(entry => {
+          const opt = document.createElement('option');
+          opt.value = entry.uid;
+          opt.textContent = 'Nv. ' + entry.level + (entry.uid === owned[0].uid ? ' (más alto)' : '');
+          if (picks[i] === entry.uid) opt.selected = true;
+          select.appendChild(opt);
+        });
+        select.addEventListener('change', () => { picks[i] = select.value; });
+        row.appendChild(document.createElement('br'));
+        row.appendChild(select);
+      }
+      body.appendChild(row);
+    });
+    const fightBtn = el('button', 'primary-btn', '⚔️ ¡Luchar!');
+    fightBtn.disabled = missing;
+    if (missing) fightBtn.title = 'Necesitas poseer las 3 evoluciones para intentar este Trial.';
+    fightBtn.addEventListener('click', () => {
+      if (picks.some(uid => !uid)) return;
+      $('pickerModal').classList.add('hidden');
+      UI.startFamilyTrial(state, trial.id, picks);
+    });
+    body.appendChild(fightBtn);
+  };
+  render();
+  $('pickerModal').classList.remove('hidden');
+};
+
+UI.startFamilyTrial = function (state, trialId, picks) {
+  const trial = FAMILY_TRIALS.find(t => t.id === trialId);
+  if (!trial) return;
+  if (picks.some(uid => !uid)) { UI.showToast('⚠️ Necesitas poseer las 3 evoluciones de esta familia para intentarlo.'); return; }
   if (!state.settings.infiniteEnergy) {
     if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
     state.currencies.energy -= STAGE_ENERGY_COST;
     saveGame(state);
     UI.renderTopbar(state);
   }
-  $('familyTrialsModal').classList.add('hidden');
   window.__championRun = null;
   window.__roguelikeRun = null;
   window.__stageRun = null;
   window.__familyTrialActive = true;
   const enemyRow = buildFamilyTrialEncounter(trial);
-  const combos = buildPlayerCombinations(state);
-  UI.openBattle(state, combos, [enemyRow], {
+  const squad = buildFamilyTrialSquad(state, trial, picks);
+  UI.openBattle(state, [squad], [enemyRow], {
     title: '🧬 Trial: ' + fighterDef(trial.displayDefId).name,
     onEnd: (result) => {
       if (result !== 'victoria') { saveGame(state); return null; }
       const rewards = familyTrialRewards(trial);
       state.currencies.texel += rewards.texel;
       const leveled = [];
-      state.band.flat().filter(Boolean).forEach(uid => {
+      picks.forEach(uid => {
         const entry = rosterEntry(state, uid);
         if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
       });
@@ -2541,10 +2614,12 @@ UI.fightBracketRound = function (state) {
 // de Bracket.
 UI.renderTreasureHunt = function (state, wrap) {
   wrap.appendChild(el('h3', null, '🗺️ Cacería del Tesoro'));
-  wrap.appendChild(el('p', 'settings-info', `Expedición corta de ${TREASURE_HUNT_STEPS} nodos: elige entre
-    2 opciones en cada paso (cofres, emboscadas, trampas) y termina contra un guardián. Solo la trampa
-    puede reducir el botín ya encontrado — una emboscada perdida corta la expedición ahí, pero no borra lo
-    que ya llevabas. El botín entero se cobra al volver, con éxito o en retirada.`));
+  wrap.appendChild(el('p', 'settings-info', `Expedición de ${TREASURE_HUNT_STEPS} nodos: elige entre 3
+    opciones en cada paso (cofres, emboscadas normales o de élite, el Mercader furtivo, trampas) y termina
+    contra 3 Guardianes Legendarios. Contenido de endgame — mucho más duro que una etapa normal, incluso con
+    un equipo Legendario bien equipado. Solo la trampa puede reducir el botín ya encontrado — una emboscada
+    perdida corta la expedición ahí, pero no borra lo que ya llevabas. El botín entero se cobra al volver,
+    con éxito o en retirada.`));
   const panel = el('div', 'panel');
   panel.innerHTML = `<div class="stat-row"><span>Expediciones completadas</span><span>${state.treasureHunt.runsCompleted}</span></div>
     <div class="stat-row"><span>Mejor botín de Texel</span><span>${state.treasureHunt.bestHaul}</span></div>`;
@@ -2588,7 +2663,7 @@ UI.openTreasureNodeChoice = function (state) {
   const body = $('pickerModalBody');
   body.innerHTML = `<h3>🗺️ Nodo ${run.step + 1}/${TREASURE_HUNT_STEPS}</h3>
     <p class="settings-info">Botín acumulado: 🪙 ${run.pool.texel} · 💎 ${run.pool.gemas}</p>
-    <p class="settings-info">Elige uno de los dos nodos.</p>`;
+    <p class="settings-info">Elige uno de los nodos.</p>`;
   choices.forEach(node => {
     const btn = el('button', 'primary-btn', node.icon + ' ' + node.label);
     btn.style.display = 'block';
@@ -2605,9 +2680,11 @@ UI.openTreasureNodeChoice = function (state) {
 
 UI.resolveTreasureNode = function (state, node) {
   const run = window.__treasureRun;
-  if (node.id === 'ambush') {
-    UI.openBattle(state, buildPlayerCombinations(state), [treasureHuntEnemyRow(run.step)], {
-      title: '🗺️ Cacería del Tesoro · Emboscada',
+  if (node.id === 'ambush' || node.id === 'elite_ambush') {
+    const enemyRow = node.id === 'elite_ambush' ? treasureHuntEliteEnemyRow(run.step) : treasureHuntEnemyRow(run.step);
+    const label = node.id === 'elite_ambush' ? '💀 Emboscada de élite' : '⚔️ Emboscada';
+    UI.openBattle(state, buildPlayerCombinations(state), [enemyRow], {
+      title: '🗺️ Cacería del Tesoro · ' + label,
       zone: { id: 'tesoro', color: '#2a2412' },
       onEnd: (result) => {
         if (result !== 'victoria') {
@@ -2617,12 +2694,13 @@ UI.resolveTreasureNode = function (state, node) {
           saveGame(state);
           return { treasureRetreat: true, pool };
         }
-        const reward = treasureHuntNodeReward('ambush', run.step);
+        const reward = treasureHuntNodeReward(node.id, run.step);
         run.pool.texel += reward.texel; run.pool.gemas += reward.gemas;
+        if (reward.crystalType) run.pool[reward.crystalType] += reward.crystalAmount;
         run.step++;
         run.pendingContinue = true;
         saveGame(state);
-        return { treasureNodeWon: true, nodeLabel: '⚔️ Emboscada', reward };
+        return { treasureNodeWon: true, nodeLabel: label, reward };
       },
     });
     return;
@@ -2631,6 +2709,17 @@ UI.resolveTreasureNode = function (state, node) {
     const outcome = treasureHuntTrapResult(run.pool);
     if (outcome.kind === 'find') { run.pool.gemas += outcome.gemas; UI.showToast(`🕳️ Trampa esquivada — encuentras +${outcome.gemas} 💎 escondidas.`); }
     else { run.pool.texel -= outcome.texel; UI.showToast(`🕳️ ¡Trampa! Pierdes ${outcome.texel} 🪙 del botín acumulado.`); }
+    run.step++;
+    saveGame(state);
+    UI.continueTreasureRun(state);
+    return;
+  }
+  if (node.id === 'market') {
+    const outcome = treasureHuntMarketResult(run.pool);
+    run.pool.texel -= outcome.spend;
+    run.pool[outcome.crystalType] += outcome.crystalAmount;
+    const crystalIcon = CRYSTALS[outcome.crystalType].icon;
+    UI.showToast(`🏪 Cambias ${outcome.spend} 🪙 por +${outcome.crystalAmount} ${crystalIcon} ${CRYSTALS[outcome.crystalType].label}.`);
     run.step++;
     saveGame(state);
     UI.continueTreasureRun(state);
@@ -2682,18 +2771,22 @@ UI.renderElementalDungeons = function (state, wrap) {
   }
   wrap.appendChild(el('p', 'settings-info', `Un equipo de hasta 3 luchadores del MISMO elemento se
     enfrenta a 2 oleadas y un Guardián Elemental del elemento que lo contrarresta — desventaja
-    elemental de partida, así que hace falta buen nivel y equipo para ganar. Recompensa mejor que
-    una etapa normal, con equipo garantizado.`));
+    elemental de partida, así que hace falta buen nivel y equipo para ganar. Cada repetición es MÁS
+    dura que la anterior, sin techo, y da Doxite garantizado en cantidad creciente — cuanto más se
+    repite una mazmorra, más vale la pena y más exige.`));
   const list = el('div', 'torre-list');
   ELEMENT_ORDER.forEach(elementId => {
     const dungeon = ELEMENTAL_DUNGEONS[elementId];
     const teamUids = elementalTeamUids(state, elementId);
     const clears = state.elementalClears[elementId] || 0;
+    const nextMult = elementalDungeonDifficultyMult(clears);
+    const nextDoxite = elementalDungeonDoxiteReward(clears);
     const row = el('div', 'torre-row');
     row.appendChild(creatureCanvas(dungeon.guardianDefId, 40));
     const info = el('div', 'torre-row-info');
     info.appendChild(el('div', 'torre-row-name', ELEMENT_INFO[elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[elementId].label));
-    info.appendChild(el('div', 'torre-row-sub', `Equipo: ${teamUids.length}/3${clears > 0 ? ' · superada ' + clears + 'x' : ''}`));
+    info.appendChild(el('div', 'torre-row-sub', `Equipo: ${teamUids.length}/3${clears > 0 ? ' · superada ' + clears + 'x' : ''}` +
+      ` · próxima: ×${nextMult.toFixed(1)} dificultad, 🟡 +${nextDoxite}`));
     row.appendChild(info);
     const btnCol = el('div', 'torre-row-btns');
     const teamBtn = el('button', 'mini-btn', '👥 Equipo');
@@ -2755,7 +2848,7 @@ UI.startElementalDungeon = function (state, elementId) {
     saveGame(state);
     UI.renderTopbar(state);
   }
-  const encounters = buildElementalDungeonEncounters(elementId);
+  const encounters = buildElementalDungeonEncounters(elementId, state.elementalClears[elementId] || 0);
   window.__championRun = null;
   window.__stageRun = {
     isElemental: true, elementId, isBoss: false,
@@ -5152,6 +5245,7 @@ UI.endBattle = function (view, result) {
     html = `<h3>${outcome.nodeLabel} superada</h3><p class="settings-info">La expedición continúa.</p>
       <div class="stat-row"><span>🪙 Texel</span><span>+${outcome.reward.texel}</span></div>
       <div class="stat-row"><span>💎 Gemas</span><span>+${outcome.reward.gemas}</span></div>`;
+    if (outcome.reward.crystalType) html += `<div class="stat-row"><span>${CRYSTALS[outcome.reward.crystalType].icon} ${CRYSTALS[outcome.reward.crystalType].label}</span><span>+${outcome.reward.crystalAmount}</span></div>`;
   } else if (outcome && outcome.treasureRetreat) {
     html = `<h3>💀 Emboscada perdida — expedición retirada</h3><p class="settings-info">Te retiras con lo que ya habías encontrado antes de la emboscada.</p>
       <div class="stat-row"><span>🪙 Texel cobrado</span><span>+${outcome.pool.texel}</span></div>

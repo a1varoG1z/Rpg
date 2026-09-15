@@ -1040,21 +1040,25 @@ function formationMeetsConstraint(state, constraint) {
 // --- Tope de Tier — Fase 2: Trials de Familia (ver FAMILY_TRIALS en
 // data.js) --- Sin desbloqueo secuencial entre ellos (no son una
 // escalera de poder): cada Trial solo depende de si esa familia se ha
-// conseguido alguna vez (para no listar 112 filas todas en "???") y, para
-// poder EMPEZARLO, de si hay al menos 1 copia fichada ahora mismo en la
-// Formación (huecos vacíos no cuentan, el resto de la Formación puede ser
-// cualquier cosa — a diferencia de la Fase 1, aquí no se restringe nada
-// más que "que esté esa familia").
+// conseguido alguna vez (para no listar 112 filas todas en "???"). Ya no
+// hace falta tenerla fichada en la Formación normal — el equipo se arma
+// DENTRO del propio Trial con los 3 eslabones de su cadena (ver
+// UI.openFamilyTrialSquad en ui.js y buildFamilyTrialSquad en combat.js),
+// y hace falta poseer una copia real de CADA una de las 3 ahora mismo
+// (familyTrialOwnsAllForms) — ya no se rellenan huecos con genéricas.
 function familyTrialClearCount(state, trial) { return state.tierCap.familyTrialClears[trial.id] || 0; }
 function familyTrialDiscovered(state, trial) {
   const discovered = new Set(state.discoveredDefIds || []);
   return trial.formIds.some(id => discovered.has(id));
 }
-function formationHasFamily(state, family) {
-  return state.band.flat().filter(Boolean).some(uid => {
-    const entry = rosterEntry(state, uid);
-    return entry && fighterDef(entry.defId).family === family;
-  });
+// Copias reales en el roster de una forma EXACTA (no de la familia entera
+// — un eslabón concreto de la cadena), de más a menos nivel, para elegir
+// cuál usar en ese hueco del trío (ver UI.openFamilyTrialSquad).
+function ownedCopiesOfForm(state, defId) {
+  return state.roster.filter(e => e.defId === defId).sort((a, b) => b.level - a.level);
+}
+function familyTrialOwnsAllForms(state, trial) {
+  return trial.formIds.every(formId => ownedCopiesOfForm(state, formId).length > 0);
 }
 function recordFamilyTrialClear(state, trial) {
   state.tierCap.familyTrialClears[trial.id] = familyTrialClearCount(state, trial) + 1;

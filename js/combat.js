@@ -407,18 +407,33 @@ function buildTierCapEncounters(level, idx) {
 
 // Trial de familia de Tope de Tier — Fase 2 (ver FAMILY_TRIALS en
 // data.js): UNA sola oleada (a diferencia de todo lo demás en Retos, que
-// encadena varias), con un "guardián" de la MISMA rareza tope que la
-// familia puesta a prueba — ni un trámite ni un muro injusto — y más
-// compañía cuanto más alto su tier (1/2/3 rivales).
+// encadena varias), con "guardianes" de la MISMA rareza tope que la
+// familia puesta a prueba. Endurecido a petición explícita del usuario,
+// sobre la primera versión ya en producción ("en trials de familia
+// también subir la dificultad de los rivales") — encaja además con que
+// el equipo ya no admite genéricas de relleno (ver
+// familyTrialOwnsAllForms, state.js): el trío que se presenta es siempre
+// 3 copias reales, así que el rival puede exigir más sin ser injusto.
+// tier+1 guardianes (2/3/4, antes 1/2/3) con un multiplicador de stats
+// creciente por tier (mult, antes ninguno).
 function buildFamilyTrialEncounter(trial) {
   const pool = FIGHTERS.filter(f => f.rarity === trial.maxRarity);
-  const level = Math.min(XP_LEVEL_CAP, 8 + trial.tier * 10);
+  const level = familyTrialLevel(trial);
+  const mult = 1.2 + trial.tier * 0.2; // tier1: 1.4 · tier2: 1.6 · tier3: 1.8
   const row = [];
-  for (let i = 0; i < trial.tier; i++) {
+  for (let i = 0; i < trial.tier + 1; i++) {
     const def = pool[Math.floor(Math.random() * pool.length)];
-    row.push(makeUnit('enemy', def.id, level));
+    row.push(makeUnit('enemy', def.id, level, mult));
   }
   return row;
+}
+
+// Equipo de un Trial de Familia: SIEMPRE los 3 eslabones de trial.formIds
+// (ya en orden ascendente de rareza) con COPIAS REALES — picks es un
+// array paralelo a formIds de uids ya validados por
+// familyTrialOwnsAllForms (ver UI.startFamilyTrial), nunca null aquí.
+function buildFamilyTrialSquad(state, trial, picks) {
+  return picks.map(uid => makePlayerUnit(state, uid));
 }
 
 // Equipo mono-elemento elegido para una Mazmorra Elemental (ver
@@ -432,12 +447,17 @@ function buildElementalTeamUnits(state, elementId) {
 // 2 oleadas de relleno (3 copias de la forma más fuerte de cada una de 2
 // familias de MOBS del elemento que contrarresta al elegido) + un
 // Guardián Elemental final en solitario (mismo patrón que un jefe de
-// zona, ver makeBossUnit).
-function buildElementalDungeonEncounters(elementId) {
+// zona, ver makeBossUnit). `iteration` (state.elementalClears[elementId]
+// antes del intento actual, ver UI.startElementalDungeon) sube el
+// multiplicador de stats de TODOS los rivales sin techo (ver
+// elementalDungeonDifficultyMult en data.js) — petición explícita del
+// usuario: "cada iteración tiene que ser más complicada".
+function buildElementalDungeonEncounters(elementId, iteration) {
   const dungeon = ELEMENTAL_DUNGEONS[elementId];
   const level = elementalDungeonLevel();
-  const rows = dungeon.waveDefIds.map(defId => [0, 1, 2].map(() => makeUnit('enemy', defId, level)));
-  rows.push([makeBossUnit(dungeon.guardianDefId, level)]);
+  const mult = elementalDungeonDifficultyMult(iteration);
+  const rows = dungeon.waveDefIds.map(defId => [0, 1, 2].map(() => makeUnit('enemy', defId, level, mult)));
+  rows.push([makeBossUnit(dungeon.guardianDefId, level, mult)]);
   return rows;
 }
 
@@ -494,28 +514,30 @@ const ZONE_DOXITE_CHANCE_TOTAL = 1.28; // 32 * 0.04
 // acumularse sin parar sea cual sea el ritmo de juego.
 const ZONE_GEAR_CHANCE_TOTAL = 3.2;
 
-function elementalDungeonRewards(isFirstClear) {
+// `iteration` (state.elementalClears[elementId] antes del intento actual):
+// petición explícita del usuario ("de recompensa doxite, aumentandose la
+// recompensa") — Doxite pasa de una posibilidad menor (40%/8% de +1) a un
+// drop GARANTIZADO cuya cantidad sube con cada repetición, en vez de solo
+// depender del azar. Texel/XP escalan con la misma dificultad creciente
+// (elementalDungeonDifficultyMult) que ya suben los propios rivales, para
+// que una mazmorra más dura pague de verdad más que la anterior.
+function elementalDungeonRewards(isFirstClear, iteration) {
   const zoneIdx = ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID);
+  const mult = elementalDungeonDifficultyMult(iteration);
   // Más generoso que el jefe de esa misma zona (×3.5/×3 en vez de la
   // porción normal de jefe) — la desventaja elemental de partida contra
   // el Guardián hace que el reto sea mayor.
-  const texel = Math.round(zoneTexelTotal(zoneIdx) * 0.35 * 3.5);
-  const fighterXp = Math.round(zoneXpTotal(zoneIdx) * 0.30 * 3);
-  const drops = { voxite: 0, doxite: 0, gear: null };
+  const texel = Math.round(zoneTexelTotal(zoneIdx) * 0.35 * 3.5 * mult);
+  const fighterXp = Math.round(zoneXpTotal(zoneIdx) * 0.30 * 3 * mult);
+  const drops = { voxite: isFirstClear ? 1 : 0, doxite: elementalDungeonDoxiteReward(iteration), gear: null };
   // El equipo aquí era antes incondicional (SIEMPRE caía una pieza, a
-  // diferencia de voxite/doxite justo debajo, que sí distinguen primera vez
-  // de repetición) — con 5 mazmorras (una por elemento) repetibles sin
+  // diferencia de voxite justo debajo, que sí distingue primera vez de
+  // repetición) — con 5 mazmorras (una por elemento) repetibles sin
   // límite, eso era una fuente de equipo garantizada sin tope. Se alinea
   // ahora con el resto del recorte de equipo: garantizado solo la primera
   // vez (premio de hito de la mazmorra), 20% en repeticiones.
   if (Math.random() < (isFirstClear ? 1 : 0.2)) drops.gear = generateGear(randomGearSlot(), gearDropRarity(zoneIdx, isFirstClear));
-  if (isFirstClear) {
-    drops.voxite = 1;
-    if (Math.random() < 0.4) drops.doxite = 1;
-  } else {
-    if (Math.random() < 0.25) drops.voxite = 1;
-    if (Math.random() < 0.08) drops.doxite = 1;
-  }
+  if (!isFirstClear && Math.random() < 0.25) drops.voxite = 1;
   return { texel, fighterXp, drops };
 }
 
@@ -673,17 +695,27 @@ function championDuelRewards(duelIdx) {
 }
 
 // ---------- Torneo de Bracket (Retos) ----------
-// Eliminatoria de 3 combates seguidos contra IA cada vez más fuerte —
-// mismo patrón de rareza creciente que buildChampionOpponent, pero con una
-// FILA de hasta 3 rivales (como el Roguelike) en vez de 1 contra 1, y con
-// solo 3 rondas fijas (no sin techo) así que la escalada es mucho más
-// brusca ronda a ronda. A diferencia del Roguelike, cada ronda se juega con
-// la banda curada al completo (ver UI.fightBracketRound) — un torneo real
+// Eliminatoria de combates seguidos contra IA cada vez más fuerte — mismo
+// patrón de rareza creciente que buildChampionOpponent, pero con una FILA
+// de hasta varios rivales (como el Roguelike) en vez de 1 contra 1, con
+// rondas FIJAS (no sin techo) así que la escalada es mucho más brusca
+// ronda a ronda. A diferencia del Roguelike, cada ronda se juega con la
+// banda curada al completo (ver UI.fightBracketRound) — un torneo real
 // con descanso entre cruces, no una supervivencia.
+//
+// Endurecido a petición explícita del usuario ("con el torneo pasa igual
+// [que Cacería del Tesoro], es demasiado sencillo... toda la sección de
+// retos está pensada para el endgame"): de 3 a 4 rondas, nivel tope
+// (XP_LEVEL_CAP) desde la 2ª ronda en vez de solo la 3ª, más rivales por
+// ronda y un multiplicador de stats por ronda (mult, aplicado como
+// extraMult de makeUnit — el nivel solo ya no basta para seguir
+// escalando una vez todas las rondas tocan el tope de nivel). La última
+// ronda es casi enteramente Legendario: el filo real del torneo.
 const BRACKET_ROUNDS = [
-  { level: 22, count: 2, epicChance: 0.15, legendaryChance: 0.02 },
-  { level: 34, count: 2, epicChance: 0.35, legendaryChance: 0.10 },
-  { level: 46, count: 3, epicChance: 0.55, legendaryChance: 0.25 },
+  { level: 30, count: 2, mult: 1.1, epicChance: 0.35, legendaryChance: 0.10 },
+  { level: 40, count: 3, mult: 1.45, epicChance: 0.45, legendaryChance: 0.30 },
+  { level: 40, count: 3, mult: 1.85, epicChance: 0.30, legendaryChance: 0.60 },
+  { level: 40, count: 4, mult: 2.3, epicChance: 0.15, legendaryChance: 0.85 },
 ];
 function buildBracketOpponentRow(round) {
   const cfg = BRACKET_ROUNDS[round];
@@ -696,12 +728,12 @@ function buildBracketOpponentRow(round) {
         ? FIGHTERS.filter(f => f.rarity === 'epico')
         : FIGHTERS.filter(f => f.rarity === 'comun' || f.rarity === 'infrecuente' || f.rarity === 'raro');
     const def = pool[Math.floor(Math.random() * pool.length)];
-    row.push(makeUnit('enemy', def.id, cfg.level));
+    row.push(makeUnit('enemy', def.id, cfg.level, cfg.mult));
   }
   return row;
 }
 function bracketRoundRewards(round) {
-  return { texel: Math.round(60 + round * 40), fighterXp: Math.round(50 + round * 35) };
+  return { texel: Math.round(80 + round * 60), fighterXp: Math.round(70 + round * 50) };
 }
 // Recompensa de ganar el torneo COMPLETO (las 3 rondas): 10 cristales del
 // mejor tier, pedido explícito del usuario ("10 del mejor tier" = Doxite,
@@ -714,31 +746,45 @@ const BRACKET_WIN_CRYSTAL_TYPE = 'doxite';
 const BRACKET_WIN_CRYSTAL_AMOUNT = 10;
 
 // ---------- Cacería del Tesoro (Retos) ----------
-// Recorrido corto de nodos elegidos por el jugador (ver
-// TREASURE_HUNT_NODE_TYPES) más un guardián final fijo. A diferencia del
-// Torneo de Bracket y el Roguelike, las recompensas de cada nodo NO se
-// suman a la cuenta permanente al momento — se acumulan en un "botín" local
-// de la expedición (run.pool, ver UI.startTreasureHunt) que solo se cobra
-// de verdad al terminar la expedición (guardián derrotado O una emboscada
-// perdida), igual que quien vuelve de una cacería real con lo que ha
-// encontrado hasta el momento en que tiene que retirarse. El único nodo que
-// puede REDUCIR ese botín es la trampa — el resto solo suma, así que el
-// único riesgo real de perder algo ya ganado es la trampa, nunca un combate
+// Recorrido de nodos elegidos por el jugador (ver TREASURE_HUNT_NODE_TYPES)
+// más un guardián final fijo. A diferencia del Torneo de Bracket y el
+// Roguelike, las recompensas de cada nodo NO se suman a la cuenta
+// permanente al momento — se acumulan en un "botín" local de la expedición
+// (run.pool, ver UI.startTreasureHunt) que solo se cobra de verdad al
+// terminar la expedición (guardián derrotado O una emboscada perdida),
+// igual que quien vuelve de una cacería real con lo que ha encontrado
+// hasta el momento en que tiene que retirarse. El único nodo que puede
+// REDUCIR ese botín es la trampa — el resto solo suma, así que el único
+// riesgo real de perder algo ya ganado es la trampa, nunca un combate
 // perdido (una emboscada perdida corta la expedición ahí, pero no borra lo
 // ya encontrado antes).
-const TREASURE_HUNT_STEPS = 5;
+//
+// Endurecido a petición explícita del usuario ("quiero más nodos, más
+// opciones de selección y que los combates sean muchísimo más difíciles,
+// con un equipo legendario no hay oposición en ese reto"):
+// - TREASURE_HUNT_STEPS de 5 a 9 (más nodos que recorrer).
+// - 2 tipos de nodo nuevos (Emboscada de Élite, Mercader furtivo) y 3
+//   opciones por nodo en vez de 2 (más variedad real donde elegir).
+// - Combates mucho más duros: nivel tope antes, más rivales, suelo de
+//   rareza más alto y un multiplicador de stats creciente con el paso
+//   (mult, aplicado como extraMult de makeUnit) — el nivel solo ya se
+//   queda corto en cuanto se llega a XP_LEVEL_CAP, hace falta seguir
+//   escalando por fuera de él para que un equipo Legendario siga sudando.
+const TREASURE_HUNT_STEPS = 9;
 const TREASURE_HUNT_NODE_TYPES = [
-  { id: 'chest_small', icon: '🪙', label: 'Cofre pequeño', weight: 35 },
-  { id: 'chest_large', icon: '💰', label: 'Cofre grande', weight: 20 },
-  { id: 'ambush', icon: '⚔️', label: 'Emboscada', weight: 25 },
-  { id: 'trap', icon: '🕳️', label: 'Trampa', weight: 20 },
+  { id: 'chest_small', icon: '🪙', label: 'Cofre pequeño', weight: 24 },
+  { id: 'chest_large', icon: '💰', label: 'Cofre grande', weight: 15 },
+  { id: 'ambush', icon: '⚔️', label: 'Emboscada', weight: 20 },
+  { id: 'elite_ambush', icon: '💀', label: 'Emboscada de élite', weight: 11 },
+  { id: 'market', icon: '🏪', label: 'Mercader furtivo', weight: 14 },
+  { id: 'trap', icon: '🕳️', label: 'Trampa', weight: 16 },
 ];
-// 2 tipos DISTINTOS (sin repetir del mismo pool), para que la elección
-// entre ambos sea una decisión real y no dos iconos iguales.
+// 3 tipos DISTINTOS (sin repetir del mismo pool, antes 2), para que la
+// elección entre ellos sea una decisión real con más matices.
 function rollTreasureNodeChoices() {
   const pool = [...TREASURE_HUNT_NODE_TYPES];
   const pick = [];
-  for (let i = 0; i < 2 && pool.length; i++) {
+  for (let i = 0; i < 3 && pool.length; i++) {
     const totalWeight = pool.reduce((s, n) => s + n.weight, 0);
     let roll = Math.random() * totalWeight;
     let idx = 0;
@@ -748,30 +794,60 @@ function rollTreasureNodeChoices() {
   return pick;
 }
 function treasureHuntEnemyRow(step) {
-  const level = Math.min(XP_LEVEL_CAP, 10 + step * 8);
-  const count = step < 2 ? 1 : 2;
-  const epicChance = Math.min(0.3, step * 0.06);
+  const level = Math.min(XP_LEVEL_CAP, 16 + step * 5);
+  const count = step < 2 ? 2 : 3;
+  const mult = 1 + step * 0.22;
+  const legendaryChance = Math.min(0.45, step * 0.06);
+  const epicChance = Math.min(0.4, 0.12 + step * 0.04);
   const row = [];
   for (let i = 0; i < count; i++) {
     const roll = Math.random();
-    const pool = roll < epicChance
-      ? FIGHTERS.filter(f => f.rarity === 'epico' || f.rarity === 'raro')
-      : FIGHTERS.filter(f => f.rarity === 'comun' || f.rarity === 'infrecuente');
+    const pool = roll < legendaryChance
+      ? FIGHTERS.filter(f => f.rarity === 'legendario')
+      : roll < legendaryChance + epicChance
+        ? FIGHTERS.filter(f => f.rarity === 'epico' || f.rarity === 'raro')
+        : FIGHTERS.filter(f => f.rarity === 'raro' || f.rarity === 'infrecuente');
     const def = pool[Math.floor(Math.random() * pool.length)];
-    row.push(makeUnit('enemy', def.id, level));
+    row.push(makeUnit('enemy', def.id, level, mult));
   }
   return row;
 }
+// Emboscada de Élite: mismo paso que una emboscada normal pero un rival
+// mucho más serio (casi siempre Épico/Legendario, con más multiplicador de
+// stats) — la opción de riesgo/recompensa alto del recorrido.
+function treasureHuntEliteEnemyRow(step) {
+  const level = Math.min(XP_LEVEL_CAP, 22 + step * 5);
+  const count = step < 4 ? 2 : 3;
+  const mult = 1.5 + step * 0.25;
+  const legendaryChance = Math.min(0.75, 0.3 + step * 0.06);
+  const row = [];
+  for (let i = 0; i < count; i++) {
+    const pool = Math.random() < legendaryChance
+      ? FIGHTERS.filter(f => f.rarity === 'legendario')
+      : FIGHTERS.filter(f => f.rarity === 'epico');
+    const def = pool[Math.floor(Math.random() * pool.length)];
+    row.push(makeUnit('enemy', def.id, level, mult));
+  }
+  return row;
+}
+// Guardián final: antes 1 solo rival Épico/Legendario con un mult apenas
+// perceptible (1.15) — trivial para un equipo endgame. Ahora 3 Legendarios
+// a tope de nivel con mult 2.0, un combate que exige de verdad.
 function treasureHuntGuardianRow() {
-  const pool = FIGHTERS.filter(f => f.rarity === 'epico' || f.rarity === 'legendario');
-  const def = pool[Math.floor(Math.random() * pool.length)];
-  return [makeUnit('enemy', def.id, 40, 1.15)];
+  const pool = FIGHTERS.filter(f => f.rarity === 'legendario');
+  const row = [];
+  for (let i = 0; i < 3; i++) {
+    const def = pool[Math.floor(Math.random() * pool.length)];
+    row.push(makeUnit('enemy', def.id, XP_LEVEL_CAP, 2.0));
+  }
+  return row;
 }
 function treasureHuntNodeReward(nodeId, step) {
   const scale = 1 + step * 0.25;
   if (nodeId === 'chest_small') return { texel: Math.round((30 + Math.random() * 30) * scale), gemas: Math.round(1 + Math.random() * 2) };
   if (nodeId === 'chest_large') return { texel: Math.round((80 + Math.random() * 70) * scale), gemas: Math.round(3 + Math.random() * 3) };
   if (nodeId === 'ambush') return { texel: Math.round((50 + Math.random() * 50) * scale), gemas: Math.round(2 + Math.random() * 3) };
+  if (nodeId === 'elite_ambush') return { texel: Math.round((160 + Math.random() * 100) * scale), gemas: Math.round(7 + Math.random() * 6), crystalType: 'doxite', crystalAmount: 1 };
   return { texel: 0, gemas: 0 };
 }
 function treasureHuntTrapResult(pool) {
@@ -779,9 +855,23 @@ function treasureHuntTrapResult(pool) {
   const lost = Math.min(pool.texel, Math.round(pool.texel * (0.15 + Math.random() * 0.15)));
   return { kind: 'lose', texel: lost };
 }
+// Mercader furtivo: sin combate, cambia una parte del Texel YA acumulado
+// en el botín por un cristal — una forma de convertir un botín ya grande
+// en algo más escaso y valioso a media expedición, en vez de solo seguir
+// sumando Texel.
+function treasureHuntMarketResult(pool) {
+  const spend = Math.min(pool.texel, Math.round(pool.texel * (0.3 + Math.random() * 0.2)));
+  const roll = Math.random();
+  const crystalType = roll < 0.35 ? 'doxite' : roll < 0.65 ? 'voxite' : 'pixite';
+  const crystalAmount = crystalType === 'doxite' ? 1 : crystalType === 'voxite' ? 2 : 3;
+  return { spend, crystalType, crystalAmount };
+}
 function treasureHuntGuardianReward() {
-  const crystalType = ['pixite', 'voxite', 'doxite'][Math.floor(Math.random() * 3)];
-  return { texel: 150 + Math.round(Math.random() * 100), gemas: 8 + Math.round(Math.random() * 6), crystalType, crystalAmount: 2 + Math.round(Math.random() * 2) };
+  const crystalType = Math.random() < 0.5 ? 'doxite' : 'voxite';
+  return {
+    texel: 420 + Math.round(Math.random() * 260), gemas: 18 + Math.round(Math.random() * 10),
+    crystalType, crystalAmount: crystalType === 'doxite' ? 3 + Math.round(Math.random() * 2) : 5 + Math.round(Math.random() * 3),
+  };
 }
 
 // ---------- Roguelike v2: encuentros por acto ----------

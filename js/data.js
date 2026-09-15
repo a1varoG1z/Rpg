@@ -1793,13 +1793,37 @@ function tierCapRewards(idx) {
 // Objetivo (ver TODO.md, diseño acordado con el usuario): un Trial ligero
 // por cada una de las ~112 familias JUGABLES (FIGHTERS) — a diferencia de
 // la Fase 1 (constraint genérica de rareza/elemento/clase, cualquier
-// familia que encaje vale), aquí cada Trial exige tener FICHADA al menos
-// 1 copia de ESA familia concreta en la Formación (ver
-// formationHasFamily en state.js) para poder intentarlo — un combate de
-// 1 SOLA oleada (no un recorrido completo), independiente y rejugable,
-// sin desbloqueo secuencial entre ellos (a diferencia de la Fase 1, esto
-// no es una escalera de poder). Así, completarlos todos obliga a haber
-// conseguido y usado en combate prácticamente todo el roster invocable.
+// familia que encaje vale), aquí cada Trial es un combate de 1 SOLA oleada
+// (no un recorrido completo), independiente y rejugable, sin desbloqueo
+// secuencial entre ellos (a diferencia de la Fase 1, esto no es una
+// escalera de poder). Así, completarlos todos obliga a haber conseguido
+// y usado en combate prácticamente todo el roster invocable.
+//
+// Rediseño (petición explícita del usuario: "quiero que se cambie el
+// enfoque... que el equipo se elija en el propio reto y que se participe
+// con los tres miembros de la familia" — antes bastaba con fichar 1 copia
+// de la familia en la Formación normal, con el resto de huecos libres).
+// Ahora el equipo del Trial se elige DENTRO del propio Trial (ver
+// UI.openFamilyTrialSquad en ui.js) y son SIEMPRE los 3 eslabones de la
+// cadena de esa familia a la vez (trial.formIds, ya en orden ascendente
+// de rareza) — un combate que celebra a la familia entera, no solo su
+// forma final. Como evolucionar MUTA el mismo roster.entry (ver
+// evolveFighter en state.js: entry.defId = def.evolvesTo, no crea una
+// copia nueva), tener las 3 formas reales a la vez en el roster exige
+// haber conservado copias sin evolucionar a propósito.
+//
+// Primera versión: un eslabón sin copia propia se rellenaba con una
+// genérica, para que ningún Trial quedara bloqueado por eso. El usuario,
+// tras probarla, pidió lo contrario ("realmente prefiero que solo se
+// pueda si posees las 3 evoluciones, te saldrán en un desplegable las que
+// tienes disponibles") — exigencia real de coleccionar/conservar la
+// familia entera, sin atajos. familyTrialOwnsAllForms (state.js) exige
+// ahora poseer las 3 formas para poder intentarlo, y cada eslabón se
+// elige con un <select> de las copias propias de esa forma exacta (ver
+// UI.openFamilyTrialSquad). Los rivales, de paso, suben de dificultad
+// (ver buildFamilyTrialEncounter, combat.js): al ser el trío siempre 3
+// copias reales (nunca genéricas débiles), el reto puede exigir más sin
+// dejar de ser justo.
 //
 // FIGHTERS no tiene una "zona de origen" real como MOBS (no aparecen en
 // ZONES.pool, se consiguen por invocación, no por avanzar el mapa), así
@@ -1834,6 +1858,10 @@ const FAMILY_TRIALS = buildFamilyTrials();
 function familyTrialRewards(trial) {
   return { texel: Math.round(40 + trial.globalIdx * 4), fighterXp: Math.round(25 + trial.globalIdx * 3) };
 }
+// Nivel compartido por el rival (buildFamilyTrialEncounter, combat.js) y
+// por cualquier eslabón genérico del propio equipo (makeFamilyTrialProxyUnit,
+// combat.js) — así un hueco sin copia propia ni penaliza ni da ventaja.
+function familyTrialLevel(trial) { return Math.min(XP_LEVEL_CAP, 8 + trial.tier * 10); }
 
 // ---------- Mazmorra Elemental ----------
 // Reto opcional de equipo mono-elemento: se desbloquea al terminar las 6
@@ -1873,6 +1901,18 @@ const ELEMENTAL_DUNGEONS = buildElementalDungeons();
 function elementalDungeonLevel() {
   return zoneEnemyLevel(ZONES.findIndex(z => z.id === ELEMENTAL_DUNGEON_ZONE_ID));
 }
+// Escalada de dificultad por REPETICIÓN (petición explícita del usuario:
+// "en la mazmorra elemental, cada iteración tiene que ser más
+// complicada"). `iteration` es state.elementalClears[elementId] ANTES de
+// registrar el intento actual (0 = primera vez, 1 = segunda...) — sin
+// techo, como roguelikeActDifficultyMult, porque las 5 mazmorras son
+// repetibles sin límite: cada vuelta debe pedir más que la anterior para
+// siempre, no estancarse en un tope fijo.
+function elementalDungeonDifficultyMult(iteration) { return 1 + iteration * 0.3; }
+// Doxite GARANTIZADO por repetición (antes era solo una posibilidad menor
+// — 40%/8% de +1). Compartido entre la recompensa real (elementalDungeonRewards,
+// combat.js) y el aviso "próxima recompensa" de la lista (UI.renderElementalDungeons).
+function elementalDungeonDoxiteReward(iteration) { return 1 + Math.floor(iteration * 0.6); }
 
 // ---------- Arena: temporadas ----------
 // El rango de Arena solo sube nunca (perder no baja) — una vez se llega al

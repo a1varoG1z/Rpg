@@ -6284,6 +6284,65 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Prestigio con los números de 4 y 7-8 cifras todos agrupados
       correctamente (1.500, 1.000.000, 500...). Sanity check general
       limpio (642/102/45/45), sin errores de página.
+- [x] **Trials de Familia: equipo elegido dentro del propio Trial, con
+      los 3 miembros de la familia** (petición explícita del usuario:
+      "quiero que el equipo se elija en el propio reto y que se participe
+      con los tres miembros de la familia"). Antes bastaba con fichar 1
+      copia de la familia en la Formación normal (el resto de huecos
+      libre); ahora el combate se libra SIEMPRE con las 3 formas de la
+      cadena de la familia a la vez, elegidas en una pantalla propia del
+      Trial (`UI.openFamilyTrialSquad`) — no hace falta tocar la
+      Formación. Primera versión: un eslabón sin copia propia se rellenaba
+      con una genérica (`makeFamilyTrialProxyUnit`). Segunda versión, tras
+      probarla (petición explícita: "realmente prefiero que solo se pueda
+      si posees las 3 evoluciones, te saldrán en un desplegable las que
+      tienes disponibles"): sin genéricas — `familyTrialOwnsAllForms`
+      exige poseer ahora mismo una copia real de cada forma, cada eslabón
+      se elige con un `<select>` de las copias propias (por nivel), y el
+      botón de luchar queda deshabilitado con el motivo si falta alguna.
+      Los rivales suben de dificultad de paso (tier+1 guardianes en vez de
+      tier, con un multiplicador de stats por tier) — al ser el trío
+      siempre 3 copias reales, el reto puede exigir más sin ser injusto.
+      Verificado con Playwright en ambas versiones: reseteo/gating
+      correcto, dropdowns con las copias reales y niveles, combate
+      completo con recompensas solo a los picks usados.
+- [x] **Retos endurecidos para endgame** (petición explícita del usuario,
+      tras ver Trials de Familia: "en cacería del tesoro... con un equipo
+      legendario no hay oposición en ese reto. Con el torneo pasa igual...
+      toda la sección de retos está pensada para el endgame"):
+      - **Torneo de Bracket**: de 3 a 4 rondas; nivel tope desde la 2ª
+        ronda (antes solo la 3ª); más rivales por ronda; nuevo
+        multiplicador de stats por ronda (`cfg.mult`, hasta ×2.3 en la
+        ronda final) — el nivel solo ya no basta una vez todas las
+        rondas tocan XP_LEVEL_CAP. Última ronda: 85% de probabilidad
+        Legendario (antes 25%).
+      - **Cacería del Tesoro**: de 5 a 9 nodos; de 2 a 3 opciones por
+        nodo; 2 tipos de nodo nuevos — 💀 Emboscada de Élite (combate
+        mucho más duro, mejor recompensa incl. Doxite) y 🏪 Mercader
+        furtivo (cambia parte del botín acumulado por un cristal, sin
+        combate). Combates mucho más duros: nivel tope antes, más
+        rivales, suelo de rareza más alto y un multiplicador de stats
+        creciente por paso (`mult`, hasta 45% de probabilidad Legendario
+        en el último). Guardián final: de 1 rival Épico/Legendario con
+        mult 1.15 a 3 Legendarios con mult 2.0.
+      - **Mazmorra Elemental**: cada repetición ahora es MÁS difícil que
+        la anterior, sin techo (`elementalDungeonDifficultyMult`,
+        `iteration = state.elementalClears[elementId]` antes del intento
+        — mismo patrón sin techo que `roguelikeActDifficultyMult`),
+        aplicado a los rivales Y a Texel/XP. Doxite pasa de una
+        posibilidad menor (40%/8%) a un drop GARANTIZADO cuya cantidad
+        sube con cada repetición (`elementalDungeonDoxiteReward`) —
+        petición explícita: "de recompensa doxite, aumentandose la
+        recompensa". La lista de mazmorras muestra la dificultad/Doxite
+        de la PRÓXIMA repetición antes de entrar.
+      Verificado con Playwright: Bracket (3 legendarios sin equipo ganan
+      la ronda 1, caen en la 2); Cacería (elemento de élite y guardián
+      con stats muy por encima de antes, mercader intercambia Texel por
+      cristal correctamente); Mazmorra Elemental (iteración 0 = mult 1.0
+      idéntico a antes, iteración 5 = mult 1.9/Doxite 4, rivales y
+      recompensa escalan juntos, run completo jugado de principio a fin
+      con Auto + velocidad 3×). Sanity check general limpio (642/102/45/45)
+      en todo momento.
 
 ## Notas
 
