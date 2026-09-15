@@ -143,36 +143,83 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 @keyframes bossPulse { 0%, 100% { box-shadow: 0 0 14px var(--rg, transparent); } 50% { box-shadow: 0 0 28px var(--rg, transparent); } }
 .creature-card.selected { outline: 3px solid var(--green); outline-offset: 1px; box-shadow: 0 0 12px rgba(76,175,80,0.7); }
 
-/* Prestigio de carta (ver PRESTIGE_TIERS en data.js) — decoración PURAMENTE
-   visual para una copia concreta en su forma final, escalando en 3 pasos:
-   1 (bronce, sutil) -> 2 (plata, con pulso) -> 3 (oro, con barrido
-   giratorio) — la misma idea que el brillo dorado de una Legendaria al
-   salir de un cristal (ver .legendary-reveal en el HTML de invocación) pero
-   permanente en la carta en vez de solo un instante. Aplicado como
-   drop-shadow sobre el propio <img> (no un ::before/::after de tamaño
-   fijo) para que funcione igual de bien en cualquier tamaño de
+/* Prestigio de carta (ver PRESTIGE_TIERS en data.js, applyPrestigeDecoration
+   en ui.js) — decoración PURAMENTE visual para una copia en su forma final.
+   Rediseñado tras feedback directo del usuario ("las dos primeras parecen
+   cutres... que la 3 sea la 1 y en cada decoración más, meter más
+   efectos"): lo que antes era el nivel MÁXIMO (aro dorado giratorio) ahora
+   es el nivel 1 (el mínimo garantizado), y cada nivel por encima AÑADE
+   capas nuevas encima de las anteriores en vez de solo cambiar de color —
+   1 aro -> +2º aro a contragiro +chispas -> +destello tipo starburst
+   +más chispas. Los aros/chispas/destello son elementos reales (no
+   ::before/::after, ya ocupados por el medallón) añadidos por JS solo
+   cuando hay prestigio, con inset en % para escalar a cualquier tamaño de
    creatureCanvas (Formación 46px, Colección ~76px, ficha 90px...). */
-.prestige-1 .creature-canvas { filter: drop-shadow(0 0 4px rgba(205,127,50,0.7)); }
-.prestige-2 .creature-canvas { animation: prestigeGlow2 2.4s ease-in-out infinite; }
-.prestige-3 .creature-canvas { animation: prestigeGlow3 1.8s ease-in-out infinite; }
-@keyframes prestigeGlow2 {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(170,200,255,0.75)); }
-  50% { filter: drop-shadow(0 0 11px rgba(170,200,255,0.95)); }
-}
-@keyframes prestigeGlow3 {
+.prestige-1 .creature-canvas,
+.prestige-2 .creature-canvas,
+.prestige-3 .creature-canvas { animation: prestigeGlow1 2.2s ease-in-out infinite; }
+.prestige-2 .creature-canvas { animation-name: prestigeGlow2; animation-duration: 1.9s; }
+.prestige-3 .creature-canvas { animation-name: prestigeGlow3; animation-duration: 1.5s; }
+@keyframes prestigeGlow1 {
   0%, 100% { filter: drop-shadow(0 0 9px rgba(255,208,80,0.9)) drop-shadow(0 0 4px rgba(255,255,255,0.55)); }
   50% { filter: drop-shadow(0 0 17px rgba(255,208,80,1)) drop-shadow(0 0 8px rgba(255,255,255,0.8)); }
 }
-/* Solo el nivel máximo se gana un barrido giratorio propio, encima de la
-   imagen (z-index 2, por encima del medallón en z-index 0) — inset en % en
-   vez de un tamaño fijo para que cubra el wrap entero sea cual sea su
-   tamaño real en ese sitio de la interfaz. */
-.creature-canvas-wrap.prestige-3::after {
-  content: ''; position: absolute; z-index: 2; inset: -10%; border-radius: 50%;
-  background: conic-gradient(from 0deg, rgba(255,215,90,0) 0%, rgba(255,215,90,0.6) 50%, rgba(255,215,90,0) 100%);
-  animation: prestigeSpin3 3s linear infinite; pointer-events: none; mix-blend-mode: screen;
+@keyframes prestigeGlow2 {
+  0%, 100% { filter: drop-shadow(0 0 11px rgba(255,208,80,0.95)) drop-shadow(0 0 6px rgba(160,220,255,0.7)); }
+  50% { filter: drop-shadow(0 0 20px rgba(255,208,80,1)) drop-shadow(0 0 11px rgba(160,220,255,0.9)); }
 }
-@keyframes prestigeSpin3 { to { transform: rotate(360deg); } }
+@keyframes prestigeGlow3 {
+  0%, 100% { filter: drop-shadow(0 0 13px rgba(255,208,80,1)) drop-shadow(0 0 7px rgba(160,220,255,0.85)) drop-shadow(0 0 4px rgba(255,150,230,0.7)); }
+  50% { filter: drop-shadow(0 0 24px rgba(255,208,80,1)) drop-shadow(0 0 13px rgba(160,220,255,1)) drop-shadow(0 0 8px rgba(255,150,230,0.95)); }
+}
+
+/* Aros giratorios — ring-a en todos los niveles (1+), ring-b (a contragiro,
+   más ancho, tono frío) solo desde el nivel 2. */
+.prestige-ring {
+  position: absolute; z-index: 2; inset: -10%; border-radius: 50%; pointer-events: none; mix-blend-mode: screen;
+}
+.prestige-ring.ring-a {
+  background: conic-gradient(from 0deg, rgba(255,215,90,0) 0%, rgba(255,215,90,0.7) 50%, rgba(255,215,90,0) 100%);
+  animation: prestigeSpinCW 3s linear infinite;
+}
+.prestige-ring.ring-b {
+  inset: -18%;
+  background: conic-gradient(from 90deg, rgba(140,215,255,0) 0%, rgba(140,215,255,0.6) 50%, rgba(140,215,255,0) 100%);
+  animation: prestigeSpinCCW 4.2s linear infinite;
+}
+@keyframes prestigeSpinCW { to { transform: rotate(360deg); } }
+@keyframes prestigeSpinCCW { to { transform: rotate(-360deg); } }
+
+/* Destello tipo starburst — solo nivel 3, capa más ancha detrás de los
+   aros con rayos de luz girando despacio, tono arcoíris tenue para dar
+   sensación de "premium" sin recolorear el sprite en sí (eso viviría en el
+   propio <img>, esto es una capa aparte con mix-blend-mode: screen). */
+.prestige-burst {
+  position: absolute; z-index: 1; inset: -34%; border-radius: 50%; pointer-events: none; mix-blend-mode: screen;
+  background: repeating-conic-gradient(from 0deg,
+    rgba(255,215,90,0.35) 0deg 4deg, rgba(255,215,90,0) 4deg 18deg,
+    rgba(160,220,255,0.28) 18deg 22deg, rgba(160,220,255,0) 22deg 36deg);
+  animation: prestigeSpinCW 9s linear infinite;
+  opacity: 0.8;
+}
+
+/* Chispas — puntitos que orbitan y titilan alrededor del sprite, 4 desde
+   el nivel 2 (spark-0..3) y 4 más desde el nivel 3 (spark-4..7), cada una
+   en un ángulo/retardo distinto (ver --ang en ui.js) para que no titilen
+   todas a la vez. */
+.prestige-spark {
+  position: absolute; z-index: 3; top: 50%; left: 50%; width: 5px; height: 5px; border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #ffd450 55%, rgba(255,212,80,0) 75%);
+  transform: rotate(var(--ang, 0deg)) translate(var(--dist, 34px)) rotate(calc(var(--ang, 0deg) * -1));
+  animation: prestigeTwinkle 1.6s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  pointer-events: none;
+}
+.prestige-3 .prestige-spark { width: 6px; height: 6px; }
+@keyframes prestigeTwinkle {
+  0%, 100% { opacity: 0.15; transform: rotate(var(--ang, 0deg)) translate(var(--dist, 34px)) rotate(calc(var(--ang, 0deg) * -1)) scale(0.6); }
+  50% { opacity: 1; transform: rotate(var(--ang, 0deg)) translate(var(--dist, 34px)) rotate(calc(var(--ang, 0deg) * -1)) scale(1.3); }
+}
 /* .battle-unit no usa --rc/--rg (nunca los necesitó para rareza normal),
    así que el marco de jefe en combate se declara directo, sin depender
    de la variable. */

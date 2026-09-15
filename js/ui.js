@@ -216,16 +216,42 @@ function sortRosterEntries(state, roster, mode, variant) {
   }
 }
 
+// Decoración de Prestigio (ver PRESTIGE_TIERS en data.js) — construye los
+// elementos decorativos EXTRA según el nivel, siempre sobre el propio
+// .creature-canvas-wrap (nunca sobre un ancestro: los aros/destello usan
+// inset en %, así que necesitan medir contra el wrap, que es el que tiene
+// el tamaño real del sprite). Cada nivel AÑADE capas encima del anterior en
+// vez de solo cambiar de color (petición del usuario tras ver el primer
+// intento: "en cada decoración más, meter más efectos") — 1 aro -> +2º aro
+// a contragiro +4 chispas -> +destello starburst +4 chispas más.
+function applyPrestigeDecoration(wrap, tier) {
+  if (!tier) return;
+  wrap.classList.add('prestige-' + tier);
+  if (tier >= 3) wrap.appendChild(el('div', 'prestige-burst'));
+  wrap.appendChild(el('div', 'prestige-ring ring-a'));
+  if (tier >= 2) wrap.appendChild(el('div', 'prestige-ring ring-b'));
+  const sparkCount = tier >= 3 ? 8 : tier >= 2 ? 4 : 0;
+  for (let i = 0; i < sparkCount; i++) {
+    const spark = el('div', 'prestige-spark');
+    const angle = (360 / sparkCount) * i;
+    spark.style.setProperty('--ang', angle + 'deg');
+    spark.style.setProperty('--dist', (tier >= 3 ? 38 : 34) + 'px');
+    spark.style.setProperty('--delay', (i * 0.18) + 's');
+    wrap.appendChild(spark);
+  }
+}
+
 function creatureCard(state, entry, opts) {
   opts = opts || {};
   const def = fighterDef(entry.defId);
   const rarity = rarityInfoFor(def);
-  const card = el('div', 'creature-card rarity-' + rarity.id + (entry.prestige ? ' prestige-' + entry.prestige : ''));
+  const card = el('div', 'creature-card rarity-' + rarity.id);
   card.style.setProperty('--rc', rarity.color);
   card.style.setProperty('--rg', rarity.glow);
   if (entry.isNew) card.appendChild(el('div', 'new-badge', '¡Nuevo!'));
   const wrap = el('div', 'creature-canvas-wrap');
   wrap.appendChild(creatureCanvas(entry.defId));
+  applyPrestigeDecoration(wrap, entry.prestige);
   card.appendChild(wrap);
   const badge = el('div', 'creature-elclass');
   badge.textContent = ELEMENT_INFO[def.element].icon + CLASS_INFO[def.class].icon;
@@ -2769,8 +2795,9 @@ UI.renderBanda = function (state) {
           slot.classList.add('rarity-' + rarity.id);
           slot.style.setProperty('--rc', rarity.color);
           slot.style.setProperty('--rg', rarity.glow);
-          const wrap = el('div', 'creature-canvas-wrap' + (entry.prestige ? ' prestige-' + entry.prestige : ''));
+          const wrap = el('div', 'creature-canvas-wrap');
           wrap.appendChild(creatureCanvas(entry.defId, 46));
+          applyPrestigeDecoration(wrap, entry.prestige);
           slot.appendChild(wrap);
           slot.appendChild(el('div', 'formation-lvl', 'Nv.' + entry.level));
           if (isCenter && def.leaderSkillId) slot.appendChild(el('div', 'leader-crown', '👑'));
@@ -3131,8 +3158,9 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   const body = $('fighterModalBody');
   body.innerHTML = '';
   const head = el('div', 'fighter-modal-head');
-  const portraitWrap = el('div', 'creature-canvas-wrap' + (entry.prestige ? ' prestige-' + entry.prestige : ''));
+  const portraitWrap = el('div', 'creature-canvas-wrap');
   portraitWrap.appendChild(creatureCanvas(entry.defId, 90));
+  applyPrestigeDecoration(portraitWrap, entry.prestige);
   head.appendChild(portraitWrap);
   const info = el('div');
   const vuln = TYPE_VULNERABILITY[def.class];
