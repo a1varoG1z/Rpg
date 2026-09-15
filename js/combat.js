@@ -759,28 +759,49 @@ const BRACKET_WIN_CRYSTAL_AMOUNT = 10;
 // perdido (una emboscada perdida corta la expedición ahí, pero no borra lo
 // ya encontrado antes).
 //
-// Endurecido a petición explícita del usuario ("quiero más nodos, más
-// opciones de selección y que los combates sean muchísimo más difíciles,
-// con un equipo legendario no hay oposición en ese reto"):
-// - TREASURE_HUNT_STEPS de 5 a 9 (más nodos que recorrer).
-// - 2 tipos de nodo nuevos (Emboscada de Élite, Mercader furtivo) y 3
-//   opciones por nodo en vez de 2 (más variedad real donde elegir).
-// - Combates mucho más duros: nivel tope antes, más rivales, suelo de
-//   rareza más alto y un multiplicador de stats creciente con el paso
-//   (mult, aplicado como extraMult de makeUnit) — el nivel solo ya se
-//   queda corto en cuanto se llega a XP_LEVEL_CAP, hace falta seguir
-//   escalando por fuera de él para que un equipo Legendario siga sudando.
-const TREASURE_HUNT_STEPS = 9;
+// Endurecido a petición explícita del usuario, en dos rondas:
+// 1) "quiero más nodos, más opciones de selección y que los combates sean
+//    muchísimo más difíciles, con un equipo legendario no hay oposición" —
+//    de 5 a 9 nodos, 2 tipos nuevos, 3 opciones por nodo.
+// 2) "quiero que contenga muchos más nodos... no quiero que aumentes el
+//    número para elegir en cada nodo, 3 está bien, pero quiero que
+//    aumentes muchísimo la VARIEDAD de esas opciones" — de 9 a
+//    TREASURE_HUNT_STEPS nodos (el doble) y de 6 a 12 tipos de nodo
+//    distintos, sin tocar las 3 opciones por paso. Los 6 tipos nuevos no
+//    son variantes de los ya existentes — cada uno tiene un mecanismo
+//    propio que no tenía ningún otro nodo: una bendición que dura el
+//    resto de la expedición, una apuesta con Gemas YA propias (no del
+//    botín), una elección de verdad DENTRO del nodo (sigilo o ataque), un
+//    cristal garantizado sin pasar por combate, un sacrificio de riesgo
+//    real (puede no dar nada a cambio) y una oleada de enjambre (muchos
+//    rivales flojos, en vez de pocos fuertes).
+//
+// Rescalado de dificultad: los combates ya escalaban con `step` sin
+// techo (mult = base + step×tasa) — duplicar TREASURE_HUNT_STEPS sin
+// tocar esa tasa habría disparado el último nodo mucho más allá de lo ya
+// calibrado (mult llegaría a ~4.7 en vez de ~2.8). Las tasas bajan a la
+// mitad para que el ÚLTIMO nodo del recorrido largo alcance
+// aproximadamente el mismo techo que alcanzaba el último nodo del
+// recorrido corto — la dificultad de pico no cambia, solo se reparte en
+// una rampa más larga y gradual.
+const TREASURE_HUNT_STEPS = 18;
 const TREASURE_HUNT_NODE_TYPES = [
-  { id: 'chest_small', icon: '🪙', label: 'Cofre pequeño', weight: 24 },
-  { id: 'chest_large', icon: '💰', label: 'Cofre grande', weight: 15 },
-  { id: 'ambush', icon: '⚔️', label: 'Emboscada', weight: 20 },
-  { id: 'elite_ambush', icon: '💀', label: 'Emboscada de élite', weight: 11 },
-  { id: 'market', icon: '🏪', label: 'Mercader furtivo', weight: 14 },
-  { id: 'trap', icon: '🕳️', label: 'Trampa', weight: 16 },
+  { id: 'chest_small', icon: '🪙', label: 'Cofre pequeño', weight: 16 },
+  { id: 'chest_large', icon: '💰', label: 'Cofre grande', weight: 10 },
+  { id: 'ambush', icon: '⚔️', label: 'Emboscada', weight: 14 },
+  { id: 'elite_ambush', icon: '💀', label: 'Emboscada de élite', weight: 8 },
+  { id: 'pack_hunters', icon: '🐺', label: 'Jauría', weight: 10 },
+  { id: 'market', icon: '🏪', label: 'Mercader furtivo', weight: 9 },
+  { id: 'trap', icon: '🕳️', label: 'Trampa', weight: 10 },
+  { id: 'blessing', icon: '🙏', label: 'Altar de Bendición', weight: 9 },
+  { id: 'wishing_well', icon: '⛲', label: 'Fuente de los Deseos', weight: 8 },
+  { id: 'sleeping_guardian', icon: '😴', label: 'Guardián Dormido', weight: 7 },
+  { id: 'ancient_crypt', icon: '⚰️', label: 'Cripta Antigua', weight: 8 },
+  { id: 'sacrifice_altar', icon: '🩸', label: 'Altar de Sacrificio', weight: 7 },
 ];
-// 3 tipos DISTINTOS (sin repetir del mismo pool, antes 2), para que la
-// elección entre ellos sea una decisión real con más matices.
+// 3 tipos DISTINTOS (sin repetir del mismo pool), para que la elección
+// entre ellos sea una decisión real con más matices — con 12 tipos en el
+// pool, cada paso puede tocar una combinación bien distinta de la anterior.
 function rollTreasureNodeChoices() {
   const pool = [...TREASURE_HUNT_NODE_TYPES];
   const pick = [];
@@ -794,11 +815,11 @@ function rollTreasureNodeChoices() {
   return pick;
 }
 function treasureHuntEnemyRow(step) {
-  const level = Math.min(XP_LEVEL_CAP, 16 + step * 5);
-  const count = step < 2 ? 2 : 3;
-  const mult = 1 + step * 0.22;
-  const legendaryChance = Math.min(0.45, step * 0.06);
-  const epicChance = Math.min(0.4, 0.12 + step * 0.04);
+  const level = Math.min(XP_LEVEL_CAP, 14 + step * 3);
+  const count = step < 4 ? 2 : 3;
+  const mult = 1 + step * 0.11;
+  const legendaryChance = Math.min(0.45, step * 0.032);
+  const epicChance = Math.min(0.4, 0.12 + step * 0.02);
   const row = [];
   for (let i = 0; i < count; i++) {
     const roll = Math.random();
@@ -816,10 +837,10 @@ function treasureHuntEnemyRow(step) {
 // mucho más serio (casi siempre Épico/Legendario, con más multiplicador de
 // stats) — la opción de riesgo/recompensa alto del recorrido.
 function treasureHuntEliteEnemyRow(step) {
-  const level = Math.min(XP_LEVEL_CAP, 22 + step * 5);
-  const count = step < 4 ? 2 : 3;
-  const mult = 1.5 + step * 0.25;
-  const legendaryChance = Math.min(0.75, 0.3 + step * 0.06);
+  const level = Math.min(XP_LEVEL_CAP, 20 + step * 3);
+  const count = step < 8 ? 2 : 3;
+  const mult = 1.5 + step * 0.12;
+  const legendaryChance = Math.min(0.75, 0.3 + step * 0.032);
   const row = [];
   for (let i = 0; i < count; i++) {
     const pool = Math.random() < legendaryChance
@@ -829,6 +850,33 @@ function treasureHuntEliteEnemyRow(step) {
     row.push(makeUnit('enemy', def.id, level, mult));
   }
   return row;
+}
+// Jauría: el reverso de la Emboscada de Élite — en vez de pocos rivales
+// muy fuertes, MUCHOS rivales de rareza baja/media (4-5, crece con el
+// paso) pero cada uno bastante más flojo. Mismo peligro agregado que una
+// emboscada normal, pero un patrón de combate distinto (repartir daño
+// entre varios objetivos en vez de concentrarlo en 2-3).
+function treasureHuntPackEnemyRow(step) {
+  const level = Math.min(XP_LEVEL_CAP, 12 + step * 3);
+  const count = step < 6 ? 4 : 5;
+  const mult = 0.6 + step * 0.05;
+  const row = [];
+  for (let i = 0; i < count; i++) {
+    const pool = FIGHTERS.filter(f => f.rarity === 'infrecuente' || f.rarity === 'raro');
+    const def = pool[Math.floor(Math.random() * pool.length)];
+    row.push(makeUnit('enemy', def.id, level, mult));
+  }
+  return row;
+}
+// Guardián Dormido — mitad del combate: si se elige "Atacar" (ver
+// UI.resolveSleepingGuardian), un guardián intermedio entre una Emboscada
+// de Élite y el Guardián final, de un solo rival muy tanque.
+function treasureHuntSleepingGuardianRow(step) {
+  const level = Math.min(XP_LEVEL_CAP, 24 + step * 3);
+  const mult = 1.7 + step * 0.13;
+  const pool = FIGHTERS.filter(f => f.rarity === 'legendario');
+  const def = pool[Math.floor(Math.random() * pool.length)];
+  return [makeUnit('enemy', def.id, level, mult)];
 }
 // Guardián final: antes 1 solo rival Épico/Legendario con un mult apenas
 // perceptible (1.15) — trivial para un equipo endgame. Ahora 3 Legendarios
@@ -843,11 +891,12 @@ function treasureHuntGuardianRow() {
   return row;
 }
 function treasureHuntNodeReward(nodeId, step) {
-  const scale = 1 + step * 0.25;
+  const scale = 1 + step * 0.15;
   if (nodeId === 'chest_small') return { texel: Math.round((30 + Math.random() * 30) * scale), gemas: Math.round(1 + Math.random() * 2) };
   if (nodeId === 'chest_large') return { texel: Math.round((80 + Math.random() * 70) * scale), gemas: Math.round(3 + Math.random() * 3) };
   if (nodeId === 'ambush') return { texel: Math.round((50 + Math.random() * 50) * scale), gemas: Math.round(2 + Math.random() * 3) };
   if (nodeId === 'elite_ambush') return { texel: Math.round((160 + Math.random() * 100) * scale), gemas: Math.round(7 + Math.random() * 6), crystalType: 'doxite', crystalAmount: 1 };
+  if (nodeId === 'pack_hunters') return { texel: Math.round((70 + Math.random() * 60) * scale), gemas: Math.round(3 + Math.random() * 4) };
   return { texel: 0, gemas: 0 };
 }
 function treasureHuntTrapResult(pool) {
@@ -865,6 +914,91 @@ function treasureHuntMarketResult(pool) {
   const crystalType = roll < 0.35 ? 'doxite' : roll < 0.65 ? 'voxite' : 'pixite';
   const crystalAmount = crystalType === 'doxite' ? 1 : crystalType === 'voxite' ? 2 : 3;
   return { spend, crystalType, crystalAmount };
+}
+// Altar de Bendición: sin combate, ninguna recompensa inmediata — en vez
+// de eso, un buff aleatorio que se queda para el RESTO de la expedición
+// (ver applyTreasureHuntBuffs, aplicado a cada combate siguiente: emboscadas,
+// Jauría, Guardián Dormido y el Guardián final). Con varios Altares en la
+// misma run los buffs se ACUMULAN (no se sustituyen).
+const TREASURE_HUNT_BLESSINGS = [
+  { id: 'atk', label: '+18% Ataque', icon: '⚔️', stat: 'atk', pct: 0.18 },
+  { id: 'def', label: '+18% Defensa', icon: '🛡️', stat: 'def', pct: 0.18 },
+  { id: 'agi', label: '+18% Agilidad', icon: '💨', stat: 'agi', pct: 0.18 },
+  { id: 'wis', label: '+18% Sabiduría', icon: '🧠', stat: 'wis', pct: 0.18 },
+  { id: 'hp', label: '+18% Vida máxima', icon: '❤️', stat: 'hp', pct: 0.18 },
+];
+function rollTreasureHuntBlessing() {
+  return TREASURE_HUNT_BLESSINGS[Math.floor(Math.random() * TREASURE_HUNT_BLESSINGS.length)];
+}
+// Aplica TODOS los buffs de Bendición acumulados en la run a una fila de
+// unidades ya construidas (después de makeUnit/makePlayerUnit) — mismo
+// patrón que applyRoguelikeRelicStats (ui.js), pero sobre stats planas en
+// vez de sobre entry.stats, porque aquí no hay una "run.squad" propia:
+// afecta a quien vaya en la Formación normal (buildPlayerCombinations).
+function applyTreasureHuntBuffs(units, run) {
+  if (!run.buffs || !run.buffs.length) return;
+  units.forEach(u => {
+    run.buffs.forEach(b => {
+      if (b.stat === 'hp') { u.maxHp = Math.round(u.maxHp * (1 + b.pct)); u.hp = u.maxHp; }
+      else u[b.stat] = Math.round(u[b.stat] * (1 + b.pct));
+    });
+  });
+}
+// Fuente de los Deseos: sin combate, apuesta GEMAS YA PROPIAS del jugador
+// (state.currencies.gemas, NO el botín de la run) por un premio aleatorio
+// que sí va al botín — a diferencia de la Trampa (riesgo pasivo/
+// automático) o el Mercader (cambio siempre seguro), aquí el jugador
+// arriesga algo que ya tenía fuera de la expedición a cambio de un
+// premio que puede ser mucho mayor... o casi nada.
+const TREASURE_HUNT_WISHING_WELL_COST = 5;
+function treasureHuntWishingWellResult(step, cost) {
+  const scale = 1 + step * 0.15;
+  const roll = Math.random();
+  if (roll < 0.08) return { tier: 'jackpot', texel: Math.round(220 * scale), crystalType: 'doxite', crystalAmount: 1, cost };
+  if (roll < 0.30) return { tier: 'grande', texel: Math.round(120 * scale), gemas: Math.round(4 * scale), cost };
+  if (roll < 0.65) return { tier: 'mediano', texel: Math.round(50 * scale), gemas: Math.round(1 * scale), cost };
+  return { tier: 'pequeño', texel: Math.round(15 * scale), cost };
+}
+// Guardián Dormido: al elegir el nodo se presenta una 2ª decisión real
+// (ver UI.openSleepingGuardianChoice) — "pasar de puntillas" (sin
+// combate, premio modesto garantizado) o "atacar" (combate contra
+// treasureHuntSleepingGuardianRow, premio mucho mejor con cristal
+// incluido). La única opción del recorrido con una elección DENTRO de la
+// propia elección.
+function treasureHuntSleepingGuardianSneakReward(step) {
+  const scale = 1 + step * 0.15;
+  return { texel: Math.round((60 + Math.random() * 40) * scale), gemas: Math.round(2 + Math.random() * 2) };
+}
+function treasureHuntSleepingGuardianAttackReward(step) {
+  const scale = 1 + step * 0.15;
+  const crystalType = Math.random() < 0.5 ? 'doxite' : 'voxite';
+  return {
+    texel: Math.round((200 + Math.random() * 120) * scale), gemas: Math.round((9 + Math.random() * 6) * scale),
+    crystalType, crystalAmount: crystalType === 'doxite' ? 1 : 2,
+  };
+}
+// Cripta Antigua: sin combate, SIEMPRE un cristal (nunca Texel/Gemas
+// solos) — a diferencia del resto de nodos sin combate, que dan moneda
+// como mucho con una posibilidad de cristal de refilón. La probabilidad
+// de que sea Doxite en vez de Voxite/Pixite crece con el paso.
+function treasureHuntCryptReward(step) {
+  const doxiteChance = Math.min(0.5, 0.1 + step * 0.025);
+  const voxiteChance = 0.4;
+  const roll = Math.random();
+  const crystalType = roll < doxiteChance ? 'doxite' : roll < doxiteChance + voxiteChance ? 'voxite' : 'pixite';
+  const crystalAmount = crystalType === 'doxite' ? 1 : crystalType === 'voxite' ? 2 : 3;
+  return { crystalType, crystalAmount };
+}
+// Altar de Sacrificio: sin combate, apuesta una parte GRANDE del Texel YA
+// ACUMULADO en el botín (a diferencia del Mercader, que siempre da algo
+// seguro a cambio) por una POSIBILIDAD de un cristal grande — puede no
+// dar nada en absoluto, un riesgo real y deliberado en vez del riesgo
+// pasivo de la Trampa.
+function treasureHuntSacrificeResult(pool) {
+  const spend = Math.min(pool.texel, Math.round(pool.texel * (0.4 + Math.random() * 0.2)));
+  if (Math.random() < 0.5) return { kind: 'fail', spend };
+  const crystalType = Math.random() < 0.4 ? 'doxite' : 'voxite';
+  return { kind: 'success', spend, crystalType, crystalAmount: crystalType === 'doxite' ? 2 : 3 };
 }
 function treasureHuntGuardianReward() {
   const crystalType = Math.random() < 0.5 ? 'doxite' : 'voxite';

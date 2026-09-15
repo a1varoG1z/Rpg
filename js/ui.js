@@ -838,11 +838,22 @@ UI.openGuide = function () {
 
   body.appendChild(guideSection('🗺️ Cacería del Tesoro', `
     <p class="settings-info">Contenido de endgame: expedición de ${TREASURE_HUNT_STEPS} nodos elegidos por
-    ti entre 3 opciones (cofres, emboscadas normales o de élite, el Mercader furtivo que cambia parte del
-    botín por cristales, trampas) más un guardián final de 3 Legendarios. Los combates escalan mucho más
-    allá del nivel tope — hace falta un equipo bien equipado, no solo de rareza alta. Las recompensas se
-    acumulan en un botín de la expedición que se cobra al volver — con éxito o tras una emboscada perdida,
-    que corta la expedición pero no borra lo ya encontrado. Solo la trampa puede reducir ese botín.</p>`));
+    ti entre 3 opciones de ${TREASURE_HUNT_NODE_TYPES.length} tipos posibles, más un guardián final de 3
+    Legendarios. Los combates escalan mucho más allá del nivel tope — hace falta un equipo bien equipado,
+    no solo de rareza alta.</p>
+    <p class="settings-info">⚔️ <b>Emboscada</b>/💀 <b>Emboscada de élite</b>/🐺 <b>Jauría</b>: combate normal,
+    contra un rival muy fuerte o contra un enjambre numeroso. 😴 <b>Guardián Dormido</b>: elige entre pasar
+    de puntillas (sin riesgo, premio modesto) o atacarlo (combate duro, mejor premio con cristal). 🙏
+    <b>Altar de Bendición</b>: sin combate, un buff aleatorio para el resto de la expedición (se acumula si
+    sale más de uno). 🩸 <b>Altar de Sacrificio</b>: apuesta una parte grande del botín de Texel por la
+    posibilidad de un cristal grande — puede no dar nada a cambio. ⛲ <b>Fuente de los Deseos</b>: paga
+    Gemas YA TUYAS (no del botín) por un premio aleatorio, del modesto al bote. ⚰️ <b>Cripta Antigua</b>:
+    sin combate, cristal garantizado siempre. 🏪 <b>Mercader furtivo</b>: cambia parte del botín de Texel
+    por un cristal, siempre seguro. 🪙 <b>Cofres</b>: recompensa instantánea. 🕳️ <b>Trampa</b>: puede dar
+    Gemas o quitar Texel del botín.</p>
+    <p class="settings-info">Las recompensas se acumulan en un botín de la expedición que se cobra al
+    volver — con éxito o tras un combate perdido, que corta la expedición pero no borra lo ya encontrado.
+    Solo la Trampa y el Altar de Sacrificio pueden reducir ese botín.</p>`));
 
   body.appendChild(guideSection('🌀 Roguelike', `
     <p class="settings-info">Se desbloquea al superar los ${TORRE_LEVELS.length} niveles de la Torre
@@ -2656,11 +2667,13 @@ UI.fightBracketRound = function (state) {
 UI.renderTreasureHunt = function (state, wrap) {
   wrap.appendChild(el('h3', null, '🗺️ Cacería del Tesoro'));
   wrap.appendChild(el('p', 'settings-info', `Expedición de ${TREASURE_HUNT_STEPS} nodos: elige entre 3
-    opciones en cada paso (cofres, emboscadas normales o de élite, el Mercader furtivo, trampas) y termina
-    contra 3 Guardianes Legendarios. Contenido de endgame — mucho más duro que una etapa normal, incluso con
-    un equipo Legendario bien equipado. Solo la trampa puede reducir el botín ya encontrado — una emboscada
-    perdida corta la expedición ahí, pero no borra lo que ya llevabas. El botín entero se cobra al volver,
-    con éxito o en retirada.`));
+    opciones en cada paso, de entre ${TREASURE_HUNT_NODE_TYPES.length} tipos distintos — cofres, emboscadas
+    (normales, de élite o en Jauría), el Guardián Dormido (sigilo o ataque, tu decisión), altares (de
+    Bendición o de Sacrificio), la Fuente de los Deseos, el Mercader furtivo, una Cripta con cristal
+    garantizado o una trampa — y termina contra 3 Guardianes Legendarios. Contenido de endgame — mucho más
+    duro que una etapa normal, incluso con un equipo Legendario bien equipado. Solo la trampa y el Altar de
+    Sacrificio pueden reducir el botín ya encontrado — una emboscada perdida corta la expedición ahí, pero
+    no borra lo que ya llevabas. El botín entero se cobra al volver, con éxito o en retirada.`));
   const panel = el('div', 'panel');
   panel.innerHTML = `<div class="stat-row"><span>Expediciones completadas</span><span>${state.treasureHunt.runsCompleted}</span></div>
     <div class="stat-row"><span>Mejor botín de Texel</span><span>${state.treasureHunt.bestHaul}</span></div>`;
@@ -2682,9 +2695,28 @@ UI.startTreasureHunt = function (state) {
   window.__stageRun = null;
   window.__roguelikeRun = null;
   window.__bracketRun = null;
-  window.__treasureRun = { step: 0, pool: { texel: 0, gemas: 0, pixite: 0, voxite: 0, doxite: 0 } };
+  window.__treasureRun = { step: 0, pool: { texel: 0, gemas: 0, pixite: 0, voxite: 0, doxite: 0 }, buffs: [] };
   UI.continueTreasureRun(state);
 };
+// Construye la fila de jugador para un combate de Cacería del Tesoro con
+// los buffs de Altar de Bendición ya acumulados aplicados — usado por
+// TODOS los combates del modo (emboscadas, Jauría, Guardián Dormido en
+// modo ataque y el Guardián final), para no repetir la llamada a
+// applyTreasureHuntBuffs en cada punto por separado.
+//
+// buildPlayerCombinations comparte UN mismo objeto de unidad entre todas
+// las líneas que contienen a ese luchador (una celda puede pertenecer a
+// su fila, su columna y hasta 2 diagonales a la vez, ver su comentario en
+// combat.js) — aplicar el buff línea a línea lo aplicaría varias veces al
+// mismo luchador. Se aplica una sola vez por uid real, no por línea.
+function treasureHuntPlayerCombos(state, run) {
+  const combos = buildPlayerCombinations(state);
+  const seen = new Set();
+  const uniqueUnits = [];
+  combos.forEach(row => row.forEach(u => { if (!seen.has(u.id)) { seen.add(u.id); uniqueUnits.push(u); } }));
+  applyTreasureHuntBuffs(uniqueUnits, run);
+  return combos;
+}
 
 // Punto único de avance de la expedición: decide si toca el siguiente nodo
 // elegible o ya el guardián final, según cuántos nodos se llevan resueltos
@@ -2721,10 +2753,12 @@ UI.openTreasureNodeChoice = function (state) {
 
 UI.resolveTreasureNode = function (state, node) {
   const run = window.__treasureRun;
-  if (node.id === 'ambush' || node.id === 'elite_ambush') {
-    const enemyRow = node.id === 'elite_ambush' ? treasureHuntEliteEnemyRow(run.step) : treasureHuntEnemyRow(run.step);
-    const label = node.id === 'elite_ambush' ? '💀 Emboscada de élite' : '⚔️ Emboscada';
-    UI.openBattle(state, buildPlayerCombinations(state), [enemyRow], {
+  if (node.id === 'ambush' || node.id === 'elite_ambush' || node.id === 'pack_hunters') {
+    const enemyRow = node.id === 'elite_ambush' ? treasureHuntEliteEnemyRow(run.step)
+      : node.id === 'pack_hunters' ? treasureHuntPackEnemyRow(run.step)
+      : treasureHuntEnemyRow(run.step);
+    const label = node.id === 'elite_ambush' ? '💀 Emboscada de élite' : node.id === 'pack_hunters' ? '🐺 Jauría' : '⚔️ Emboscada';
+    UI.openBattle(state, treasureHuntPlayerCombos(state, run), [enemyRow], {
       title: '🗺️ Cacería del Tesoro · ' + label,
       zone: { id: 'tesoro', color: '#2a2412' },
       onEnd: (result) => {
@@ -2766,6 +2800,57 @@ UI.resolveTreasureNode = function (state, node) {
     UI.continueTreasureRun(state);
     return;
   }
+  if (node.id === 'blessing') {
+    const blessing = rollTreasureHuntBlessing();
+    run.buffs.push({ stat: blessing.stat, pct: blessing.pct });
+    UI.showToast(`🙏 ${blessing.icon} ${blessing.label} para el resto de la expedición.`);
+    run.step++;
+    saveGame(state);
+    UI.continueTreasureRun(state);
+    return;
+  }
+  if (node.id === 'wishing_well') {
+    const cost = Math.min(TREASURE_HUNT_WISHING_WELL_COST, state.currencies.gemas);
+    const outcome = treasureHuntWishingWellResult(run.step, cost);
+    state.currencies.gemas -= outcome.cost;
+    run.pool.texel += outcome.texel || 0;
+    if (outcome.gemas) run.pool.gemas += outcome.gemas;
+    if (outcome.crystalType) run.pool[outcome.crystalType] += outcome.crystalAmount;
+    const tierLabel = { jackpot: '¡BOTE!', grande: 'premio grande', mediano: 'premio', pequeño: 'premio modesto' }[outcome.tier];
+    const crystalPart = outcome.crystalType ? ` y +${outcome.crystalAmount} ${CRYSTALS[outcome.crystalType].icon}` : '';
+    UI.showToast(`⛲ Pagas ${outcome.cost} 💎 propias — ${tierLabel}: +${outcome.texel} 🪙${crystalPart}.`);
+    run.step++;
+    saveGame(state);
+    UI.continueTreasureRun(state);
+    return;
+  }
+  if (node.id === 'ancient_crypt') {
+    const reward = treasureHuntCryptReward(run.step);
+    run.pool[reward.crystalType] += reward.crystalAmount;
+    UI.showToast(`⚰️ La cripta guardaba +${reward.crystalAmount} ${CRYSTALS[reward.crystalType].icon} ${CRYSTALS[reward.crystalType].label}.`);
+    run.step++;
+    saveGame(state);
+    UI.continueTreasureRun(state);
+    return;
+  }
+  if (node.id === 'sacrifice_altar') {
+    const outcome = treasureHuntSacrificeResult(run.pool);
+    run.pool.texel -= outcome.spend;
+    if (outcome.kind === 'success') {
+      run.pool[outcome.crystalType] += outcome.crystalAmount;
+      UI.showToast(`🩸 Sacrificas ${outcome.spend} 🪙 — ¡el altar responde! +${outcome.crystalAmount} ${CRYSTALS[outcome.crystalType].icon} ${CRYSTALS[outcome.crystalType].label}.`);
+    } else {
+      UI.showToast(`🩸 Sacrificas ${outcome.spend} 🪙 — el altar permanece en silencio. No consigues nada a cambio.`);
+    }
+    run.step++;
+    saveGame(state);
+    UI.continueTreasureRun(state);
+    return;
+  }
+  if (node.id === 'sleeping_guardian') {
+    UI.openSleepingGuardianChoice(state);
+    return;
+  }
   // Cofres: sin combate, recompensa instantánea.
   const reward = treasureHuntNodeReward(node.id, run.step);
   run.pool.texel += reward.texel; run.pool.gemas += reward.gemas;
@@ -2775,9 +2860,61 @@ UI.resolveTreasureNode = function (state, node) {
   UI.continueTreasureRun(state);
 };
 
+// Guardián Dormido: única opción del recorrido con una 2ª decisión real
+// dentro del propio nodo — "pasar de puntillas" (sin combate, premio
+// modesto garantizado) o "atacar" (combate de verdad, mejor premio con
+// cristal incluido).
+UI.openSleepingGuardianChoice = function (state) {
+  const run = window.__treasureRun;
+  const body = $('pickerModalBody');
+  body.innerHTML = `<h3>😴 Guardián Dormido</h3>
+    <p class="settings-info">Duerme sobre un botín considerable. Puedes pasar de puntillas sin arriesgar
+    nada, o atacarlo mientras está indefenso — más difícil que una Emboscada de Élite, pero con
+    mejor recompensa.</p>`;
+  const sneakBtn = el('button', 'primary-btn', '🥷 Pasar de puntillas');
+  sneakBtn.style.display = 'block'; sneakBtn.style.width = '100%'; sneakBtn.style.marginBottom = '8px';
+  sneakBtn.addEventListener('click', () => {
+    $('pickerModal').classList.add('hidden');
+    const reward = treasureHuntSleepingGuardianSneakReward(run.step);
+    run.pool.texel += reward.texel; run.pool.gemas += reward.gemas;
+    UI.showToast(`🥷 Pasas sin despertarlo — +${reward.texel} 🪙 · +${reward.gemas} 💎`);
+    run.step++;
+    saveGame(state);
+    UI.continueTreasureRun(state);
+  });
+  body.appendChild(sneakBtn);
+  const attackBtn = el('button', 'primary-btn', '⚔️ Atacar');
+  attackBtn.style.display = 'block'; attackBtn.style.width = '100%';
+  attackBtn.addEventListener('click', () => {
+    $('pickerModal').classList.add('hidden');
+    UI.openBattle(state, treasureHuntPlayerCombos(state, run), [treasureHuntSleepingGuardianRow(run.step)], {
+      title: '🗺️ Cacería del Tesoro · 😴 Guardián Dormido',
+      zone: { id: 'tesoro', color: '#2a2412' },
+      onEnd: (result) => {
+        if (result !== 'victoria') {
+          const pool = run.pool;
+          bankTreasureHuntPool(state, pool);
+          window.__treasureRun = null;
+          saveGame(state);
+          return { treasureRetreat: true, pool };
+        }
+        const reward = treasureHuntSleepingGuardianAttackReward(run.step);
+        run.pool.texel += reward.texel; run.pool.gemas += reward.gemas;
+        run.pool[reward.crystalType] += reward.crystalAmount;
+        run.step++;
+        run.pendingContinue = true;
+        saveGame(state);
+        return { treasureNodeWon: true, nodeLabel: '😴 Guardián Dormido', reward };
+      },
+    });
+  });
+  body.appendChild(attackBtn);
+  $('pickerModal').classList.remove('hidden');
+};
+
 UI.fightTreasureGuardian = function (state) {
   const run = window.__treasureRun;
-  UI.openBattle(state, buildPlayerCombinations(state), [treasureHuntGuardianRow()], {
+  UI.openBattle(state, treasureHuntPlayerCombos(state, run), [treasureHuntGuardianRow()], {
     title: '🗺️ Cacería del Tesoro · Guardián del tesoro',
     zone: { id: 'tesoro', color: '#2a2412' },
     onEnd: (result) => {

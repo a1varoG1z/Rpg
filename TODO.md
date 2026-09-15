@@ -6428,6 +6428,59 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       2.48 > Murallas Caídas 2.33); un bloqueo de una zona FUERA del
       tramo final (Llanura del Titán) sobrevive intacto. Sanity check
       general limpio (642/102/45/45).
+- [x] **Cacería del Tesoro: más nodos y muchísima más variedad de tipos**
+      (petición explícita del usuario: "quiero que contenga muchos más
+      nodos... no quiero que aumentes el número para elegir en cada
+      nodo, 3 está bien, pero quiero que aumentes muchísimo la VARIEDAD
+      de esas opciones"). De 9 a 18 nodos (el doble), 3 opciones por
+      paso sin cambios, de 6 a 12 tipos de nodo distintos — 6 nuevos con
+      mecanismo propio, no variantes de los ya existentes:
+      - 🙏 **Altar de Bendición**: sin combate, un buff aleatorio
+        (+18% ATK/DEF/AGI/WIS/HP) que dura el RESTO de la expedición —
+        se acumula si sale más de uno. Aplicado a todos los combates
+        siguientes (`applyTreasureHuntBuffs`).
+      - ⛲ **Fuente de los Deseos**: sin combate, apuesta Gemas YA
+        PROPIAS del jugador (no del botín) por un premio aleatorio del
+        botín — del modesto al bote (8% de probabilidad).
+      - 😴 **Guardián Dormido**: única opción con una 2ª decisión real
+        DENTRO del nodo — pasar de puntillas (sin combate, premio
+        modesto) o atacar (combate contra un único Legendario muy
+        tanque, mejor premio con cristal).
+      - ⚰️ **Cripta Antigua**: sin combate, SIEMPRE un cristal (nunca
+        Texel/Gemas solos) — la probabilidad de Doxite crece con el
+        paso.
+      - 🩸 **Altar de Sacrificio**: sin combate, apuesta una parte
+        grande del Texel YA acumulado en el botín por la posibilidad
+        (50%) de un cristal grande — puede no dar nada a cambio, a
+        diferencia del Mercader furtivo (siempre seguro).
+      - 🐺 **Jauría**: combate, el reverso de la Emboscada de Élite —
+        4-5 rivales flojos en vez de 2-3 fuertes, mismo peligro
+        agregado con un patrón de combate distinto.
+      Las fórmulas de dificultad de los combates (`treasureHuntEnemyRow`/
+      `treasureHuntEliteEnemyRow`) ya escalaban con `step` sin techo —
+      doblar TREASURE_HUNT_STEPS sin más habría disparado el último nodo
+      muy por encima de lo ya calibrado (mult ~4.7 en vez de ~2.8). Las
+      tasas de crecimiento se redujeron a la mitad para que el nodo
+      FINAL del recorrido largo alcance aproximadamente el mismo techo
+      que alcanzaba el final del recorrido corto — mismo pico de
+      dificultad, repartido en una rampa más gradual.
+      **Bug real encontrado y corregido durante la verificación**:
+      `buildPlayerCombinations` comparte un mismo objeto de unidad entre
+      TODAS las líneas de la Formación que contienen a ese luchador (una
+      celda puede pertenecer a su fila, columna y hasta 2 diagonales a
+      la vez) — aplicar `applyTreasureHuntBuffs` línea a línea reaplicaba
+      el buff varias veces al mismo luchador (verificado: 2 bendiciones
+      de +18% ATK acababan multiplicando ×2.70 en vez de ×1.39). Corregido
+      deduplicando por `u.id` antes de aplicar los buffs una sola vez por
+      unidad real, sea cual sea el nº de líneas a las que pertenezca.
+      Verificado con Playwright: los 4 mecanismos sin combate resuelven
+      correctamente por separado; el Guardián Dormido muestra su
+      sub-elección y resuelve ambas ramas; los buffs de Bendición dan
+      exactamente el ratio esperado (×1.18 por buff, no compuesto) tanto
+      con 1 luchador como con una Formación de 9 completa; una expedición
+      completa jugada de principio a fin con Auto + velocidad 3× pasa por
+      9 tipos de nodo distintos sin ningún error de página. Sanity check
+      general limpio (642/102/45/45).
 
 ## Notas
 
