@@ -6362,6 +6362,47 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       (nivel 0, 3 oleadas de 10 = 30, el mismo total que daba antes solo
       al final); un roster de nivel 10 (no tope) acumula 10→20→30 de xp
       real oleada a oleada. Sanity check general limpio (642/102/45/45).
+- [x] **Últimas 2 zonas del Mapa endurecidas de verdad** (petición
+      explícita del usuario: "¿son más fáciles las últimas dos zonas?
+      hay que subirles la dificultad" — confirmado por la propia
+      calibración anterior: el comentario de bossAdaptiveMult, state.js,
+      ya documentaba que una banda maxed de referencia recibía "72-73%
+      de daño... sin cambio significativo" entre una zona intermedia
+      tardía y la última). Causa raíz: `lateZoneMult` (data.js) crece con
+      raíz cuadrada más allá de LEVEL_CAP_ZONE_IDX, así que decelera
+      tanto que, a 15-16 zonas de ese tope, apenas queda diferencia entre
+      una zona y la siguiente — el tramo que debería ser el clímax del
+      Mapa se sentía como una meseta. Para los MOBS del camino encima:
+      verificado con simulación real que el jefe (bossAdaptiveMult) ni
+      siquiera notaba esa meseta — el techo de su ajuste por overpower
+      (`Math.min(4.5×lateZoneMult, overpower^0.85)`) casi nunca se
+      llegaba a tocar de verdad con una banda realista, así que su
+      dificultad dependía casi solo del ruido de qué mob concreto fuera
+      `zone.pool[0]` en cada zona, sin ninguna tendencia ascendente real.
+      Arreglo con dos piezas nuevas en data.js, ambas escaladas SOLO en
+      las últimas `FINAL_STRETCH_ZONES` (4) zonas — sin tocar ni una
+      pizca la calibración ya validada de las ~17 zonas anteriores:
+      - `lateZoneMult` gana un tramo lineal aparte (`FINAL_STRETCH_ADD_RATE`)
+        que se SUMA a la curva sqrt existente, para los mobs (que ya lo
+        multiplican de forma directa en `mobMult`, combat.js).
+      - `finalStretchMult`, nuevo, se aplica de forma DIRECTA (no solo
+        como techo) al resultado final de `bossAdaptiveMult` — así el
+        jefe SÍ nota el tramo final de verdad, no solo cuando su
+        overpower llega a tocar un techo que en la práctica casi nunca
+        toca.
+      Ambas tasas se calibraron por combate real (no solo mirando el
+      número), con la banda de referencia de siempre YA EQUIPADA (9
+      Legendarios Nv.40 3★, equipo Legendario Nv.15 en las 6 ranuras) —
+      el primer intento (0.22 para ambas) convertía un "reto real, gana
+      recibiendo más daño del que hace" en un "baño de sangre total,
+      pierde siempre" — demasiado, por la naturaleza multiplicativa de
+      extraMult sobre HP+DEF+ATK a la vez. Bajado a 0.05 (jefe) / 0.06
+      (mobs): la banda de referencia gana la mayoría de oleadas de mobs
+      con daño recibido real (~9.000-11.000, antes trivial) y el jefe
+      final pasa a un ~50% de victorias reñidas de verdad (antes ganaba
+      casi siempre con margen), sin llegar a ser un muro imposible.
+      Verificado con Playwright/combate real repetido varias veces en
+      cada escenario. Sanity check general limpio (642/102/45/45).
 
 ## Notas
 

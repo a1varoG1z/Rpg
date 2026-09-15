@@ -796,6 +796,20 @@ function applyFormationPreset(state, presetId) {
 // tapered de arriba protege esa calibración tardía sea cual sea este
 // valor, porque ahí bossLevelCorrectionMult ya vale ~1.
 //
+// ACTUALIZACIÓN: ese "sin cambio significativo" entre Llanura del Titán
+// y Salón de los Engaños era precisamente el problema, no una garantía —
+// el usuario, jugando ya el tramo final, notó que las 2 últimas zonas
+// (Torre Prohibida y Salón de los Engaños) no se sentían más duras que
+// las anteriores, y pidió subirles la dificultad. Verificado el motivo:
+// el techo de `overpower^0.85` de más abajo casi nunca llegaba a tocarse
+// con una banda maxed real, así que ni siquiera dependía de zona en
+// zona — el jefe de las últimas zonas variaba solo por el ruido de qué
+// mob concreto fuera zone.pool[0] en cada una. finalStretchMult
+// (data.js) se aplica ahora de forma DIRECTA al resultado (no solo como
+// techo) en las últimas FINAL_STRETCH_ZONES zonas — así el % de daño
+// recibido de la banda maxed ya SÍ sube de verdad en ese tramo final, en
+// vez de quedarse plano.
+//
 // MIN_BAND_FOR_BOOST: ni este refuerzo ni el "overpower" de más abajo se
 // aplican con una banda todavía muy pequeña (menos de 6 huecos ocupados,
 // como la banda inicial de solo 3) — verificado por simulación: la
@@ -851,7 +865,17 @@ function bossAdaptiveMult(state, zoneIdx) {
       }
     }
   }
-  return result * playerDifficultyMult(state);
+  // finalStretchMult (data.js) aparte del techo de arriba: verificado con
+  // una banda maxed de referencia que ese techo casi nunca se llega a
+  // tocar de verdad (overpower^0.85 se queda muy por debajo), así que
+  // subirlo solo no bastaba — el jefe de las últimas zonas dependía casi
+  // solo de qué mob concreto fuera zone.pool[0] en cada una (ruido sin
+  // tendencia ascendente real), no de lo avanzada que estuviera el Mapa.
+  // Este factor SÍ se nota siempre, de forma directa, en las últimas
+  // FINAL_STRETCH_ZONES zonas — petición explícita del usuario tras
+  // notar que las 2 últimas zonas no se sentían más duras que las
+  // anteriores.
+  return result * finalStretchMult(zoneIdx) * playerDifficultyMult(state);
 }
 
 // Mismo concepto que bossAdaptiveMult pero para los MOBS de una etapa

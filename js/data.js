@@ -1326,9 +1326,68 @@ function earlyGameBoostMult(baseline, maxBoost) {
 // nivel tope, al ser contenido pensado para jugarse tras terminar el mapa
 // entero).
 const LATE_ZONE_GROWTH_RATE = 0.35;
+// Refuerzo final (petición explícita del usuario: "¿son más fáciles las
+// últimas dos zonas [Torre Prohibida y Salón de los Engaños]? hay que
+// subirles la dificultad" — confirmado por la propia calibración previa,
+// ver el comentario de bossAdaptiveMult en state.js: una banda maxed
+// recibía "72-73% de daño... sin cambio significativo" entre una zona
+// intermedia tardía y la última). La raíz es que sqrt() decelera tanto
+// que, tan cerca del final, casi no queda diferencia zona a zona — un
+// tramo final que debería ser el clímax del Mapa se sentía como una
+// meseta. En vez de tocar LATE_ZONE_GROWTH_RATE (afectaría a las ~17
+// zonas posteriores a LEVEL_CAP_ZONE_IDX ya calibradas una a una, no solo
+// a las 2 últimas), se añade un tramo lineal SOLO en las últimas
+// FINAL_STRETCH_ZONES zonas, creciendo cuanto más cerca del final —así
+// la propia última zona (Salón de los Engaños) queda claramente por
+// encima de la penúltima (Torre Prohibida), y ambas por encima de
+// cualquier zona anterior al tramo final.
+const FINAL_STRETCH_ZONES = 4;
+// 0.06, no el 0.22 del primer intento: lateZoneMult alimenta DOS sitios a
+// la vez para los mobs (mobMult en buildEnemyBand, combat.js, Y el techo
+// de mobAdaptiveMult aquí abajo — Math.min(MOB_OVERPOWER_CAP×lateZoneMult,
+// overpower^0.7)), así que un empujón que parecía moderado mirando solo el
+// número de lateZoneMult resultó doblemente compuesto en combate real: una
+// oleada de mobs que antes ganaba la banda de referencia equipada pasaba a
+// perderla de calle. 0.06 deja una oleada final claramente más dura
+// (~9000-11000 de daño recibido en vez de ~trivial) sin cruzar a derrota
+// garantizada.
+const FINAL_STRETCH_ADD_RATE = 0.06;
+// Tasa APARTE para el jefe (finalStretchMult, más abajo): un jefe fixedStats
+// aplica el mismo extraMult a HP+DEF (más aguante) Y a ATK (más daño) a la
+// vez, así que multiplicar su resultado final por (1+x) compone mucho más
+// fuerte que sumar esa misma x a lateZoneMult (que ahí se suma sobre una
+// base sqrt ya bastante grande, un empujón relativo mucho más pequeño).
+// Verificado por combate real con la banda de referencia YA equipada
+// (9 Legendarios Nv.40 3★, equipo Legendario Nv.15 en las 6 ranuras, la
+// misma referencia de siempre): con 0.22 aquí, una banda que antes ganaba
+// recibiendo más daño del que hacía (12635 hecho / 18050 recibido, un
+// combate reñido de verdad) pasaba a un baño de sangre total (1637 hecho
+// / 41868 recibido) — de "reto real" a "imposible". 0.05 sube el jefe lo
+// bastante para notarse sin cruzar esa línea.
+const FINAL_STRETCH_BOSS_RATE = 0.05;
+// Aparte de lateZoneMult (de donde sale — ver arriba), expuesto también
+// como multiplicador independiente: bossAdaptiveMult (state.js) NO puede
+// limitarse a subir el techo de su ajuste por overpower como hacen los
+// mobs (mobMult ya multiplica por lateZoneMult de forma directa, ver
+// buildEnemyBand en combat.js) — verificado con una banda maxed de
+// referencia que ese techo (Math.min(4.5×lateZoneMult, overpower^0.85))
+// casi NUNCA llega a tocarlo de verdad (overpower^0.85 se queda muy por
+// debajo), así que subirlo no cambiaba nada real: el jefe de las últimas
+// zonas dependía casi solo del ruido de qué mob concreto fuera
+// zone.pool[0] en cada una (sin ninguna tendencia ascendente real de
+// zona en zona), no de lo avanzada que estuviera el Mapa. bossAdaptiveMult
+// aplica este factor de forma DIRECTA al resultado final, igual que los
+// mobs, para que el jefe también note de verdad el tramo final.
+function finalStretchMult(zoneIdx) {
+  const zonesFromEnd = ZONES.length - 1 - zoneIdx;
+  return zonesFromEnd < FINAL_STRETCH_ZONES ? 1 + (FINAL_STRETCH_ZONES - zonesFromEnd) * FINAL_STRETCH_BOSS_RATE : 1;
+}
 function lateZoneMult(zoneIdx) {
   const zonesPastCap = Math.max(0, zoneIdx - LEVEL_CAP_ZONE_IDX);
-  return zonesPastCap === 0 ? 1 : 1 + Math.sqrt(zonesPastCap) * LATE_ZONE_GROWTH_RATE;
+  const base = zonesPastCap === 0 ? 1 : 1 + Math.sqrt(zonesPastCap) * LATE_ZONE_GROWTH_RATE;
+  const zonesFromEnd = ZONES.length - 1 - zoneIdx;
+  const finalStretchAdd = zonesFromEnd < FINAL_STRETCH_ZONES ? (FINAL_STRETCH_ZONES - zonesFromEnd) * FINAL_STRETCH_ADD_RATE : 0;
+  return base + finalStretchAdd;
 }
 
 // ---------- Torre Batalla ----------
