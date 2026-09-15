@@ -6249,6 +6249,41 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       cargas posteriores (el flag lo impide), y el panel de Prestigio
       muestra los números grandes con separador de miles sin errores de
       página. Sanity check general limpio (642/102/45/45).
+- [x] **Prestigio de carta: segundo endurecido** (petición explícita del
+      usuario sobre el endurecido anterior, ya en producción: "tiene que
+      ser mucho más exigente"). `PRESTIGE_TIERS` sube otra vez, esta vez
+      de forma mucho más agresiva — el tier máximo pasa de miles a
+      DECENAS de miles de combates:
+      - Decoración: 1.500 combates, 1.000 víctimas, 1.000.000 de daño,
+        500 ultis (antes 400/300/250.000/150) — coste 50.000 Texel +
+        150 Pixite.
+      - Decoración intermedia: 6.000 combates, 5.000 víctimas, 6.000.000
+        de daño, 2.500 ultis (antes 1.500/1.200/1.200.000/600) — coste
+        250.000 Texel + 400 Voxite.
+      - Decoración máxima: 20.000 combates, 16.000 víctimas, 25.000.000
+        de daño, 8.000 ultis (antes 5.000/4.000/5.000.000/2.000) —
+        coste 1.000.000 Texel + 600 Doxite (el cristal más raro de
+        conseguir de los tres).
+      **Reseteo retroactivo, otra vez**: el flag booleano
+      `state.prestigeRebalanced` del primer endurecido se sustituye por
+      un contador `PRESTIGE_REBALANCE_VERSION` (data.js) comparado con
+      `state.prestigeRebalancedVersion` (state.js) — cualquier partida
+      por debajo de la versión actual (incluida una que ya pasara por el
+      primer reseteo con el flag booleano) vuelve a poner todo el
+      prestigio del roster a 0 una vez más. Subir el número de nuevo en
+      el futuro basta para forzar otro reseteo sin tocar la lógica de
+      migración. `objRow` y el coste del panel de Prestigio pasan a
+      `useGrouping:'always'` en el separador de miles — el es-ES por
+      defecto no agrupa números de 4 cifras (1500 salía "1500" en vez de
+      "1.500"), algo que con los nuevos requisitos de 4 cifras (1.500,
+      6.000, 500, 2.500...) sí se notaba.
+      Verificado con Playwright: partida con el flag booleano antiguo Y
+      prestige=3 se resetea a 0 y queda marcada en la versión nueva;
+      partida ya en la versión nueva con prestige=1 (ganado bajo las
+      reglas actuales) NO se resetea en cargas posteriores; panel de
+      Prestigio con los números de 4 y 7-8 cifras todos agrupados
+      correctamente (1.500, 1.000.000, 500...). Sanity check general
+      limpio (642/102/45/45), sin errores de página.
 
 ## Notas
 
