@@ -414,14 +414,25 @@ function buildTierCapEncounters(level, idx) {
 // el equipo ya no admite genéricas de relleno (ver
 // familyTrialOwnsAllForms, state.js): el trío que se presenta es siempre
 // 3 copias reales, así que el rival puede exigir más sin ser injusto.
-// tier+1 guardianes (2/3/4, antes 1/2/3) con un multiplicador de stats
-// creciente por tier (mult, antes ninguno).
+// tier+1 guardianes (2/3/3, antes 2/3/4 — ver fix de count abajo) con un
+// multiplicador de stats creciente por tier (mult, antes ninguno).
+//
+// Fix: tier3 (familias tope Legendario) pedía tier+1 = 4 guardianes, el
+// MISMO bug que el usuario reportó primero en el Torneo de Bracket y
+// luego en la Jauría de Cacería del Tesoro ("en trials de familia pasa
+// lo mismo") — el motor de combate por bandas solo admite filas de HASTA
+// 3 luchadores (cabecera de combat.js), así que la línea de 3 del
+// jugador se enfrentaba a 4 guardianes a la vez en cualquier Trial de
+// tier 3. Corregido con Math.min(3, ...) y compensando la dificultad
+// perdida en tier3 con un mult mayor (1.8 → 2.1, misma proporción usada
+// para compensar la ronda 4 del Torneo).
 function buildFamilyTrialEncounter(trial) {
   const pool = FIGHTERS.filter(f => f.rarity === trial.maxRarity);
   const level = familyTrialLevel(trial);
-  const mult = 1.2 + trial.tier * 0.2; // tier1: 1.4 · tier2: 1.6 · tier3: 1.8
+  const mult = trial.tier === 3 ? 2.1 : 1.2 + trial.tier * 0.2; // tier1: 1.4 · tier2: 1.6 · tier3: 2.1
+  const count = Math.min(3, trial.tier + 1);
   const row = [];
-  for (let i = 0; i < trial.tier + 1; i++) {
+  for (let i = 0; i < count; i++) {
     const def = pool[Math.floor(Math.random() * pool.length)];
     row.push(makeUnit('enemy', def.id, level, mult));
   }

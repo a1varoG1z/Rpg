@@ -6503,6 +6503,20 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       enemigos; la Jauría en distintos pasos de la expedición reparte
       correctamente sus 4-5 rivales en oleadas de máximo 3 (p.ej. [3,2]).
       Sanity check general limpio (642/102/45/45).
+- [x] **Fix: mismo bug en Trials de Familia** (reportado por el usuario
+      tras el fix anterior: "en trials de familia pasa lo mismo").
+      `buildFamilyTrialEncounter` sacaba `trial.tier + 1` guardianes —
+      2/3/4 para tier 1/2/3 — pero `trial.tier` va de 1 a 3
+      (TIER_BY_MAX_RARITY en data.js), así que cualquier Trial de familia
+      tope Legendario (tier 3) enfrentaba a la línea de 3 del jugador
+      contra 4 guardianes a la vez, la misma violación del límite de 3
+      del motor de combate por bandas que ya se había corregido en el
+      Torneo de Bracket y en la Jauría. Corregido con
+      `Math.min(3, trial.tier + 1)` y compensando la dificultad perdida
+      en tier 3 subiendo su mult de 1.8 a 2.1 (misma proporción usada
+      para compensar la ronda 4 del Torneo). Verificado con Playwright:
+      20 encuentros generados por tier dan siempre 2/3/3 guardianes
+      (antes 2/3/4). Sanity check general limpio (642/102/45/45).
 
 ## Notas
 
