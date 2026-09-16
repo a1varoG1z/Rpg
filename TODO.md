@@ -6481,6 +6481,28 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       completa jugada de principio a fin con Auto + velocidad 3× pasa por
       9 tipos de nodo distintos sin ningún error de página. Sanity check
       general limpio (642/102/45/45).
+- [x] **Fix: la ronda 4 del Torneo de Bracket enfrentaba a 4 rivales a la
+      vez** (bug reportado por el usuario: "en el torneo me ha tocado
+      enfrentarme a 4 rivales a la vez, eso está mal, el máximo a la vez
+      combatiendo son 3"). El endurecimiento de dificultad del Torneo
+      (ver entrada anterior sobre Bracket/Cacería/Trials) había subido
+      `count` a 4 en la última ronda de `BRACKET_ROUNDS`, pero el motor de
+      combate por bandas está documentado como "filas de HASTA 3
+      luchadores" (cabecera de combat.js) — un enemigo de más rompía esa
+      regla y enfrentaba a la línea de 3 del jugador contra 4 rivales a
+      la vez. Corregido volviendo `count` a 3 y compensando la dificultad
+      perdida subiendo `mult` de 2.3 a 2.7.
+      Durante la revisión se encontró el MISMO bug ya presente en la
+      Jauría (`pack_hunters`, uno de los 6 nodos nuevos de Cacería del
+      Tesoro de la entrada anterior): `treasureHuntPackEnemyRow` metía
+      sus 4-5 rivales en una única fila. Corregido repartiéndolos en
+      varias oleadas consecutivas de hasta 3 (mismo patrón que usan los
+      stages normales con más de 3 mobs), conservando la sensación de
+      "muchos rivales" sin romper el 3 vs 3. Verificado con Playwright:
+      la ronda 4 del Torneo ahora abre el combate con exactamente 3
+      enemigos; la Jauría en distintos pasos de la expedición reparte
+      correctamente sus 4-5 rivales en oleadas de máximo 3 (p.ej. [3,2]).
+      Sanity check general limpio (642/102/45/45).
 
 ## Notas
 

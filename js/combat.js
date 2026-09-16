@@ -707,15 +707,20 @@ function championDuelRewards(duelIdx) {
 // [que Cacería del Tesoro], es demasiado sencillo... toda la sección de
 // retos está pensada para el endgame"): de 3 a 4 rondas, nivel tope
 // (XP_LEVEL_CAP) desde la 2ª ronda en vez de solo la 3ª, más rivales por
-// ronda y un multiplicador de stats por ronda (mult, aplicado como
-// extraMult de makeUnit — el nivel solo ya no basta para seguir
-// escalando una vez todas las rondas tocan el tope de nivel). La última
-// ronda es casi enteramente Legendario: el filo real del torneo.
+// ronda (hasta el tope real de 3 que respeta el motor de combate por
+// bandas, ver comentario en la cabecera del archivo — la 4ª ronda llegó a
+// probar count:4, un bug reportado por el usuario: "me ha tocado
+// enfrentarme a 4 rivales a la vez, eso está mal, el máximo a la vez
+// combatiendo son 3", corregido de vuelta a 3 y compensado subiendo mult)
+// y un multiplicador de stats por ronda (mult, aplicado como extraMult de
+// makeUnit — el nivel solo ya no basta para seguir escalando una vez
+// todas las rondas tocan el tope de nivel). La última ronda es casi
+// enteramente Legendario: el filo real del torneo.
 const BRACKET_ROUNDS = [
   { level: 30, count: 2, mult: 1.1, epicChance: 0.35, legendaryChance: 0.10 },
   { level: 40, count: 3, mult: 1.45, epicChance: 0.45, legendaryChance: 0.30 },
   { level: 40, count: 3, mult: 1.85, epicChance: 0.30, legendaryChance: 0.60 },
-  { level: 40, count: 4, mult: 2.3, epicChance: 0.15, legendaryChance: 0.85 },
+  { level: 40, count: 3, mult: 2.7, epicChance: 0.15, legendaryChance: 0.85 },
 ];
 function buildBracketOpponentRow(round) {
   const cfg = BRACKET_ROUNDS[round];
@@ -856,17 +861,29 @@ function treasureHuntEliteEnemyRow(step) {
 // paso) pero cada uno bastante más flojo. Mismo peligro agregado que una
 // emboscada normal, pero un patrón de combate distinto (repartir daño
 // entre varios objetivos en vez de concentrarlo en 2-3).
+//
+// Devuelve VARIAS oleadas (filas de hasta 3, el tope real del motor de
+// combate por bandas — ver cabecera del archivo) en vez de una única fila
+// de 4-5. Primera versión metía los 4-5 en una sola fila y reproducía
+// exactamente el bug que el usuario reportó en el Torneo de Bracket ("me
+// ha tocado enfrentarme a 4 rivales a la vez, eso está mal, el máximo a
+// la vez combatiendo son 3") — aquí se corrige repartiendo la jauría en
+// oleadas consecutivas sin curación entre medias (mismo patrón que
+// STAGES_PER_ZONE para stages con más de 3 mobs), conservando la
+// sensación de "muchos rivales" sin romper el 3 vs 3.
 function treasureHuntPackEnemyRow(step) {
   const level = Math.min(XP_LEVEL_CAP, 12 + step * 3);
   const count = step < 6 ? 4 : 5;
   const mult = 0.6 + step * 0.05;
-  const row = [];
+  const pool = FIGHTERS.filter(f => f.rarity === 'infrecuente' || f.rarity === 'raro');
+  const units = [];
   for (let i = 0; i < count; i++) {
-    const pool = FIGHTERS.filter(f => f.rarity === 'infrecuente' || f.rarity === 'raro');
     const def = pool[Math.floor(Math.random() * pool.length)];
-    row.push(makeUnit('enemy', def.id, level, mult));
+    units.push(makeUnit('enemy', def.id, level, mult));
   }
-  return row;
+  const rows = [];
+  for (let i = 0; i < units.length; i += 3) rows.push(units.slice(i, i + 3));
+  return rows;
 }
 // Guardián Dormido — mitad del combate: si se elige "Atacar" (ver
 // UI.resolveSleepingGuardian), un guardián intermedio entre una Emboscada

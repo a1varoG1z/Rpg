@@ -2754,11 +2754,15 @@ UI.openTreasureNodeChoice = function (state) {
 UI.resolveTreasureNode = function (state, node) {
   const run = window.__treasureRun;
   if (node.id === 'ambush' || node.id === 'elite_ambush' || node.id === 'pack_hunters') {
-    const enemyRow = node.id === 'elite_ambush' ? treasureHuntEliteEnemyRow(run.step)
+    // Jauría devuelve YA varias oleadas de hasta 3 (ver
+    // treasureHuntPackEnemyRow en combat.js); las otras dos son una única
+    // fila, así que se envuelven en un array de 1 para tener la misma
+    // forma que espera UI.openBattle (lista de filas/oleadas).
+    const enemyRows = node.id === 'elite_ambush' ? [treasureHuntEliteEnemyRow(run.step)]
       : node.id === 'pack_hunters' ? treasureHuntPackEnemyRow(run.step)
-      : treasureHuntEnemyRow(run.step);
+      : [treasureHuntEnemyRow(run.step)];
     const label = node.id === 'elite_ambush' ? '💀 Emboscada de élite' : node.id === 'pack_hunters' ? '🐺 Jauría' : '⚔️ Emboscada';
-    UI.openBattle(state, treasureHuntPlayerCombos(state, run), [enemyRow], {
+    UI.openBattle(state, treasureHuntPlayerCombos(state, run), enemyRows, {
       title: '🗺️ Cacería del Tesoro · ' + label,
       zone: { id: 'tesoro', color: '#2a2412' },
       onEnd: (result) => {
