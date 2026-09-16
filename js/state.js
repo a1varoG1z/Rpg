@@ -347,6 +347,19 @@ function buyGemasWithTexel(state, offer) {
   return true;
 }
 
+// Compra directa de Homúnculos en la Tienda (ver HOMUNCULO_SHOP_PRICES en
+// data.js) — currency es 'texel' o 'gemas', a elección del jugador. Mismo
+// resultado que applyHomunculoResult (ganarlos por invocación con el
+// roster lleno): se acumulan en state.homunculos[id], repetible sin límite.
+function buyHomunculo(state, id, currency) {
+  const price = HOMUNCULO_SHOP_PRICES[id];
+  if (!price || !price[currency]) return false;
+  if (state.currencies[currency] < price[currency]) return false;
+  state.currencies[currency] -= price[currency];
+  state.homunculos[id] = (state.homunculos[id] || 0) + 1;
+  return true;
+}
+
 // El equipo (state.gearInventory) contiene TODAS las piezas que posee el jugador,
 // estén o no equipadas; los luchadores solo guardan una referencia (uid) a la pieza.
 function equippedGearOwner(state, gearUid) {
@@ -1480,9 +1493,10 @@ function migrateState(state) {
     // Prestigio de carta (ver PRESTIGE_TIERS en data.js): partidas
     // anteriores a esta feature no tienen el campo en ningún roster entry.
     state.roster.forEach(entry => { if (entry.prestige === undefined) entry.prestige = 0; });
-    // Los requisitos de Prestigio se han endurecido dos veces (petición del
-    // usuario, la segunda vez sobre el primer endurecido ya en juego: "tiene
-    // que ser mucho más exigente"). Cualquier decoración comprada con
+    // Los requisitos de Prestigio se han endurecido TRES veces (petición del
+    // usuario cada vez, la última: "sube la exigencia de: combates jugados
+    // con esta copia, daño infligido y ultis usadas"). Cualquier decoración
+    // comprada con
     // umbrales de una versión anterior, más blandos, no representa la
     // dedicación que exige la versión actual — se resetea a 0 cada vez que
     // sube PRESTIGE_REBALANCE_VERSION (subirlo de nuevo en el futuro fuerza

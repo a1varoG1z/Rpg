@@ -40,6 +40,7 @@ function difficultyLabelText(mult) { return Math.round(mult * 100) + '%'; }
   $('rosterFilterElement').addEventListener('change', (e) => { UI.rosterFilter.element = e.target.value; UI.renderBanda(state); });
   $('rosterFilterClass').addEventListener('change', (e) => { UI.rosterFilter.class = e.target.value; UI.renderBanda(state); });
   $('rosterFilterRarity').addEventListener('change', (e) => { UI.rosterFilter.rarity = e.target.value; UI.renderBanda(state); });
+  $('rosterFilterFusion').addEventListener('change', (e) => { UI.rosterFilter.fusion = e.target.value; UI.renderBanda(state); });
 
   $('settingsBtn').addEventListener('click', () => {
     $('infiniteEnergyToggle').checked = state.settings.infiniteEnergy;

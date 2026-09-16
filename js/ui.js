@@ -727,9 +727,10 @@ UI.openGuide = function () {
   body.appendChild(guideSection('📈 Nivel, XP y Homúnculos', `
     <p class="settings-info">Los luchadores suben de nivel (hasta el tope de nivel ${XP_LEVEL_CAP})
     ganando experiencia al ganar combates — cada nivel sube todas sus estadísticas un poco.</p>
-    <p class="settings-info">Los <b>Homúnculos</b> (se consiguen invocando) no luchan nunca: se
-    fusionan directamente con un luchador de tu Colección para darle experiencia al instante, sin
-    tener que combatir. Cuanto mayor el Homúnculo, más experiencia da.</p>`));
+    <p class="settings-info">Los <b>Homúnculos</b> (se consiguen invocando, o se compran directamente
+    en la Tienda con Texel o con Gemas) no luchan nunca: se fusionan directamente con un luchador de
+    tu Colección para darle experiencia al instante, sin tener que combatir. Cuanto mayor el
+    Homúnculo, más experiencia da.</p>`));
 
   body.appendChild(guideSection('⚡ Ultis', `
     <p class="settings-info">Cada luchador tiene una única habilidad especial (ulti) que se carga
@@ -3041,17 +3042,30 @@ UI.startElementalDungeon = function (state, elementId) {
 
 // ---------- Filtro de la Colección ----------
 // Independiente del orden (UI.rosterSortMode): reduce qué tarjetas se
-// pintan en #rosterGrid antes de ordenarlas, por elemento/clase/rareza a
-// la vez. 'all' en cualquiera de los 3 = sin filtrar por ese criterio.
-UI.rosterFilter = { element: 'all', class: 'all', rarity: 'all' };
-function rosterMatchesFilter(entry) {
+// pintan en #rosterGrid antes de ordenarlas, por elemento/clase/rareza/
+// material de fusión a la vez. 'all' en cualquiera de los 4 = sin filtrar
+// por ese criterio.
+UI.rosterFilter = { element: 'all', class: 'all', rarity: 'all', fusion: 'all' };
+// Un luchador "tiene material de fusión disponible" si aún le queda hueco
+// en su barra de SEF (sef < 5, ver fuseMaterials en state.js — si ya está
+// a 5/5 no admite más copias) Y existe en el roster AL MENOS otra copia
+// con su mismo defId lista para usarse como material (mismo criterio
+// exacto que fuseMaterials: misma defId, uid distinto). Petición explícita
+// del usuario: "un filtro que sea Material de fusión, ahí tienen que
+// aparecer los que tengan cartas duplicadas disponibles para fusión".
+function rosterEntryHasFusionMaterial(state, entry) {
+  if (entry.sef >= 5) return false;
+  return state.roster.some(r => r.uid !== entry.uid && r.defId === entry.defId);
+}
+function rosterMatchesFilter(state, entry) {
   const def = fighterDef(entry.defId);
   if (UI.rosterFilter.element !== 'all' && def.element !== UI.rosterFilter.element) return false;
   if (UI.rosterFilter.class !== 'all' && def.class !== UI.rosterFilter.class) return false;
   if (UI.rosterFilter.rarity !== 'all' && def.rarity !== UI.rosterFilter.rarity) return false;
+  if (UI.rosterFilter.fusion === 'fusion' && !rosterEntryHasFusionMaterial(state, entry)) return false;
   return true;
 }
-// Los 3 <select> se rellenan una única vez (a partir de ELEMENT_INFO/
+// Los 4 <select> se rellenan una única vez (a partir de ELEMENT_INFO/
 // CLASS_INFO/RARITIES, ya definidos en data.js — nada hardcodeado a mano
 // dos veces) y luego solo se sincroniza su valor mostrado con el filtro
 // activo en cada render, sin reconstruir las opciones.
@@ -3074,6 +3088,12 @@ function buildRosterFilterSelects() {
     RARITIES.forEach(r => rarSel.appendChild(new Option(r.icon + ' ' + r.label, r.id)));
   }
   rarSel.value = UI.rosterFilter.rarity;
+  const fusSel = $('rosterFilterFusion');
+  if (!fusSel.options.length) {
+    fusSel.appendChild(new Option('Todos', 'all'));
+    fusSel.appendChild(new Option('🔀 Material de fusión disponible', 'fusion'));
+  }
+  fusSel.value = UI.rosterFilter.fusion;
 }
 
 // ---------- Banda ----------
@@ -3140,7 +3160,7 @@ UI.renderBanda = function (state) {
 
   $('rosterCount').textContent = state.roster.length;
   buildRosterFilterSelects();
-  const filtered = state.roster.filter(rosterMatchesFilter);
+  const filtered = state.roster.filter(entry => rosterMatchesFilter(state, entry));
   $('rosterFilterHint').textContent = filtered.length === state.roster.length ? ''
     : (filtered.length === 0 ? 'Ningún luchador coincide con el filtro.' : `Mostrando ${filtered.length} de ${state.roster.length}.`);
   const rGrid = $('rosterGrid');
@@ -4586,6 +4606,43 @@ UI.renderTienda = function (state) {
     }
     panel.appendChild(info);
     itemWrap.appendChild(panel);
+  });
+
+  const homWrap = $('shopHomunculoPanels');
+  homWrap.innerHTML = '';
+  HOMUNCULOS.forEach(hom => {
+    const price = HOMUNCULO_SHOP_PRICES[hom.id];
+    const panel = el('div', 'shop-row');
+    panel.appendChild(el('div', 'shop-row-icon', '🧬'));
+    const info = el('div', 'shop-row-info');
+    info.appendChild(el('div', 'shop-row-title', hom.name + ' <span class="badge">' + (state.homunculos[hom.id] || 0) + '</span>'));
+    info.appendChild(el('div', 'settings-info', '+' + hom.xpValue + ' XP al fusionarlo con un luchador'));
+    const buyRow = el('div', 'shop-buy-row');
+    const texelBtn = el('button', 'primary-btn', 'Comprar (🪙' + price.texel + ')');
+    texelBtn.disabled = state.currencies.texel < price.texel;
+    texelBtn.addEventListener('click', () => {
+      if (buyHomunculo(state, hom.id, 'texel')) {
+        saveGame(state);
+        UI.renderTopbar(state);
+        UI.renderTienda(state);
+        UI.showToast('🧬 ' + hom.name + ' comprado');
+      }
+    });
+    const gemasBtn = el('button', 'primary-btn', 'Comprar (💎' + price.gemas + ')');
+    gemasBtn.disabled = state.currencies.gemas < price.gemas;
+    gemasBtn.addEventListener('click', () => {
+      if (buyHomunculo(state, hom.id, 'gemas')) {
+        saveGame(state);
+        UI.renderTopbar(state);
+        UI.renderTienda(state);
+        UI.showToast('🧬 ' + hom.name + ' comprado');
+      }
+    });
+    buyRow.appendChild(texelBtn);
+    buyRow.appendChild(gemasBtn);
+    info.appendChild(buyRow);
+    panel.appendChild(info);
+    homWrap.appendChild(panel);
   });
 };
 

@@ -791,6 +791,21 @@ const HOMUNCULOS = [
   { id: 'homunculo_t3', name: 'Homúnculo Mayor', tier: 3, element: 'fuego', class: 'guru', rarity: 'legendario', xpValue: 700, lore: 'La cúspide del arte alquímico: no sirve para pelear, pero fusionarlo con un luchador equivale a decenas de batallas de experiencia.' },
 ];
 function homunculoDef(id) { return HOMUNCULOS.find(h => h.id === id); }
+// Venta directa en la Tienda (petición explícita del usuario: "pon que se
+// puedan comprar homúnculos por dinero y por gemas") — antes solo se
+// conseguían como resultado alternativo de una invocación con el roster
+// lleno (ver applyHomunculoResult en state.js). Precio en Texel y en
+// Gemas a la vez para cada tier, escalado con su propia rareza (igual
+// idea que GEAR_SHOP_PRICES) y con su xpValue (a más experiencia que da,
+// más caro). Texel/Gema ronda las 40-50 unidades por tier, ligeramente
+// por debajo del mejor precio de GEMAS_TEXEL_OFFERS (60/Gema) para que
+// comprar homúnculos con Gemas se sienta un pelín más rentable que con
+// Texel, sin llegar a ser gratis.
+const HOMUNCULO_SHOP_PRICES = {
+  homunculo_t1: { texel: 120, gemas: 3 },
+  homunculo_t2: { texel: 400, gemas: 9 },
+  homunculo_t3: { texel: 1200, gemas: 24 },
+};
 function homunculoTierForRarity(rarity) {
   if (rarity === 'legendario') return 3;
   if (rarity === 'raro' || rarity === 'epico') return 2;
@@ -1533,22 +1548,29 @@ function torreRepeatBossRewards(level) {
 // invalide el prestigio ya comprado bajo umbrales anteriores — migrateState
 // (state.js) lo compara con state.prestigeRebalancedVersion y resetea todo
 // el prestige del roster a 0 una sola vez por versión nueva.
-const PRESTIGE_REBALANCE_VERSION = 2;
+//
+// Tercer endurecimiento (petición explícita del usuario: "en las
+// condiciones para conseguir decoraciones en las cartas, sube la
+// exigencia de: combates jugados con esta copia, daño infligido y ultis
+// usadas") — solo esos 3 requisitos suben (~2.7-3×), "kills" se deja
+// igual porque el usuario no lo mencionó. cost (monedas/cristales) tampoco
+// cambia, solo cuánto hay que haber jugado de VERDAD con la copia.
+const PRESTIGE_REBALANCE_VERSION = 3;
 const PRESTIGE_TIERS = [
   null, // índice 0 = sin prestigio, no se usa como requisito de nada
   {
     tier: 1, label: 'Decoración', className: 'prestige-1',
-    require: { battles: 1500, kills: 1000, dmgDealt: 1000000, ultsUsed: 500 },
+    require: { battles: 4000, kills: 1000, dmgDealt: 3000000, ultsUsed: 1500 },
     cost: { texel: 50000, pixite: 150 },
   },
   {
     tier: 2, label: 'Decoración intermedia', className: 'prestige-2',
-    require: { battles: 6000, kills: 5000, dmgDealt: 6000000, ultsUsed: 2500 },
+    require: { battles: 16000, kills: 5000, dmgDealt: 18000000, ultsUsed: 7000 },
     cost: { texel: 250000, voxite: 400 },
   },
   {
     tier: 3, label: 'Decoración máxima', className: 'prestige-3',
-    require: { battles: 20000, kills: 16000, dmgDealt: 25000000, ultsUsed: 8000 },
+    require: { battles: 50000, kills: 16000, dmgDealt: 70000000, ultsUsed: 22000 },
     cost: { texel: 1000000, doxite: 600 },
   },
 ];

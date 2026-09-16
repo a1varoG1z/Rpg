@@ -6517,6 +6517,37 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       para compensar la ronda 4 del Torneo). Verificado con Playwright:
       20 encuentros generados por tier dan siempre 2/3/3 guardianes
       (antes 2/3/4). Sanity check general limpio (642/102/45/45).
+- [x] **Filtro "Material de fusión" en la Colección, Homúnculos comprables
+      en la Tienda, tercer endurecimiento del Prestigio de carta** (3
+      peticiones explícitas del usuario en un solo mensaje):
+      1. **Filtro de fusión**: nuevo 4º `<select>` en la fila de filtros
+         de la Colección (`rosterFilterFusion`, junto a elemento/clase/
+         rareza) — "Material de fusión disponible" muestra solo a los
+         luchadores con `sef < 5` que tienen AL MENOS otra copia con su
+         mismo `defId` en el roster (`rosterEntryHasFusionMaterial`,
+         mismo criterio exacto que `fuseMaterials` en state.js: misma
+         defId, uid distinto). Verificado con Playwright: con 2 copias
+         extra de un común ya presente en la banda inicial, el filtro
+         pasa de 5 a 3 tarjetas (las 3 que comparten esa defId).
+      2. **Homúnculos en la Tienda**: nuevo panel "🧬 Homúnculos" con los
+         3 tiers (`HOMUNCULOS` en data.js), cada uno con dos botones de
+         compra — Texel o Gemas (`HOMUNCULO_SHOP_PRICES`/`buyHomunculo`
+         en state.js) — antes solo se conseguían como resultado
+         alternativo de una invocación con el roster lleno. Precios
+         120🪙/3💎, 400🪙/9💎, 1200🪙/24💎 para tier 1/2/3, escalados con
+         su propia rareza y su `xpValue`. Verificado: ambas monedas
+         descuentan correctamente y sí que suman a `state.homunculos`.
+      3. **Tercer endurecimiento del Prestigio de carta** (`PRESTIGE_TIERS`
+         en data.js, `PRESTIGE_REBALANCE_VERSION` 2→3): el usuario pidió
+         subir solo 3 de los 4 requisitos — combates jugados con esa
+         copia, daño infligido y ultis usadas — dejando "kills" igual
+         porque no lo mencionó. Subida ~2.7-3× en los 3: tier1
+         battles 1500→4000 / dmgDealt 1M→3M / ultsUsed 500→1500; tier2
+         6000→16000 / 6M→18M / 2500→7000; tier3 20000→50000 / 25M→70M /
+         8000→22000. El coste en monedas/cristales no cambia. El versionado
+         ya existente (migrateState) resetea automáticamente a 0 cualquier
+         Prestigio ya comprado bajo los umbrales anteriores.
+      Sanity check general limpio (642/102/45/45), sin errores de página.
 
 ## Notas
 
