@@ -705,6 +705,23 @@ function bandFighterCount(state) {
   return state.band.flat().filter(Boolean).length;
 }
 
+// Mazmorra Elemental (Formación) — petición explícita del usuario: "falta
+// añadir la obligación de escoger al equipo de un mismo tipo, como en el
+// otro modo". La mazmorra normal exige un equipo mono-elemento (hasta 3,
+// ver elementalTeamUids); aquí, al ser la Formación 9 completa, la misma
+// exigencia se traduce en que TODA la Formación colocada (huecos vacíos
+// aparte) sea del elemento de esa mazmorra — sin eso, la Formación de
+// siempre (mezcla de elementos para líderes/sinergias) esquivaría por
+// completo la desventaja elemental que es el reto real del modo.
+function elementalFullFormationValid(state, elementId) {
+  const uids = state.band.flat().filter(Boolean);
+  if (uids.length === 0) return false;
+  return uids.every(uid => {
+    const entry = rosterEntry(state, uid);
+    return entry && fighterDef(entry.defId).element === elementId;
+  });
+}
+
 // Hueco {row, col} donde está colocado un uid en la Formación, o null si no
 // está en ninguno — usado para saber si un luchador concreto está en banda
 // (y en qué hueco, para poder sustituirlo) sin recorrer la rejilla a mano

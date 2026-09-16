@@ -790,9 +790,10 @@ UI.openGuide = function () {
     más veces se supera una mazmorra, más dura y más rentable se vuelve.</p>
     <p class="settings-info"><b>Mazmorra Elemental · Formación 9</b>: la misma mazmorra, mismas
     oleadas y mismas recompensas, pero con tu Formación 9 completa (las 8 líneas normales, cambiando
-    de línea entre choques) en vez de un equipo fijo de 3 — no hace falta elegir equipo aparte, usa
-    la Formación tal cual la tengas en Banda. Cuenta sus propias repeticiones, independientes de la
-    mazmorra normal.</p>`));
+    de línea entre choques) en vez de un equipo fijo de 3 — eso sí, TODA tu Formación colocada tiene
+    que ser del elemento de esa mazmorra (igual de exigente que el equipo mono-elemento del otro
+    modo, solo que a escala de Formación completa). Cuenta sus propias repeticiones, independientes
+    de la mazmorra normal.</p>`));
 
   body.appendChild(guideSection('🗼 Torre Batalla', `
     <p class="settings-info">Modo endgame: se desbloquea al completar el mapa entero (derrotar al
@@ -3018,27 +3019,36 @@ UI.renderElementalDungeons = function (state, wrap) {
   // oleadas/Guardián/fórmulas de dificultad y recompensa que la de
   // arriba, pero con la Formación 9 completa (las 8 líneas normales, con
   // cambio de línea entre choques) en vez de un equipo fijo de 3 de un
-  // solo elemento — así no hace falta elegir equipo aparte, siempre está
-  // lista mientras haya al menos 1 luchador en la Formación. Contador de
-  // repeticiones propio (state.elementalFullClears), independiente del
-  // de la mazmorra normal.
+  // solo elemento. Petición explícita del usuario, sobre la primera
+  // versión ya en producción: "falta añadir la obligación de escoger al
+  // equipo de un mismo tipo, como en el otro modo" — la mazmorra normal
+  // exige equipo mono-elemento (ver elementalTeamUids/openElementalTeamPicker),
+  // así que aquí se exige lo mismo pero sobre TODA la Formación colocada
+  // (elementalFullFormationValid, state.js): sin eso, la Formación mixta
+  // de siempre esquivaría la desventaja elemental que es el reto real.
+  // Contador de repeticiones propio (state.elementalFullClears),
+  // independiente del de la mazmorra normal.
   wrap.appendChild(el('h3', null, '🌋⚔️ Mazmorra Elemental · Formación 9'));
   wrap.appendChild(el('p', 'settings-info', `La misma Mazmorra Elemental, mismas oleadas y mismas
     recompensas, pero con tu Formación 9 completa (las 8 líneas normales, cambiando de línea entre
-    choques) en vez de un equipo fijo de 3 de un solo elemento — no hace falta elegir equipo, usa la
-    Formación tal cual la tengas en Banda.`));
+    choques) en vez de un equipo fijo de 3 de un solo elemento — eso sí, TODA tu Formación colocada
+    tiene que ser del elemento de esa mazmorra, igual de exigente que el equipo mono-elemento del
+    otro modo. Usa "Formaciones guardadas" en Banda para cambiar de Formación rápido entre mazmorras.`));
   const listFull = el('div', 'torre-list');
   ELEMENT_ORDER.forEach(elementId => {
     const dungeon = ELEMENTAL_DUNGEONS[elementId];
     const clears = state.elementalFullClears[elementId] || 0;
     const nextMult = elementalDungeonDifficultyMult(clears);
     const nextDoxite = elementalDungeonDoxiteReward(clears);
-    const row = el('div', 'torre-row');
+    const valid = elementalFullFormationValid(state, elementId);
+    const row = el('div', 'torre-row' + (valid ? '' : ' locked'));
     row.appendChild(creatureCanvas(dungeon.guardianDefId, 40));
     const info = el('div', 'torre-row-info');
     info.appendChild(el('div', 'torre-row-name', ELEMENT_INFO[elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[elementId].label + ' · Formación 9'));
     info.appendChild(el('div', 'torre-row-sub', `${clears > 0 ? 'Superada ' + clears + 'x · ' : ''}` +
       `próxima: ×${nextMult.toFixed(1)} dificultad, 🟡 +${nextDoxite}`));
+    info.appendChild(el('div', 'torre-row-sub' + (valid ? '' : ' warning'),
+      valid ? `✅ Formación válida (100% ${ELEMENT_INFO[elementId].label})` : `⚠️ Tu Formación debe ser enteramente del elemento ${ELEMENT_INFO[elementId].label}`));
     row.appendChild(info);
     row.addEventListener('click', () => UI.startElementalFullDungeon(state, elementId));
     listFull.appendChild(row);
@@ -3105,11 +3115,16 @@ UI.startElementalDungeon = function (state, elementId) {
 };
 
 // Mazmorra Elemental (Formación) — ver UI.renderElementalDungeons. Usa la
-// Formación 9 completa (bandFighterCount, igual comprobación que Arena),
-// no un equipo elegido aparte, así que no hace falta pasar por un picker.
+// Formación 9 completa, no un equipo elegido aparte, pero exige que TODA
+// esa Formación sea del elemento de la mazmorra (elementalFullFormationValid,
+// state.js) — misma obligación de equipo mono-elemento que el otro modo,
+// petición explícita del usuario tras la primera versión sin esta gate.
 UI.startElementalFullDungeon = function (state, elementId) {
   if (!elementalDungeonUnlocked(state)) return;
-  if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
+  if (!elementalFullFormationValid(state, elementId)) {
+    UI.showToast('⚠️ Tu Formación debe ser enteramente del elemento ' + ELEMENT_INFO[elementId].label + ' para entrar en esta mazmorra.');
+    return;
+  }
   if (!state.settings.infiniteEnergy) {
     if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
     state.currencies.energy -= STAGE_ENERGY_COST;

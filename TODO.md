@@ -6600,6 +6600,28 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       la UI (clic en la fila → "Luchar") confirmando que la batalla abre
       con 8 líneas de 3 luchadores cada una (Formación completa) contra
       3 enemigos por oleada. Sanity check general limpio (642/102/45/45).
+- [x] **Fix: la Mazmorra Elemental · Formación 9 no exigía equipo
+      mono-elemento** (petición explícita del usuario sobre la entrada
+      anterior: "falta añadir la obligación de escoger al equipo de un
+      mismo tipo, como en el otro modo"). La mazmorra normal exige un
+      equipo de hasta 3 del MISMO elemento; la versión Formación 9 de la
+      entrada anterior dejaba entrar con cualquier Formación, mezcla de
+      elementos incluida — esquivando por completo la desventaja
+      elemental que es el reto real del modo. Nueva
+      `elementalFullFormationValid(state, elementId)` (state.js): exige
+      que TODA la Formación colocada (huecos vacíos aparte) sea del
+      elemento de esa mazmorra — no basta con tener algún luchador de ese
+      elemento, ninguno de otro elemento puede estar colocado. La lista
+      de Retos ahora muestra "✅ Formación válida" o "⚠️ Tu Formación debe
+      ser enteramente del elemento X" por cada una de las 5 mazmorras
+      (fila atenuada con `.torre-row.locked` si no cumple, mismo patrón
+      visual que Trials de Familia), y `UI.startElementalFullDungeon`
+      bloquea el inicio con un toast si no se cumple. Verificado con
+      Playwright: una Formación mezclada (Fuego + Viento) rechaza entrar
+      en la mazmorra de Fuego; una Formación 100% Fuego entra en la de
+      Fuego pero es rechazada en la de Viento; la UI marca cada fila
+      como válida/bloqueada correctamente. Sanity check general limpio
+      (642/102/45/45).
 
 ## Notas
 
