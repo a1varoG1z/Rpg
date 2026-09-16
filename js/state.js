@@ -88,6 +88,16 @@ function createNewState() {
     // y cuántas veces se ha superado cada una.
     elementalTeams: { fuego: [], viento: [], tierra: [], rayo: [], agua: [] },
     elementalClears: { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 },
+    // Mazmorra Elemental (Formación): mismo reto, misma escalada de
+    // dificultad y mismas recompensas (ver ELEMENTAL_DUNGEONS/
+    // elementalDungeonRewards) pero con la Formación 9 completa (8 líneas
+    // a elegir) en vez de un equipo fijo de hasta 3 de un solo elemento —
+    // petición explícita del usuario: "otro modo mazmorra elemental que
+    // sea de combates con formación 9 vs 9, lo mismo y mismas
+    // recompensas que mazmorra elemental". Contador de superaciones
+    // INDEPENDIENTE del de arriba (misma fórmula de dificultad, pero cada
+    // modo escala con su propia repetición, no comparten progreso).
+    elementalFullClears: { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 },
     // Prueba del Campeón: luchador elegido para los duelos 1 contra 1 y la
     // mejor racha (duelos ganados seguidos) conseguida hasta ahora.
     champion: { selectedUid: null, bestStreak: 0 },
@@ -1107,6 +1117,10 @@ function recordFamilyTrialClear(state, trial) {
 // entero) — ver el comentario de ELEMENTAL_DUNGEON_ZONE_ID en data.js.
 function elementalDungeonUnlocked(state) { return !!state.settings.enableElementalDungeon || isZoneUnlocked(state, ELEMENTAL_DUNGEON_ZONE_ID); }
 function recordElementalClear(state, elementId) { state.elementalClears[elementId] = (state.elementalClears[elementId] || 0) + 1; }
+// Mazmorra Elemental (Formación) — ver state.elementalFullClears más
+// arriba: mismo desbloqueo y mismas fórmulas de dificultad/recompensa que
+// la Mazmorra Elemental normal, solo con contador de repeticiones propio.
+function recordElementalFullClear(state, elementId) { state.elementalFullClears[elementId] = (state.elementalFullClears[elementId] || 0) + 1; }
 // Filtra los uids del equipo elegido que ya no existen en el roster
 // (vendidos, evolucionados...) y, si encuentra alguno, deja el hueco
 // limpio guardado — evita que un uid huérfano llegue a combate.
@@ -1485,6 +1499,7 @@ function migrateState(state) {
     if (state.arena.scoutedChampionLeagueId === undefined) state.arena.scoutedChampionLeagueId = null;
     if (!state.elementalTeams) state.elementalTeams = { fuego: [], viento: [], tierra: [], rayo: [], agua: [] };
     if (!state.elementalClears) state.elementalClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
+    if (!state.elementalFullClears) state.elementalFullClears = { fuego: 0, viento: 0, tierra: 0, rayo: 0, agua: 0 };
     if (!state.champion) state.champion = { selectedUid: null, bestStreak: 0 };
     if (!state.roguelike) state.roguelike = { bestRound: 0, bestAct: 0 };
     if (state.roguelike.bestAct === undefined) state.roguelike.bestAct = 0;

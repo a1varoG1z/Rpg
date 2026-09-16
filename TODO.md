@@ -6573,6 +6573,33 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       invocar `onEnd('victoria')` directamente) confirma que las 3
       monedas suben de verdad y que `outcome.rewards.drops` llega
       relleno. Sanity check general limpio (642/102/45/45).
+- [x] **Mazmorra Elemental · Formación 9 (nuevo modo en Retos)** —
+      petición explícita del usuario: "otro modo mazmorra elemental que
+      sea de combates con formación 9 vs 9, lo mismo y mismas
+      recompensas que mazmorra elemental". Segunda lista bajo la
+      Mazmorra Elemental normal en Retos, con las mismas 5 mazmorras
+      (una por elemento), las mismas 2 oleadas + Guardián Elemental y
+      EXACTAMENTE las mismas fórmulas de dificultad y recompensa
+      (`elementalDungeonDifficultyMult`/`elementalDungeonRewards`, sin
+      tocar ninguna) — la única diferencia real es que el jugador lucha
+      con su Formación 9 completa (`buildPlayerCombinations`, las 8
+      líneas normales con cambio de línea entre choques) en vez de un
+      equipo fijo de 3 de un solo elemento, así que no hace falta elegir
+      equipo aparte: siempre está lista mientras haya algún luchador en
+      la Formación (misma comprobación que Arena, `bandFighterCount`).
+      Contador de repeticiones PROPIO (`state.elementalFullClears`,
+      nuevo), independiente del de la mazmorra normal — cada modo escala
+      su propia dificultad por separado, no comparten progreso.
+      Implementado con un flag `isElementalFull` nuevo y separado de
+      `isElemental` en `window.__stageRun`, reutilizando casi todo el
+      código compartido de Mapa/Torre/Tope de Tier sin tocarlo (cae solo
+      por los `else` ya existentes de cada rama `if (run.isElemental)`).
+      Verificado con Playwright: interceptando `UI.openBattle` para
+      recorrer las 3 oleadas y comprobar que las recompensas/monedas se
+      aplican igual que la mazmorra normal, y con un recorrido real por
+      la UI (clic en la fila → "Luchar") confirmando que la batalla abre
+      con 8 líneas de 3 luchadores cada una (Formación completa) contra
+      3 enemigos por oleada. Sanity check general limpio (642/102/45/45).
 
 ## Notas
 

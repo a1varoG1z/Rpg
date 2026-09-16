@@ -787,7 +787,12 @@ UI.openGuide = function () {
     al tuyo — desventaja elemental de partida a propósito, así que hace falta buen nivel y equipo
     para ganar. Recompensa mejor que una etapa normal, con una pieza de equipo garantizada. Cada
     repetición sube de dificultad SIN TECHO y da Doxite garantizado en cantidad creciente — cuantas
-    más veces se supera una mazmorra, más dura y más rentable se vuelve.</p>`));
+    más veces se supera una mazmorra, más dura y más rentable se vuelve.</p>
+    <p class="settings-info"><b>Mazmorra Elemental · Formación 9</b>: la misma mazmorra, mismas
+    oleadas y mismas recompensas, pero con tu Formación 9 completa (las 8 líneas normales, cambiando
+    de línea entre choques) en vez de un equipo fijo de 3 — no hace falta elegir equipo aparte, usa
+    la Formación tal cual la tengas en Banda. Cuenta sus propias repeticiones, independientes de la
+    mazmorra normal.</p>`));
 
   body.appendChild(guideSection('🗼 Torre Batalla', `
     <p class="settings-info">Modo endgame: se desbloquea al completar el mapa entero (derrotar al
@@ -1384,7 +1389,7 @@ function runFighterUids(state, run) {
 // color de respaldo si no) tanto en el recorrido de nodos como en la
 // propia batalla, en vez de quedarse sin fondo alguno.
 function runPseudoZone(run) {
-  if (run.isElemental) return { id: 'elemental_' + run.elementId, color: ELEMENT_INFO[run.elementId].color };
+  if (run.isElemental || run.isElementalFull) return { id: 'elemental_' + run.elementId, color: ELEMENT_INFO[run.elementId].color };
   if (run.isTorre) return { id: 'torre', color: '#3a3a4a' };
   if (run.isTierCap) return { id: 'tiercap', color: '#3a2a4a' };
   return null;
@@ -1397,17 +1402,19 @@ UI.renderStageRun = function (state) {
   wrap.classList.remove('hidden');
   wrap.innerHTML = '';
   const run = window.__stageRun;
-  const zone = (run.isTorre || run.isElemental || run.isTierCap) ? null : ZONES[run.zoneIdx];
+  const zone = (run.isTorre || run.isElemental || run.isElementalFull || run.isTierCap) ? null : ZONES[run.zoneIdx];
   wrap.style.background = zoneBackgroundStyle(runPseudoZone(run) || zone);
 
   const back = el('button', 'mini-btn', '« Retirarse');
   back.addEventListener('click', () => {
     window.__stageRun = null;
-    if (run.isTorre || run.isElemental || run.isTierCap) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
+    if (run.isTorre || run.isElemental || run.isElementalFull || run.isTierCap) UI.renderTorre(state); else UI.openZoneStages(state, run.zoneIdx);
   });
   wrap.appendChild(back);
   wrap.appendChild(el('h3', null, run.isElemental
     ? ELEMENT_INFO[run.elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[run.elementId].label
+    : run.isElementalFull
+    ? ELEMENT_INFO[run.elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[run.elementId].label + ' · Formación 9'
     : run.isTorre
     ? '🗼 Torre — ' + torreLevelLabel(TORRE_LEVELS[run.torreIdx])
     : run.isTierCap
@@ -1595,6 +1602,8 @@ UI.fightStageRunNode = function (state) {
   UI.openBattle(state, playerCombos, [enemyRow], {
     title: run.isElemental
       ? ELEMENT_INFO[run.elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[run.elementId].label + ' · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length
+      : run.isElementalFull
+      ? ELEMENT_INFO[run.elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[run.elementId].label + ' · Formación 9 · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length
       : run.isTorre
       ? '🗼 Torre · Encuentro ' + (run.nodeIdx + 1) + '/' + run.encounters.length
       : run.isTierCap
@@ -1651,6 +1660,28 @@ UI.fightStageRunNode = function (state) {
           if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
         });
         recordElementalClear(state, run.elementId);
+        saveGame(state);
+        return { rewards, leveled };
+      }
+      // Mazmorra Elemental (Formación) — mismas fórmulas de dificultad y
+      // recompensa que la mazmorra normal (elementalDungeonRewards), solo
+      // que la XP se reparte entre TODA la Formación (como Mapa/Torre/Tope
+      // de Tier) en vez del equipo fijo de 3, y el contador de repeticiones
+      // es el propio (state.elementalFullClears), independiente del otro.
+      if (run.isElementalFull) {
+        const iteration = state.elementalFullClears[run.elementId] || 0;
+        const isFirstClear = !iteration;
+        const rewards = elementalDungeonRewards(isFirstClear, iteration);
+        state.currencies.texel += rewards.texel;
+        if (rewards.drops.voxite) state.currencies.voxite += rewards.drops.voxite;
+        if (rewards.drops.doxite) state.currencies.doxite += rewards.drops.doxite;
+        if (rewards.drops.gear) addGear(state, rewards.drops.gear);
+        const leveled = [];
+        state.band.flat().filter(Boolean).forEach(uid => {
+          const entry = rosterEntry(state, uid);
+          if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
+        });
+        recordElementalFullClear(state, run.elementId);
         saveGame(state);
         return { rewards, leveled };
       }
@@ -2980,6 +3011,39 @@ UI.renderElementalDungeons = function (state, wrap) {
     list.appendChild(row);
   });
   wrap.appendChild(list);
+
+  // Mazmorra Elemental (Formación) — petición explícita del usuario:
+  // "otro modo mazmorra elemental que sea de combates con formación 9 vs
+  // 9, lo mismo y mismas recompensas que mazmorra elemental". Mismas
+  // oleadas/Guardián/fórmulas de dificultad y recompensa que la de
+  // arriba, pero con la Formación 9 completa (las 8 líneas normales, con
+  // cambio de línea entre choques) en vez de un equipo fijo de 3 de un
+  // solo elemento — así no hace falta elegir equipo aparte, siempre está
+  // lista mientras haya al menos 1 luchador en la Formación. Contador de
+  // repeticiones propio (state.elementalFullClears), independiente del
+  // de la mazmorra normal.
+  wrap.appendChild(el('h3', null, '🌋⚔️ Mazmorra Elemental · Formación 9'));
+  wrap.appendChild(el('p', 'settings-info', `La misma Mazmorra Elemental, mismas oleadas y mismas
+    recompensas, pero con tu Formación 9 completa (las 8 líneas normales, cambiando de línea entre
+    choques) en vez de un equipo fijo de 3 de un solo elemento — no hace falta elegir equipo, usa la
+    Formación tal cual la tengas en Banda.`));
+  const listFull = el('div', 'torre-list');
+  ELEMENT_ORDER.forEach(elementId => {
+    const dungeon = ELEMENTAL_DUNGEONS[elementId];
+    const clears = state.elementalFullClears[elementId] || 0;
+    const nextMult = elementalDungeonDifficultyMult(clears);
+    const nextDoxite = elementalDungeonDoxiteReward(clears);
+    const row = el('div', 'torre-row');
+    row.appendChild(creatureCanvas(dungeon.guardianDefId, 40));
+    const info = el('div', 'torre-row-info');
+    info.appendChild(el('div', 'torre-row-name', ELEMENT_INFO[elementId].icon + ' Mazmorra de ' + ELEMENT_INFO[elementId].label + ' · Formación 9'));
+    info.appendChild(el('div', 'torre-row-sub', `${clears > 0 ? 'Superada ' + clears + 'x · ' : ''}` +
+      `próxima: ×${nextMult.toFixed(1)} dificultad, 🟡 +${nextDoxite}`));
+    row.appendChild(info);
+    row.addEventListener('click', () => UI.startElementalFullDungeon(state, elementId));
+    listFull.appendChild(row);
+  });
+  wrap.appendChild(listFull);
 };
 
 // mode: si se pasa, filtra la Colección al elemento indicado y deja
@@ -3035,6 +3099,27 @@ UI.startElementalDungeon = function (state, elementId) {
   window.__championRun = null;
   window.__stageRun = {
     isElemental: true, elementId, isBoss: false,
+    encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {},
+  };
+  UI.renderStageRun(state);
+};
+
+// Mazmorra Elemental (Formación) — ver UI.renderElementalDungeons. Usa la
+// Formación 9 completa (bandFighterCount, igual comprobación que Arena),
+// no un equipo elegido aparte, así que no hace falta pasar por un picker.
+UI.startElementalFullDungeon = function (state, elementId) {
+  if (!elementalDungeonUnlocked(state)) return;
+  if (bandFighterCount(state) === 0) { UI.showToast('⚠️ Coloca al menos un luchador en tu Formación.'); return; }
+  if (!state.settings.infiniteEnergy) {
+    if (state.currencies.energy < STAGE_ENERGY_COST) { UI.showToast('⚡ No tienes suficiente energía.'); return; }
+    state.currencies.energy -= STAGE_ENERGY_COST;
+    saveGame(state);
+    UI.renderTopbar(state);
+  }
+  const encounters = buildElementalDungeonEncounters(elementId, state.elementalFullClears[elementId] || 0);
+  window.__championRun = null;
+  window.__stageRun = {
+    isElementalFull: true, elementId, isBoss: false,
     encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {},
   };
   UI.renderStageRun(state);
