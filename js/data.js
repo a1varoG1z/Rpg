@@ -850,6 +850,47 @@ setLeaderSkill('afrodita_legendario', 'hp_boost');
 setLeaderSkill('poseidon_legendario', 'def_boost');
 setLeaderSkill('ragnar_legendario', 'def_boost');
 
+// Fix: 34 de los 65 Legendarios (todo el panteón añadido en la ampliación
+// masiva del roster) se habían quedado sin habilidad de líder — bug
+// reportado por el usuario: "hay algunas legendarias que no tienen
+// habilidad de líder, eso está mal, todas tienen que tener". Mismo
+// criterio de reparto a mano por tema/mitología que el bloque de arriba,
+// no un valor por defecto.
+setLeaderSkill('ganesha_legendario', 'wis_boost');
+setLeaderSkill('amaterasu_legendario', 'hp_boost');
+setLeaderSkill('susanoo_legendario', 'atk_boost');
+setLeaderSkill('kali_legendario', 'atk_boost');
+setLeaderSkill('cernunnos_legendario', 'hp_boost');
+setLeaderSkill('maui_legendario', 'agi_boost');
+setLeaderSkill('pele_legendario', 'atk_boost');
+setLeaderSkill('coatlicue_legendario', 'hp_boost');
+setLeaderSkill('tezcatlipoca_legendario', 'wis_boost');
+setLeaderSkill('ares_legendario', 'atk_boost');
+setLeaderSkill('artemisa_legendario', 'agi_boost');
+setLeaderSkill('atenea_legendario', 'wis_boost');
+setLeaderSkill('sekhmet_legendario', 'atk_boost');
+setLeaderSkill('sobek_legendario', 'def_boost');
+setLeaderSkill('isis_legendario', 'hp_boost');
+setLeaderSkill('horus_legendario', 'agi_boost');
+setLeaderSkill('freya_legendario', 'wis_boost');
+setLeaderSkill('tyr_legendario', 'def_boost');
+setLeaderSkill('hermes_legendario', 'agi_boost');
+setLeaderSkill('hefesto_legendario', 'def_boost');
+setLeaderSkill('sigurd_legendario', 'atk_boost');
+setLeaderSkill('aquiles_legendario', 'hp_boost');
+setLeaderSkill('sanson_legendario', 'atk_boost');
+setLeaderSkill('musashi_legendario', 'agi_boost');
+setLeaderSkill('guanyu_legendario', 'atk_boost');
+setLeaderSkill('atila_legendario', 'atk_boost');
+setLeaderSkill('khagan_legendario', 'agi_boost');
+setLeaderSkill('miguelarcangel_legendario', 'def_boost');
+setLeaderSkill('huitzilopochtli_legendario', 'atk_boost');
+setLeaderSkill('shinigami_legendario', 'wis_boost');
+setLeaderSkill('morrigan_legendario', 'agi_boost');
+setLeaderSkill('arturo_legendario', 'def_boost');
+setLeaderSkill('shango_legendario', 'atk_boost');
+setLeaderSkill('beowulf_legendario', 'hp_boost');
+
 // Ejemplo (desactivado) de setStatMult (ver la función más arriba, junto a
 // statVarianceMult): sube el ATK de Hércules un 20% en sus 3 formas, sin
 // tocar el resto de sus stats ni a ningún otro Campeón de Tierra. Para

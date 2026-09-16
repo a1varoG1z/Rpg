@@ -6622,6 +6622,21 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Fuego pero es rechazada en la de Viento; la UI marca cada fila
       como válida/bloqueada correctamente. Sanity check general limpio
       (642/102/45/45).
+- [x] **Fix: 34 de los 65 Legendarios no tenían habilidad de líder**
+      (petición explícita del usuario: "hay algunas legendarias que no
+      tienen habilidad de líder, eso está mal, todas tienen que tener").
+      Todo el panteón mitológico añadido en la ampliación masiva del
+      roster (Ganesha, Amaterasu, Ares, Atenea, Isis, Freya, Aquiles,
+      Arturo, Genghis Khan y 25 más) se había quedado sin
+      `setLeaderSkill`, así que su celda central de la Formación no daba
+      ningún bonus de líder. Añadidas las 34 llamadas que faltaban, con
+      el mismo criterio a mano por tema/mitología que ya usaba el resto
+      (dioses de la guerra → atk_boost, protectores/reyes → def_boost,
+      diosas de vida/vitalidad → hp_boost, mensajeros/cazadores/
+      embaucadores → agi_boost, sabiduría/magia/destino → wis_boost).
+      Verificado: script sobre `FIGHTERS` confirma 65/65 Legendarios con
+      `leaderSkillId` (antes 31/65). Sanity check general limpio
+      (642/102/45/45).
 
 ## Notas
 
