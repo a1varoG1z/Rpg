@@ -4235,7 +4235,11 @@ UI.renderArena = function (state) {
     <div class="stat-row"><span>Reset de temporada en</span><span>${arenaSeasonDaysLeft()} día${arenaSeasonDaysLeft() === 1 ? '' : 's'}</span></div>
     ${league.rewardMult > 1 ? `<div class="stat-row"><span>Bonus de liga a las recompensas</span><span>+${Math.round((league.rewardMult - 1) * 100)}%</span></div>` : ''}
     <p class="settings-info">Cada semana el rango baja a la mitad de su pico (nunca a 1), con una recompensa
-    de Gemas por ese pico — para tener siempre un motivo para seguir subiendo.</p>`;
+    de Gemas por ese pico — para tener siempre un motivo para seguir subiendo.</p>
+    <p class="settings-info">Cada victoria da también ${CRYSTALS.pixite.icon} Pixite siempre, y una
+    probabilidad creciente de ${CRYSTALS.voxite.icon} Voxite y ${CRYSTALS.doxite.icon} Doxite según el
+    rango — desde el rango ${ARENA_DOXITE_GUARANTEED_RANK} en adelante, ${CRYSTALS.doxite.icon} Doxite
+    está GARANTIZADO en cada victoria.</p>`;
   const enemyPanel = $('arenaEnemyPanel');
   enemyPanel.innerHTML = '';
   if (!state.arena.scouted) {
@@ -4299,9 +4303,13 @@ UI.startArenaBattle = function (state) {
         const texel = Math.round((40 + state.arena.rank * 6) * league.rewardMult);
         let gemas = Math.round((3 + Math.floor(state.arena.rank / 3)) * league.rewardMult);
         if (scoutedLeague) gemas += arenaChampionBonusReward(scoutedLeague).gemas;
+        const drops = arenaCrystalRewards(state.arena.rank);
         state.currencies.texel += texel; state.currencies.gemas += gemas;
+        state.currencies.pixite += drops.pixite;
+        if (drops.voxite) state.currencies.voxite += drops.voxite;
+        if (drops.doxite) state.currencies.doxite += drops.doxite;
         saveGame(state);
-        return { rewards: { texel, fighterXp: 0, drops: {} }, leveled: [], gemas, championBeaten: scoutedLeague ? scoutedLeague.label : null };
+        return { rewards: { texel, fighterXp: 0, drops }, leveled: [], gemas, championBeaten: scoutedLeague ? scoutedLeague.label : null };
       }
       saveGame(state);
       return null;

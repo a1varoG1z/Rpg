@@ -2069,6 +2069,30 @@ function arenaChampionBonusReward(league) {
   return { gemas: Math.round(15 + league.minRank * 1.5) };
 }
 
+// Petición explícita del usuario: "en el modo arena, también tiene que
+// haber recompensas de cristales. Y a partir de x nivel de platino doxite
+// garantizado" — antes Arena solo daba Texel + Gemas por victoria, el
+// único modo de combate repetible del juego sin cristales. Pixite sale
+// SIEMPRE (escala con el rango, como ya hacen Texel/Gemas), Voxite es una
+// probabilidad creciente con el rango, y Doxite pasa de una probabilidad
+// creciente dentro de Platino a GARANTIZADO (100%) al llegar a
+// ARENA_DOXITE_GUARANTEED_RANK — rango 30, ya avanzado dentro de Platino
+// (que va de 22 a 34, ver ARENA_LEAGUES, antes de cruzar a Diamante en el
+// 35) — y se mantiene garantizado en cualquier rango igual o superior a
+// partir de ahí (Diamante/Maestro/Leyenda incluidos).
+const ARENA_DOXITE_GUARANTEED_RANK = 30;
+function arenaCrystalRewards(rank) {
+  const pixite = Math.round(2 + rank * 0.3);
+  const voxite = Math.random() < Math.min(0.6, 0.03 + rank * 0.01) ? 1 : 0;
+  let doxiteChance;
+  if (rank >= ARENA_DOXITE_GUARANTEED_RANK) doxiteChance = 1;
+  else if (rank >= 22) doxiteChance = 0.05 + (rank - 22) * 0.05; // Platino: 5%→40% subiendo hacia el 30
+  else if (rank >= 12) doxiteChance = 0.05; // Oro: un adelanto fijo del 5%
+  else doxiteChance = 0; // Bronce/Plata: todavía no
+  const doxite = Math.random() < doxiteChance ? 1 : 0;
+  return { pixite, voxite, doxite };
+}
+
 // ---------- Mercader Itinerante ----------
 // Oferta diaria determinista (misma oferta todo el día, cambia sola al día
 // siguiente, sin necesitar servidor: se deriva de la fecha real con

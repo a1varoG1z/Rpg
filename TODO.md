@@ -6548,6 +6548,31 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
          ya existente (migrateState) resetea automáticamente a 0 cualquier
          Prestigio ya comprado bajo los umbrales anteriores.
       Sanity check general limpio (642/102/45/45), sin errores de página.
+- [x] **Recompensas de cristales en Arena, Doxite garantizado desde
+      cierto rango de Platino** (petición explícita del usuario: "en el
+      modo arena, también tiene que haber recompensas de cristales. Y a
+      partir de x nivel de platino doxite garantizado"). Arena era el
+      único modo de combate repetible del juego sin cristales — solo daba
+      Texel + Gemas. Nueva `arenaCrystalRewards(rank)` (data.js):
+      - 🟤 **Pixite**: siempre, escala con el rango (`2 + rank*0.3`).
+      - ⚪ **Voxite**: probabilidad creciente con el rango (hasta 60%).
+      - 🟡 **Doxite**: 0% en Bronce/Plata, 5% fijo en Oro, rampa 5%→40%
+        dentro de Platino (rango 22 al 29) y **GARANTIZADO (100%)** desde
+        `ARENA_DOXITE_GUARANTEED_RANK = 30` en adelante — bien entrado en
+        Platino (que va de 22 a 34), antes de cruzar a Diamante en el 35 —
+        y se mantiene garantizado en cualquier rango igual o superior
+        (Diamante/Maestro/Leyenda incluidos).
+      `UI.startArenaBattle` sube `state.currencies` con el resultado y lo
+      mete en `rewards.drops`, así la pantalla de victoria ya los muestra
+      gratis (reutiliza el mismo bloque que Mapa/Elemental/Torre/Tope de
+      Tier). El panel de rango de Arena explica ahora el sistema y el
+      umbral garantizado. Verificado con Playwright: 2000 tiradas por
+      rango confirman la distribución esperada en cada tramo (0% pre-Oro,
+      ~5% en Oro, rampa en Platino, 100% exacto desde el rango 30 en
+      adelante); un combate real (interceptando `UI.openBattle` para
+      invocar `onEnd('victoria')` directamente) confirma que las 3
+      monedas suben de verdad y que `outcome.rewards.drops` llega
+      relleno. Sanity check general limpio (642/102/45/45).
 
 ## Notas
 
