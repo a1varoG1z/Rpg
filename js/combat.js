@@ -352,16 +352,33 @@ function torreMobMult(level) {
 // de la v2) — apuntando ya a un objetivo de HP absoluto y creciente por
 // tier, amortiguarlo además dejaba a los jefes de tier alto con menos vida
 // de la pretendida, justo el "sin ofrecer resistencia" reportado.
+// Empujón extra SOLO para jefes (petición explícita del usuario: "los
+// bosses de la torre batalla, al ser solo un personaje y un único combate,
+// no deberían ser un poco más poderosos?"). Un jefe pelea en solitario
+// contra hasta 3 luchadores a la vez (sin la ayuda de 2 compañeros que sí
+// tiene cualquier mob de una tanda), así que puede permitirse ser más
+// fuerte 1 contra 3 de lo que le haría falta a un mob que ya lucha
+// acompañado. TORRE_BOSS_POWER_BOOST se aplica sobre el EXCESO por encima
+// de 1 (no sobre el ratio entero) para no romper el suelo "sin cambio si
+// ya native ≥ objetivo" que ya tenían off/def.
+// Calibrado con ~35 simulaciones reales en Playwright (5 combates enteros
+// de los 45 jefes, con la banda de referencia FUERTE y objetos curativos,
+// para cada valor de 1.4 a 2.0): 1.4-1.6 superan la escalera entera SIEMPRE
+// (0/5 fallos); en 1.7 ya falla el 80% de las veces (4/5) justo en
+// Jormungandr (tier 6); de 1.8 en adelante falla siempre y cada vez antes.
+// 1.5 se queda con margen de sobra por debajo de ese precipicio (1.7)
+// mientras casi TRIPLICA las pociones que hacían falta antes (24→75 de
+// media en los 45 jefes) — un salto real de dificultad, no cosmético.
+const TORRE_BOSS_POWER_BOOST = 1.5;
 function torreBossMult(level) {
   const fixed = fighterDef(level.fightDefId).fixedStats;
   const rawOff = Math.min(TORRE_BOSS_OFF_CAP, TORRE_BOSS_ATK_TARGET_BY_TIER[level.enemyCount] / fixed.atk);
   let rawDef = Math.min(TORRE_BOSS_DEF_CAP, TORRE_BOSS_HP_TARGET_BY_TIER[level.enemyCount] / fixed.hp);
   const defMaxRatio = TORRE_BOSS_DEF_MAX[level.enemyCount] / fixed.def;
   if (rawDef > defMaxRatio) rawDef = Math.max(1, defMaxRatio);
-  return {
-    off: rawOff <= 1 ? 1 : rawOff,
-    def: rawDef <= 1 ? 1 : rawDef,
-  };
+  const off = rawOff <= 1 ? 1 : 1 + (rawOff - 1) * TORRE_BOSS_POWER_BOOST;
+  const def = rawDef <= 1 ? 1 : 1 + (rawDef - 1) * TORRE_BOSS_POWER_BOOST;
+  return { off, def };
 }
 
 // Oleadas de un nivel de la Torre Batalla (ver TORRE_LEVELS en data.js):

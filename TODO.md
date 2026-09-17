@@ -6739,6 +6739,33 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       que el objetivo ahora es "el mejor equipo posible", no cualquier
       selección de Legendarios. Sanity check general limpio
       (642/102/45/45).
+- [x] **Torre Batalla: jefes más poderosos que los mobs** — petición
+      explícita del usuario sobre la v3: "los bosses de la torre batalla,
+      al ser solo un personaje y un único combate, no deberían ser un
+      poco más poderosos? Haz muchas simulaciones y determina una buena
+      decisión". Un jefe pelea en solitario contra hasta 3 luchadores a
+      la vez (sin la ayuda de 2 compañeros que sí tiene cualquier mob de
+      una tanda), así que puede permitirse ser más fuerte 1 contra 3 sin
+      dejar de ser justo. Nuevo `TORRE_BOSS_POWER_BOOST` (combat.js): se
+      aplica sobre el EXCESO por encima de 1 del ATK/HP ya calculados por
+      `torreBossMult` (no sobre el ratio entero, para no romper el suelo
+      "sin cambio si el nativo ya alcanza el objetivo").
+      Calibrado con ~35 simulaciones reales en Playwright (5 combates
+      completos de los 45 jefes contra la banda de referencia FUERTE —
+      9 mejores Legendarios + equipo Legendario, con objetos curativos —
+      para cada candidato de 1.4 a 2.0): 1.4-1.6 superan la escalera
+      entera SIEMPRE (0/5 fallos en cada uno); en 1.7 ya falla el 80% de
+      las veces (4/5) justo en Jormungandr (tier 6, el "precipicio" real
+      de la escalada); de 1.8 en adelante falla siempre y cada vez antes.
+      Elegido **1.5**: se queda con margen de sobra por debajo de ese
+      precipicio (1.7) mientras casi TRIPLICA las pociones que hacían
+      falta antes solo en la sección de jefes (24→75 de media en 45
+      jefes). Reverificado con la escalera COMPLETA (79 niveles, mobs +
+      jefes) 3 veces seguidas para confirmar que la varianza real del
+      combate (hay probabilidad de crítico, `Math.random()` en
+      `computeDamage`) no hace fallar ningún intento: 134-152 pociones
+      en total cada vez, 79/79 niveles superados en las 3. Sanity check
+      general limpio (642/102/45/45).
 
 ## Notas
 
