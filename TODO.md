@@ -6692,6 +6692,53 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       escalera entera sin cambios de dificultad (el fix solo BAJA a los
       mobs, no toca la fórmula de jefes). Sanity check general limpio
       (642/102/45/45).
+- [x] **Torre Batalla: recalibración completa (v3)** — petición explícita
+      del usuario sobre la entrada anterior: "hay que recalcular la
+      dificultad de la torre batalla. Piensa que llegas ahí una vez que
+      has superado al último boss del último mapa, ahí es cuando se
+      desbloquea. Ese debe ser más o menos el nivel de dificultad de la
+      torre batalla [al empezar]... tiene que ser posible con un equipo
+      full legendario (de los mejores) y con equipación legendaria...
+      tiene que partir de una dificultad mayor. Hay bosses que de muy
+      pocos golpes acabas con ellos... sin ofrecer resistencia, y los
+      mobs lo mismo". La v2 (entrada anterior) se había calibrado contra
+      la banda de Legendarios MÁS FLOJA posible para arreglar un bug real
+      (el nivel 0 aniquilaba a esa banda) — pero eso dejó la escalera
+      entera TRIVIAL para la banda de referencia de siempre (9 MEJORES
+      Legendarios Nv.40 3★ + equipo Legendario Nv.15): objetivos de ATK
+      calibrados contra ~500 de Defensa (la floja) en vez de los ~684 de
+      la buena la dejaban casi sin recibir daño, y objetivos de HP
+      igual de bajos morían de 1-2 golpes por su propio daño de salida.
+      Recalibrado usando como ancla real el jefe final del Mapa (Tifón,
+      enfrentado de verdad en Playwright con el Mapa entero marcado como
+      superado: ATK 480/DEF 500 nativo, banda con ~684 de Defensa y ~772
+      de ATK medio) — el primer escalón de cada sección (mob tanda de 3,
+      jefe enemyCount 1) apunta a un daño por golpe y una vida similar a
+      ESE combate, con `TORRE_MOB_ATK_TARGET`/`TORRE_MOB_HP_TARGET`/
+      `TORRE_BOSS_ATK_TARGET_BY_TIER`/`TORRE_BOSS_HP_TARGET_BY_TIER`
+      (combat.js) fijando objetivos ABSOLUTOS de ATK y HP por separado
+      (nunca derivados de fighterPowerScore ni de un ratio ligado solo al
+      ATK) que escalan con tabla propia hasta un tramo final muy por
+      encima de Tifón.
+      Durante la calibración se encontró y arregló OTRO bug real: Surtr
+      (nativo DEF 419, ya alto respecto a su propio ATK 161) escalaba su
+      DEF con el MISMO multiplicador que su HP para llegar al objetivo de
+      vida de su tier — pero eso disparaba su DEF final muy por encima
+      del ATK de la banda de referencia, dejando `computeDamage`
+      (ATK−DEF×0.5) en 1 de daño SIEMPRE: un muro imposible, no un reto
+      duro. Nuevo `TORRE_BOSS_DEF_MAX` limita la DEF final aunque eso deje
+      a un jefe de DEF nativa ya alta un poco por debajo de su objetivo de
+      HP — mejor corto de vida que un muro invencible.
+      Verificado con simulación completa (79 niveles) contra la banda
+      FUERTE de referencia: la escalera entera se supera con resistencia
+      real en casi todos los niveles (solo 20/79 sin apenas daño, todos
+      justo al empezar un tier nuevo) usando 102 pociones en total
+      (~1.3/nivel), sin errores de página; la banda MÁS FLOJA (el caso
+      límite de la entrada anterior) ya no revienta en el nivel 0 pero sí
+      encuentra un techo real más adelante en la escalera, coherente con
+      que el objetivo ahora es "el mejor equipo posible", no cualquier
+      selección de Legendarios. Sanity check general limpio
+      (642/102/45/45).
 
 ## Notas
 

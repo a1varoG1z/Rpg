@@ -288,107 +288,57 @@ function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
 // los mobs también... a un equipo de todo legendarios equipados con
 // objetos legendarios, al nivel 40, no les hacen nada".
 //
-// MOBS (torreMobMult): primera versión — cada tanda de enemyCount (crece
-// cada 8 escalones) tenía una potencia OBJETIVO fija en unidades de
-// fighterPowerScore, con un único escalar aplicado a las 5 stats por igual
-// para que la potencia nativa de CADA familia llegara a ese objetivo. Bug
-// real reportado por el usuario ("la torre batalla no es muy complicada?
-// […] que sea posible ganar con un equipo completo de legendarios"): una
-// familia con mucho peso de HP nativo (fighterPowerScore solo pesa el HP a
-// 0.3×) necesitaba un escalar grande para llegar a esa potencia, y ese
-// mismo escalar disparaba su ATK muy por encima de lo pretendido — la
-// araña del nivel 0 llegaba a 1149 de ATK contra ~500 de Defensa de una
-// banda de Legendarios ya floja, aniquilándola en 1-2 turnos. Ahora
-// TORRE_MOB_ATK_TARGET/TORRE_MOB_HP_TARGET (más abajo) fijan objetivos
-// ABSOLUTOS de ATK y HP por separado — igual que ya hacía torreBossMult
-// para jefes — así el multiplicador de ATK de una familia ya no depende de
-// lo "cara" que le salga alcanzar también su HP.
-//
-// JEFES (torreBossMult): pasó por DOS intentos fallidos antes de este.
-// 1º) normalizar por potencia nativa, igual que los mobs — PROVOCÓ UNA
-// DERROTA REAL reportada por el usuario (captura: 42.511 de daño
-// recibido contra un solo jefe, banda de 9 Legendarios Nv.40 arrasada):
-// las stats de jefe son fixedStats puestas A MANO, con muchísima más
-// variación entre sí que las de un mob (la tanda de un único jefe va de
-// 584 a 2299 de potencia nativa, casi 4×), así que normalizar todos a la
-// misma potencia objetivo disparó el multiplicador del jefe más flojo
-// (Bruja del Pantano, zona 2) a ×14.6 sobre TODAS sus stats a la vez.
-// 2º) un multiplicador FIJO por tanda (sin normalizar) — más seguro, pero
-// el usuario mandó una segunda captura mostrando lo contrario: con ese
-// mismo equipo ganaba al Coloso de Cristal (jefe de la 3ª zona) sin
-// ningún problema (7 de daño recibido). La razón, mirando computeDamage
-// (más arriba): el daño de un golpe es `ATK_atacante − DEF_rival×0.5`,
-// así que lo que de verdad decide si un jefe hace daño NO es su potencia
-// general sino si su ATK nativo (aquí 65) llega a superar la mitad de la
-// DEF de la banda (~566 con equipo Legendario bueno, así que hacen falta
-// más de 283 de ATK) — un multiplicador FIJO igual para todos los jefes
-// de la tanda no puede corregir eso sin sobre-subir también a los que ya
-// tenían ATK decente.
-// Solución: dos multiplicadores por separado (ver el objeto { off, def }
-// que acepta buildUnitStats) — `off` sube SOLO ATK/WIS hasta que cruce con
-// margen ese umbral de la DEF de la banda de referencia (con techo propio,
-// más alto, porque no arrastra HP/DEF/AGI consigo) y `def` sube HP/DEF/AGI
-// por separado con un techo más bajo (para que el combate dure lo
-// suficiente para que ese ATK ya relevante se note, sin volverse
-// eterno ni disparar la prob. de crítico vía AGI sin necesidad).
-// TORRE_BOSS_ATK_TARGET (700) es el ATK nativo que, multiplicado por el
-// "off" de un jefe cualquiera, se intenta alcanzar; TORRE_BOSS_OFF_CAP/
-// DEF_CAP limitan cuánto puede subir cada uno para un jefe de ATK nativo
-// muy bajo. `def` se sigue amortiguando con la raíz del nº de repeticiones
-// de la tanda (level.enemyCount), para que el combate dure lo suficiente
-// sin volverse eterno.
-//
-// `off`, en cambio, YA NO se amortigua — bug real reportado por el
-// usuario ("los bosses de la torre batalla son más fáciles que los mobs,
-// deberían ser más complicados"), confirmado por simulación con la banda
-// de referencia (9 Legendarios Nv.40 + equipo legendario Nv.15): con la
-// amortiguación antigua (÷√enemyCount, techo ×10) NINGÚN jefe de los 33
-// hacía perder a esa banda más de un ~50% de vida en todo su nivel
-// (Tifón, el jefe final, incluido) — mientras que varias tandas de mobs
-// intermedias ya la aniquilaban del todo (100%+). La razón: con el techo
-// antiguo (×10), un jefe de ATK nativo bajo (p.ej. Guardián del Bosque,
-// ATK 26) llegaba como mucho a 260 de ATK reforzado — por DEBAJO de la
-// mitad de la Defensa media de esa banda (~579 → 290), así que
-// `computeDamage` (ATK − DEF×0.5) se quedaba en el suelo de 1 de daño
-// SIEMPRE, por mucho que se repitiera la oleada; amortiguar además ese
-// techo ya insuficiente solo lo empeoraba. Subir el techo (×10→×30) y
-// dejar de amortiguarlo dentro de una misma tanda arregla la causa real
-// (que el golpe cruce ese umbral) sin tocar cómo escala `def`. Verificado
-// con la MISMA banda de referencia, simulando los 33 jefes uno a uno: la
-// escalada de daño perdido por sección queda ahora en progresión sensata
-// (~4-20% en los jefes de zona temprana, enemyCount 1, hasta ~55% en
-// Tifón, el jefe final, enemyCount 5) y por encima de las tandas de mobs
-// equivalentes en vez de por debajo. Un único jefe intermedio (Surtr,
-// enemyCount 4 — mucha Defensa Y ATK ya de fábrica, la combinación más
-// dura posible) sí llega a derrotar a esa banda de referencia; el resto
-// de los 33 se supera con margen, coherente con que unas pocas tandas de
-// mobs de esa misma tabla también la derrotan (es una tabla de dificultad
-// creciente pensada para ir mejorando equipo/nivel según se sube, no un
-// pasillo sin riesgo en ningún escalón).
-// ATK y HP objetivo ABSOLUTOS por tanda (mismo mecanismo que
-// TORRE_BOSS_ATK_TARGET para jefes, ver comentario grande de arriba y el de
-// buildUnitStats en combat.js): antes torreMobMult usaba un único escalar
-// derivado de fighterPowerScore (que solo pesa el HP a 0.3×) aplicado por
-// igual a las 5 stats — un mob con mucho peso de HP nativo (p.ej. la Reina
-// Araña, pícaro hp:90/atk:26) necesitaba un escalar grande para que su HP
-// "poco valorado" llegara a esa potencia objetivo, y ese mismo escalar
-// disparaba su ATK muy por encima de lo pretendido. Bug real reportado por
-// el usuario ("la torre batalla no es muy complicada? […] que sea posible
-// ganar con un equipo completo de legendarios"): con una banda de
-// Legendarios más floja (pero real, Nv.40 3★, equipo Legendario Nv.15
-// completo), el nivel 0 de la Torre (la araña) aniquilaba a la banda de un
-// golpe — ATK 1149 contra ~500 de Defensa. TORRE_MOB_ATK_TARGET aísla el
-// ATK/WIS (off, lo que de verdad decide si un golpe hace daño real,
-// computeDamage = ATK−DEF×0.5) del HP/DEF/AGI (def, aguante — objetivo de
-// HP propio, TORRE_MOB_HP_TARGET, ya no ligado a fighterPowerScore),
-// calibrado por simulación real contra la banda de referencia MÁS FLOJA
-// posible (los 9 Legendarios de menor potencia, no los mejores) para que
-// el peor caso realista también pueda ganar la escalera entera, con
-// objetos curativos entre oleadas.
-const TORRE_MOB_ATK_TARGET = { 3: 340, 6: 400, 9: 460, 12: 520, 15: 600 };
-const TORRE_MOB_HP_TARGET = { 3: 2400, 6: 2700, 9: 3000, 12: 3300, 15: 3600 };
-const TORRE_MOB_OFF_CAP = 15, TORRE_MOB_DEF_CAP = 4;
-const TORRE_BOSS_ATK_TARGET = 700, TORRE_BOSS_OFF_CAP = 30, TORRE_BOSS_DEF_CAP = 4;
+// v3 (recalibración completa, petición explícita del usuario): "hay que
+// recalcular la dificultad de la torre batalla. Piensa que llegas ahí una
+// vez que has superado al último boss del último mapa, ahí es cuando se
+// desbloquea. Ese debe ser más o menos el nivel de dificultad de la torre
+// batalla [al empezar]... tiene que ser posible con un equipo full
+// legendario (de los mejores) y con equipación legendaria... tiene que
+// partir de una dificultad mayor [que antes]. Hay bosses que de muy pocos
+// golpes acabas con ellos... sin ofrecer resistencia, y los mobs lo mismo."
+// La v2 (commit anterior) se había calibrado contra la banda de Legendarios
+// MÁS FLOJA posible para arreglar un bug real (el nivel 0 aniquilaba a esa
+// banda) — pero eso dejó la escalera entera trivial para la banda de
+// referencia de SIEMPRE (9 MEJORES Legendarios Nv.40 3★ + equipo Legendario
+// Nv.15, la misma que usa el resto del juego, ver TODO.md): con objetivos
+// de ATK calibrados contra ~500 de Defensa (la floja) en vez de los ~684 de
+// la banda buena, esta última no recibía apenas daño (techo de 1 de daño
+// por computeDamage), y con objetivos de HP igual de bajos la mataba de
+// 1-2 golpes por su propio daño de salida altísimo. Recalibrado point por
+// point contra la banda BUENA (medido de verdad: enfrentándola en Playwright
+// al jefe final del Mapa, Tifón, con el Mapa entero marcado como superado —
+// ATK 480/DEF 500 nativo de Tifón, banda con ~684 de Defensa media y ~772
+// de ATK medio) como ancla de "así de duro se siente el reto que acabas de
+// superar para desbloquear la Torre": el primer escalón de cada sección
+// (mob tanda de 3, jefe de enemyCount 1) apunta a un daño por golpe y una
+// vida similar a ESE combate, ya fijando directamente una VIDA absoluta
+// (TORRE_MOB_HP_TARGET/TORRE_BOSS_HP_TARGET_BY_TIER) en vez de derivarla de
+// fighterPowerScore o de un ratio ligado al ATK — así ni el HP "regala" un
+// multiplicador de ATK barato (el bug de la v1) ni el ATK evita que el
+// rival aguante lo suficiente para que el combate se note (el problema de
+// esta v2 reportado ahora). Ambos (ATK y HP) escalan con tabla propia por
+// tanda/tier, cada vez más dura, hasta un tramo final (mob 15, jefe 6) muy
+// por encima de Tifón — Torre es contenido posterior al Mapa entero, así
+// que su techo debe superar con margen lo último que ya se superó.
+const TORRE_MOB_ATK_TARGET = { 3: 480, 6: 560, 9: 650, 12: 740, 15: 850 };
+const TORRE_MOB_HP_TARGET = { 3: 3800, 6: 4300, 9: 4800, 12: 5400, 15: 6100 };
+const TORRE_MOB_OFF_CAP = 20, TORRE_MOB_DEF_CAP = 10;
+const TORRE_BOSS_ATK_TARGET_BY_TIER = { 1: 480, 2: 542, 3: 613, 4: 692, 5: 782, 6: 884 };
+const TORRE_BOSS_HP_TARGET_BY_TIER = { 1: 7000, 2: 7910, 3: 8938, 4: 10100, 5: 11413, 6: 12897 };
+const TORRE_BOSS_OFF_CAP = 40, TORRE_BOSS_DEF_CAP = 20;
+// Techo ABSOLUTO de Defensa final por tier (aparte del objetivo de HP) —
+// bug real encontrado calibrando esta v3: Surtr (nativo DEF 419, ya alto de
+// fábrica respecto a su propio ATK 161) escalaba su DEF con el MISMO
+// multiplicador que su HP (ambos bajo `def`, ver buildUnitStats) para
+// llegar al objetivo de HP del tier — pero eso disparaba su DEF final muy
+// por encima del ATK de la banda de referencia, dejando computeDamage
+// (ATK−DEF×0.5) en 1 de daño SIEMPRE: la banda no podía ni rascarle,
+// mientras Surtr sí le hacía daño real cada turno — un muro imposible, no
+// un reto duro. TORRE_BOSS_DEF_MAX limita cuánto puede subir la DEF
+// aunque eso deje a un jefe de DEF nativa ya alta un poco por debajo de su
+// objetivo de HP — mejor quedarse corto de vida que crear un muro
+// invencible.
+const TORRE_BOSS_DEF_MAX = { 1: 380, 2: 440, 3: 500, 4: 560, 5: 630, 6: 700 };
 function torreMobMult(level) {
   const u = makeUnit('enemy', level.fightDefId, XP_LEVEL_CAP);
   const rawOff = Math.min(TORRE_MOB_OFF_CAP, TORRE_MOB_ATK_TARGET[level.enemyCount] / u.atk);
@@ -398,14 +348,19 @@ function torreMobMult(level) {
     def: rawDef <= 1 ? 1 : rawDef,
   };
 }
+// `def` YA NO se amortigua con la raíz del nº de repeticiones (a diferencia
+// de la v2) — apuntando ya a un objetivo de HP absoluto y creciente por
+// tier, amortiguarlo además dejaba a los jefes de tier alto con menos vida
+// de la pretendida, justo el "sin ofrecer resistencia" reportado.
 function torreBossMult(level) {
-  const ratio = TORRE_BOSS_ATK_TARGET / fighterDef(level.fightDefId).fixedStats.atk;
-  const rawOff = Math.min(TORRE_BOSS_OFF_CAP, ratio);
-  const rawDef = Math.min(TORRE_BOSS_DEF_CAP, ratio);
-  const damp = Math.sqrt(level.enemyCount);
+  const fixed = fighterDef(level.fightDefId).fixedStats;
+  const rawOff = Math.min(TORRE_BOSS_OFF_CAP, TORRE_BOSS_ATK_TARGET_BY_TIER[level.enemyCount] / fixed.atk);
+  let rawDef = Math.min(TORRE_BOSS_DEF_CAP, TORRE_BOSS_HP_TARGET_BY_TIER[level.enemyCount] / fixed.hp);
+  const defMaxRatio = TORRE_BOSS_DEF_MAX[level.enemyCount] / fixed.def;
+  if (rawDef > defMaxRatio) rawDef = Math.max(1, defMaxRatio);
   return {
     off: rawOff <= 1 ? 1 : rawOff,
-    def: rawDef <= 1 ? 1 : 1 + (rawDef - 1) / damp,
+    def: rawDef <= 1 ? 1 : rawDef,
   };
 }
 
