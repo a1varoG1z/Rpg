@@ -4055,6 +4055,27 @@ UI.showCompare = function (state, uidA, uidB, mode) {
     + compareStatRow('🧠', 'Sabiduría', 'wis', statsA, statsB);
   body.appendChild(statsPanel);
 
+  // Ulti y habilidad de líder de cada lado — petición explícita del
+  // usuario: "que cuando comparas peleadores también se vean las ultis y
+  // habilidades de líder (si tienen)". Antes Comparar solo mostraba las 5
+  // estadísticas; para decidir de verdad a cuál usar hace falta ver
+  // también QUÉ hace su ulti y si aporta un bonus de líder para toda la
+  // banda (no todos los Legendarios se benefician igual de ocupar el
+  // centro de la Formación si ya tienes otro líder mejor colocado).
+  const abilityCol = (def) => {
+    const skill = SKILL_TYPES[def.skillId];
+    const leaderInfo = def.leaderSkillId ? LEADER_SKILLS[def.leaderSkillId] : null;
+    return `<div class="compare-ability-col">
+      <div class="compare-ability-title">⚡ ${skill.name}</div>
+      <p class="settings-info">${skill.desc}</p>
+      <div class="compare-ability-title">👑 ${leaderInfo ? leaderInfo.name : 'Sin habilidad de líder'}</div>
+      <p class="settings-info">${leaderInfo ? leaderInfo.desc : 'Este luchador no da ningún bonus a la banda desde el centro de la Formación.'}</p>
+    </div>`;
+  };
+  const abilityPanel = el('div', 'panel');
+  abilityPanel.innerHTML = '<h3>⚡ Ultis y liderazgo</h3><div class="compare-ability-grid">' + abilityCol(defA) + abilityCol(defB) + '</div>';
+  body.appendChild(abilityPanel);
+
   // Sustituir en la Formación: solo tiene sentido cuando UNO de los dos está
   // en un hueco y el otro no (si los dos están, o ninguno, no hay hueco que
   // ceder de uno a otro con un solo toque).

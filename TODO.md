@@ -6637,6 +6637,21 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Verificado: script sobre `FIGHTERS` confirma 65/65 Legendarios con
       `leaderSkillId` (antes 31/65). Sanity check general limpio
       (642/102/45/45).
+- [x] **Comparar luchadores: ahora también muestra ulti y habilidad de
+      líder** (petición explícita del usuario: "que cuando comparas
+      peleadores también se vean las ultis y habilidades de líder (si
+      tienen)"). `UI.showCompare` solo mostraba las 5 estadísticas —
+      para decidir de verdad a cuál usar (o a cuál poner en el centro de
+      la Formación) hacía falta abrir la ficha de cada uno por separado.
+      Nuevo panel "⚡ Ultis y liderazgo" bajo las estadísticas, con una
+      columna por luchador: nombre+descripción de su ulti (`SKILL_TYPES`,
+      siempre la tienen) y nombre+descripción de su habilidad de líder
+      (`LEADER_SKILLS`) o "Sin habilidad de líder" si no la tiene (solo
+      los Legendarios la llevan). Verificado con Playwright: comparación
+      real Legendario-con-líder vs Común-sin-líder muestra ambos casos
+      correctamente, y una captura de pantalla confirma que el layout de
+      2 columnas no rompe en viewport de móvil. Sanity check general
+      limpio (642/102/45/45).
 
 ## Notas
 

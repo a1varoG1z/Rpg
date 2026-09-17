@@ -423,6 +423,10 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .compare-val { text-align: center; }
 .compare-val.compare-win { color: var(--green); font-weight: bold; }
 .compare-val.compare-lose { color: var(--cream-dim); }
+.compare-ability-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.compare-ability-col { min-width: 0; }
+.compare-ability-title { font-weight: bold; font-size: 0.74rem; margin-top: 6px; }
+.compare-ability-col .settings-info { margin: 2px 0 0; }
 
 /* ---------- Tienda ---------- */
 .shop-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px dashed #3a2c17; }
