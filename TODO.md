@@ -6766,6 +6766,44 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       `computeDamage`) no hace fallar ningún intento: 134-152 pociones
       en total cada vez, 79/79 niveles superados en las 3. Sanity check
       general limpio (642/102/45/45).
+- [x] **Fix: 2 bugs reales en el orden de poder de los jefes** — petición
+      explícita del usuario: "Ettin, el gigante de dos cabezas, no tiene
+      stats muy altas? Se supone que los bosses tenían que estar
+      ordenados en orden de poder según cuándo van apareciendo, no?
+      Tienes que revisar bien eso" (visto en la Colección, filtro "Poder
+      total", Base). Investigado con un script real contra los 45 jefes:
+      1. **`bossPlayerPremium` (state.js) seguía sin corregir del todo el
+         mismo bug que motivó su creación** ("los bosses están mal
+         calibrados... Tifón aparecía #28 de 33"): el arreglo anterior
+         hacía el premium proporcional a la potencia NATIVA (fixedStats)
+         del jefe, pero como `fighterStats` aplica ese premium como
+         multiplicador ÚNICO sobre los 5 pesos de CLASE de siempre
+         (`CLASS_INFO[def.class].weights`), dos jefes con la MISMA
+         potencia nativa pero de clases distintas seguían dando un
+         "Poder total" muy distinto — Ettin (Campeón, hp:145 de peso)
+         adelantaba a Basilisco y Las Gorgonas (Brujo, hp:100, con más
+         potencia nativa que Ettin) solo por la clase que le tocó, no por
+         ser más fuerte de verdad. Nuevo `BOSS_CLASS_BASE_REFERENCE`
+         (ancla al jefe más flojo) hace que el "Poder total" resultante
+         dependa SOLO de la potencia nativa, nunca de la clase.
+      2. **Jersey Devil (zona 31 de 45) tenía fixedStats de magnitud de
+         zona muy temprana** (hp 550, ~1/3 de sus vecinos Liche/
+         Gashadokuro con 1580-2000) a pesar de estar marcado 'legendario'
+         como ellos — un bug de datos real, no un caso límite de diseño.
+         Corregido ×2.2 manteniendo la misma proporción entre sus 5
+         estadísticas (sigue siendo un brujo ágil y distinto, no una
+         copia de otro jefe), solo arreglando la magnitud.
+      Verificado con Playwright: tras el fix, ordenar los 45 jefes por
+      "Poder total" (Base) da una lista PERFECTAMENTE monótona con su
+      potencia nativa (antes no lo era, con Tifón en el puesto #28 de
+      cara al jugador pese a ser el más fuerte por diseño) — Tifón pasa a
+      ser el #1 de verdad, seguido de Balrog/Titán Colosal/Kaiju, tal
+      como pedía el diseño original ("el más poderoso debe ser el
+      tifón... luego balrog y así sucesivamente"); Ettin baja del puesto
+      #9 al #18, coherente con su potencia nativa real (~15º de 45).
+      Reverificado que Torre Batalla (que también lee `fixedStats` de
+      Jersey Devil) sigue superando la escalera completa sin problemas
+      tras el cambio. Sanity check general limpio (642/102/45/45).
 
 ## Notas
 

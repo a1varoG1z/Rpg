@@ -1040,7 +1040,16 @@ addBoss('simbionte', 'rayo', 'brujo', 'perforar', 'El Simbionte Devorador', 'Cay
 addBoss('titancolosal', 'tierra', 'campeon', 'golpe', 'El Titán Colosal', 'Ninguna muralla construida por manos mortales ha resistido jamás su avance.', 'legendario', true, { hp: 3350, atk: 280, def: 650, agi: 140, wis: 90 });
 addBoss('kaiju', 'agua', 'campeon', 'arrasar', 'El Kaiju de las Profundidades', 'Emergió del fondo del océano una sola vez, y esa vez bastó para borrar una costa entera del mapa.', 'legendario', true, { hp: 3200, atk: 355, def: 550, agi: 130, wis: 100 });
 addBoss('grendel', 'tierra', 'campeon', 'furia', 'Grendel, el Devorador de Salones', 'Ningún salón de guerreros, por bien custodiado que esté, ha sobrevivido intacto a una de sus visitas nocturnas.', 'legendario', true, { hp: 1580, atk: 180, def: 280, agi: 90, wis: 40 });
-addBoss('jerseydevil', 'viento', 'brujo', 'debilitar', 'El Jersey Devil', 'Nadie que ha escuchado su chillido en mitad del bosque ha vuelto a dormir tranquilo.', 'legendario', true, { hp: 550, atk: 138, def: 125, agi: 135, wis: 110 });
+// Fix: fixedStats se habían quedado con una magnitud de zona muy temprana
+// (hp 550, ~1/3 de sus vecinos Liche/Gashadokuro con 1580-2000) a pesar de
+// estar marcado 'legendario' como ellos y aparecer en la zona 31 de 44 —
+// bug real reportado por el usuario ("se supone que los bosses tenían que
+// estar ordenados en orden de poder según cuándo van apareciendo"). Stats
+// ×2.2 manteniendo la MISMA proporción entre ellas (sigue siendo un brujo
+// ágil y distinto de Liche/Gashadokuro, no una copia de su perfil), solo
+// corrigiendo la magnitud para encajar con el resto de jefes legendarios
+// de alrededor.
+addBoss('jerseydevil', 'viento', 'brujo', 'debilitar', 'El Jersey Devil', 'Nadie que ha escuchado su chillido en mitad del bosque ha vuelto a dormir tranquilo.', 'legendario', true, { hp: 1210, atk: 304, def: 275, agi: 297, wis: 242 });
 addBoss('gashadokuro', 'tierra', 'campeon', 'furia', 'Gashadokuro, Devorador de Caminantes', 'Formado por los huesos de miles de muertos olvidados, ningún caminante nocturno lo ve llegar hasta que ya es tarde.', 'legendario', true, { hp: 2000, atk: 255, def: 420, agi: 100, wis: 50 });
 
 const ZONES = [

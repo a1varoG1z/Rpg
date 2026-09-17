@@ -210,12 +210,32 @@ function gearBonusForEntry(state, entry) {
 // potencia de cara al jugador sin aplanarlo del todo — cualquier
 // exponente > 0 conserva el orden exacto, solo cambia cuánto se nota la
 // diferencia.
+//
+// Fix (bug real reportado por el usuario: "Ettin no tiene stats muy
+// altas? Se supone que los bosses tenían que estar ordenados en orden de
+// poder según cuándo van apareciendo"): el arreglo de arriba solo hacía
+// PROPORCIONAL el premium a la potencia nativa, pero fighterStats aplica
+// ese premium como multiplicador ÚNICO sobre los 5 pesos de CLASE de
+// siempre (CLASS_INFO[def.class].weights) — y fighterPowerScore(pesos×k) =
+// k×fighterPowerScore(pesos), así que dos jefes con el MISMO premium (misma
+// potencia nativa) pero de clases distintas (p.ej. Campeón, hp:145, frente
+// a Brujo, hp:100) seguían saliendo con "Poder total" muy distinto: Ettin
+// (Campeón, potencia nativa #15 de 45) adelantaba en la Colección a
+// Basilisco y Las Gorgonas (Brujo, potencia nativa más alta que la suya)
+// solo por venir de una clase con más peso de HP, no por ser más fuerte de
+// verdad. BOSS_CLASS_BASE_REFERENCE ancla el cálculo a la clase del jefe
+// más flojo (para no mover su premium de 1.4 de siempre) y
+// bossPlayerPremium ahora se calcula para que el "Poder total" resultante
+// dependa SOLO de la potencia nativa, nunca de qué clase le tocó al jefe.
 const BOSS_BASE_PREMIUM = 1.4;
 const BOSS_NATIVE_COMPRESS_EXP = 0.5;
 const BOSS_MIN_NATIVE_POWER = Math.min(...BOSSES.map(b => fighterPowerScore(b.fixedStats)));
+const BOSS_WEAKEST = BOSSES.find(b => fighterPowerScore(b.fixedStats) === BOSS_MIN_NATIVE_POWER);
+const BOSS_CLASS_BASE_REFERENCE = fighterPowerScore(CLASS_INFO[BOSS_WEAKEST.class].weights);
 function bossPlayerPremium(def) {
   const ratio = fighterPowerScore(def.fixedStats) / BOSS_MIN_NATIVE_POWER;
-  return BOSS_BASE_PREMIUM * Math.pow(ratio, BOSS_NATIVE_COMPRESS_EXP);
+  const targetPower = BOSS_BASE_PREMIUM * BOSS_CLASS_BASE_REFERENCE * Math.pow(ratio, BOSS_NATIVE_COMPRESS_EXP);
+  return targetPower / fighterPowerScore(CLASS_INFO[def.class].weights);
 }
 function fighterStats(state, entry) {
   const def = fighterDef(entry.defId);
