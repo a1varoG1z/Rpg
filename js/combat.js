@@ -32,6 +32,36 @@ function buildUnitStats(defId, level, extraMult) {
     };
   }
   const w = CLASS_INFO[def.class].weights;
+  // extraMult objeto { off, def } (solo lo usa torreMobMult, ver más abajo):
+  // mismo mecanismo que ya tenía el jefe de fixedStats arriba, extendido
+  // aquí a los MOBS normales (fórmula de rareza×nivel×clase). Bug real
+  // reportado por el usuario ("la torre batalla no es muy complicada? […]
+  // que sea posible ganar con un equipo completo de legendarios"):
+  // torreMobMult aplicaba un ÚNICO multiplicador escalar (derivado de
+  // fighterPowerScore, que solo pesa el HP a 0.3×) a las 5 stats por
+  // igual — un mob de clase con mucho peso de HP nativo (p.ej. la Reina
+  // Araña, pícaro con hp:90/atk:26) necesitaba un multiplicador grande
+  // para alcanzar la potencia objetivo (el HP "cuenta poco"), y ese mismo
+  // multiplicador grande disparaba su ATK muy por encima de lo previsto
+  // — verificado con la araña del nivel 0 de la Torre llegando a 1149 de
+  // ATK contra una banda de Legendarios con ~500 de DEF, un golpe de
+  // ~900+ que aniquilaba en 1-2 turnos a cualquier equipo que no fuera ya
+  // el más optimizado posible. Con el objeto { off, def } el ATK/WIS (lo
+  // que decide si un golpe hace daño real, computeDamage = ATK−DEF×0.5)
+  // se calibra contra un objetivo de ATK ABSOLUTO (torreMobAtkTarget,
+  // independiente de la "forma" de stats nativa del mob) en vez de
+  // heredar sin querer el multiplicador que hacía falta para el HP.
+  if (extraMult && typeof extraMult === 'object') {
+    const off = extraMult.off || 1, dfn = extraMult.def || 1;
+    const base = rarityInfo(def.rarity).mult * levelGrowth(level);
+    return {
+      maxHp: Math.round(w.hp * base * dfn * statVarianceMult(def.family, 'hp') * fighterStatMult(def, 'hp')),
+      atk: Math.round(w.atk * base * off * statVarianceMult(def.family, 'atk') * fighterStatMult(def, 'atk')),
+      def: Math.round(w.def * base * dfn * statVarianceMult(def.family, 'def') * fighterStatMult(def, 'def')),
+      agi: Math.round(w.agi * base * dfn * statVarianceMult(def.family, 'agi') * fighterStatMult(def, 'agi')),
+      wis: Math.round(w.wis * base * off * statVarianceMult(def.family, 'wis') * fighterStatMult(def, 'wis')),
+    };
+  }
   const mult = rarityInfo(def.rarity).mult * levelGrowth(level) * (extraMult || 1);
   return {
     maxHp: Math.round(w.hp * mult * statVarianceMult(def.family, 'hp') * fighterStatMult(def, 'hp')),
@@ -258,15 +288,21 @@ function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
 // los mobs también... a un equipo de todo legendarios equipados con
 // objetos legendarios, al nivel 40, no les hacen nada".
 //
-// MOBS (torreMobMult): cada tanda de enemyCount (crece cada 8 escalones)
-// tiene una potencia OBJETIVO fija (TORRE_MOB_TARGET_POWER, en unidades de
-// fighterPowerScore) — el multiplicador de CADA familia es el que hace
-// falta para que SU potencia nativa (a ×1, la de rareza/clase de
-// siempre) llegue a esa potencia objetivo, así una familia floja para su
-// tanda recibe más empujón que una que ya viene fuerte de fábrica. Esto
-// es seguro para mobs porque su potencia nativa, al salir de la misma
-// fórmula rareza×clase que cualquier otro luchador, varía poco dentro de
-// una tanda (~2-4.7× de multiplicador en toda la escalera, verificado).
+// MOBS (torreMobMult): primera versión — cada tanda de enemyCount (crece
+// cada 8 escalones) tenía una potencia OBJETIVO fija en unidades de
+// fighterPowerScore, con un único escalar aplicado a las 5 stats por igual
+// para que la potencia nativa de CADA familia llegara a ese objetivo. Bug
+// real reportado por el usuario ("la torre batalla no es muy complicada?
+// […] que sea posible ganar con un equipo completo de legendarios"): una
+// familia con mucho peso de HP nativo (fighterPowerScore solo pesa el HP a
+// 0.3×) necesitaba un escalar grande para llegar a esa potencia, y ese
+// mismo escalar disparaba su ATK muy por encima de lo pretendido — la
+// araña del nivel 0 llegaba a 1149 de ATK contra ~500 de Defensa de una
+// banda de Legendarios ya floja, aniquilándola en 1-2 turnos. Ahora
+// TORRE_MOB_ATK_TARGET/TORRE_MOB_HP_TARGET (más abajo) fijan objetivos
+// ABSOLUTOS de ATK y HP por separado — igual que ya hacía torreBossMult
+// para jefes — así el multiplicador de ATK de una familia ya no depende de
+// lo "cara" que le salga alcanzar también su HP.
 //
 // JEFES (torreBossMult): pasó por DOS intentos fallidos antes de este.
 // 1º) normalizar por potencia nativa, igual que los mobs — PROVOCÓ UNA
@@ -329,12 +365,38 @@ function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
 // mobs de esa misma tabla también la derrotan (es una tabla de dificultad
 // creciente pensada para ir mejorando equipo/nivel según se sube, no un
 // pasillo sin riesgo en ningún escalón).
-const TORRE_MOB_TARGET_POWER = { 3: 3300, 6: 2950, 9: 2700, 12: 2646, 15: 3200 };
+// ATK y HP objetivo ABSOLUTOS por tanda (mismo mecanismo que
+// TORRE_BOSS_ATK_TARGET para jefes, ver comentario grande de arriba y el de
+// buildUnitStats en combat.js): antes torreMobMult usaba un único escalar
+// derivado de fighterPowerScore (que solo pesa el HP a 0.3×) aplicado por
+// igual a las 5 stats — un mob con mucho peso de HP nativo (p.ej. la Reina
+// Araña, pícaro hp:90/atk:26) necesitaba un escalar grande para que su HP
+// "poco valorado" llegara a esa potencia objetivo, y ese mismo escalar
+// disparaba su ATK muy por encima de lo pretendido. Bug real reportado por
+// el usuario ("la torre batalla no es muy complicada? […] que sea posible
+// ganar con un equipo completo de legendarios"): con una banda de
+// Legendarios más floja (pero real, Nv.40 3★, equipo Legendario Nv.15
+// completo), el nivel 0 de la Torre (la araña) aniquilaba a la banda de un
+// golpe — ATK 1149 contra ~500 de Defensa. TORRE_MOB_ATK_TARGET aísla el
+// ATK/WIS (off, lo que de verdad decide si un golpe hace daño real,
+// computeDamage = ATK−DEF×0.5) del HP/DEF/AGI (def, aguante — objetivo de
+// HP propio, TORRE_MOB_HP_TARGET, ya no ligado a fighterPowerScore),
+// calibrado por simulación real contra la banda de referencia MÁS FLOJA
+// posible (los 9 Legendarios de menor potencia, no los mejores) para que
+// el peor caso realista también pueda ganar la escalera entera, con
+// objetos curativos entre oleadas.
+const TORRE_MOB_ATK_TARGET = { 3: 340, 6: 400, 9: 460, 12: 520, 15: 600 };
+const TORRE_MOB_HP_TARGET = { 3: 2400, 6: 2700, 9: 3000, 12: 3300, 15: 3600 };
+const TORRE_MOB_OFF_CAP = 15, TORRE_MOB_DEF_CAP = 4;
 const TORRE_BOSS_ATK_TARGET = 700, TORRE_BOSS_OFF_CAP = 30, TORRE_BOSS_DEF_CAP = 4;
 function torreMobMult(level) {
   const u = makeUnit('enemy', level.fightDefId, XP_LEVEL_CAP);
-  const native = fighterPowerScore({ hp: u.maxHp, atk: u.atk, def: u.def, agi: u.agi, wis: u.wis });
-  return Math.max(1, TORRE_MOB_TARGET_POWER[level.enemyCount] / native);
+  const rawOff = Math.min(TORRE_MOB_OFF_CAP, TORRE_MOB_ATK_TARGET[level.enemyCount] / u.atk);
+  const rawDef = Math.min(TORRE_MOB_DEF_CAP, TORRE_MOB_HP_TARGET[level.enemyCount] / u.maxHp);
+  return {
+    off: rawOff <= 1 ? 1 : rawOff,
+    def: rawDef <= 1 ? 1 : rawDef,
+  };
 }
 function torreBossMult(level) {
   const ratio = TORRE_BOSS_ATK_TARGET / fighterDef(level.fightDefId).fixedStats.atk;

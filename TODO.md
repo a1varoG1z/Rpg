@@ -6652,6 +6652,46 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       correctamente, y una captura de pantalla confirma que el layout de
       2 columnas no rompe en viewport de móvil. Sanity check general
       limpio (642/102/45/45).
+- [x] **Fix: Torre Batalla podía aniquilar a un equipo real de Legendarios
+      en su primer nivel** (petición explícita del usuario: "la torre
+      batalla no es muy complicada? revisa para ajustar bien y que sea
+      posible ganar con un equipo completo de legendarios y con
+      equipamiento legendario, aunque sea necesario utilizar objetos
+      curativos entre combates"). Simulación real con Playwright (79
+      niveles: 34 familias de mob + 45 jefes) usando la banda de
+      referencia MÁS FLOJA posible (los 9 Legendarios de menor potencia,
+      no los mejores) con equipo Legendario Nv.15 en las 6 ranuras —
+      reveló un bug real en `torreMobMult` (combat.js): aplicaba un ÚNICO
+      escalar (derivado de `fighterPowerScore`, que solo pesa el HP a
+      0.3×) por igual a las 5 stats de cada familia de mob. Una familia
+      con mucho peso de HP nativo (p.ej. la Reina Araña — pícaro,
+      hp:90/atk:26) necesitaba un escalar grande para que su HP "poco
+      valorado" llegara a la potencia objetivo, y ese mismo escalar
+      disparaba su ATK muy por encima de lo pretendido: el nivel 0 de la
+      Torre (la araña) llegaba a 1149 de ATK contra ~500 de Defensa de la
+      banda floja, aniquilándola en 1-2 turnos — el nivel MÁS FÁCIL de
+      toda la escalera derrotaba a un equipo real de Legendarios
+      equipados.
+      Arreglado extendiendo `buildUnitStats` (antes solo lo admitían los
+      jefes de `fixedStats`) para aceptar también un `extraMult` objeto
+      `{ off, def }` en la rama normal de rareza×clase — `off` escala
+      SOLO ATK/WIS (lo que decide si un golpe hace daño real,
+      `computeDamage = ATK−DEF×0.5`) contra un objetivo ABSOLUTO por
+      tanda (`TORRE_MOB_ATK_TARGET`, 340→600 según enemyCount 3→15), y
+      `def` escala HP/DEF/AGI aparte contra su propio objetivo
+      (`TORRE_MOB_HP_TARGET`, 2400→3600) — el mismo mecanismo que ya
+      protegía a los jefes, ahora también en los mobs.
+      Reverificado con simulación completa: los 79 niveles se superan de
+      principio a fin con la banda MÁS FLOJA de Legendarios usando
+      objetos curativos de forma proactiva (curar entre oleadas antes de
+      bajar del 85% de vida, no esperar a estar crítico) — 147 pociones
+      en total repartidas entre los 79 niveles (~1.9/nivel de media), con
+      los picos más duros (Surtr, Cthulhu, Titán Colosal) pidiendo
+      6-11 cada uno; sin errores de página. La banda de referencia FUERTE
+      (9 Legendarios top, la misma de siempre) sigue superando la
+      escalera entera sin cambios de dificultad (el fix solo BAJA a los
+      mobs, no toca la fórmula de jefes). Sanity check general limpio
+      (642/102/45/45).
 
 ## Notas
 
