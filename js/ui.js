@@ -813,8 +813,15 @@ UI.openGuide = function () {
     <p class="settings-info">Hay ultis de varios tipos: daño a un objetivo, daño mágico a toda una
     fila (Arrasar), curar (a sí mismo o a toda la fila propia), subir una estadística (a sí mismo o
     a toda la fila), debilitar la defensa rival, aturdir (con probabilidad de fallar), veneno/quemadura
-    que muerde varios turnos ignorando defensa, drenar vida (cura una parte del daño hecho),
-    purificar (quita todos los males de estado de la fila propia) y revivir a un aliado caído.</p>
+    que muerde varios turnos ignorando defensa, congelación (ralentiza siempre y puede además dejar
+    sin turno), drenar vida (cura una parte del daño hecho), purificar (quita todos los males de
+    estado de la fila propia) y revivir a un aliado caído.</p>
+    <p class="settings-info">🟡 <b>Parálisis</b>: mientras dura, el objetivo es mucho más fácil de
+    golpear en punto crítico. ⬛ <b>Ceguera</b>: lo contrario — el propio objetivo pierde precisión y
+    su probabilidad de crítico baja. 🔮 <b>Maldición</b>: el objetivo carga su ulti mucho más despacio,
+    tanto al atacar como al recibir golpes. 💚 <b>Regeneración</b>: cura a un aliado un poco de vida
+    cada turno durante varios turnos (la única ulti que cura con el tiempo en vez de golpe único).
+    Purificar también limpia parálisis, ceguera y maldición.</p>
     <p class="settings-info">Las ultis que no hacen daño por sí mismas (curar, subir estadísticas,
     purificar, revivir...) también golpean a un enemigo con un golpe extra más flojo — ningún turno
     de ulti se queda sin hacer daño.</p>`));
@@ -5416,7 +5423,11 @@ const STATUS_SPECIAL = {
   freeze: { icon: '🥶', color: '#7fd6ff', label: 'Congelado', severity: 100 },
   stun: { icon: '😵', color: '#b0b0b0', label: 'Aturdido', severity: 90 },
   burn: { icon: '🔥', color: '#ff6a3c', label: 'Quemado', severity: 80 },
+  paralysis: { icon: '🟡', color: '#e8c23c', label: 'Paralizado', severity: 75 },
   poison: { icon: '☠️', color: '#7fd15f', label: 'Envenenado', severity: 70 },
+  blind: { icon: '⬛', color: '#4a4a4a', label: 'Cegado', severity: 65 },
+  curse: { icon: '🔮', color: '#8a4ae0', label: 'Maldecido', severity: 55 },
+  regen: { icon: '💚', color: '#3ce080', label: 'Regeneración', severity: 15 },
   shield: { icon: '🛡️', color: '#5fa8f0', label: 'Escudo', severity: 10 },
 };
 // Construye, a partir del propio luchador, dos listas separadas (buffs y
@@ -5438,6 +5449,11 @@ function unitStatusBadges(u) {
     const s = u.stunReason === 'freeze' ? STATUS_SPECIAL.freeze : STATUS_SPECIAL.stun;
     debuffs.push({ ...s, title: s.label });
   }
+  // Parálisis/ceguera/maldición/regeneración (ver SKILL_TYPES en data.js).
+  if (u.critVulnTurnsLeft > 0) debuffs.push({ ...STATUS_SPECIAL.paralysis, title: `${STATUS_SPECIAL.paralysis.label} (+${u.critVulnBonus}% crítico recibido)` });
+  if (u.blindTurnsLeft > 0) debuffs.push({ ...STATUS_SPECIAL.blind, title: `${STATUS_SPECIAL.blind.label} (-${u.blindPenalty}% crítico propio)` });
+  if (u.curseTurnsLeft > 0) debuffs.push({ ...STATUS_SPECIAL.curse, title: `${STATUS_SPECIAL.curse.label} (carga ulti ×${u.curseChargeMult})` });
+  if ((u.hots || []).length) buffs.push({ ...STATUS_SPECIAL.regen, title: STATUS_SPECIAL.regen.label });
   if (u.shield) buffs.push({ ...STATUS_SPECIAL.shield, title: STATUS_SPECIAL.shield.label });
   return { buffs, debuffs };
 }
@@ -5506,9 +5522,18 @@ function battleUnitStatusPanel(u) {
   (u.dots || []).forEach(d => rows.push(
     `<div class="stat-row"><span class="status-debuff">☠️ ${d.label}</span><span>${d.amount}/turno · ${turnsLabel(d.turnsLeft)}</span></div>`));
   if (u.stunTurns > 0) rows.push(
-    `<div class="stat-row"><span class="status-debuff">😵 Aturdido</span><span>${turnsLabel(u.stunTurns)}</span></div>`);
+    `<div class="stat-row"><span class="status-debuff">${u.stunReason === 'freeze' ? '🥶 Congelado' : '😵 Aturdido'}</span><span>${turnsLabel(u.stunTurns)}</span></div>`);
   if (u.shield) rows.push(
     `<div class="stat-row"><span class="status-buff">🛡️ Escudo</span><span>${u.shield.amount} · ${turnsLabel(u.shield.turnsLeft)}</span></div>`);
+  // Parálisis/ceguera/maldición/regeneración (ver SKILL_TYPES en data.js).
+  if (u.critVulnTurnsLeft > 0) rows.push(
+    `<div class="stat-row"><span class="status-debuff">🟡 Paralizado (+${u.critVulnBonus}% crítico recibido)</span><span>${turnsLabel(u.critVulnTurnsLeft)}</span></div>`);
+  if (u.blindTurnsLeft > 0) rows.push(
+    `<div class="stat-row"><span class="status-debuff">⬛ Cegado (-${u.blindPenalty}% crítico propio)</span><span>${turnsLabel(u.blindTurnsLeft)}</span></div>`);
+  if (u.curseTurnsLeft > 0) rows.push(
+    `<div class="stat-row"><span class="status-debuff">🔮 Maldecido (carga ulti ×${u.curseChargeMult})</span><span>${turnsLabel(u.curseTurnsLeft)}</span></div>`);
+  (u.hots || []).forEach(h => rows.push(
+    `<div class="stat-row"><span class="status-buff">💚 ${h.label}</span><span>+${h.amount}/turno · ${turnsLabel(h.turnsLeft)}</span></div>`));
   panel.innerHTML = `<h3>🌀 Estado actual</h3>` + (rows.length ? rows.join('') : '<p class="settings-info">Sin efectos activos ahora mismo.</p>');
   return panel;
 }
@@ -5623,6 +5648,14 @@ function syncUnitFromClone(live, cloned) {
   // antes de que existiera esta función.
   live.phaseIdx = cloned.phaseIdx;
   live.immuneElement = cloned.immuneElement;
+  // Parálisis/ceguera/maldición/regeneración (ver SKILL_TYPES en data.js):
+  // mismo motivo exacto que phaseIdx/immuneElement arriba — sin esto se
+  // "olvidarían" cada ronda igual que ya les pasó a buffs/debuffs/veneno/
+  // aturdimiento y a las fases de jefe antes de que existiera esta función.
+  live.hots = cloned.hots;
+  live.critVulnBonus = cloned.critVulnBonus; live.critVulnTurnsLeft = cloned.critVulnTurnsLeft;
+  live.blindPenalty = cloned.blindPenalty; live.blindTurnsLeft = cloned.blindTurnsLeft;
+  live.curseChargeMult = cloned.curseChargeMult; live.curseTurnsLeft = cloned.curseTurnsLeft;
 }
 
 UI.onClashDone = function (view) {
@@ -5741,6 +5774,25 @@ UI.applyBattleEvent = function (view, ev) {
       triggerBattleAnim(u.id, 'hit-shake', 300);
       UI.spawnBattleFloat(u.id, '-' + ev.amount, false);
       UI.logLine(`🧪 ${u.name} sufre ${ev.amount} de daño por ${ev.label}.`);
+      break;
+    case 'paralysisattempt':
+      UI.logLine(ev.success ? `🟡 ${target.name} queda paralizado: mucho más fácil de golpear con crítico.` : `${target.name} resiste la parálisis.`);
+      break;
+    case 'blindattempt':
+      UI.logLine(ev.success ? `⬛ ${target.name} queda cegado: sus golpes fallan más el crítico.` : `${target.name} resiste la ceguera.`);
+      break;
+    case 'curseattempt':
+      UI.logLine(ev.success ? `🔮 ${target.name} queda maldecido: carga su ulti mucho más despacio.` : `${target.name} resiste la maldición.`);
+      break;
+    case 'regenapplied':
+      UI.logLine(`💚 ${u.name} envuelve a ${target.name} en regeneración.`);
+      break;
+    case 'regen':
+      u.hp = Math.min(u.maxHp, u.hp + ev.amount);
+      UI.updateUnitCardHp(u);
+      triggerBattleAnim(u.id, 'heal-glow', 400);
+      UI.spawnBattleFloat(u.id, '+' + ev.amount, false);
+      UI.logLine(`💚 ${u.name} recupera ${ev.amount} de vida por ${ev.label}.`);
       break;
     case 'cleanse':
       UI.logLine(`✨ ${u.name} se purifica de todos sus efectos negativos.`);

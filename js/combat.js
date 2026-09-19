@@ -122,6 +122,12 @@ function makeUnit(side, defId, level, extraMult, sourceUid) {
     level, powerMult: (extraMult && typeof extraMult === 'object') ? (extraMult.off || 1) : (extraMult || 1),
     maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
     skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], dots: [], stunTurns: 0, shield: null, alive: true,
+    // Parálisis/ceguera/maldición/regeneración (ver SKILL_TYPES): mismo
+    // patrón que immuneElement/phaseIdx de las fases de jefe — campos
+    // planos con su propio contador de turnos, en vez de un array, porque
+    // cada unidad solo puede llevar UNO de cada a la vez (una parálisis
+    // nueva sustituye a la anterior, no se acumulan).
+    hots: [], critVulnBonus: 0, critVulnTurnsLeft: 0, blindPenalty: 0, blindTurnsLeft: 0, curseChargeMult: 1, curseTurnsLeft: 0,
   };
 }
 
@@ -139,6 +145,7 @@ function makePlayerUnit(state, uid, level) {
     name: def.name, element: def.element, class: def.class, rarity: def.rarity,
     level: entry.level, maxHp: stats.hp, hp: stats.hp, atk: stats.atk, def: stats.def, agi: stats.agi, wis: stats.wis,
     skillId: def.skillId, ultCharge: 0, buffs: [], debuffs: [], dots: [], stunTurns: 0, shield: null, alive: true,
+    hots: [], critVulnBonus: 0, critVulnTurnsLeft: 0, blindPenalty: 0, blindTurnsLeft: 0, curseChargeMult: 1, curseTurnsLeft: 0,
   };
 }
 
@@ -1277,7 +1284,11 @@ function applyDamage(log, attacker, target, rawAmount, isCrit, label) {
     target.alive = false;
     log.push({ type: 'faint', unitId: target.id, side: target.side, killerId: attacker.id });
   } else if (target.alive) {
-    target.ultCharge = Math.min(ULT_CHARGE_MAX, target.ultCharge + ULT_CHARGE_ON_HIT);
+    // Maldición (target.curseChargeMult, ver SKILL_TYPES kind 'curse'):
+    // ralentiza TODA ganancia de carga de ulti del maldecido, tanto la
+    // que recibe por ser golpeado (aquí) como la de su propio golpe
+    // básico (ver performTurn) — sin esto solo frenaría media ecuación.
+    target.ultCharge = Math.min(ULT_CHARGE_MAX, target.ultCharge + Math.round(ULT_CHARGE_ON_HIT * (target.curseChargeMult || 1)));
     log.push({ type: 'charge', unitId: target.id, value: target.ultCharge });
     maybeTriggerBossPhase(log, target);
   }
@@ -1315,7 +1326,13 @@ function computeDamage(attacker, target, mult, useWis, forceCrit, ignoreDef) {
   const elMult = elementDamageMult(attacker.element, target.element, target.immuneElement);
   const vulnMult = typeVulnerabilityMult(target.class, useWis);
   const variance = 0.9 + Math.random() * 0.2;
-  const critChance = Math.min(40, 5 + effectiveAgi(attacker) * 0.15);
+  // Parálisis (target.critVulnBonus) sube el crítico de CUALQUIERA que
+  // golpee al paralizado, incluso por encima del 40% de tope normal;
+  // ceguera (attacker.blindPenalty) baja el crítico de quien ataca
+  // cegado. Los dos usan el mismo cálculo base de siempre, solo
+  // desplazado — ver SKILL_TYPES (kind 'paralysis'/'blind').
+  const critVuln = target.critVulnBonus || 0;
+  const critChance = Math.max(0, Math.min(40 + critVuln, 5 + effectiveAgi(attacker) * 0.15 + critVuln - (attacker.blindPenalty || 0)));
   const isCrit = forceCrit || Math.random() * 100 < critChance;
   const dmg = base * elMult * vulnMult * mult * variance * (isCrit ? 1.5 : 1);
   return { amount: Math.max(1, Math.round(dmg)), isCrit };
@@ -1352,6 +1369,12 @@ function tickTimers(unit, log) {
     unit.shield.turnsLeft--;
     if (unit.shield.turnsLeft <= 0) unit.shield = null;
   }
+  // Parálisis/ceguera/maldición (ver SKILL_TYPES/computeDamage/applyDamage):
+  // decaen igual que el escudo, un campo plano con su propio contador en
+  // vez de vivir dentro de debuffs[], porque no son un ±% de estadística.
+  if (unit.critVulnTurnsLeft > 0 && --unit.critVulnTurnsLeft <= 0) unit.critVulnBonus = 0;
+  if (unit.blindTurnsLeft > 0 && --unit.blindTurnsLeft <= 0) unit.blindPenalty = 0;
+  if (unit.curseTurnsLeft > 0 && --unit.curseTurnsLeft <= 0) unit.curseChargeMult = 1;
   if (unit.dots && unit.dots.length) {
     unit.dots.forEach(d => {
       if (!unit.alive) return;
@@ -1363,6 +1386,17 @@ function tickTimers(unit, log) {
       d.turnsLeft--;
     });
     unit.dots = unit.dots.filter(d => d.turnsLeft > 0);
+  }
+  // Regeneración: HoT (heal over time) — mismo patrón que dots pero
+  // curando en vez de restando, tope en maxHp.
+  if (unit.hots && unit.hots.length) {
+    unit.hots.forEach(h => {
+      if (!unit.alive) return;
+      unit.hp = Math.min(unit.maxHp, unit.hp + h.amount);
+      log.push({ type: 'regen', unitId: unit.id, amount: h.amount, label: h.label });
+      h.turnsLeft--;
+    });
+    unit.hots = unit.hots.filter(h => h.turnsLeft > 0);
   }
 }
 
@@ -1389,7 +1423,7 @@ function performTurn(log, unit, ownRow, enemyRow) {
     const { amount, isCrit } = computeDamage(unit, target, isDevastador ? 1.6 : 1.0, false, isDevastador);
     applyDamage(log, unit, target, amount, isCrit, null);
     if (unit.alive) {
-      const gain = Math.round(22 + effectiveAgi(unit) * 0.4);
+      const gain = Math.round((22 + effectiveAgi(unit) * 0.4) * (unit.curseChargeMult || 1));
       unit.ultCharge = Math.min(ULT_CHARGE_MAX, unit.ultCharge + gain);
       log.push({ type: 'charge', unitId: unit.id, value: unit.ultCharge });
     }
@@ -1508,6 +1542,60 @@ function performTurn(log, unit, ownRow, enemyRow) {
       applyUltBonusHit(log, unit, enemyRow, skill, target);
       break;
     }
+    case 'paralysis': {
+      // Parálisis: probabilidad de dejar al objetivo mucho más fácil de
+      // golpear en un punto débil — sube su vulnerabilidad a crítico (lo
+      // lee computeDamage) en vez de hacerle perder el turno como
+      // aturdir/congelar. Siempre lo golpea, tenga o no éxito la tirada.
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const success = Math.random() < skill.chance;
+      if (success) { target.critVulnBonus = skill.critVulnBonus; target.critVulnTurnsLeft = skill.turns; }
+      log.push({ type: 'paralysisattempt', unitId: unit.id, targetId: target.id, success });
+      applyUltBonusHit(log, unit, enemyRow, skill, target);
+      break;
+    }
+    case 'blind': {
+      // Ceguera: lo opuesto de parálisis — probabilidad de que sea el
+      // PROPIO objetivo quien pierda precisión: mientras dure, sus golpes
+      // (los que ÉL reparte, no los que recibe) tienen menos probabilidad
+      // de ser críticos (computeDamage lee attacker.blindPenalty).
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const success = Math.random() < skill.chance;
+      if (success) { target.blindPenalty = skill.blindPenalty; target.blindTurnsLeft = skill.turns; }
+      log.push({ type: 'blindattempt', unitId: unit.id, targetId: target.id, success });
+      applyUltBonusHit(log, unit, enemyRow, skill, target);
+      break;
+    }
+    case 'curse': {
+      // Maldición: probabilidad de ralentizar TODA ganancia de carga de
+      // ulti del objetivo durante varios turnos (ver curseChargeMult en
+      // applyDamage/performTurn) — un debuff que ataca el ritmo del
+      // rival, no sus estadísticas de golpe.
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const success = Math.random() < skill.chance;
+      if (success) { target.curseChargeMult = skill.curseMult; target.curseTurnsLeft = skill.turns; }
+      log.push({ type: 'curseattempt', unitId: unit.id, targetId: target.id, success });
+      applyUltBonusHit(log, unit, enemyRow, skill, target);
+      break;
+    }
+    case 'regen': {
+      // Regeneración: cura a UN aliado (el mismo criterio que pickTarget
+      // usa contra el rival — sesgado a elegir al más herido, no siempre
+      // el mismo) un % de su vida máxima cada turno durante varios turnos
+      // — lo opuesto exacto de un veneno/quemadura, mismo mecanismo
+      // (unit.hots, ver tickTimers) en la dirección contraria.
+      const target = pickTarget(ownRow);
+      if (target) {
+        const tick = Math.max(1, Math.round(target.maxHp * skill.pct * healWisMult(unit, skill)));
+        target.hots.push({ amount: tick, turnsLeft: skill.turns, label: skill.name });
+        log.push({ type: 'regenapplied', unitId: unit.id, targetId: target.id });
+      }
+      applyUltBonusHit(log, unit, enemyRow, skill);
+      break;
+    }
     case 'drain': {
       // Golpea y se cura una parte del daño hecho — el único ulti que sube
       // la vida propia sin depender de estar ileso, bueno para aguantar.
@@ -1521,14 +1609,21 @@ function performTurn(log, unit, ownRow, enemyRow) {
       break;
     }
     case 'cleanse': {
-      // Quita todos los debuffs y el aturdimiento de toda su fila — el único
-      // ulti pensado como respuesta directa a debilitar/aturdir/veneno
-      // rivales en vez de hacer daño o curar vida.
+      // Quita todos los debuffs y cualquier estado alterado negativo de
+      // toda su fila — el único ulti pensado como respuesta directa a
+      // debilitar/aturdir/veneno/parálisis/ceguera/maldición rivales en
+      // vez de hacer daño o curar vida. La regeneración (hots) NO se
+      // limpia aquí a propósito: es un efecto POSITIVO, igual que los
+      // buffs/el escudo, que este ulti nunca toca.
       ownRow.filter(u => u.alive).forEach(ally => {
-        const hadSomething = ally.debuffs.length > 0 || ally.stunTurns > 0 || ally.dots.length > 0;
+        const hadSomething = ally.debuffs.length > 0 || ally.stunTurns > 0 || ally.dots.length > 0
+          || ally.critVulnTurnsLeft > 0 || ally.blindTurnsLeft > 0 || ally.curseTurnsLeft > 0;
         ally.debuffs = [];
         ally.dots = [];
         ally.stunTurns = 0;
+        ally.critVulnBonus = 0; ally.critVulnTurnsLeft = 0;
+        ally.blindPenalty = 0; ally.blindTurnsLeft = 0;
+        ally.curseChargeMult = 1; ally.curseTurnsLeft = 0;
         if (hadSomething) log.push({ type: 'cleanse', unitId: ally.id });
       });
       applyUltBonusHit(log, unit, enemyRow, skill);
@@ -1543,7 +1638,9 @@ function performTurn(log, unit, ownRow, enemyRow) {
       if (fallen) {
         fallen.alive = true;
         fallen.hp = Math.round(fallen.maxHp * skill.pct);
-        fallen.buffs = []; fallen.debuffs = []; fallen.dots = []; fallen.stunTurns = 0; fallen.shield = null;
+        fallen.buffs = []; fallen.debuffs = []; fallen.dots = []; fallen.hots = []; fallen.stunTurns = 0; fallen.shield = null;
+        fallen.critVulnBonus = 0; fallen.critVulnTurnsLeft = 0; fallen.blindPenalty = 0; fallen.blindTurnsLeft = 0;
+        fallen.curseChargeMult = 1; fallen.curseTurnsLeft = 0;
         log.push({ type: 'revive', unitId: unit.id, targetId: fallen.id, amount: fallen.hp });
       }
       applyUltBonusHit(log, unit, enemyRow, skill);

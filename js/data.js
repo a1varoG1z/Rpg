@@ -147,7 +147,7 @@ const SKILL_TYPES = {
   aturdir: { name: 'Onda de Trueno', kind: 'stun', turns: 1, chance: 0.65, target: 'single', bonusHitMult: 0.85, desc: 'Puede aturdir a un enemigo y siempre lo golpea.' },
   veneno: { name: 'Mordisco Venenoso', kind: 'dot', mult: 1.5, dotPct: 0.07, dotTurns: 3, target: 'single', desc: 'Golpea con fuerza a un enemigo y lo envenena: sigue perdiendo vida 3 turnos, ignorando su defensa.' },
   drenar: { name: 'Golpe Vampírico', kind: 'drain', mult: 1.8, drainPct: 0.5, target: 'single', desc: 'Golpea con fuerza a un enemigo y recupera la mitad del daño hecho como vida propia.' },
-  purificar: { name: 'Aura Purificadora', kind: 'cleanse', target: 'row-ally', bonusHitMult: 0.85, usesWis: true, desc: 'Elimina los debuffs y cualquier estado alterado (veneno, quemadura, congelación, aturdimiento) de toda su fila, y golpea a un enemigo.' },
+  purificar: { name: 'Aura Purificadora', kind: 'cleanse', target: 'row-ally', bonusHitMult: 0.85, usesWis: true, desc: 'Elimina los debuffs y cualquier estado alterado negativo (veneno, quemadura, congelación, aturdimiento, parálisis, ceguera, maldición) de toda su fila, y golpea a un enemigo.' },
   revivir: { name: 'Milagro de Vida', kind: 'revive', pct: 0.4, target: 'row-ally', bonusHitMult: 0.85, usesWis: true, desc: 'Revive a un aliado caído de su fila con parte de su vida máxima, y golpea a un enemigo.' },
   // --- Ultis nuevas (petición explícita: "implementa y reparte entre los
   // personajes existentes: barrera, golpe perforante, doble golpe, golpe
@@ -177,6 +177,26 @@ const SKILL_TYPES = {
   //    turno), a diferencia de aturdir (solo probabilidad, todo o nada).
   quemadura: { name: 'Aliento Abrasador', kind: 'burn', mult: 1.3, dotPct: 0.06, dotTurns: 3, burnAtkPct: 0.2, target: 'single', desc: 'Golpea a un enemigo y lo quema: pierde vida cada turno y su Ataque se reduce mientras arde, ignorando su Defensa.' },
   congelacion: { name: 'Aliento Glacial', kind: 'freeze', chance: 0.45, freezeTurns: 1, slowPct: 0.3, slowTurns: 3, target: 'single', bonusHitMult: 0.85, desc: 'Ralentiza a un enemigo (pierde Agilidad varios turnos) y puede llegar a congelarlo del todo, haciéndole perder el turno entero.' },
+  // --- Segunda ronda de estados alterados (petición explícita: "añadir
+  // ultis de parálisis, ceguera, maldición, regeneración") — otros 4
+  // estados MECÁNICAMENTE distintos entre sí y de los 3 anteriores, sin
+  // reutilizar ningún efecto ya existente (ninguno hace perder el turno
+  // ni es un simple ±% de estadística):
+  //  - parálisis: sube la probabilidad de que CUALQUIERA que golpee al
+  //    objetivo saque crítico (computeDamage, combat.js) — lo deja
+  //    vulnerable en vez de inmovilizarlo.
+  //  - ceguera: lo contrario — baja la probabilidad de que el PROPIO
+  //    objetivo saque crítico en sus golpes, mientras dure.
+  //  - maldición: ralentiza toda la ganancia de carga de ulti del
+  //    objetivo (atacando o siendo golpeado), en vez de tocar daño o
+  //    estadísticas — ataca su ritmo de combate.
+  //  - regeneración: la primera ulti de curación por turnos (HoT) del
+  //    juego — cura a UN aliado (no toda la fila) cada turno durante
+  //    varios turnos, lo opuesto exacto de veneno/quemadura.
+  paralisis: { name: 'Toque Paralizante', kind: 'paralysis', chance: 0.55, critVulnBonus: 25, turns: 3, target: 'single', bonusHitMult: 0.85, desc: 'Puede paralizar a un enemigo: mientras dure, es mucho más fácil acertarle un golpe crítico. Siempre lo golpea.' },
+  ceguera: { name: 'Nube Cegadora', kind: 'blind', chance: 0.6, blindPenalty: 25, turns: 3, target: 'single', bonusHitMult: 0.85, desc: 'Puede cegar a un enemigo: mientras dure, sus propios golpes tienen mucha menos probabilidad de ser críticos. Siempre lo golpea.' },
+  maldicion: { name: 'Maldición del Vacío', kind: 'curse', chance: 0.65, curseMult: 0.5, turns: 3, target: 'single', bonusHitMult: 0.85, desc: 'Puede maldecir a un enemigo: mientras dure, carga su ulti mucho más despacio, tanto atacando como al recibir golpes. Siempre lo golpea.' },
+  regeneracion: { name: 'Aliento de Vida', kind: 'regen', pct: 0.08, turns: 3, target: 'single-ally', bonusHitMult: 0.85, usesWis: true, desc: 'Cura a un aliado herido (prioriza al que menos vida tenga) un pequeño % de su vida máxima cada turno durante varios turnos, y golpea a un enemigo.' },
 };
 
 // Texto con los números EXACTOS de cada ulti (%, turnos, probabilidad...)
@@ -225,10 +245,18 @@ function skillMechanicsText(skill) {
       return `Daño ×${skill.mult} a un enemigo, y lo quema: pierde un ${pct(skill.dotPct)} de su vida máxima cada turno (ignorando su Defensa) y su Ataque baja un ${pct(skill.burnAtkPct)}, ambos durante ${skill.dotTurns} turnos.`;
     case 'freeze':
       return `Reduce la Agilidad de un enemigo un ${pct(skill.slowPct)} durante ${skill.slowTurns} turnos, y tiene un ${Math.round(skill.chance * 100)}% de posibilidades de congelarlo del todo ${skill.freezeTurns} turno${skill.freezeTurns === 1 ? '' : 's'} (pierde el turno entero).` + bonusHit;
+    case 'paralysis':
+      return `${Math.round(skill.chance * 100)}% de posibilidades de paralizar a un enemigo ${skill.turns} turnos: mientras dure, CUALQUIERA que lo golpee tiene un ${skill.critVulnBonus}% más de probabilidades de sacar crítico.` + bonusHit;
+    case 'blind':
+      return `${Math.round(skill.chance * 100)}% de posibilidades de cegar a un enemigo ${skill.turns} turnos: mientras dure, sus propios golpes tienen un ${skill.blindPenalty}% menos de probabilidades de ser críticos.` + bonusHit;
+    case 'curse':
+      return `${Math.round(skill.chance * 100)}% de posibilidades de maldecir a un enemigo ${skill.turns} turnos: mientras dure, gana carga de ulti al ${pct(skill.curseMult)} de lo normal (atacando o siendo golpeado).` + bonusHit;
+    case 'regen':
+      return `Cura a un aliado herido un ${pct(skill.pct)} de su vida máxima cada turno durante ${skill.turns} turnos (más cuanta más Sabiduría tenga).` + bonusHit;
     case 'drain':
       return `Daño ×${skill.mult} a un enemigo; recupera el ${pct(skill.drainPct)} de ese daño como vida propia.`;
     case 'cleanse':
-      return 'Elimina todos los debuffs y cualquier estado alterado (veneno, quemadura, congelación, aturdimiento) de TODA su fila.' + bonusHit;
+      return 'Elimina todos los debuffs y cualquier estado alterado negativo (veneno, quemadura, congelación, aturdimiento, parálisis, ceguera, maldición) de TODA su fila.' + bonusHit;
     case 'revive':
       return `Si tiene algún aliado caído en su fila, lo revive con un ${pct(skill.pct)} de su vida máxima (sin ningún debuff ni estado alterado encima). También golpea a un enemigo (×${skill.bonusHitMult} de daño, según su Sabiduría) pase lo que pase, haya o no a quien revivir.`;
     case 'shieldRow':
@@ -459,7 +487,7 @@ addFamily('sirena', 2, 'agua', 'brujo', 'arrasar', ['Sirena de Voz Dulce', 'Sire
 addFamily('gorila', 1, 'tierra', 'campeon', 'golpe', ['Gorila Montaraz', 'Gorila de Espalda Plateada', 'Rey de la Jungla de Piedra'], ['Gobierna su territorio a puñetazos que parten la roca.', 'El plateado de su espalda es una advertencia que toda la jungla reconoce a distancia.', 'Ni la roca más dura resiste ya el peso de sus puños.'], true);
 addFamily('cocodrilo', 2, 'agua', 'campeon', 'escudo', ['Guerrero Cocodrilo', 'Centurión del Pantano', 'Señor de las Aguas Turbias'], ['Su piel curtida ha detenido más golpes de los que nadie recuerda.', 'Patrulla el pantano con la disciplina de un verdadero centurión, sin dejar pasar ni una brecha.', 'Las aguas turbias del pantano le pertenecen, y quien las cruza sin permiso no vuelve a salir.'], true);
 addFamily('hidradragon', 3, 'rayo', 'brujo', 'arrasar', ['Cría de Mil Fauces', 'Dragón de Tres Cabezas', 'Soberano de las Siete Cabezas'], ['Cada cabeza que pierde en combate vuelve a crecer el doble de fuerte.', 'Tres cabezas piensan — y muerden — mejor que una.', 'Siete cabezas, siete fauces: ningún ejército ha sobrevivido para contarlas todas.'], true);
-addFamily('avefenix', 3, 'fuego', 'guru', 'curar', ['Polluelo de Cenizas', 'Ave de Fuego Eterno', 'Fénix Inmortal'], ['Cuando muere, renace de sus propias cenizas más brillante que antes.', 'El fuego que la consume ya no es un castigo, sino la fuente de su poder.', 'Ha muerto tantas veces que ya no recuerda tener miedo a la última.'], true);
+addFamily('avefenix', 3, 'fuego', 'guru', 'regeneracion', ['Polluelo de Cenizas', 'Ave de Fuego Eterno', 'Fénix Inmortal'], ['Cuando muere, renace de sus propias cenizas más brillante que antes.', 'El fuego que la consume ya no es un castigo, sino la fuente de su poder.', 'Ha muerto tantas veces que ya no recuerda tener miedo a la última.'], true);
 addFamily('hipogrifo', 2, 'viento', 'explorador', 'rafaga', ['Potro Alado', 'Hipogrifo Salvaje', 'Señor de los Cielos Altos'], ['Mitad caballo, mitad grifo, surca el cielo más rápido que cualquier ave.', 'Vuela libre por cielos que ningún jinete se atreve a cruzar sin su permiso.', 'Ni el águila más veloz alcanza la sombra que deja tras de sí.'], true);
 addFamily('cerbero', 3, 'fuego', 'campeon', 'barrera', ['Cachorro de Tres Cabezas', 'Guardián del Umbral', 'Cerbero, Custodio del Inframundo'], ['Vigila la puerta que separa el mundo de los vivos del de los muertos.', 'Cada una de sus tres cabezas vigila una dirección distinta: nada cruza sin ser visto.', 'Ninguna alma, viva o muerta, ha logrado pasar junto a él sin su consentimiento.'], true);
 addFamily('centauro', 2, 'tierra', 'explorador', 'debilitar', ['Potrillo Centauro', 'Centauro Arquero', 'Jefe de la Manada Salvaje'], ['Combina la fuerza de un corcel con la puntería de un cazador nato.', 'Su flecha nunca falla, y su galope nunca se cansa.', 'Lidera a la manada entera con el arco en una mano y las riendas de su propio cuerpo en la otra.'], true);
@@ -490,7 +518,7 @@ addFamily('genbu', 2, 'agua', 'campeon', 'barrera', ['Tortuga Joven de Genbu', '
 addFamily('escualo', 1, 'agua', 'picaro', 'golpeGracia', ['Aprendiz Tiburón', 'Escualo de Combate', 'Depredador de los Siete Mares'], ['Huele la sangre — y la debilidad — antes que nadie.', 'Cada combate afila más sus instintos de depredador.', 'Los siete mares le pertenecen: nada débil sobrevive donde él caza.'], true);
 addFamily('hercules', 3, 'tierra', 'campeon', 'golpe', ['Joven de Fuerza Divina', 'Hércules en sus Trabajos', 'Hércules, el Semidiós'], ['Ha completado hazañas que ningún mortal lograría siquiera empezar.', 'Cada trabajo imposible que completa añade una hazaña más a su leyenda.', 'Su fuerza ya no se mide como la de un mortal, sino como la de un dios.'], true);
 addFamily('ciclope', 2, 'tierra', 'campeon', 'golpe', ['Cíclope Pastor', 'Cíclope Forjador', 'Cíclope, Ojo del Trueno'], ['Con un solo ojo ve más peligro que la mayoría con dos.', 'Su forja produce armas capaces de atravesar la piedra más dura de la montaña.', 'Su único ojo ve venir la tormenta antes de que el propio cielo se oscurezca.'], true);
-addFamily('driada', 1, 'tierra', 'guru', 'curar', ['Brote de Dríada', 'Dríada del Bosque', 'Dríada Madre del Bosque Ancestral'], ['Su vida está ligada al árbol que la vio nacer.', 'Su raíz se extiende cada vez más profunda en el corazón del bosque.', 'Es la madre de todos los árboles del bosque ancestral, y ellos la protegen a su vez.'], true);
+addFamily('driada', 1, 'tierra', 'guru', 'regeneracion', ['Brote de Dríada', 'Dríada del Bosque', 'Dríada Madre del Bosque Ancestral'], ['Su vida está ligada al árbol que la vio nacer.', 'Su raíz se extiende cada vez más profunda en el corazón del bosque.', 'Es la madre de todos los árboles del bosque ancestral, y ellos la protegen a su vez.'], true);
 addFamily('ent', 2, 'tierra', 'campeon', 'barrera', ['Retoño Andante', 'Ent Guardián', 'Ent Ancestral del Bosque Viejo'], ['Piensa despacio, pero cuando decide actuar, nada lo detiene.', 'Cada año que pasa, sus raíces se hunden un poco más en la tierra vieja.', 'El bosque viejo entero escucha su voz cuando por fin decide hablar.'], true);
 addFamily('hidraserpiente', 2, 'agua', 'brujo', 'arrasar', ['Hidra Recién Nacida', 'Hidra de Pantano', 'Hidra de las Nueve Cabezas'], ['Corta una cabeza y otras dos crecerán en su lugar.', 'Cada cabeza cortada solo alimenta más su furia — y su número.', 'Nueve cabezas vigilan el pantano: ninguna presa escapa a todas a la vez.'], true);
 addFamily('hombreoso', 1, 'tierra', 'campeon', 'golpe', ['Joven Oso', 'Guerrero Oso', 'Gran Oso de las Montañas'], ['Su abrazo es tan mortal como su zarpazo.', 'Su fuerza ha crecido tanto como su territorio en las montañas.', 'Ningún rival sobrevive a un abrazo del Gran Oso de las Montañas.'], true);
@@ -502,7 +530,7 @@ addFamily('lamasu', 2, 'tierra', 'campeon', 'barrera', ['Guardián Menor Lamasu'
 addFamily('pegaso', 2, 'viento', 'explorador', 'rafaga', ['Potrillo Alado', 'Pegaso Veloz', 'Pegaso, Corcel de las Nubes'], ['Ningún jinete olvida jamás la primera vez que voló sobre sus alas.', 'Su velocidad en el aire ya deja atrás a cualquier otra criatura alada.', 'Cabalgar sobre él es cabalgar entre las nubes mismas.'], true);
 addFamily('silfide', 1, 'viento', 'guru', 'bendicion', ['Brisa Menor', 'Sílfide del Viento', 'Sílfide, Espíritu del Aire Puro'], ['Tan ligera que apenas roza el suelo al caminar.', 'El viento la lleva cada vez más lejos, casi sin tocar el suelo.', 'Es pura esencia del aire: nadie ha logrado verla completamente quieta.'], true);
 addFamily('wyvern', 2, 'viento', 'picaro', 'perforar', ['Cría de Wyvern', 'Wyvern Cazador', 'Wyvern, Terror de los Cielos'], ['Más ágil que un dragón, y su aguijón es igual de letal.', 'Su aguijón se ha vuelto tan letal como sus garras.', 'Es el terror indiscutido de los cielos: ni los dragones se atreven a cruzarse en su camino.'], true);
-addFamily('cecaelia', 2, 'agua', 'brujo', 'sabotaje', ['Joven Cecaelia', 'Cecaelia de los Arrecifes', 'Cecaelia, Bruja del Coral'], ['Mitad mujer, mitad pulpo, teje hechizos tan enredados como sus tentáculos.', 'Sus hechizos se enredan tanto como sus propios tentáculos entre el coral.', 'Ninguna bruja del arrecife teje magia tan retorcida como ella.'], true);
+addFamily('cecaelia', 2, 'agua', 'brujo', 'ceguera', ['Joven Cecaelia', 'Cecaelia de los Arrecifes', 'Cecaelia, Bruja del Coral'], ['Mitad mujer, mitad pulpo, teje hechizos tan enredados como sus tentáculos.', 'Sus hechizos se enredan tanto como sus propios tentáculos entre el coral.', 'Ninguna bruja del arrecife teje magia tan retorcida como ella.'], true);
 addFamily('hipocampo', 1, 'agua', 'explorador', 'debilitar', ['Hipocampo Joven', 'Hipocampo de las Corrientes', 'Hipocampo, Corcel del Mar'], ['Mitad caballo, mitad pez, tira de los carros de los dioses del mar.', 'Tira de carros cada vez más pesados entre las corrientes marinas.', 'Es el corcel elegido de los dioses del mar para cruzar cualquier tormenta.'], true);
 addFamily('enano', 1, 'tierra', 'campeon', 'golpe', ['Enano Aprendiz', 'Enano Herrero', 'Enano Rey de la Montaña'], ['Forja armas capaces de atravesar la piedra más dura.', 'Cada arma que forja es más resistente que la anterior.', 'Su yunque ha forjado las armas que defienden la montaña entera.'], true);
 addFamily('duendetravieso', 1, 'viento', 'picaro', 'aturdir', ['Duende Travieso', 'Duende Embaucador', 'Duende Rey de las Bromas'], ['Le encanta más gastar una broma que ganar una pelea.', 'Cada broma que gasta es más elaborada — y más difícil de evitar.', 'Es el rey indiscutido de las bromas, temido y adorado a partes iguales.'], true);
@@ -554,10 +582,10 @@ addFamily('tortugahumanoide', 1, 'agua', 'campeon', 'escudo', ['Tortuga Guerrera
 addFamily('kappa', 1, 'agua', 'picaro', 'aturdir', ['Kappa Juguetón', 'Kappa de las Corrientes', 'Kappa Maestro del Estanque'], ['Guarda un cuenco de agua sagrada en la cabeza: si se derrama, pierde todo su poder.', 'Ha aprendido a proteger su cuenco en pleno combate sin derramar ni una gota.', 'Ningún río de Texel se cruza sin su permiso, y su cuenco nunca se ha vaciado.'], true);
 addFamily('tanuki', 1, 'tierra', 'explorador', 'sabotaje', ['Tanuki Curioso', 'Tanuki Embaucador', 'Gran Tanuki de las Mil Formas'], ['Puede transformar su propio cuerpo para parecer cualquier cosa... o cualquiera.', 'Sus disfraces ya engañan hasta a quien conoce bien sus trucos.', 'Ha adoptado tantas formas que ya nadie recuerda cuál es la suya de verdad.'], true);
 addFamily('salamandraignea', 1, 'fuego', 'brujo', 'quemadura', ['Cría de Salamandra', 'Salamandra de Brasas', 'Salamandra del Corazón del Volcán'], ['Nació en el centro de una hoguera y jamás ha sentido frío.', 'Las brasas por las que camina se reavivan solas a su paso.', 'Vive en el corazón de un volcán, donde ni la lava logra herirla.'], true);
-addFamily('thunderbird', 1, 'rayo', 'explorador', 'furia', ['Cría de Thunderbird', 'Thunderbird Joven', 'Thunderbird de las Tormentas'], ['Cada aleteo suyo hace crepitar el aire con pequeñas chispas.', 'Ya es capaz de convocar una tormenta con solo alzar el vuelo.', 'Su vuelo desata tormentas que se ven llegar desde el otro lado de Texel.'], true);
+addFamily('thunderbird', 1, 'rayo', 'explorador', 'paralisis', ['Cría de Thunderbird', 'Thunderbird Joven', 'Thunderbird de las Tormentas'], ['Cada aleteo suyo hace crepitar el aire con pequeñas chispas.', 'Ya es capaz de convocar una tormenta con solo alzar el vuelo.', 'Su vuelo desata tormentas que se ven llegar desde el otro lado de Texel.'], true);
 addFamily('selkie', 1, 'agua', 'guru', 'purificar', ['Cría de Selkie', 'Selkie de las Mareas', 'Selkie Guardiana de su Piel'], ['Su piel de foca guarda toda su magia — y todo su secreto.', 'Ha aprendido a moverse entre ambas formas sin perder ni un ápice de su don.', 'Nadie que le arrebate su piel ha logrado quedársela para siempre.'], true);
 
-addFamily('babayaga', 2, 'tierra', 'brujo', 'corromper', ['Aprendiz de Baba Yaga', 'Baba Yaga Errante', 'Baba Yaga, Señora del Bosque Negro'], ['Vive en una choza que se mueve sobre patas de gallina, siempre un paso por delante.', 'Su mortero vuela cada vez más rápido entre los árboles del bosque.', 'Ningún viajero perdido en el bosque negro escapa a su maldición.'], true);
+addFamily('babayaga', 2, 'tierra', 'brujo', 'maldicion', ['Aprendiz de Baba Yaga', 'Baba Yaga Errante', 'Baba Yaga, Señora del Bosque Negro'], ['Vive en una choza que se mueve sobre patas de gallina, siempre un paso por delante.', 'Su mortero vuela cada vez más rápido entre los árboles del bosque.', 'Ningún viajero perdido en el bosque negro escapa a su maldición.'], true);
 addFamily('ragnar', 3, 'tierra', 'campeon', 'golpe', ['Ragnar Lothbrok', 'Ragnar, Rey Vikingo', 'Ragnar Lothbrok, Leyenda del Norte'], ['Un joven guerrero destinado a conquistar tierras más allá del mar.', 'Su nombre ya es temido por reyes y guerreros de toda Escandinavia.', 'Convertido en leyenda, su espíritu aún guía a los vikingos hacia la batalla.'], true);
 
 // --- Segunda ronda de mitologías/inspiraciones poco representadas (hindú,
@@ -761,7 +789,7 @@ addBoss('nian', 'fuego', 'campeon', 'furia', 'Nian, la Bestia del Año Nuevo', '
 addBoss('tiamat', 'agua', 'brujo', 'arrasar', 'Tiamat, Madre del Caos', 'De su furia nacieron los primeros monstruos del mundo.', 'epico', true, { hp: 1410, atk: 261, def: 248, agi: 190, wis: 301 });
 addBoss('surtr', 'fuego', 'campeon', 'golpe', 'Surtr, Señor de las Llamas de Muspelheim', 'Su espada ardiente se dice que incendiará los nueve mundos al final de los tiempos.', 'epico', true, { hp: 1944, atk: 161, def: 419, agi: 176, wis: 63 });
 addBoss('behemoth', 'tierra', 'campeon', 'golpe', 'Behemoth, la Bestia Primigenia', 'Tan grande y antiguo que su sola existencia desafía toda lógica.', 'epico', true, { hp: 1398, atk: 186, def: 476, agi: 185, wis: 66 });
-addBoss('medusa', 'tierra', 'brujo', 'debilitar', 'Medusa, la Gorgona de Mirada Pétrea', 'Una sola mirada a sus ojos convierte a cualquiera en piedra.', 'raro', true, { hp: 1498, atk: 245, def: 156, agi: 86, wis: 189 });
+addBoss('medusa', 'tierra', 'brujo', 'paralisis', 'Medusa, la Gorgona de Mirada Pétrea', 'Una sola mirada a sus ojos convierte a cualquiera en piedra.', 'raro', true, { hp: 1498, atk: 245, def: 156, agi: 86, wis: 189 });
 addBoss('apofis', 'tierra', 'brujo', 'arrasar', 'Apofis, la Serpiente del Caos', 'Cada noche intenta devorar al sol, y cada noche es derrotado — por poco.', 'epico', true, { hp: 1688, atk: 297, def: 288, agi: 187, wis: 294 });
 addBoss('ammit', 'tierra', 'campeon', 'furia', 'Ammit, Devoradora de Corazones', 'Devora el corazón de quien no es digno de pasar al más allá.', 'raro', true, { hp: 1286, atk: 169, def: 254, agi: 64, wis: 48 });
 addBoss('cthulhu', 'agua', 'brujo', 'arrasar', 'Cthulhu, el que Duerme en las Profundidades', 'Su despertar traería la locura a cualquiera que lo presencie.', 'epico', true, { hp: 1884, atk: 254, def: 343, agi: 281, wis: 324 });
@@ -788,7 +816,7 @@ addBoss('mantisreligiosa', 'viento', 'picaro', 'furia', 'Mantis, la Segadora Sil
 // criaturas jugables". Estos 6 los sustituyen, uno por zona, con la misma
 // rareza aproximada que tenían antes.
 addBoss('guardianbosque', 'tierra', 'campeon', 'escudo', 'Guardián del Bosque Ancestral', 'Un espíritu milenario que protege cada árbol de la Linde del Bosque.', 'comun', true, { hp: 715, atk: 26, def: 14, agi: 44, wis: 31 });
-addBoss('brujapantano', 'agua', 'brujo', 'debilitar', 'Bruja del Pantano Eterno', 'Conoce cada raíz y cada sombra del Pantano Oscuro, y las usa contra los intrusos.', 'infrecuente', true, { hp: 501, atk: 79, def: 74, agi: 54, wis: 86 });
+addBoss('brujapantano', 'agua', 'brujo', 'ceguera', 'Bruja del Pantano Eterno', 'Conoce cada raíz y cada sombra del Pantano Oscuro, y las usa contra los intrusos.', 'infrecuente', true, { hp: 501, atk: 79, def: 74, agi: 54, wis: 86 });
 addBoss('colosocristal', 'tierra', 'campeon', 'golpe', 'Coloso de Cristal', 'Sus puños de cuarzo han sepultado a más de un intruso en las Cuevas de Cristal.', 'raro', true, { hp: 704, atk: 65, def: 143, agi: 45, wis: 19 });
 addBoss('titanhielo', 'agua', 'campeon', 'escudo', 'Titán de Hielo Eterno', 'Ni la escalada más dura prepara a nadie para enfrentarse a él en la cima de los Picos Helados.', 'raro', true, { hp: 1458, atk: 142, def: 175, agi: 53, wis: 37 });
 addBoss('reyruinas', 'tierra', 'brujo', 'debilitar', 'Rey Espectral de las Ruinas', 'Gobierna las Ruinas Abisales desde un trono que se desmorona junto con su reino.', 'raro', true, { hp: 1659, atk: 276, def: 131, agi: 63, wis: 138 });
@@ -1055,7 +1083,7 @@ setStatMult('kraken_legendario', { hp: 0.911876, atk: 0.911876, def: 0.911876, a
 // deliberadamente bajo, como amenaza de folclore moderno más que divina.
 addBoss('jormungandr', 'agua', 'brujo', 'arrasar', 'Jörmungandr, la Serpiente que Rodea el Mundo', 'Tan grande que su cuerpo entero rodea el océano y se muerde su propia cola — el día que la suelte, los nueve mundos temblarán.', 'legendario', true, { hp: 2600, atk: 420, def: 380, agi: 220, wis: 425 });
 addBoss('hades', 'tierra', 'brujo', 'debilitar', 'Hades, Señor del Inframundo', 'Gobierna el reino de los muertos con una justicia fría que ni los propios dioses se atreven a cuestionar.', 'legendario', true, { hp: 1750, atk: 380, def: 410, agi: 210, wis: 400 });
-addBoss('hel', 'agua', 'brujo', 'corromper', 'Hel, Soberana de los Muertos sin Honor', 'Mitad rostro de viva, mitad de cadáver, decide el destino de quienes no cayeron con gloria en la batalla.', 'legendario', true, { hp: 1700, atk: 365, def: 390, agi: 200, wis: 390 });
+addBoss('hel', 'agua', 'brujo', 'maldicion', 'Hel, Soberana de los Muertos sin Honor', 'Mitad rostro de viva, mitad de cadáver, decide el destino de quienes no cayeron con gloria en la batalla.', 'legendario', true, { hp: 1700, atk: 365, def: 390, agi: 200, wis: 390 });
 addBoss('set', 'tierra', 'brujo', 'sabotaje', 'Set, Señor de las Tormentas y el Caos', 'Asesinó a su propio hermano por el trono, y desde entonces el caos que siembra no conoce límites.', 'legendario', true, { hp: 1650, atk: 347, def: 355, agi: 200, wis: 345 });
 addBoss('fafnir', 'fuego', 'campeon', 'golpe', 'Fafnir, el Dragón de la Avaricia', 'Su codicia por un tesoro maldito lo transformó en el dragón más temido de su época.', 'legendario', true, { hp: 1780, atk: 230, def: 420, agi: 110, wis: 70 });
 addBoss('anzu', 'viento', 'brujo', 'aturdir', 'Anzu, el Ave-Demonio de la Tormenta', 'Robó la Tablilla de los Destinos a los propios dioses, y desde entonces el trueno le obedece.', 'legendario', true, { hp: 1350, atk: 295, def: 250, agi: 230, wis: 270 });

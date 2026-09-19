@@ -286,7 +286,18 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 }
 .pokedex-tree-family-name { font-size: 0.72rem; font-weight: bold; color: var(--gold); margin: 0 0 8px 4px; }
 .pokedex-tree-row { display: flex; align-items: center; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
-.pokedex-tree-row .creature-card { flex: 1 1 0; min-width: 84px; max-width: 120px; }
+/* Bug real reportado por el usuario (captura adjunta): a 84px de ancho
+   mínimo, con el padding de .creature-card (6px a cada lado) quedaban
+   solo 72px de hueco de contenido — justo el ancho del sprite, pero por
+   debajo de los 76px del propio medallón circular de fondo
+   (.creature-canvas-wrap::before), así que el medallón (y con él el
+   sprite) se salía del recuadro de la tarjeta en vez de quedar contenido
+   dentro. Subido a 108px (hueco de contenido: 96px, con margen de sobra
+   para el medallón de 76px) — el mismo ancho aproximado que ya usan las
+   columnas de la cuadrícula normal, donde nunca se ha visto este
+   problema — y overflow:hidden como red de seguridad para que nada
+   pueda volver a asomar fuera del borde de la tarjeta pase lo que pase. */
+.pokedex-tree-row .creature-card { flex: 1 1 0; min-width: 108px; max-width: 130px; overflow: hidden; }
 .pokedex-tree-arrow { flex: 0 0 auto; font-size: 1rem; color: var(--gold-dim); }
 .pokedex-locked { border-style: dashed; border-color: var(--gold-dim); opacity: 0.6; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 108px; }
 .pokedex-lock-icon { font-size: 1.8rem; }

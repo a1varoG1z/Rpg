@@ -243,6 +243,47 @@ se indica explícitamente.
 - [x] **Boss Medusa**: ya existía desde la ampliación de mapas de esta
       sesión (`boss_medusa`, jefe de la zona Jardín de Piedra) — confirmado
       al usuario, no hacía falta crearlo de nuevo
+- [x] **Arreglado: en el árbol genealógico de la Pokédex las fotos se salían
+      de la tarjeta** (bug reportado con captura) — `.pokedex-tree-row
+      .creature-card` tenía `min-width: 84px`, por debajo de los 76px del
+      medallón circular de fondo más el padding de la tarjeta, así que el
+      sprite se salía del borde. Subido a `min-width: 108px; max-width:
+      130px` y añadido `overflow: hidden` como red de seguridad
+- [x] **4 estados alterados nuevos: parálisis, ceguera, maldición,
+      regeneración** — cada uno añade una palanca distinta a las ya
+      existentes (veneno/quemadura = daño por turno, congelación =
+      ralentiza + posible pérdida de turno, aturdir = solo pérdida de
+      turno):
+      - **Parálisis** (`paralisis`, Toque Paralizante): sube la
+        vulnerabilidad a crítico del objetivo (`critVulnBonus`, lee
+        `computeDamage`) — más fácil de golpear en un punto débil, no
+        pierde el turno. Asignado a Thunderbird (familia) y al boss Medusa
+        (su mirada petrificante).
+      - **Ceguera** (`ceguera`, Nube Cegadora): lo opuesto — baja la
+        probabilidad de que el PROPIO objetivo saque crítico
+        (`blindPenalty`). Asignado a Cecaelia (tinta de pulpo) y al boss
+        Bruja del Pantano (sombras contra los intrusos).
+      - **Maldición** (`maldicion`, Maldición del Vacío): ralentiza toda
+        ganancia de carga de ulti del objetivo (`curseChargeMult`), tanto
+        atacando como al recibir golpes — ataca el ritmo, no las
+        estadísticas. Asignado a Baba Yaga (ya mencionaba "maldición" en
+        su propia lore) y al boss Hel (diosa nórdica de los muertos sin
+        honor).
+      - **Regeneración** (`regeneracion`, Aliento de Vida): primer HoT del
+        juego — cura a un aliado (sesgado al más herido, vía `pickTarget`
+        reutilizado sobre la fila propia) un % de su vida máxima cada
+        turno, con `unit.hots` (mismo mecanismo que `dots` pero curando,
+        con tope en `maxHp`). Asignado a Ave Fénix (renace de sus cenizas)
+        y Dríada (raíces que no dejan de crecer).
+      - Purificar ahora limpia también parálisis/ceguera/maldición (no
+        toca `hots`, por ser un efecto positivo); Revivir resetea los 3
+        campos negativos y `hots` en el aliado revivido.
+      - **Bug evitado a propósito**: cada ronda de combate se simula sobre
+        un clon; sin sincronizar estos 7 campos nuevos de vuelta a la
+        unidad persistente (`syncUnitFromClone`, mismo fallo que ya tuvo
+        antes el sistema de fases de jefe) se habrían "olvidado" en la
+        ronda siguiente. Arreglado antes de que llegara a pasar y
+        verificado con test dedicado
 
 ## Pendiente — de la ronda de 14 preguntas/peticiones del usuario (26/08)
 
