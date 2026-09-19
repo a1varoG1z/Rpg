@@ -638,20 +638,43 @@ body.hide-medallion .reveal-canvas-wrap::before { display: none; }
   background: rgba(10,6,3,0.75); border: 1px solid #7a5f22; border-radius: 8px; padding: 0 4px; line-height: 1.4;
 }
 /* Halo de estado (buffs/debuffs/veneno/quemadura/congelación/aturdimiento/
-   escudo, ver STATUS_HALO_CATEGORIES en ui.js) — aro de luz pulsante
-   alrededor del retrato para saber de un vistazo que un luchador tiene
-   ALGÚN efecto activo, sin tener que tocar su tarjeta. El color (--halo-c,
-   puesto vía JS) es el de la categoría más severa activa; los iconos de
-   abajo apilan TODAS las categorías activas a la vez. */
-.battle-unit-canvas-wrap.status-halo { border-radius: 50%; animation: statusHaloPulse 1.3s ease-in-out infinite; }
-@keyframes statusHaloPulse {
-  0%, 100% { box-shadow: 0 0 7px 2px var(--halo-c, rgba(255,255,255,0.6)); }
-  50% { box-shadow: 0 0 14px 5px var(--halo-c, rgba(255,255,255,0.6)); }
+   escudo, ver STATUS_STAT_INFO/STATUS_SPECIAL en ui.js) — reescrito DOS
+   veces tras feedback directo del usuario: v1 con box-shadow se veía como
+   una mancha negra sólida tapando el retrato; v2 con gradiente radial
+   transparente por dentro quedaba demasiado tenue para notarse. v3: un
+   ARO de borde sólido (nunca relleno, así que nunca puede tapar el
+   retrato ni verse como una mancha) con un brillo suave alrededor — el
+   borde por sí solo ya es inequívocamente del color de la categoría más
+   severa activa, sin depender de lo oscuro o claro que sea el fondo tras
+   él. Los iconos van aparte, YA debajo del nombre en el flujo normal de
+   la tarjeta (no superpuestos al retrato ni a la barra de vida). */
+.status-halo-ring {
+  position: absolute; inset: -6px; z-index: 1; border-radius: 50%; pointer-events: none;
+  border: 3px solid transparent; opacity: 0;
 }
-.status-halo-badges {
-  position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); z-index: 3;
-  font-size: 0.62rem; line-height: 1.3; white-space: nowrap; pointer-events: none;
-  background: rgba(10,6,3,0.75); border-radius: 8px; padding: 0 3px;
+.status-halo-ring.active { opacity: 1; border-color: var(--halo-c, #fff); animation: statusHaloPulse 1.3s ease-in-out infinite; }
+@keyframes statusHaloPulse {
+  0%, 100% { box-shadow: 0 0 5px 0 var(--halo-c, #fff); }
+  50% { box-shadow: 0 0 11px 2px var(--halo-c, #fff); }
+}
+/* Dos secciones bien diferenciadas (petición explícita: "tiene que haber
+   una sección de buff y debuff") — cada icono ya lleva su propio color
+   por estadística (puesto vía JS, span.style.color) y una ↑/↓ para saber
+   si sube o baja esa stat en concreto, así varios efectos a la vez se
+   distinguen sin ambigüedad. Colapsa a "display:none" sola cuando no hay
+   ningún badge de ese tipo (:empty), en vez de dejar un hueco en blanco. */
+.status-badges-buffs, .status-badges-debuffs {
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 2px; margin-top: 1px; min-height: 0;
+}
+.status-badges-buffs:empty, .status-badges-debuffs:empty { display: none; }
+/* Los emoji son glifos ya coloreados de fábrica — CSS `color` no les hace
+   nada, así que el color por estadística (--badge-c, puesto vía JS) se ve
+   en un borde/chip de fondo alrededor del icono, no tiñendo el propio
+   icono. */
+.status-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; line-height: 1; padding: 1px 3px; border-radius: 6px;
+  background: rgba(10,6,3,0.85); border: 1.5px solid var(--badge-c, #888);
 }
 .ult-bar { height: 5px; width: 100%; background: #1a1410; border: 1px solid #000; border-radius: 3px; overflow: hidden; margin-top: 2px; }
 .ult-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #c98fe8, #e8a23c); transition: width 0.25s ease-out; }

@@ -7054,6 +7054,53 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       fin, aplicar Quemadura de verdad sobre un jefe hace aparecer el
       halo con 🔥⬇️ justo al terminar esa ronda. Sanity check general
       limpio (642/102/45/45).
+- [x] **Rediseño del halo de estado** (feedback directo del usuario tras
+      ver la v1 en una captura real: "se ve horroroso... el icono no se
+      ve bien, tienen que salir debajo del nombre... los halos tienen que
+      ser de colores diferentes según sea ataque, defensa, agilidad,
+      quemadura, etc... el icono también debe decir en qué es el buff...
+      debería haber una sección de buff y debuff"). Tres cambios sobre la
+      v1:
+      1. **Iconos debajo del nombre, no sobre el retrato**: dos filas
+         nuevas en la tarjeta (`.status-badges-buffs`/`-debuffs`, ya en el
+         flujo normal, después de `.battle-unit-name`) en vez de una
+         insignia superpuesta al borde inferior del retrato (que en la
+         v1 quedaba tapando la barra de vida).
+      2. **Un color POR ESTADÍSTICA, no un genérico "buff/debuff"**:
+         `STATUS_STAT_INFO` (ui.js) da a Ataque/Defensa/Agilidad/
+         Sabiduría/Vida su propio icono y su propio color (vivo si es
+         buff, apagado si es debuff de esa misma stat) — un Ataque
+         reforzado y una Agilidad reforzada ya no comparten el mismo
+         "⬆️ dorado" genérico de la v1, se distinguen a simple vista.
+         `unitStatusBadges` genera UNA insignia POR CADA buff/debuff
+         activo (no una por categoría), así dos buffs de stats distintas
+         a la vez se ven como dos iconos separados, no se pisan.
+      3. **El aro en sí, rehecho DOS veces**: la v1 (box-shadow con
+         blur/spread grandes) se veía, según el propio usuario, como una
+         mancha negra sólida tapando el retrato del griffin en su
+         captura. v2 (probada primero, sin llegar a publicarse):
+         gradiente radial transparente por dentro — ya no tapaba nada,
+         pero quedaba demasiado tenue para notarse contra el fondo oscuro
+         de la tarjeta (comprobado con una captura ampliada real). v3
+         (la que se envía): un ARO DE BORDE SÓLIDO de 3px (nunca relleno,
+         así que estructuralmente no puede volver a verse como una
+         mancha) con un brillo suave alrededor, en el color de la
+         categoría MÁS severa activa en ese momento (nuevo orden:
+         congelado > aturdido > quemado > envenenado > cualquier debuff
+         de stat > cualquier buff de stat > escudo). Los emoji no
+         responden a `color` en CSS (son glifos ya coloreados, no texto),
+         así que el color de cada insignia se transmite con un borde/chip
+         de fondo alrededor del icono (`--badge-c`), no tiñendo el propio
+         emoji.
+      Verificado visualmente con capturas de Playwright ampliadas: una
+      rejilla de 12 combinaciones (buff/debuff de cada stat, quemadura+su
+      debuff de Ataque, veneno, congelación+su debuff de Agilidad,
+      aturdimiento, escudo, sin efectos) muestra 11 aros de color
+      claramente distinto entre sí y ninguna mancha negra, con las
+      insignias correctas y bien separadas (sección buffs / sección
+      debuffs) debajo del nombre en todos los casos; y en la pantalla
+      real de combate (no una tarjeta aislada) se ve exactamente igual de
+      limpio. Sanity check general limpio (642/102/45/45).
 
 ## Notas
 

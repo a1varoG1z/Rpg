@@ -5352,9 +5352,10 @@ UI.battleUnitCard = function (u) {
   // (esquina superior), no como barra aparte debajo — deja la tarjeta
   // más compacta y legible.
   const canvasWrap = el('div', 'battle-unit-canvas-wrap');
+  const halo = el('div', 'status-halo-ring');
+  canvasWrap.appendChild(halo);
   canvasWrap.appendChild(creatureCanvas(u.defId, 76));
   canvasWrap.appendChild(el('div', 'ult-turns', ultTurnsText(u)));
-  renderStatusHalo(canvasWrap, u);
   card.appendChild(canvasWrap);
   const hpBar = el('div', 'hp-bar small');
   const fill = el('div', 'hp-fill');
@@ -5362,6 +5363,11 @@ UI.battleUnitCard = function (u) {
   hpBar.appendChild(fill);
   card.appendChild(hpBar);
   card.appendChild(el('div', 'battle-unit-name', u.name));
+  // Iconos de estado DEBAJO del nombre (nunca superpuestos al retrato ni
+  // a la barra de vida) — ver renderStatusBadges más abajo.
+  card.appendChild(el('div', 'status-badges-buffs'));
+  card.appendChild(el('div', 'status-badges-debuffs'));
+  renderStatusEffects(card, u);
   return card;
 };
 
@@ -5377,35 +5383,94 @@ function ultTurnsText(u) {
 // Petición explícita del usuario: "cuando un personaje se refuerza la
 // defensa, el ataque, está quemado, congelado o cualquier efecto de buff
 // o debuff, añade un halo al personaje para que se sepa que tiene un
-// efecto". Misma fuente de datos que battleUnitStatusPanel de aquí abajo
-// (buffs/debuffs/dots/stunTurns/shield) — esto no es una mecánica nueva,
-// solo la hace VISIBLE sin tener que tocar la tarjeta para abrir la ficha.
-// Orden de prioridad (de más a menos severo): decide de qué color se
-// pinta el aro luminoso cuando hay varios efectos a la vez, siempre el
-// más urgente de notar. Los iconos, en cambio, se apilan TODOS los que
-// estén activos a la vez (no solo el prioritario), para poder distinguir
-// de un vistazo exactamente qué tiene encima sin necesidad de abrir nada.
-const STATUS_HALO_CATEGORIES = [
-  { icon: '🥶', color: '#7fd6ff', test: u => u.stunTurns > 0 && u.stunReason === 'freeze' },
-  { icon: '😵', color: '#b0b0b0', test: u => u.stunTurns > 0 && u.stunReason !== 'freeze' },
-  { icon: '🔥', color: '#ff8a3c', test: u => (u.dots || []).some(d => d.kind === 'burn') },
-  { icon: '☠️', color: '#7fd15f', test: u => (u.dots || []).some(d => d.kind !== 'burn') },
-  { icon: '⬇️', color: '#d968d9', test: u => (u.debuffs || []).length > 0 },
-  { icon: '⬆️', color: '#e8c23c', test: u => (u.buffs || []).length > 0 },
-  { icon: '🛡️', color: '#5fa8f0', test: u => !!u.shield },
-];
-// Pinta (o quita) el halo sobre el envoltorio del retrato de una tarjeta
-// de combate — recibe el elemento directamente (en vez de buscarlo) para
-// poder usarse tanto al crear la tarjeta por primera vez como al
-// refrescarla más tarde (ver UI.updateUnitCardStatusHalo).
-function renderStatusHalo(wrapEl, u) {
-  const active = STATUS_HALO_CATEGORIES.filter(c => c.test(u));
-  wrapEl.classList.toggle('status-halo', active.length > 0);
-  let badges = wrapEl.querySelector('.status-halo-badges');
-  if (!active.length) { if (badges) badges.remove(); return; }
-  wrapEl.style.setProperty('--halo-c', active[0].color);
-  if (!badges) { badges = el('div', 'status-halo-badges'); wrapEl.appendChild(badges); }
-  badges.textContent = active.map(c => c.icon).join('');
+// efecto" — y, tras ver el primer resultado ("el halo se ve horroroso, el
+// icono tiene que salir debajo del nombre, cada alteración de estado
+// tiene que tener un color de halo diferente según sea ataque, defensa,
+// agilidad, quemadura, etc., y el icono tiene que decir de qué es cada
+// buff/debuff, con una sección de buffs y otra de debuffs bien
+// diferenciadas"), rehecho con esos 3 cambios. Misma fuente de datos que
+// battleUnitStatusPanel de aquí abajo (buffs/debuffs/dots/stunTurns/
+// shield) — esto no es una mecánica nueva, solo la hace VISIBLE sin tener
+// que abrir la ficha.
+//
+// Un color/icono POR ESTADÍSTICA (no un genérico "⬆️ buff" para
+// cualquier stat) — así un Ataque reforzado y una Agilidad reforzada se
+// distinguen a simple vista aunque las dos sean "buffs". El buff y el
+// debuff de la MISMA estadística comparten icono base pero con su propio
+// tono (vivo para el buff, apagado para el debuff) y una flechita ↑/↓.
+const STATUS_STAT_INFO = {
+  atk: { icon: '⚔️', buffColor: '#f0a23c', debuffColor: '#a8402e' },
+  def: { icon: '🛡️', buffColor: '#4a90e2', debuffColor: '#4a5a7a' },
+  agi: { icon: '💨', buffColor: '#3cd9c0', debuffColor: '#3c7a72' },
+  wis: { icon: '🧠', buffColor: '#b073e0', debuffColor: '#6a4a80' },
+  hp: { icon: '❤️', buffColor: '#5fd15f', debuffColor: '#8a3c3c' },
+};
+// Estados que no son un simple ±% de estadística (veneno/quemadura/
+// congelación/aturdimiento/escudo) — su propio icono y color fijos, y una
+// `severity` para decidir de qué color se pinta el HALO cuando hay varios
+// efectos a la vez (siempre el más urgente de notar). Los buffs/debuffs
+// de estadística usan severity 60 (debuff) / 20 (buff) — por debajo de
+// cualquier estado alterado "de verdad" pero por encima de un escudo
+// suelto, que es el menos urgente de todos.
+const STATUS_SPECIAL = {
+  freeze: { icon: '🥶', color: '#7fd6ff', label: 'Congelado', severity: 100 },
+  stun: { icon: '😵', color: '#b0b0b0', label: 'Aturdido', severity: 90 },
+  burn: { icon: '🔥', color: '#ff6a3c', label: 'Quemado', severity: 80 },
+  poison: { icon: '☠️', color: '#7fd15f', label: 'Envenenado', severity: 70 },
+  shield: { icon: '🛡️', color: '#5fa8f0', label: 'Escudo', severity: 10 },
+};
+// Construye, a partir del propio luchador, dos listas separadas (buffs y
+// debuffs) de insignias {icon, color, title, severity} — una por CADA
+// efecto activo, no una por categoría, para que dos buffs distintos
+// (p.ej. Ataque y Agilidad a la vez) se vean como dos iconos separados.
+function unitStatusBadges(u) {
+  const buffs = (u.buffs || []).map(b => {
+    const info = STATUS_STAT_INFO[b.stat];
+    return { icon: info.icon + '↑', color: info.buffColor, title: `${SKILL_STAT_LABEL[b.stat]} +${Math.round(b.pct * 100)}%`, severity: 20 };
+  });
+  const debuffs = (u.debuffs || []).map(b => {
+    const info = STATUS_STAT_INFO[b.stat];
+    return { icon: info.icon + '↓', color: info.debuffColor, title: `${SKILL_STAT_LABEL[b.stat]} -${Math.round(b.pct * 100)}%`, severity: 60 };
+  });
+  if ((u.dots || []).some(d => d.kind === 'burn')) debuffs.push({ ...STATUS_SPECIAL.burn, title: STATUS_SPECIAL.burn.label });
+  if ((u.dots || []).some(d => d.kind !== 'burn')) debuffs.push({ ...STATUS_SPECIAL.poison, title: STATUS_SPECIAL.poison.label });
+  if (u.stunTurns > 0) {
+    const s = u.stunReason === 'freeze' ? STATUS_SPECIAL.freeze : STATUS_SPECIAL.stun;
+    debuffs.push({ ...s, title: s.label });
+  }
+  if (u.shield) buffs.push({ ...STATUS_SPECIAL.shield, title: STATUS_SPECIAL.shield.label });
+  return { buffs, debuffs };
+}
+// Pinta (o quita) el halo + las dos secciones de iconos (buffs/debuffs,
+// ver el div.status-badges-buffs/debuffs ya presentes en la tarjeta desde
+// UI.battleUnitCard) — recibe la TARJETA entera (no solo el retrato) para
+// poder llegar a ambas secciones, que ya no viven superpuestas sobre el
+// retrato sino debajo del nombre.
+function renderStatusEffects(cardEl, u) {
+  const { buffs, debuffs } = unitStatusBadges(u);
+  const halo = cardEl.querySelector('.status-halo-ring');
+  const all = [...debuffs, ...buffs];
+  const dominant = all.length ? all.reduce((a, b) => (b.severity > a.severity ? b : a)) : null;
+  if (halo) {
+    halo.classList.toggle('active', !!dominant);
+    if (dominant) halo.style.setProperty('--halo-c', dominant.color);
+  }
+  const renderGroup = (sel, list) => {
+    const wrap = cardEl.querySelector(sel);
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    list.forEach(b => {
+      const badge = el('span', 'status-badge', b.icon);
+      // Los emoji ignoran color (son glifos ya coloreados de fábrica, no
+      // texto) — el color por estadística se transmite con un borde/chip
+      // de fondo (ver .status-badge en style.css), no tiñendo el icono.
+      badge.style.setProperty('--badge-c', b.color);
+      badge.title = b.title;
+      wrap.appendChild(badge);
+    });
+  };
+  renderGroup('.status-badges-buffs', buffs);
+  renderGroup('.status-badges-debuffs', debuffs);
 }
 // El estado real de un luchador (buffs/debuffs/dots/stunTurns/shield) solo
 // queda al día en el objeto EN VIVO justo después de sincronizar cada
@@ -5417,8 +5482,7 @@ function renderStatusHalo(wrapEl, u) {
 // el que termina de reproducirse la ronda que lo dejó así.
 UI.updateUnitCardStatusHalo = function (u) {
   const cardEl = document.querySelector(`.battle-unit[data-unit-id="${u.id}"]`);
-  const wrap = cardEl && cardEl.querySelector('.battle-unit-canvas-wrap');
-  if (wrap) renderStatusHalo(wrap, u);
+  if (cardEl) renderStatusEffects(cardEl, u);
 };
 
 // Panel de estado (buffs/debuffs/veneno-quemadura/aturdimiento/escudo) de un
