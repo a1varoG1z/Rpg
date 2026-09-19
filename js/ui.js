@@ -822,6 +822,11 @@ UI.openGuide = function () {
     tanto al atacar como al recibir golpes. 💚 <b>Regeneración</b>: cura a un aliado un poco de vida
     cada turno durante varios turnos (la única ulti que cura con el tiempo en vez de golpe único).
     Purificar también limpia parálisis, ceguera y maldición.</p>
+    <p class="settings-info">En la ficha de cada luchador aparece también su <b>Rol de combate</b>
+    (Atacante físico, Atacante mágico, Rematador, Tanque defensivo, Protector de fila, Apoyo
+    curativo, Apoyo (renacer), Apoyo purificador, Apoyo buff ofensivo/de velocidad, Control /
+    incapacitación...): información derivada de su ulti para orientar tu Formación, no cambia
+    ninguna estadística ni efecto.</p>
     <p class="settings-info">Las ultis que no hacen daño por sí mismas (curar, subir estadísticas,
     purificar, revivir...) también golpean a un enemigo con un golpe extra más flojo — ningún turno
     de ulti se queda sin hacer daño.</p>`));
@@ -3739,8 +3744,10 @@ UI.openFighterModal = function (state, uid, formationCtx) {
   const info = el('div');
   const vuln = TYPE_VULNERABILITY[def.class];
   const bandPos = bandPositionOf(state, uid);
+  const role = combatRoleInfo(skill);
   info.innerHTML = `<div class="item-modal-name" style="color:${rarity.color}">${def.name}</div>
     <div class="item-modal-rarity">${rarity.label} · ${ELEMENT_INFO[def.element].label} ${ELEMENT_INFO[def.element].icon} · ${CLASS_INFO[def.class].label} ${CLASS_INFO[def.class].icon}</div>
+    <div class="role-tag">${role.icon} Rol de combate: <b>${role.label}</b></div>
     ${bandPos ? `<div class="in-band-tag">🐾 En formación</div>` : ''}
     ${vuln ? `<div class="type-vuln-note">${vuln.desc}</div>` : ''}
     <div class="xp-bar" style="margin-top:6px"><div class="xp-fill" style="width:${entry.level >= XP_LEVEL_CAP ? 100 : (entry.xp / fighterXpToNext(entry.level) * 100)}%"></div></div>

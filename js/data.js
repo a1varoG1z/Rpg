@@ -276,6 +276,46 @@ function skillMechanicsText(skill) {
   }
 }
 
+// Rol de combate: etiqueta puramente informativa (petición explícita del
+// usuario: "Simplemente tiene un valor informativo", en el perfil del
+// personaje) sobre el papel que cumple cada luchador en la Formación,
+// derivada del `kind` de su ulti (y, para las de subir estadística a toda
+// la fila, de qué estadística sube). NO añade ninguna estadística ni efecto
+// nuevo — es solo texto para que el jugador entienda de un vistazo qué hace
+// cada personaje sin tener que leer el `desc`/mecánica exacta de su ulti.
+// No incluye una categoría "Completo": ningún `kind` actual reparte su
+// efecto entre dos papeles a la vez (todos son claramente daño, control o
+// apoyo), así que inventar ese cajón sin una ulti real que lo justifique
+// habría sido una etiqueta vacía.
+function combatRoleInfo(skill) {
+  switch (skill.kind) {
+    case 'damage': case 'trueDamage': case 'damageDouble': case 'dot': case 'burn': case 'drain':
+      return { icon: '⚔️', label: 'Atacante físico', desc: 'Su ulti golpea con fuerza usando su Ataque — el papel clásico de dañar al rival.' };
+    case 'damageRow':
+      return { icon: '🔮', label: 'Atacante mágico', desc: 'Su ulti daña con magia (según su Sabiduría) a TODA la fila enemiga de golpe.' };
+    case 'execute':
+      return { icon: '🎯', label: 'Rematador', desc: 'Su ulti hace mucho más daño cuanta menos vida le quede al objetivo — brilla acabando enemigos casi caídos.' };
+    case 'buffSelf':
+      return { icon: '🛡️', label: 'Tanque defensivo', desc: 'Su ulti refuerza su propia Defensa — pensado para aguantar golpes al frente de la Formación.' };
+    case 'shieldRow':
+      return { icon: '🧱', label: 'Protector de fila', desc: 'Su ulti da un escudo a TODA su fila — protege al equipo entero, no solo a sí mismo.' };
+    case 'heal': case 'healRow': case 'regen':
+      return { icon: '💚', label: 'Apoyo curativo', desc: 'Su ulti cura vida a sus aliados — mantiene con vida al equipo.' };
+    case 'revive':
+      return { icon: '✨', label: 'Apoyo (renacer)', desc: 'Su ulti puede revivir a un aliado caído — el único papel capaz de deshacer una muerte en pleno combate.' };
+    case 'cleanse':
+      return { icon: '🧹', label: 'Apoyo purificador', desc: 'Su ulti limpia los males de estado de su fila — la respuesta directa a venenos, aturdimientos y demás estados negativos rivales.' };
+    case 'buffRow':
+      return skill.stat === 'agi'
+        ? { icon: '💨', label: 'Apoyo (buff de velocidad)', desc: 'Su ulti sube la Agilidad de toda su fila — más críticos y actúan antes.' }
+        : { icon: '📢', label: 'Apoyo (buff ofensivo)', desc: 'Su ulti sube el Ataque de toda su fila — potencia el daño de todo el equipo.' };
+    case 'debuff': case 'stun': case 'freeze': case 'paralysis': case 'blind': case 'curse': case 'chargeDrain': case 'dispel':
+      return { icon: '🌀', label: 'Control / incapacitación', desc: 'Su ulti no busca hacer mucho daño por sí misma, sino debilitar, retrasar o incapacitar al rival.' };
+    default:
+      return { icon: '❔', label: 'Sin clasificar', desc: '' };
+  }
+}
+
 // Habilidad de líder de banda: una bonificación pasiva para TODA la banda
 // (no solo quien la tiene), que solo está activa mientras ese luchador
 // ocupe la celda central [1][1] de la Formación 3×3. Solo la tienen los

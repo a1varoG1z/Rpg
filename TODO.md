@@ -284,6 +284,20 @@ se indica explícitamente.
         antes el sistema de fases de jefe) se habrían "olvidado" en la
         ronda siguiente. Arreglado antes de que llegara a pasar y
         verificado con test dedicado
+- [x] **Rol de combate informativo en la ficha del personaje** (petición
+      explícita: "Simplemente tiene un valor informativo") — nueva función
+      `combatRoleInfo(skill)` (data.js) que deriva una etiqueta puramente
+      informativa del `kind` (y, para las de subir estadística a toda la
+      fila, de qué estadística) de la ulti de cada luchador: Atacante
+      físico, Atacante mágico, Rematador, Tanque defensivo, Protector de
+      fila, Apoyo curativo, Apoyo (renacer), Apoyo purificador, Apoyo (buff
+      ofensivo), Apoyo (buff de velocidad), Control/incapacitación — sin
+      categoría "Completo" a propósito, porque ningún `kind` actual reparte
+      su efecto entre dos papeles a la vez. Se muestra como una línea
+      `.role-tag` justo debajo de rareza/elemento/clase en la ficha
+      (`UI.openFighterModal`, ui.js), NO añade ninguna estadística ni
+      efecto de combate. Verificado que los 26 `skillId` del juego caen en
+      una categoría (ninguno queda "Sin clasificar")
 
 ## Pendiente — de la ronda de 14 preguntas/peticiones del usuario (26/08)
 
