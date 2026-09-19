@@ -857,7 +857,7 @@ UI.openGuide = function () {
     forma de sacarle partido a piezas duplicadas de bajo nivel que de otro modo solo servirían
     para vender.</p>
     <p class="settings-info">✨ <b>Objetos legendarios personalizados</b> (Mjölnir, Excalibur,
-    Tridente de Poseidón...): 14 piezas únicas ligadas cada una a UN personaje Legendario en
+    Tridente de Poseidón...): ${LEGENDARY_ITEMS.length} piezas únicas ligadas cada una a UN personaje Legendario en
     concreto — solo se pueden equipar en él, nunca en otro, pero a cambio dan más bonificación que
     cualquier pieza normal de su rareza. Se reconocen por su fondo dorado brillante propio. Pequeña
     probabilidad de encontrar una al azar (entre las que aún no tienes) al derrotar un jefe de la

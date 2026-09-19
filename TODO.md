@@ -6965,6 +6965,31 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       persisten correctamente ronda tras ronda a lo largo de todo un
       combate multi-ronda real (antes del fix se reseteaban cada ronda).
       Sanity check general limpio (642/102/45/45).
+- [x] **Ampliar equipo legendario personalizado** (petición explícita:
+      "aumenta la lista de equipo legendario personalizado"). 15 objetos
+      más en `LEGENDARY_ITEMS` (data.js), mismo patrón exacto que los 14
+      originales, atados a otras tantas familias Legendarias que aún no
+      tenían ninguno: Ruyi Jingu Bang (Sun Wukong), Anzuelo Mágico (Maui),
+      Xiuhcoatl (Huitzilopochtli), Gram (Sigurd), Oshe (Shango), Espada
+      Llameante (Miguel Arcángel), Armadura de Aquiles, Capa de Cuervo
+      (Morrígan), Cornamenta (Cernunnos), Melena Sagrada (Sansón),
+      Colmillo (Fenrir), Guantelete (Tyr), Sandalias Aladas (Hermes), Ojo
+      de Horus y Espejo Humeante (Tezcatlipoca) — total 29. Cada lore usa
+      o amplía la descripción ya existente de esa familia en vez de
+      inventar una nueva, para quedar coherente con su ficha. Reparto de
+      huecos más equilibrado que la primera tanda (antes muy cargada de
+      `arma`): armadura/casco/guantes/botas/amuleto reciben más piezas
+      esta vez. El texto de la Guía y el contador de Objetivos ya no
+      tenían el número fijo a mano ("14 piezas") — pasado a
+      `${LEGENDARY_ITEMS.length}` para que nunca se desincronice si se
+      vuelve a ampliar la lista en el futuro. Probado con Playwright: los
+      29 objetos (incluidos los 15 nuevos) pasan las mismas comprobaciones
+      de integridad que la primera tanda (familias/huecos reales, ids
+      únicos, ratio de bonificación ×1.6, restricción de equipar,
+      bloqueo de venta/forja, reparto sin duplicados hasta agotar los 29);
+      la Guía y el panel de Objetivos muestran el número actualizado
+      (29/29) sin texto obsoleto. Sanity check general limpio
+      (642/102/45/45).
 
 ## Notas
 

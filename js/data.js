@@ -1419,13 +1419,77 @@ const LEGENDARY_ITEMS = [
     primary: 'wis', primaryMult: 1.05, secondary: 'def', secondaryMult: 1.0,
     bg: 'linear-gradient(160deg, #3a2a10, #e0952f 60%, #ffe0a0)',
     lore: 'Su reflejo devolvió al sol al cielo una vez — su luz sigue devolviendo el calor a quien lo ha perdido.' },
+  // --- Segunda tanda (petición explícita: "aumenta la lista de equipo
+  // legendario personalizado") — 15 objetos más, mismo patrón exacto que
+  // los 14 primeros, atados a otras tantas familias Legendarias que aún
+  // no tenían ninguno.
+  { id: 'bastonsunwukong', name: 'Ruyi Jingu Bang, Bastón de Sun Wukong', icon: '🥢', slot: 'arma', targetFamily: 'sunwukong',
+    primary: 'atk', primaryMult: 1.4, secondary: 'agi', secondaryMult: 1.0,
+    bg: 'linear-gradient(160deg, #3a1a12, #d9782f 60%, #ffd699)',
+    lore: 'Cambia de tamaño a voluntad de su dueño — de una aguja escondida tras la oreja a un pilar capaz de sostener el cielo.' },
+  { id: 'anzuelomaui', name: 'Anzuelo Mágico de Maui', icon: '🪝', slot: 'arma', targetFamily: 'maui',
+    primary: 'atk', primaryMult: 1.2, secondary: 'agi', secondaryMult: 1.0,
+    bg: 'linear-gradient(160deg, #0a2e2a, #1f9e8a 60%, #a0f0e0)',
+    lore: 'Con él pescó islas enteras del fondo del océano — ningún tesoro del mar se le resiste.' },
+  { id: 'xiuhcoatl', name: 'Xiuhcoatl, Serpiente de Fuego de Huitzilopochtli', icon: '🐍', slot: 'arma', targetFamily: 'huitzilopochtli',
+    primary: 'atk', primaryMult: 1.35, secondary: 'def', secondaryMult: 1.0,
+    bg: 'linear-gradient(160deg, #3a0f0f, #c9342f 60%, #ffb199)',
+    lore: 'La serpiente de fuego que empuñó al nacer, ya armado, para defender a su madre.' },
+  { id: 'gram', name: 'Gram, Espada de Sigurd', icon: '⚔️', slot: 'arma', targetFamily: 'sigurd',
+    primary: 'atk', primaryMult: 1.4, secondary: 'hp', secondaryMult: 1.3,
+    bg: 'linear-gradient(160deg, #1c2430, #5a7290 60%, #d0e0f0)',
+    lore: 'Reforjada de los fragmentos de una espada rota, atravesó el corazón de un dragón desde abajo.' },
+  { id: 'oshe', name: 'Oshe, Hacha Doble de Shango', icon: '🪓', slot: 'arma', targetFamily: 'shango',
+    primary: 'atk', primaryMult: 1.3, secondary: 'agi', secondaryMult: 0.9,
+    bg: 'linear-gradient(160deg, #2a123a, #a24bd9 60%, #f0d9ff)',
+    lore: 'El hacha de doble filo que Shango lanza como un rayo — cae, y donde cae, truena.' },
+  { id: 'espadamiguel', name: 'Espada Llameante de Miguel Arcángel', icon: '🔥', slot: 'arma', targetFamily: 'miguelarcangel',
+    primary: 'atk', primaryMult: 1.3, secondary: 'wis', secondaryMult: 0.9,
+    bg: 'linear-gradient(160deg, #2f2a10, #e0c93c 60%, #ffffff)',
+    lore: 'Ninguna sombra se atreve a mirar de frente el brillo que refleja su filo.' },
+  { id: 'armaduraaquiles', name: 'Armadura de Aquiles', icon: '🏺', slot: 'armadura', targetFamily: 'aquiles',
+    primary: 'def', primaryMult: 1.2, secondary: 'agi', secondaryMult: 0.9,
+    bg: 'linear-gradient(160deg, #2f2510, #b8892f 60%, #f0d9a0)',
+    lore: 'Forjada por el propio Hefesto — ningún punto de su cuerpo queda desprotegido, salvo el que todos conocen.' },
+  { id: 'capamorrigan', name: 'Capa de Cuervo de la Morrígan', icon: '🐦‍⬛', slot: 'armadura', targetFamily: 'morrigan',
+    primary: 'def', primaryMult: 1.0, secondary: 'wis', secondaryMult: 1.0,
+    bg: 'linear-gradient(160deg, #14100f, #4a1c2a 60%, #8a2f42)',
+    lore: 'Quien la viste sobrevuela el campo de batalla como un presagio — y elige quién no volverá de él.' },
+  { id: 'cornamentacernunnos', name: 'Cornamenta de Cernunnos', icon: '🦌', slot: 'casco', targetFamily: 'cernunnos',
+    primary: 'wis', primaryMult: 1.1, secondary: 'hp', secondaryMult: 1.4,
+    bg: 'linear-gradient(160deg, #142a12, #3f7a2f 60%, #c9e8a0)',
+    lore: 'El bosque entero reconoce a su señor por esta corona de astas — ninguna criatura salvaje le es ajena.' },
+  { id: 'melenasanson', name: 'Melena Sagrada de Sansón', icon: '💇', slot: 'casco', targetFamily: 'sanson',
+    primary: 'hp', primaryMult: 1.5, secondary: 'atk', secondaryMult: 1.0,
+    bg: 'linear-gradient(160deg, #2a2210, #a08030 60%, #e8d09a)',
+    lore: 'Su fuerza crece con su fe, y nunca se ha dejado cortar el cabello que la contiene.' },
+  { id: 'colmillofenrir', name: 'Colmillo de Fenrir', icon: '🐺', slot: 'guantes', targetFamily: 'fenrir',
+    primary: 'atk', primaryMult: 1.3, secondary: 'agi', secondaryMult: 1.1,
+    bg: 'linear-gradient(160deg, #1a2028, #4a5f7a 60%, #c8dcf0)',
+    lore: 'El lobo que ni los propios dioses lograron encadenar sin sacrificio — su mordisco no perdona.' },
+  { id: 'guanteletetyr', name: 'Guantelete de Tyr', icon: '✋', slot: 'guantes', targetFamily: 'tyr',
+    primary: 'def', primaryMult: 1.0, secondary: 'atk', secondaryMult: 1.0,
+    bg: 'linear-gradient(160deg, #221a1a, #6a5050 60%, #d9a0a0)',
+    lore: 'El precio de atar a Fenrir fue su propia mano derecha — la que le queda golpea con la justicia de quien ya no teme perder nada más.' },
+  { id: 'sandaliashermes', name: 'Sandalias Aladas de Hermes', icon: '🪽', slot: 'botas', targetFamily: 'hermes',
+    primary: 'agi', primaryMult: 1.45, secondary: 'wis', secondaryMult: 0.7,
+    bg: 'linear-gradient(160deg, #0f2a3a, #3fa8d9 60%, #eaffff)',
+    lore: 'Llevan a su dueño de un extremo a otro de Texel antes de que el propio viento se entere.' },
+  { id: 'ojohorus', name: 'Ojo de Horus', icon: '👁️', slot: 'amuleto', targetFamily: 'horus',
+    primary: 'wis', primaryMult: 1.1, secondary: 'def', secondaryMult: 1.2,
+    bg: 'linear-gradient(160deg, #0f2438, #2f6fa8 60%, #e8c85a)',
+    lore: 'Perdió el ojo original luchando por el trono de su padre — con este ve aún más lejos que antes.' },
+  { id: 'espejotezcatlipoca', name: 'Espejo Humeante de Tezcatlipoca', icon: '🌑', slot: 'amuleto', targetFamily: 'tezcatlipoca',
+    primary: 'wis', primaryMult: 1.2, secondary: 'atk', secondaryMult: 0.9,
+    bg: 'linear-gradient(160deg, #0a0a10, #2a1a3a 60%, #6a4a8a)',
+    lore: 'En su obsidiana pulida se refleja el destino de quien se atreve a mirar dentro.' },
 ];
 const LEGENDARY_ITEM_BY_ID = {};
 LEGENDARY_ITEMS.forEach(item => { LEGENDARY_ITEM_BY_ID[item.id] = Object.assign({ label: 'Objeto Único', names: { legendario: item.name } }, item); });
 // Probabilidad de que un nivel de JEFE de la Torre Batalla (repetible sin
 // límite, el contenido de más nivel del juego — ver UI.fightStageRunNode)
 // conceda uno de estos objetos al azar entre los que aún no se tienen
-// (grantRandomLegendaryItem, state.js). Nada cuando ya se tienen los 14.
+// (grantRandomLegendaryItem, state.js). Nada cuando ya se tienen todos.
 const LEGENDARY_ITEM_DROP_CHANCE = 0.03;
 
 // --- Tienda: equipo nuevo (nivel 0) por Texel, y objetos consumibles ---
