@@ -526,6 +526,23 @@ UI.openObjectives = function (state) {
   resPanel.appendChild(el('div', 'stat-row', `<span>Homúnculos conseguidos</span><span>${s.homunculosTotal}</span>`));
   body.appendChild(resPanel);
 
+  // ---------- Objetos legendarios personalizados ----------
+  // Contador "cuántos has encontrado" pedido explícitamente por el usuario
+  // (ver LEGENDARY_ITEMS, data.js), más la lista completa con quién los
+  // tiene descubiertos ya (✅) y quién sigue siendo un misterio (🔒), igual
+  // de espíritu que la Pokédex pero para este objetivo de colección aparte.
+  const legendaryPanel = el('div', 'panel');
+  legendaryPanel.innerHTML = '<h3>🏆 Objetos Legendarios</h3>';
+  legendaryPanel.appendChild(objRow('Encontrados', s.legendaryItemsFound, s.totalLegendaryItems));
+  const foundIds = new Set(state.discoveredLegendaryItemIds || []);
+  const legendaryList = el('div', 'settings-info');
+  legendaryList.innerHTML = LEGENDARY_ITEMS.map(item => foundIds.has(item.id)
+    ? `✅ ${item.icon} ${item.name} (${familyDisplayName(item.targetFamily)})`
+    : `🔒 ???`).join('<br>');
+  legendaryPanel.appendChild(legendaryList);
+  legendaryPanel.appendChild(el('p', 'settings-info', 'Pequeña probabilidad de encontrar uno al azar (entre los que aún no tienes) al derrotar un jefe de la Torre Batalla.'));
+  body.appendChild(legendaryPanel);
+
   // ---------- Logros (con recompensa de Gemas) ----------
   const claimedCount = OBJECTIVES.filter(o => state.objectivesClaimed.includes(o.id)).length;
   const achPanel = el('div', 'panel');
@@ -825,7 +842,13 @@ UI.openGuide = function () {
     piezas del MISMO hueco+tipo+rareza (p.ej. 2 hachas Épicas) para combinarlas en 1 sola pieza —
     su nivel resultante es la suma de los dos niveles +1 de bonus. Gratis, sin gastar Texel: la
     forma de sacarle partido a piezas duplicadas de bajo nivel que de otro modo solo servirían
-    para vender.</p>`));
+    para vender.</p>
+    <p class="settings-info">✨ <b>Objetos legendarios personalizados</b> (Mjölnir, Excalibur,
+    Tridente de Poseidón...): 14 piezas únicas ligadas cada una a UN personaje Legendario en
+    concreto — solo se pueden equipar en él, nunca en otro, pero a cambio dan más bonificación que
+    cualquier pieza normal de su rareza. Se reconocen por su fondo dorado brillante propio. Pequeña
+    probabilidad de encontrar una al azar (entre las que aún no tienes) al derrotar un jefe de la
+    Torre Batalla — el contador de cuántas llevas encontradas está en Objetivos.</p>`));
 
   body.appendChild(guideSection('🌋 Mazmorra Elemental', `
     <p class="settings-info">Reto de mitad de partida: se desbloquea al completar las primeras
@@ -1812,10 +1835,17 @@ UI.fightStageRunNode = function (state) {
           capturedIsNew = capture.outcome === 'nuevo';
         }
         recordTorreClear(state, run.torreIdx);
+        // Objetos legendarios personalizados (LEGENDARY_ITEMS, data.js):
+        // pequeña probabilidad SOLO en niveles de jefe (repetibles sin
+        // límite) de conceder uno al azar entre los que aún no se tienen —
+        // la Torre Batalla es el contenido de más nivel/repetible del
+        // juego, el sitio natural para un objetivo de colección sin tope.
+        let legendaryItemFound = null;
+        if (level.kind === 'boss' && Math.random() < LEGENDARY_ITEM_DROP_CHANCE) legendaryItemFound = grantRandomLegendaryItem(state);
         saveGame(state);
         return {
           rewards: { texel: rewards.texel, fighterXp: rewards.fighterXp, drops: rewards.doxite ? { doxite: rewards.doxite } : undefined },
-          leveled, gemas: rewards.gemas, capturedCopy, capturedIsNew, repeatBoss: alreadyOwnsBossCard,
+          leveled, gemas: rewards.gemas, capturedCopy, capturedIsNew, repeatBoss: alreadyOwnsBossCard, legendaryItemFound,
         };
       }
       if (run.isTierCap) {
@@ -4237,18 +4267,26 @@ UI.openGearPickerForFighter = function (state, fighterUid, slotKey) {
     body.appendChild(removeBtn);
   }
   const list = el('div', 'item-grid');
-  const options = state.gearInventory.filter(g => g.slot === slotKey && !equippedGearOwner(state, g.uid) || g.uid === currentUid);
+  // Los objetos legendarios personalizados de OTRA familia (ver
+  // LEGENDARY_ITEMS/canEquipGearOnFighter) ni siquiera aparecen aquí — no
+  // tiene sentido ofrecer una pieza que este luchador no puede llevar.
+  const options = state.gearInventory.filter(g => g.slot === slotKey && (!equippedGearOwner(state, g.uid) || g.uid === currentUid) && canEquipGearOnFighter(g, entry));
   if (options.length === 0) list.appendChild(el('div', 'empty-hint', 'No tienes piezas de este tipo.'));
   options.forEach(g => {
     const rarity = rarityInfo(g.rarity);
-    const cell = el('div', 'item-cell');
+    const cell = el('div', 'item-cell' + (g.unique ? ' gear-unique-cell' : ''));
     cell.style.borderColor = rarity.color;
-    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div>`;
+    if (g.unique) cell.style.background = LEGENDARY_ITEM_BY_ID[g.unique].bg;
+    cell.innerHTML = `<div class="item-tier-icon">${g.unique ? '✨' : rarity.icon}</div>`;
     cell.appendChild(gearIcon(g, 30));
     cell.appendChild(el('div', 'item-plus', '+' + g.level));
     cell.addEventListener('click', () => { equipGear(state, fighterUid, g.uid); saveGame(state); $('pickerModal').classList.add('hidden'); UI.openFighterModal(state, fighterUid); });
     list.appendChild(cell);
   });
+  const uniqueAvailable = state.gearInventory.filter(g => g.unique && g.slot === slotKey && !canEquipGearOnFighter(g, entry));
+  if (uniqueAvailable.length) {
+    list.appendChild(el('div', 'empty-hint', `Tienes ${uniqueAvailable.map(g => LEGENDARY_ITEM_BY_ID[g.unique].name).join(', ')}, pero solo se puede equipar en ${uniqueAvailable.map(g => familyDisplayName(LEGENDARY_ITEM_BY_ID[g.unique].targetFamily)).join('/')}.`));
+  }
   body.appendChild(list);
   $('pickerModal').classList.remove('hidden');
 };
@@ -4572,9 +4610,13 @@ UI.renderEquipo = function (state) {
   filtered.forEach(g => {
     const rarity = rarityInfo(g.rarity);
     const owner = equippedGearOwner(state, g.uid);
-    const cell = el('div', 'item-cell' + (UI.gearBulkMode && UI.gearBulkSelection.has(g.uid) ? ' selected' : ''));
+    const cell = el('div', 'item-cell' + (g.unique ? ' gear-unique-cell' : '') + (UI.gearBulkMode && UI.gearBulkSelection.has(g.uid) ? ' selected' : ''));
     cell.style.borderColor = rarity.color;
-    cell.innerHTML = `<div class="item-tier-icon">${rarity.icon}</div><div class="item-plus">+${g.level}</div>${owner ? '<div class="equipped-dot"></div>' : ''}`;
+    // Fondo cosmético propio (LEGENDARY_ITEMS.bg, data.js) — el "fondo
+    // distintivo" pedido explícitamente para estos objetos, en vez del
+    // fondo plano de siempre que llevan las piezas normales.
+    if (g.unique) cell.style.background = LEGENDARY_ITEM_BY_ID[g.unique].bg;
+    cell.innerHTML = `<div class="item-tier-icon">${g.unique ? '✨' : rarity.icon}</div><div class="item-plus">+${g.level}</div>${owner ? '<div class="equipped-dot"></div>' : ''}`;
     cell.appendChild(gearIcon(g, 30));
     cell.addEventListener('click', () => {
       if (UI.gearBulkMode) {
@@ -4908,12 +4950,13 @@ UI.openGearModal = function (state, gearUid) {
   const val = gearStatValue(g);
   const body = $('gearModalBody');
   body.innerHTML = `
-    <div class="item-modal-header" style="color:${rarity.color}">
-      <div><div class="item-modal-name">${t.names[g.rarity]} +${g.level}</div><div class="item-modal-rarity">${rarity.label} · ${slot.label} (${t.label})</div></div></div>
+    <div class="item-modal-header${g.unique ? ' gear-unique-header' : ''}" style="color:${rarity.color}${g.unique ? `;background:${LEGENDARY_ITEM_BY_ID[g.unique].bg}` : ''}">
+      <div><div class="item-modal-name">${t.names[g.rarity]} +${g.level}</div><div class="item-modal-rarity">${g.unique ? '✨ Objeto Único' : rarity.label} · ${slot.label}${g.unique ? '' : ' (' + t.label + ')'}</div></div></div>
     <div class="panel">
       <div class="stat-row"><span>${STAT_LABELS[t.primary]}</span><span>+${Math.round(val * t.primaryMult)}</span></div>
       ${t.secondary ? `<div class="stat-row"><span>${STAT_LABELS[t.secondary]}</span><span>+${Math.round(val * t.secondaryMult)}</span></div>` : ''}
     </div>
+    ${g.unique ? `<p class="settings-info">"${t.lore}"</p><p class="settings-info">Solo se puede equipar en <b>${familyDisplayName(t.targetFamily)}</b> — es de un solo ejemplar, no se puede vender.</p>` : ''}
     ${owner ? `<p class="settings-info">Equipado en ${fighterDef(rosterEntry(state, owner.uid).defId).name}.</p>` : ''}
   `;
   body.querySelector('.item-modal-header').prepend(gearIcon(g, 50));
@@ -4921,7 +4964,7 @@ UI.openGearModal = function (state, gearUid) {
   const upgradeBtn = el('button', 'primary-btn', 'Mejorar (🪙 ' + gearUpgradeCost(g) + ')');
   upgradeBtn.addEventListener('click', () => { if (upgradeGear(state, gearUid)) { saveGame(state); UI.openGearModal(state, gearUid); UI.renderTopbar(state); } });
   actions.appendChild(upgradeBtn);
-  if (!owner) {
+  if (!owner && !g.unique) {
     const sellBtn = el('button', 'danger-btn', 'Vender (🪙 ' + gearStatValue(g) * 2 + ')');
     sellBtn.addEventListener('click', () => { sellGear(state, gearUid); saveGame(state); $('gearModal').classList.add('hidden'); UI.renderEquipo(state); UI.renderTopbar(state); });
     actions.appendChild(sellBtn);
@@ -5786,6 +5829,7 @@ UI.endBattle = function (view, result) {
     if (outcome && outcome.newMapDifficulty) html += `<p class="settings-info">🏆 ¡Mapa completado! Nueva dificultad desbloqueada: <b>${outcome.newMapDifficulty.name}</b>. Cámbiala desde la parte de arriba del Mapa cuando quieras jugarlo de nuevo con más reto y mejores recompensas.</p>`;
     if (outcome && outcome.capturedCopy) html += `<div class="stat-row"><span>${outcome.capturedIsNew ? '🆕' : '🔁'} ${outcome.capturedCopy.name}</span><span>+1 copia</span></div>`;
     if (outcome && outcome.repeatBoss) html += `<p class="settings-info">👑 Ya tienes su carta — no da otra copia, pero la recompensa es mejor.</p>`;
+    if (outcome && outcome.legendaryItemFound) html += `<p class="settings-info gear-unique-drop">${outcome.legendaryItemFound.item.icon} ¡Objeto legendario encontrado: <b>${outcome.legendaryItemFound.item.name}</b>! Solo se puede equipar en ${familyDisplayName(outcome.legendaryItemFound.item.targetFamily)}.</p>`;
   } else {
     html = `<h3>💀 Derrota</h3><p class="settings-info">Tu banda ha caído. Mejora tu equipo y vuelve a intentarlo.</p>`;
   }

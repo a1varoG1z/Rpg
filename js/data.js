@@ -828,6 +828,14 @@ function homunculoTierForRarity(rarity) {
 }
 
 function fighterDef(id) { return FIGHTERS.find(f => f.id === id) || BOSSES.find(f => f.id === id) || MOBS.find(f => f.id === id) || HOMUNCULOS.find(f => f.id === id); }
+// Nombre de la forma FINAL de una familia (sin evolución pendiente) — usado
+// para referirse a "el personaje X" en general (p.ej. a quién pertenece un
+// objeto legendario personalizado, ver LEGENDARY_ITEMS) sin atarlo a una
+// forma concreta de esa familia.
+function familyDisplayName(family) {
+  const final = FIGHTERS.find(f => f.family === family && !f.evolvesTo);
+  return final ? final.name : family;
+}
 
 // Solo los Legendarios llevan habilidad de líder (ver LEADER_SKILLS), como
 // pedía el usuario ("sobre todo legendarias"). Repartida a mano por clase y
@@ -1271,9 +1279,98 @@ function randomGearType(slot) { const ids = gearTypeIds(slot); return ids[Math.f
 // guardada de antes de esta actualización (sin campo `type`) cae aquí y no
 // cambia de golpe sus estadísticas.
 function gearTypeInfo(gear) {
+  if (gear.unique) return LEGENDARY_ITEM_BY_ID[gear.unique];
   const slot = GEAR_SLOTS[gear.slot];
   return slot.types[gear.type] || slot.types[gearTypeIds(gear.slot)[0]];
 }
+
+// ---------- Objetos legendarios personalizados ----------
+// Petición explícita del usuario: "añadir piezas de equipo personalizadas
+// (Martillo de Thor, Tridente de Poseidón, Espada Excalibur del Rey
+// Arturo...) objetos de tipo legendario que solo se podrán aplicar a ese
+// personaje, y otorgarán una mayor bonificación que una pieza de equipo
+// normal. Intenta ponerles un icono acorde y un fondo cosmético
+// distintivo. Crea todos los objetos legendarios que puedas y en las
+// estadísticas se tiene que reflejar cuántos has encontrado".
+//
+// Cada uno está atado a la FAMILIA de un luchador Legendario ya existente
+// (targetFamily) — solo se puede equipar en un luchador de esa familia
+// exacta (ver canEquipGearOnFighter, state.js), nunca en otro. Son piezas
+// de rareza 'legendario' de siempre (mismo coste de mejora, misma
+// escalera), pero gearStatValue (state.js) les aplica
+// LEGENDARY_ITEM_POWER_MULT encima del valor base de una pieza Legendaria
+// normal — así son siempre claramente más fuertes que el mejor equipo
+// genérico posible, tal como pidió el usuario. `bg` es su fondo cosmético
+// propio (gradiente CSS), usado por la tarjeta de Equipo en vez del color
+// de rareza normal — el "fondo cosmético distintivo" pedido explícitamente.
+// `gear.type` en la pieza real guarda este `id` (nunca colisiona con los
+// tipos normales de GEAR_SLOTS, ver generateLegendaryItemGear en state.js).
+const LEGENDARY_ITEM_POWER_MULT = 1.6;
+const LEGENDARY_ITEMS = [
+  { id: 'mjolnir', name: 'Mjölnir, Martillo de Thor', icon: '🔨', slot: 'arma', targetFamily: 'thor',
+    primary: 'atk', primaryMult: 1.5, secondary: 'def', secondaryMult: 1.2,
+    bg: 'linear-gradient(160deg, #1b2a52, #4d6fc0 60%, #a8c4ff)',
+    lore: 'Solo el digno puede levantarlo — en cualquier otra mano, no se mueve ni un centímetro del suelo.' },
+  { id: 'excalibur', name: 'Excalibur, Espada del Rey Arturo', icon: '⚔️', slot: 'arma', targetFamily: 'arturo',
+    primary: 'atk', primaryMult: 1.45, secondary: 'wis', secondaryMult: 0.9,
+    bg: 'linear-gradient(160deg, #2b2a1f, #c9a227 60%, #f5e6a0)',
+    lore: 'Sacada de la piedra por un solo rey — su filo no conoce la derrota mientras la justicia lo guíe.' },
+  { id: 'tridente_poseidon', name: 'Tridente de Poseidón', icon: '🔱', slot: 'arma', targetFamily: 'poseidon',
+    primary: 'atk', primaryMult: 1.35, secondary: 'hp', secondaryMult: 1.8,
+    bg: 'linear-gradient(160deg, #0b2a3a, #1f7fa0 60%, #8fe0e8)',
+    lore: 'Con un solo golpe agita mareas enteras — o las calma, si su dueño así lo decide.' },
+  { id: 'gungnir', name: 'Gungnir, Lanza de Odín', icon: '🎯', slot: 'arma', targetFamily: 'odin',
+    primary: 'wis', primaryMult: 1.1, secondary: 'atk', secondaryMult: 0.9,
+    bg: 'linear-gradient(160deg, #23262e, #5c6478 60%, #cfd6e6)',
+    lore: 'Forjada para no fallar nunca su objetivo — igual que Odín jamás pierde de vista el destino de los nueve mundos.' },
+  { id: 'kusanagi', name: 'Kusanagi, Espada de Susanoo', icon: '🗡️', slot: 'arma', targetFamily: 'susanoo',
+    primary: 'atk', primaryMult: 1.3, secondary: 'agi', secondaryMult: 1.0,
+    bg: 'linear-gradient(160deg, #241b3a, #6d4fb0 60%, #c9b8ff)',
+    lore: 'Arrancada del interior de una serpiente de ocho cabezas — corta la tormenta con la misma facilidad que la carne.' },
+  { id: 'egida_atenea', name: 'Égida de Atenea', icon: '🛡️', slot: 'armadura', targetFamily: 'atenea',
+    primary: 'def', primaryMult: 1.15, secondary: 'wis', secondaryMult: 1.1,
+    bg: 'linear-gradient(160deg, #2f2a1a, #8a7a3f 60%, #e8dca0)',
+    lore: 'El propio escudo de la guerra justa — nadie que la porta cae por descuido o por furia ciega.' },
+  { id: 'corona_osiris', name: 'Corona de Osiris', icon: '👑', slot: 'casco', targetFamily: 'osiris',
+    primary: 'wis', primaryMult: 1.0, secondary: 'hp', secondaryMult: 1.6,
+    bg: 'linear-gradient(160deg, #1a2e22, #2f8f5a 60%, #bfe8c8)',
+    lore: 'La corona de quien ya murió una vez y volvió — quien la lleva, teme mucho menos a la muerte.' },
+  { id: 'piel_leon_hercules', name: 'Piel del León de Nemea', icon: '🦁', slot: 'guantes', targetFamily: 'hercules',
+    primary: 'atk', primaryMult: 0.95, secondary: 'hp', secondaryMult: 1.5,
+    bg: 'linear-gradient(160deg, #3a2a12, #b8862f 60%, #f0d49a)',
+    lore: 'Ninguna hoja conocida logró jamás atravesarla — Hércules tuvo que estrangular a la bestia con sus propias manos.' },
+  { id: 'sandalias_quetzalcoatl', name: 'Plumas Aladas de Quetzalcóatl', icon: '🪽', slot: 'botas', targetFamily: 'quetzalcoatl',
+    primary: 'agi', primaryMult: 1.4, secondary: 'wis', secondaryMult: 0.7,
+    bg: 'linear-gradient(160deg, #123a2e, #2fa88a 60%, #a8f0dc)',
+    lore: 'El propio viento de Texel se aparta a su paso — serpiente y ave a la vez, nunca toca el suelo por mucho tiempo.' },
+  { id: 'rayo_zeus', name: 'Rayo de Zeus', icon: '⚡', slot: 'amuleto', targetFamily: 'zeus',
+    primary: 'atk', primaryMult: 1.1, secondary: 'agi', secondaryMult: 1.2,
+    bg: 'linear-gradient(160deg, #2e2a10, #e0c93c 60%, #fff6c8)',
+    lore: 'Ningún cielo se atreve a nublarse sin su permiso — ni un rival se atreve a mirarlo dos veces.' },
+  { id: 'ankh_isis', name: 'Ankh de Isis', icon: '☥', slot: 'amuleto', targetFamily: 'isis',
+    primary: 'wis', primaryMult: 1.2, secondary: 'hp', secondaryMult: 1.3,
+    bg: 'linear-gradient(160deg, #142a3a, #3f8fc0 60%, #d8c878)',
+    lore: 'Con él reunió el cuerpo de Osiris pedazo a pedazo — desde entonces, ninguna muerte le parece definitiva.' },
+  { id: 'balanza_anubis', name: 'Balanza de Anubis', icon: '⚖️', slot: 'amuleto', targetFamily: 'anubis',
+    primary: 'wis', primaryMult: 1.0, secondary: 'def', secondaryMult: 1.1,
+    bg: 'linear-gradient(160deg, #1a1a1a, #4a4a4a 60%, #d4af37)',
+    lore: 'Pesa cada corazón antes de dejarlo pasar al más allá — ningún engaño sobrevive su juicio.' },
+  { id: 'brisingamen_freya', name: 'Brísingamen de Freya', icon: '💠', slot: 'amuleto', targetFamily: 'freya',
+    primary: 'wis', primaryMult: 1.05, secondary: 'atk', secondaryMult: 0.9,
+    bg: 'linear-gradient(160deg, #3a1a2e, #c05fa0 60%, #f5c8e0)',
+    lore: 'Forjado por cuatro enanos a cambio de un precio que solo ella conoce — la lleva tanto al amor como a la batalla.' },
+  { id: 'espejo_amaterasu', name: 'Yata no Kagami, Espejo de Amaterasu', icon: '🪞', slot: 'casco', targetFamily: 'amaterasu',
+    primary: 'wis', primaryMult: 1.05, secondary: 'def', secondaryMult: 1.0,
+    bg: 'linear-gradient(160deg, #3a2a10, #e0952f 60%, #ffe0a0)',
+    lore: 'Su reflejo devolvió al sol al cielo una vez — su luz sigue devolviendo el calor a quien lo ha perdido.' },
+];
+const LEGENDARY_ITEM_BY_ID = {};
+LEGENDARY_ITEMS.forEach(item => { LEGENDARY_ITEM_BY_ID[item.id] = Object.assign({ label: 'Objeto Único', names: { legendario: item.name } }, item); });
+// Probabilidad de que un nivel de JEFE de la Torre Batalla (repetible sin
+// límite, el contenido de más nivel del juego — ver UI.fightStageRunNode)
+// conceda uno de estos objetos al azar entre los que aún no se tienen
+// (grantRandomLegendaryItem, state.js). Nada cuando ya se tienen los 14.
+const LEGENDARY_ITEM_DROP_CHANCE = 0.03;
 
 // --- Tienda: equipo nuevo (nivel 0) por Texel, y objetos consumibles ---
 const GEAR_SHOP_PRICES = { comun: 60, infrecuente: 150, raro: 350, epico: 800, legendario: 2000 };

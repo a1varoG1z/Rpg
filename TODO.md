@@ -6890,6 +6890,45 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       (sin los campos nuevos) migra a Fácil con su progreso intacto;
       combate real de principio a fin en Fácil sin errores. Sanity check
       general limpio (642/102/45/45).
+- [x] **Equipo legendario personalizado** (petición explícita: "añadir
+      piezas de equipo personalizadas (Martillo de Thor, Tridente de
+      Poseidón, Espada Excalibur del Rey Arturo, etc.), objetos de tipo
+      legendario que solo se podrán aplicar a ese personaje, y otorgarán
+      una mayor bonificación que una pieza de equipo normal. Intenta
+      ponerles un icono acorde y un fondo cosmético distintivo. Crea todos
+      los objetos legendarios que puedas y en las estadísticas se tiene
+      que reflejar cuántos has encontrado"). `LEGENDARY_ITEMS` (data.js):
+      14 objetos únicos, cada uno atado a la FAMILIA de un luchador
+      Legendario ya existente (Mjölnir→Thor, Excalibur→Arturo, Tridente→
+      Poseidón, Gungnir→Odín, Kusanagi→Susanoo, Égida→Atenea, Corona→
+      Osiris, Piel del León de Nemea→Hércules, Plumas Aladas→Quetzalcóatl,
+      Rayo→Zeus, Ankh→Isis, Balanza→Anubis, Brísingamen→Freya, Espejo de
+      Amaterasu), repartidos entre los 6 huecos de equipo, cada uno con su
+      icono propio y su fondo cosmético (gradiente CSS) distintivo —
+      brillo dorado animado en la tarjeta de Equipo para reconocerlos de
+      un vistazo. `LEGENDARY_ITEM_POWER_MULT` (×1.6) hace que su
+      `gearStatValue` sea siempre mayor que el de la mejor pieza normal de
+      su misma rareza/nivel. Solo se pueden equipar en un luchador de su
+      familia exacta (`canEquipGearOnFighter`, state.js) — cualquier otro
+      luchador ni los ve como opción en el selector de equipo, con un
+      aviso de a quién pertenecen; tampoco se pueden vender ni forjar (son
+      de un solo ejemplar). Pequeña probabilidad (`LEGENDARY_ITEM_DROP_
+      CHANCE`, 3%) de encontrar uno al azar entre los que faltan al
+      derrotar un jefe de la Torre Batalla (repetible sin límite, el
+      contenido de más nivel del juego). `state.discoveredLegendaryItemIds`
+      registra para siempre cuáles se han encontrado — contador y listado
+      completo (✅ encontrado / 🔒 ???) en Objetivos, tal como pidió el
+      usuario. Probado con Playwright: los 14 objetos referencian familias
+      y huecos reales; la bonificación mide exactamente ×1.6 sobre una
+      pieza Legendaria normal del mismo nivel; equipar en la familia
+      correcta funciona y en cualquier otra se rechaza (tanto a mano como
+      en auto-equipar); vender/forjar un objeto único están bloqueados;
+      conceder objetos al azar nunca repite uno ya encontrado y devuelve
+      null al agotarlos los 14; el selector de equipo de un luchador
+      ajeno no muestra el objeto como opción pero avisa de quién es su
+      dueño correcto; la ficha de objeto muestra su lore/restricción y
+      oculta el botón de Vender. Sanity check general limpio
+      (642/102/45/45).
 
 ## Notas
 

@@ -130,6 +130,9 @@ function createNewState() {
     // roster actual, esto no "olvida" un luchador si se vendiera/evolucionara
     // y ya no quedara ninguna copia suelta con ese defId exacto.
     discoveredDefIds: [roster[0].defId, roster[1].defId, roster[2].defId],
+    // Registro permanente de qué objetos legendarios personalizados (ver
+    // LEGENDARY_ITEMS, data.js) se han encontrado alguna vez.
+    discoveredLegendaryItemIds: [],
     // Formaciones guardadas: hasta poder alternar entre varias sin tener
     // que rehacerlas a mano cada vez — cada una es una copia independiente
     // de state.band en el momento de guardarla (ver saveFormationPreset).
@@ -272,7 +275,8 @@ function fighterStatsBreakdown(state, entry) {
 
 function gearStatValue(gear) {
   const base = { comun: 4, infrecuente: 7, raro: 12, epico: 20, legendario: 32 }[gear.rarity];
-  return Math.round(base * (1 + gear.level * 0.15));
+  const uniqueMult = gear.unique ? LEGENDARY_ITEM_POWER_MULT : 1;
+  return Math.round(base * uniqueMult * (1 + gear.level * 0.15));
 }
 
 function gearUpgradeCost(gear) {
@@ -322,7 +326,7 @@ function upgradeAllGear(state, uids) {
 // (si estaba equipada en OTRO luchador, se desequipa primero para no dejar
 // una referencia colgante).
 function canForgeGear(a, b) {
-  return !!a && !!b && a.uid !== b.uid && a.slot === b.slot && a.type === b.type && a.rarity === b.rarity;
+  return !!a && !!b && a.uid !== b.uid && !a.unique && !b.unique && a.slot === b.slot && a.type === b.type && a.rarity === b.rarity;
 }
 function forgeGear(state, uidA, uidB) {
   const a = gearItem(state, uidA), b = gearItem(state, uidB);
@@ -337,6 +341,11 @@ function forgeGear(state, uidA, uidB) {
 function sellGear(state, gearUid) {
   const gear = gearItem(state, gearUid);
   if (!gear) return false;
+  // Los objetos legendarios personalizados (ver LEGENDARY_ITEMS, data.js)
+  // son de un solo ejemplar por partida — venderlo lo perdería para
+  // siempre sin forma de recuperarlo, a diferencia de cualquier otra
+  // pieza (que siempre se puede volver a conseguir jugando).
+  if (gear.unique) return false;
   if (equippedGearOwner(state, gearUid)) return false;
   state.currencies.texel += gearStatValue(gear) * 2;
   state.gearInventory = state.gearInventory.filter(g => g.uid !== gearUid);
@@ -367,6 +376,35 @@ function generateGear(slot, rarity, type) {
 function addGear(state, gear) {
   state.gearInventory.push(gear);
   return true;
+}
+
+// ---------- Objetos legendarios personalizados ----------
+// state.discoveredLegendaryItemIds: registro PERMANENTE (para siempre,
+// igual que discoveredDefIds con la Pokédex) de qué LEGENDARY_ITEMS ha
+// conseguido alguna vez — usado para el contador "cuántos has encontrado"
+// de Estadísticas y para no repetir el mismo objeto dos veces (cada uno es
+// de un solo ejemplar, no tiene sentido acumular copias).
+function generateLegendaryItemGear(itemId) {
+  return { uid: newUid('g'), slot: LEGENDARY_ITEM_BY_ID[itemId].slot, type: itemId, unique: itemId, rarity: 'legendario', level: 0 };
+}
+function undiscoveredLegendaryItems(state) {
+  const found = new Set(state.discoveredLegendaryItemIds || []);
+  return LEGENDARY_ITEMS.filter(item => !found.has(item.id));
+}
+// Concede UNO al azar entre los que todavía no se han encontrado — null si
+// ya se tienen los 14. Se llama desde una pequeña probabilidad al derrotar
+// un jefe de la Torre Batalla (ver LEGENDARY_ITEM_DROP_CHANCE, combat.js) —
+// el contenido repetible de más nivel del juego, así que es el sitio
+// natural para un objetivo de colección a largo plazo sin tope.
+function grantRandomLegendaryItem(state) {
+  const pool = undiscoveredLegendaryItems(state);
+  if (!pool.length) return null;
+  const item = pool[Math.floor(Math.random() * pool.length)];
+  const gear = generateLegendaryItemGear(item.id);
+  addGear(state, gear);
+  if (!state.discoveredLegendaryItemIds) state.discoveredLegendaryItemIds = [];
+  state.discoveredLegendaryItemIds.push(item.id);
+  return { item, gear };
 }
 
 // --- Tienda ---
@@ -421,10 +459,19 @@ function equippedGearOwner(state, gearUid) {
   return state.roster.find(r => GEAR_SLOT_IDS.some(slot => r.gear[slot] === gearUid));
 }
 
+// Los objetos legendarios personalizados (ver LEGENDARY_ITEMS, data.js)
+// solo se pueden equipar en un luchador de su FAMILIA exacta (targetFamily)
+// — cualquier otra pieza de equipo, sin restricción, siempre puede.
+function canEquipGearOnFighter(gear, entry) {
+  if (!gear.unique) return true;
+  const def = fighterDef(entry.defId);
+  return !!def && def.family === LEGENDARY_ITEM_BY_ID[gear.unique].targetFamily;
+}
 function equipGear(state, fighterUid, gearUid) {
   const entry = rosterEntry(state, fighterUid);
   const gear = gearItem(state, gearUid);
   if (!entry || !gear || !GEAR_SLOTS[gear.slot]) return false;
+  if (!canEquipGearOnFighter(gear, entry)) return false;
   const owner = equippedGearOwner(state, gearUid);
   if (owner) { GEAR_SLOT_IDS.forEach(slot => { if (owner.gear[slot] === gearUid) owner.gear[slot] = null; }); }
   entry.gear[gear.slot] = gearUid;
@@ -435,12 +482,14 @@ function equipGear(state, fighterUid, gearUid) {
 // la que ya lleva puesta ahí mismo (si la hay), la de mayor gearStatValue —
 // que solo depende de rareza+nivel, no del tipo concreto (espada/hacha/...),
 // así que es una comparación justa entre piezas de tipos distintos dentro
-// del mismo hueco. null si no hay ninguna opción.
+// del mismo hueco. null si no hay ninguna opción. Descarta cualquier objeto
+// legendario personalizado que no sea de la familia de este luchador (ver
+// canEquipGearOnFighter) — nunca se le "autoequipa" a quien no le pertenece.
 function bestGearForSlot(state, fighterUid, slotKey) {
   const entry = rosterEntry(state, fighterUid);
   if (!entry) return null;
   const currentUid = entry.gear[slotKey];
-  const options = state.gearInventory.filter(g => g.slot === slotKey && (g.uid === currentUid || !equippedGearOwner(state, g.uid)));
+  const options = state.gearInventory.filter(g => g.slot === slotKey && (g.uid === currentUid || !equippedGearOwner(state, g.uid)) && canEquipGearOnFighter(g, entry));
   if (!options.length) return null;
   return options.reduce((best, g) => gearStatValue(g) > gearStatValue(best) ? g : best);
 }
@@ -1409,6 +1458,7 @@ function objectivesSummary(state) {
     roguelikeBestRound: state.roguelike.bestRound,
     gearOwned: state.gearInventory.length,
     gearLegendarioCount: state.gearInventory.filter(g => g.rarity === 'legendario').length,
+    legendaryItemsFound: (state.discoveredLegendaryItemIds || []).length, totalLegendaryItems: LEGENDARY_ITEMS.length,
     homunculosTotal: state.homunculos.homunculo_t1 + state.homunculos.homunculo_t2 + state.homunculos.homunculo_t3,
     crystalsConverted: state.stats.crystalsConverted,
     totalFusionsMade: state.stats.totalFusionsMade, totalEvolutions: state.stats.totalEvolutions,
@@ -1606,6 +1656,7 @@ function migrateState(state) {
     if (state.progress.mapDifficulty === undefined) state.progress.mapDifficulty = 0;
     if (!state.progress.unlockedMapDifficulties) state.progress.unlockedMapDifficulties = [0];
     if (!state.progress.unlockedZonesByTier) state.progress.unlockedZonesByTier = {};
+    if (!state.discoveredLegendaryItemIds) state.discoveredLegendaryItemIds = [];
     if (!state.settings) state.settings = { infiniteEnergy: false, showMedallion: true };
     if (state.settings.showMedallion === undefined) state.settings.showMedallion = true;
     if (state.settings.enableTorreBatalla === undefined) state.settings.enableTorreBatalla = false;
