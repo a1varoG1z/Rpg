@@ -5495,8 +5495,11 @@ UI.applyBattleEvent = function (view, ev) {
     case 'stunattempt':
       UI.logLine(ev.success ? `⚡ ${target.name} queda aturdido.` : `${target.name} resiste el aturdimiento.`);
       break;
+    case 'freezeattempt':
+      UI.logLine(ev.success ? `❄️ ${target.name} queda congelado por completo.` : `${target.name} resiste la congelación, pero queda ralentizado.`);
+      break;
     case 'stunned':
-      UI.logLine(`😵 ${u.name} está aturdido y no puede actuar.`);
+      UI.logLine(ev.reason === 'freeze' ? `🥶 ${u.name} está congelado y no puede actuar.` : `😵 ${u.name} está aturdido y no puede actuar.`);
       break;
     case 'dot':
       u.hp = Math.max(0, u.hp - ev.amount);

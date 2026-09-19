@@ -6827,6 +6827,35 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       style.css. Probado con Playwright alternando entre ambos modos: el
       número de flechas por familia siempre es formas-1, las formas
       bloqueadas se ven correctamente, y no quedan errores de página.
+- [x] **Nuevos estados alterados: quemadura y congelación** (petición
+      explícita: "estados alterados nuevos (veneno, quemadura,
+      congelación), para ello hay que introducir nuevas ultis y repartirlas
+      entre los personajes" — el veneno ya existía, kind `dot` en la ulti
+      `veneno`). Dos ultis nuevas en `SKILL_TYPES` (data.js), cada una con
+      un `kind` propio en el motor de combate (combat.js), mecánicamente
+      distintas entre sí y del veneno, no solo un cambio de nombre/icono:
+      - **Quemadura** (`quemadura`, kind `burn`): golpea, y además de dejar
+        un DoT como el veneno (ignora Defensa), reduce el Ataque del
+        objetivo mientras arde — un veneno puro no toca ninguna stat.
+      - **Congelación** (`congelacion`, kind `freeze`): SIEMPRE reduce la
+        Agilidad del objetivo varios turnos (a diferencia de aturdir, que
+        no hace nada si falla su tirada) y además tiene su propia
+        probabilidad de congelarlo del todo (pierde el turno entero, vía el
+        mismo `stunTurns` que aturdir pero etiquetado con `stunReason:
+        'freeze'` para que el log de combate diga "está congelado" en vez
+        de "está aturdido").
+      Repartidas entre 4 familias jugables ya existentes cuyo lore encajaba
+      ("Hombre de Fuego"/Salamandra Ígnea → quemadura; Oso Polar/Hombre de
+      Hielo → congelación), sin crear personajes nuevos. `purificar`
+      (Aura Purificadora) y la reanimación limpian ambos estados igual que
+      ya limpiaban el veneno y el aturdimiento (reutilizan los mismos
+      arrays `dots`/`debuffs`/`stunTurns`, sin tocar esa lógica). Probado
+      con Playwright llamando a `performTurn` directamente con unidades de
+      prueba: la quemadura aplica el DoT Y el debuff de Ataque a la vez; la
+      congelación ralentiza siempre y solo aturde cuando la tirada tiene
+      éxito (forzado con `Math.random`), con el motivo correcto en el log;
+      Purificar limpia ambos estados de un aliado sucio. Sanity check
+      general limpio (642/102/45/45).
 
 ## Notas
 

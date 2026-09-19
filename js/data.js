@@ -147,7 +147,7 @@ const SKILL_TYPES = {
   aturdir: { name: 'Onda de Trueno', kind: 'stun', turns: 1, chance: 0.65, target: 'single', bonusHitMult: 0.85, desc: 'Puede aturdir a un enemigo y siempre lo golpea.' },
   veneno: { name: 'Mordisco Venenoso', kind: 'dot', mult: 1.5, dotPct: 0.07, dotTurns: 3, target: 'single', desc: 'Golpea con fuerza a un enemigo y lo envenena: sigue perdiendo vida 3 turnos, ignorando su defensa.' },
   drenar: { name: 'Golpe Vampírico', kind: 'drain', mult: 1.8, drainPct: 0.5, target: 'single', desc: 'Golpea con fuerza a un enemigo y recupera la mitad del daño hecho como vida propia.' },
-  purificar: { name: 'Aura Purificadora', kind: 'cleanse', target: 'row-ally', bonusHitMult: 0.85, usesWis: true, desc: 'Elimina los debuffs, el veneno y el aturdimiento de toda su fila, y golpea a un enemigo.' },
+  purificar: { name: 'Aura Purificadora', kind: 'cleanse', target: 'row-ally', bonusHitMult: 0.85, usesWis: true, desc: 'Elimina los debuffs y cualquier estado alterado (veneno, quemadura, congelación, aturdimiento) de toda su fila, y golpea a un enemigo.' },
   revivir: { name: 'Milagro de Vida', kind: 'revive', pct: 0.4, target: 'row-ally', bonusHitMult: 0.85, usesWis: true, desc: 'Revive a un aliado caído de su fila con parte de su vida máxima, y golpea a un enemigo.' },
   // --- Ultis nuevas (petición explícita: "implementa y reparte entre los
   // personajes existentes: barrera, golpe perforante, doble golpe, golpe
@@ -166,6 +166,17 @@ const SKILL_TYPES = {
   rafaga: { name: 'Ráfaga de Viento', kind: 'buffRow', stat: 'agi', pct: 0.25, turns: 3, bonusHitMult: 0.85, desc: 'Aumenta la Agilidad de toda su fila (más críticos, ulti más rápida y actúan antes) y golpea a un enemigo.' },
   corromper: { name: 'Corromper', kind: 'dispel', target: 'row-enemy', bonusHitMult: 0.85, usesWis: true, desc: 'Elimina cualquier mejora activa (ataque/defensa/agilidad) de toda la fila enemiga, y golpea a un enemigo.' },
   sabotaje: { name: 'Sabotaje', kind: 'chargeDrain', drainAmount: 45, target: 'single', bonusHitMult: 0.85, desc: 'Reduce la carga de ulti de un enemigo, retrasando su próximo golpe especial, y lo golpea.' },
+  // --- Nuevos estados alterados (petición explícita: "veneno, quemadura,
+  // congelación") — el veneno ya existía (skill `veneno`, kind 'dot'); se
+  // añaden quemadura y congelación como estados MECÁNICAMENTE distintos,
+  // no solo un cambio de nombre/icono del veneno:
+  //  - quemadura: como el veneno, pero además debilita el Ataque del
+  //    objetivo mientras arde (un DoT que también resta ofensiva).
+  //  - congelación: SIEMPRE ralentiza (debuff de Agilidad garantizado) y
+  //    encima tiene una probabilidad propia de congelar del todo (pierde el
+  //    turno), a diferencia de aturdir (solo probabilidad, todo o nada).
+  quemadura: { name: 'Aliento Abrasador', kind: 'burn', mult: 1.3, dotPct: 0.06, dotTurns: 3, burnAtkPct: 0.2, target: 'single', desc: 'Golpea a un enemigo y lo quema: pierde vida cada turno y su Ataque se reduce mientras arde, ignorando su Defensa.' },
+  congelacion: { name: 'Aliento Glacial', kind: 'freeze', chance: 0.45, freezeTurns: 1, slowPct: 0.3, slowTurns: 3, target: 'single', bonusHitMult: 0.85, desc: 'Ralentiza a un enemigo (pierde Agilidad varios turnos) y puede llegar a congelarlo del todo, haciéndole perder el turno entero.' },
 };
 
 // Texto con los números EXACTOS de cada ulti (%, turnos, probabilidad...)
@@ -210,12 +221,16 @@ function skillMechanicsText(skill) {
       return `${Math.round(skill.chance * 100)}% de posibilidades de aturdir a un enemigo ${skill.turns} turno${skill.turns === 1 ? '' : 's'} (pierde el turno entero).` + bonusHit;
     case 'dot':
       return `Daño ×${skill.mult} a un enemigo, y lo envenena: pierde un ${pct(skill.dotPct)} de su vida máxima cada turno durante ${skill.dotTurns} turnos, ignorando su Defensa.`;
+    case 'burn':
+      return `Daño ×${skill.mult} a un enemigo, y lo quema: pierde un ${pct(skill.dotPct)} de su vida máxima cada turno (ignorando su Defensa) y su Ataque baja un ${pct(skill.burnAtkPct)}, ambos durante ${skill.dotTurns} turnos.`;
+    case 'freeze':
+      return `Reduce la Agilidad de un enemigo un ${pct(skill.slowPct)} durante ${skill.slowTurns} turnos, y tiene un ${Math.round(skill.chance * 100)}% de posibilidades de congelarlo del todo ${skill.freezeTurns} turno${skill.freezeTurns === 1 ? '' : 's'} (pierde el turno entero).` + bonusHit;
     case 'drain':
       return `Daño ×${skill.mult} a un enemigo; recupera el ${pct(skill.drainPct)} de ese daño como vida propia.`;
     case 'cleanse':
-      return 'Elimina todos los debuffs, el veneno y el aturdimiento de TODA su fila.' + bonusHit;
+      return 'Elimina todos los debuffs y cualquier estado alterado (veneno, quemadura, congelación, aturdimiento) de TODA su fila.' + bonusHit;
     case 'revive':
-      return `Si tiene algún aliado caído en su fila, lo revive con un ${pct(skill.pct)} de su vida máxima (sin ningún debuff/veneno/aturdimiento encima). También golpea a un enemigo (×${skill.bonusHitMult} de daño, según su Sabiduría) pase lo que pase, haya o no a quien revivir.`;
+      return `Si tiene algún aliado caído en su fila, lo revive con un ${pct(skill.pct)} de su vida máxima (sin ningún debuff ni estado alterado encima). También golpea a un enemigo (×${skill.bonusHitMult} de daño, según su Sabiduría) pase lo que pase, haya o no a quien revivir.`;
     case 'shieldRow':
       return `Da a TODA su fila un escudo igual al ${pct(skill.shieldPct)} de la vida máxima de cada uno, que absorbe daño antes que la vida durante ${skill.turns} turnos (o hasta agotarse antes).` + bonusHit;
     case 'trueDamage':
@@ -499,11 +514,11 @@ addFamily('amazona', 2, 'viento', 'picaro', 'dobleGolpe', ['Joven Amazona', 'Gue
 addFamily('bigfoot', 1, 'tierra', 'campeon', 'golpe', ['Rastro en el Bosque', 'Bigfoot Solitario', 'Bigfoot, Leyenda del Bosque'], ['Pocos lo han visto, y menos aún han vivido para contarlo con detalle.', 'Cada avistamiento añade un capítulo más a su leyenda del bosque.', 'Es ya más mito que criatura, pero el bosque entero sabe que es real.'], true);
 addFamily('nessie', 2, 'agua', 'campeon', 'escudo', ['Cría del Lago', 'Monstruo del Lago', 'Nessie, Leyenda de las Aguas Frías'], ['Ha esquivado a cazadores y curiosos durante siglos sin ser jamás atrapada.', 'Ha aprendido a esconderse de cazadores cada vez más decididos a encontrarla.', 'Su leyenda ha sobrevivido a siglos de curiosos sin que nadie logre atraparla.'], true);
 addFamily('samurai', 2, 'rayo', 'picaro', 'perforar', ['Aprendiz de Samurái', 'Samurái Errante', 'Maestro Espadachín del Trueno'], ['Su espada se mueve más rápido de lo que el ojo puede seguir.', 'Su espada se ha movido en tantos duelos que ya no necesita pensar antes de golpear.', 'Su corte es tan rápido como el propio trueno que lleva por nombre.'], true);
-addFamily('hombrefuego', 1, 'fuego', 'brujo', 'sabotaje', ['Chispa Viviente', 'Hombre de Fuego', 'Avatar de las Llamas'], ['Cada paso que da deja un rastro de brasas ardientes.', 'Las brasas que deja a su paso ya arden más tiempo que antes.', 'Es la llama misma hecha carne: nada que toca vuelve a ser lo mismo.'], true);
+addFamily('hombrefuego', 1, 'fuego', 'brujo', 'quemadura', ['Chispa Viviente', 'Hombre de Fuego', 'Avatar de las Llamas'], ['Cada paso que da deja un rastro de brasas ardientes.', 'Las brasas que deja a su paso ya arden más tiempo que antes.', 'Es la llama misma hecha carne: nada que toca vuelve a ser lo mismo.'], true);
 addFamily('sacerdote', 1, 'tierra', 'guru', 'curar', ['Acólito', 'Sacerdote Bendecido', 'Sumo Sacerdote de Texel'], ['Dedica su vida a curar a quienes protegen el reino.', 'Sus bendiciones han salvado a más soldados de los que puede recordar.', 'Es el guía espiritual de todo Texel, y su fe cura donde la magia común falla.'], true);
 addFamily('thor', 3, 'rayo', 'campeon', 'golpe', ['Joven del Martillo', 'Guerrero de Asgard', 'Thor, Dios del Trueno'], ['Solo el digno puede levantar su martillo... y desatar la tormenta.', 'Cada batalla en Asgard fortalece más su brazo — y su martillo.', 'Solo él puede levantar el martillo, y solo él puede desatar la tormenta que trae.'], true);
 addFamily('gladiador', 1, 'tierra', 'campeon', 'golpe', ['Esclavo de la Arena', 'Gladiador Veterano', 'Campeón del Coliseo'], ['Ha sobrevivido a cientos de combates ante multitudes sedientas de sangre.', 'Cada victoria en la arena le gana más respeto — y más enemigos.', 'Es el campeón indiscutido del coliseo, y las multitudes corean su nombre.'], true);
-addFamily('hombrehielo', 1, 'agua', 'brujo', 'debilitar', ['Escarcha Viviente', 'Hombre de Hielo', 'Avatar del Invierno Eterno'], ['Congela todo lo que toca, incluso el ánimo de sus rivales.', 'El frío que desprende ya congela el aire a su alrededor.', 'Es el invierno eterno hecho carne: nada sobrevive mucho tiempo a su lado.'], true);
+addFamily('hombrehielo', 1, 'agua', 'brujo', 'congelacion', ['Escarcha Viviente', 'Hombre de Hielo', 'Avatar del Invierno Eterno'], ['Congela todo lo que toca, incluso el ánimo de sus rivales.', 'El frío que desprende ya congela el aire a su alrededor.', 'Es el invierno eterno hecho carne: nada sobrevive mucho tiempo a su lado.'], true);
 addFamily('odin', 3, 'rayo', 'guru', 'bendicion', ['Joven Vidente', 'Odín, el Errante', 'Odín, Padre de Todo'], ['Sacrificó un ojo por sabiduría, y con ella gobierna Asgard.', 'Cada viaje errante le enseña un secreto más del destino de los mundos.', 'Gobierna Asgard entero con la sabiduría que pagó con su propio ojo.'], true);
 addFamily('sunwukong', 3, 'viento', 'picaro', 'dobleGolpe', ['Mono de Piedra', 'Rey Mono', 'Sun Wukong, el Sabio Igualado al Cielo'], ['Su bastón puede crecer hasta el cielo... y su ingenio, aún más alto.', 'Su bastón crece más alto con cada batalla que libra.', 'Ni el cielo mismo ha logrado igualar su ingenio.'], true);
 addFamily('leonhumanizado', 2, 'tierra', 'campeon', 'grito', ['Cachorro de León', 'Guerrero León', 'Rey de la Sabana Dorada'], ['Su rugido basta para que la manada entera se ponga en pie.', 'Su rugido ya reúne a toda la manada en un solo instante.', 'Gobierna la sabana dorada como el rey indiscutido que siempre fue.'], true);
@@ -538,7 +553,7 @@ addFamily('tortugahumanoide', 1, 'agua', 'campeon', 'escudo', ['Tortuga Guerrera
 // pedidas explícitamente por el usuario.
 addFamily('kappa', 1, 'agua', 'picaro', 'aturdir', ['Kappa Juguetón', 'Kappa de las Corrientes', 'Kappa Maestro del Estanque'], ['Guarda un cuenco de agua sagrada en la cabeza: si se derrama, pierde todo su poder.', 'Ha aprendido a proteger su cuenco en pleno combate sin derramar ni una gota.', 'Ningún río de Texel se cruza sin su permiso, y su cuenco nunca se ha vaciado.'], true);
 addFamily('tanuki', 1, 'tierra', 'explorador', 'sabotaje', ['Tanuki Curioso', 'Tanuki Embaucador', 'Gran Tanuki de las Mil Formas'], ['Puede transformar su propio cuerpo para parecer cualquier cosa... o cualquiera.', 'Sus disfraces ya engañan hasta a quien conoce bien sus trucos.', 'Ha adoptado tantas formas que ya nadie recuerda cuál es la suya de verdad.'], true);
-addFamily('salamandraignea', 1, 'fuego', 'brujo', 'arrasar', ['Cría de Salamandra', 'Salamandra de Brasas', 'Salamandra del Corazón del Volcán'], ['Nació en el centro de una hoguera y jamás ha sentido frío.', 'Las brasas por las que camina se reavivan solas a su paso.', 'Vive en el corazón de un volcán, donde ni la lava logra herirla.'], true);
+addFamily('salamandraignea', 1, 'fuego', 'brujo', 'quemadura', ['Cría de Salamandra', 'Salamandra de Brasas', 'Salamandra del Corazón del Volcán'], ['Nació en el centro de una hoguera y jamás ha sentido frío.', 'Las brasas por las que camina se reavivan solas a su paso.', 'Vive en el corazón de un volcán, donde ni la lava logra herirla.'], true);
 addFamily('thunderbird', 1, 'rayo', 'explorador', 'furia', ['Cría de Thunderbird', 'Thunderbird Joven', 'Thunderbird de las Tormentas'], ['Cada aleteo suyo hace crepitar el aire con pequeñas chispas.', 'Ya es capaz de convocar una tormenta con solo alzar el vuelo.', 'Su vuelo desata tormentas que se ven llegar desde el otro lado de Texel.'], true);
 addFamily('selkie', 1, 'agua', 'guru', 'purificar', ['Cría de Selkie', 'Selkie de las Mareas', 'Selkie Guardiana de su Piel'], ['Su piel de foca guarda toda su magia — y todo su secreto.', 'Ha aprendido a moverse entre ambas formas sin perder ni un ápice de su don.', 'Nadie que le arrebate su piel ha logrado quedársela para siempre.'], true);
 
@@ -660,7 +675,7 @@ addFamily("hipopotamo", 2, "agua", "campeon", "furia", ["Cría de Hipopótamo", 
 addFamily("pinguino", 1, "agua", "campeon", "barrera", ["Cría de Pingüino", "Pingüino Guerrero de Aleta Firme", "Gran Pingüino, General de la Muralla de Hielo"], ["Se desliza sobre el hielo con la misma facilidad con la que nada bajo él.", "Ya ha aguantado tormentas que dispersarían a cualquier otra bandada.", "Es el general de la muralla de hielo, y bajo su mando ningún frío logra romper la formación."], true);
 addFamily("guepardo", 2, "viento", "picaro", "dobleGolpe", ["Cría de Guepardo", "Guepardo Cazador de Velocidad Pura", "Gran Guepardo, Relámpago de la Sabana"], ["Alcanza velocidades que ningún otro cazador de Texel puede siquiera soñar con igualar.", "Su carrera ya termina antes de que la presa entienda que la caza ha comenzado.", "Es el relámpago de la sabana, y ninguna distancia lo separa ya de lo que decide perseguir."], true);
 addFamily("canguro", 2, "tierra", "picaro", "golpeGracia", ["Cría de Canguro", "Canguro Boxeador de Patada Certera", "Gran Canguro, Campeón Invicto del Ring de Tierra Roja"], ["Se pone de pie sobre su cola y reparte golpes con ambas patas delanteras sin descanso.", "Su patada trasera ya ha derribado rivales que jamás vieron venir el golpe.", "Es el campeón invicto del ring de tierra roja, y nadie ha logrado tumbarlo todavía."], true);
-addFamily("osopolar", 2, "agua", "campeon", "golpe", ["Cría de Oso Polar", "Oso Polar Guerrero de Garra Helada", "Gran Oso Polar, Soberano del Hielo Eterno"], ["Nada en aguas heladas que congelarían a cualquier otro depredador en minutos.", "Su zarpazo ya ha atravesado el hielo más grueso sin que se note el esfuerzo.", "Es el soberano del hielo eterno, y ningún rival de las tierras heladas se atreve a desafiarlo dos veces."], true);
+addFamily("osopolar", 2, "agua", "campeon", "congelacion", ["Cría de Oso Polar", "Oso Polar Guerrero de Garra Helada", "Gran Oso Polar, Soberano del Hielo Eterno"], ["Nada en aguas heladas que congelarían a cualquier otro depredador en minutos.", "Su zarpazo ya ha atravesado el hielo más grueso sin que se note el esfuerzo.", "Es el soberano del hielo eterno, y ningún rival de las tierras heladas se atreve a desafiarlo dos veces."], true);
 
 // --- Novena ronda: mitologia/religion (Miguel Arcangel, Huitzilopochtli),
 // animales nuevos (Ballena, Narval, Lince, Jirafa) y un guia de almas

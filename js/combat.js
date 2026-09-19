@@ -1308,7 +1308,7 @@ function performTurn(log, unit, ownRow, enemyRow) {
   if (!unit.alive) return;
   if (unit.stunTurns > 0) {
     unit.stunTurns--;
-    log.push({ type: 'stunned', unitId: unit.id });
+    log.push({ type: 'stunned', unitId: unit.id, reason: unit.stunReason || 'stun' });
     return;
   }
   const skill = SKILL_TYPES[unit.skillId];
@@ -1395,14 +1395,14 @@ function performTurn(log, unit, ownRow, enemyRow) {
       const target = pickTarget(enemyRow);
       if (!target) break;
       const success = Math.random() < skill.chance;
-      if (success) target.stunTurns = (target.stunTurns || 0) + skill.turns;
+      if (success) { target.stunTurns = (target.stunTurns || 0) + skill.turns; target.stunReason = 'stun'; }
       log.push({ type: 'stunattempt', unitId: unit.id, targetId: target.id, success });
       applyUltBonusHit(log, unit, enemyRow, skill, target);
       break;
     }
     case 'dot': {
-      // Daño instantáneo más flojo que golpear, pero deja un veneno/quemadura
-      // que sigue mordiendo varios turnos — bueno contra objetivos que curan
+      // Daño instantáneo más flojo que golpear, pero deja un veneno que
+      // sigue mordiendo varios turnos — bueno contra objetivos que curan
       // o se escudan, porque el DoT ignora defensa y buffs por completo.
       const target = pickTarget(enemyRow);
       if (!target) break;
@@ -1412,6 +1412,38 @@ function performTurn(log, unit, ownRow, enemyRow) {
         const tick = Math.max(1, Math.round(target.maxHp * skill.dotPct));
         target.dots.push({ amount: tick, turnsLeft: skill.dotTurns, label: skill.name });
       }
+      break;
+    }
+    case 'burn': {
+      // Quemadura: como el veneno, un DoT que ignora defensa, pero además
+      // el propio fuego debilita al objetivo mientras arde (debuff de
+      // Ataque durante los mismos turnos) — un veneno puro no toca stats.
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const { amount, isCrit } = computeDamage(unit, target, skill.mult, !!skill.usesWis);
+      applyDamage(log, unit, target, amount, isCrit, skill.name);
+      if (target.alive) {
+        const tick = Math.max(1, Math.round(target.maxHp * skill.dotPct));
+        target.dots.push({ amount: tick, turnsLeft: skill.dotTurns, label: skill.name });
+        target.debuffs.push({ stat: 'atk', pct: skill.burnAtkPct, turnsLeft: skill.dotTurns });
+        log.push({ type: 'debuff', unitId: unit.id, targetId: target.id, stat: 'atk', pct: skill.burnAtkPct });
+      }
+      break;
+    }
+    case 'freeze': {
+      // Congelación: SIEMPRE ralentiza (debuff de Agilidad garantizado,
+      // varios turnos) y además tiene una probabilidad de congelar del
+      // todo (pierde el turno entero, como aturdir pero con probabilidad
+      // propia) — a diferencia de aturdir (solo probabilidad, sin ralentizar
+      // si falla) o debilitar (solo debuff, nunca hace perder el turno).
+      const target = pickTarget(enemyRow);
+      if (!target) break;
+      const success = Math.random() < skill.chance;
+      if (success) { target.stunTurns = (target.stunTurns || 0) + skill.freezeTurns; target.stunReason = 'freeze'; }
+      target.debuffs.push({ stat: 'agi', pct: skill.slowPct, turnsLeft: skill.slowTurns });
+      log.push({ type: 'freezeattempt', unitId: unit.id, targetId: target.id, success });
+      log.push({ type: 'debuff', unitId: unit.id, targetId: target.id, stat: 'agi', pct: skill.slowPct });
+      applyUltBonusHit(log, unit, enemyRow, skill, target);
       break;
     }
     case 'drain': {
