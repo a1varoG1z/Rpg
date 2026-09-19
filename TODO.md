@@ -6990,6 +6990,34 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       la Guía y el panel de Objetivos muestran el número actualizado
       (29/29) sin texto obsoleto. Sanity check general limpio
       (642/102/45/45).
+- [x] **Un objeto legendario por cada familia Legendario** (petición
+      explícita: "mete al menos un objeto de equipo legendario
+      personalizado por cada familia de legendarios"). Las dos tandas
+      anteriores solo cubrían 29 de las 65 familias de rareza Legendario
+      del roster — 36 más en `LEGENDARY_ITEMS` (data.js), mismo patrón
+      exacto, cubren TODAS las que faltaban: las 7 familias de "monstruo
+      genérico" sin nombre propio (Drakón Ígneo, Señor del Maelström,
+      Monarca de Piedra Negra, Titán de las Corrientes, Tirano de la
+      Tormenta, Señor de las Cenizas, Soberana del Vendaval — también
+      Legendario aunque no sean figuras mitológicas) y 29 figuras más
+      (Hidra de Siete Cabezas, Fénix, Cerbero, Kraken, Leviatán, Shenlong,
+      Pazuzu, Ra, Drácula, Esfinge, Armadura Tecno, Genio, Afrodita,
+      Ragnar, Ganesha, Kali, Pele, Coatlicue, Ares, Artemisa, Sekhmet,
+      Sobek, Hefesto, Musashi, Guan Yu, Atila, Gengis Kan, Shinigami,
+      Beowulf). Cada lore extiende la descripción ya existente de esa
+      familia; reparto de huecos sin cambios de criterio respecto a las
+      tandas anteriores. El texto de la Guía y el contador de Objetivos
+      ya usaban `LEGENDARY_ITEMS.length` en vez de un número fijo (ver
+      tanda anterior), así que se actualizan solos a 65/65 sin tocar
+      código de UI. Probado con Playwright: las 65 familias Legendario del
+      roster tienen ya al menos un objeto propio (0 familias sin cubrir,
+      verificado programáticamente contra `FIGHTERS.filter(rarity===
+      'legendario')`); los 65 objetos pasan las mismas comprobaciones de
+      integridad que las tandas anteriores (familias/huecos reales, ids
+      únicos, ratio ×1.6, restricción de equipar, bloqueo de venta/forja,
+      reparto sin duplicados hasta agotar los 65); Guía y Objetivos
+      muestran 65/65 correctamente. Sanity check general limpio
+      (642/102/45/45).
 
 ## Notas
 
