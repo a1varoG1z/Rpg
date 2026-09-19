@@ -6804,6 +6804,29 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       Reverificado que Torre Batalla (que también lee `fixedStats` de
       Jersey Devil) sigue superando la escalera completa sin problemas
       tras el cambio. Sanity check general limpio (642/102/45/45).
+- [x] **Forja (sección Equipo)**: en el modo de selección múltiple de
+      piezas de equipo, si eliges exactamente 2 piezas del mismo slot +
+      tipo + rareza aparece un botón "🔨 Forjar" que las combina en 1 sola
+      pieza, sumando sus niveles + 1 (p.ej. Nv.3 + Nv.5 → Nv.9), gratis
+      (sin coste de Texel). La pieza consumida se desequipa primero si
+      estaba puesta en algún luchador. `canForgeGear`/`forgeGear` en
+      `state.js`; botón en `renderGearBulkActionBar` (ui.js), deshabilitado
+      con el texto "elige 2 piezas iguales" cuando la selección no es
+      forjable. Añadida explicación en la Guía (sección Equipo). Probado
+      con Playwright: rechaza piezas de tipo distinto, habilita/calcula
+      bien el nivel resultante, y tras forjar el inventario baja en 1 pieza
+      con el nivel resultante correcto.
+- [x] **Árbol genealógico visual (Pokédex)**: nuevo selector "▦ Cuadrícula"
+      / "🌳 Árbol genealógico" en la cabecera de la Pokédex (aplica tanto a
+      luchadores como a la sección 🗼 Torre Batalla). El árbol agrupa por
+      familia y muestra las formas en fila horizontal unidas por flechas
+      "➜" (2 flechas para una cadena de 3 formas, 0 para un jefe de forma
+      única); las formas no descubiertas siguen apareciendo como "???"
+      igual que en la cuadrícula. `pokedexFamilyGroups`/`renderPokedexTree`/
+      `renderPokedexGrid` en ui.js; nuevas clases `.pokedex-tree*` en
+      style.css. Probado con Playwright alternando entre ambos modos: el
+      número de flechas por familia siempre es formas-1, las formas
+      bloqueadas se ven correctamente, y no quedan errores de página.
 
 ## Notas
 

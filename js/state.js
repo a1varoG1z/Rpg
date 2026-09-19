@@ -309,6 +309,31 @@ function upgradeAllGear(state, uids) {
   return { count, spent };
 }
 
+// ---------- Forja ----------
+// Combina 2 piezas del MISMO hueco+tipo+rareza en 1 sola de más nivel —
+// petición explícita del usuario: "añadir Forja, para combinar dos piezas
+// del mismo tipo y obtener una de más nivel". Alternativa GRATUITA (sin
+// gastar Texel, a diferencia de upgradeGear) a mejorar equipo: da salida a
+// piezas duplicadas de bajo nivel que de otro modo solo servirían para
+// vender, igual que la Fusión (SEF) hace con copias de luchadores. El
+// nivel resultante es la SUMA de los dos niveles +1 de bonus (forjar dos
+// Nv.0 da Nv.1; dos Nv.10 dan Nv.21) — se queda con el uid de `a` (si
+// estaba equipada, sigue estándolo, ahora más fuerte) y consume `b`
+// (si estaba equipada en OTRO luchador, se desequipa primero para no dejar
+// una referencia colgante).
+function canForgeGear(a, b) {
+  return !!a && !!b && a.uid !== b.uid && a.slot === b.slot && a.type === b.type && a.rarity === b.rarity;
+}
+function forgeGear(state, uidA, uidB) {
+  const a = gearItem(state, uidA), b = gearItem(state, uidB);
+  if (!canForgeGear(a, b)) return null;
+  const ownerB = equippedGearOwner(state, uidB);
+  if (ownerB) unequipGear(state, ownerB.uid, b.slot);
+  a.level = a.level + b.level + 1;
+  state.gearInventory = state.gearInventory.filter(g => g.uid !== uidB);
+  return a;
+}
+
 function sellGear(state, gearUid) {
   const gear = gearItem(state, gearUid);
   if (!gear) return false;

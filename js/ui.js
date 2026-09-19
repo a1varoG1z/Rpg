@@ -349,6 +349,40 @@ UI.showPokedexEntry = function (def) {
 };
 
 // ---------- Pokédex ----------
+// 'grid' (de siempre) o 'tree' — petición explícita del usuario ("implementa
+// árbol genealógico visual"): agrupa cada familia en su propia fila
+// horizontal (forma1 → forma2 → forma3, con flechas) en vez de una
+// cuadrícula continua ordenada solo por familia+rareza — de un vistazo se ve
+// la cadena de evolución completa de cada familia, no solo el orden.
+UI.pokedexViewMode = 'grid';
+function pokedexFamilyGroups(list) {
+  const byFamily = {};
+  list.forEach(def => { (byFamily[def.family] = byFamily[def.family] || []).push(def); });
+  return Object.keys(byFamily).sort().map(family => {
+    const forms = byFamily[family].sort((a, b) => rarityIndex(a.rarity) - rarityIndex(b.rarity));
+    return { family, forms };
+  });
+}
+function renderPokedexTree(container, list, discovered) {
+  pokedexFamilyGroups(list).forEach(({ family, forms }) => {
+    const familyWrap = el('div', 'pokedex-tree-family');
+    // Nombre de familia legible: el de la forma final conocida (o el propio
+    // slug si ni la primera forma se ha descubierto todavía, sin spoiler).
+    const lastKnown = forms.slice().reverse().find(f => discovered.has(f.id));
+    familyWrap.appendChild(el('div', 'pokedex-tree-family-name', lastKnown ? lastKnown.name.split(',')[0] : '???'));
+    const row = el('div', 'pokedex-tree-row');
+    forms.forEach((def, i) => {
+      row.appendChild(pokedexCard(def, discovered.has(def.id)));
+      if (i < forms.length - 1) row.appendChild(el('div', 'pokedex-tree-arrow', '➜'));
+    });
+    familyWrap.appendChild(row);
+    container.appendChild(familyWrap);
+  });
+}
+function renderPokedexGrid(container, list, discovered) {
+  const sorted = list.slice().sort((a, b) => a.family.localeCompare(b.family) || rarityIndex(a.rarity) - rarityIndex(b.rarity));
+  sorted.forEach(def => container.appendChild(pokedexCard(def, discovered.has(def.id))));
+}
 // Registro de todas las formas jugables (FIGHTERS) alguna vez conseguidas,
 // agrupadas por familia y ordenadas por tier — igual que "ordenar por
 // familia" en la Colección, pero cubriendo TODO el roster invocable, no
@@ -357,24 +391,34 @@ UI.openPokedex = function (state) {
   const body = $('pokedexModalBody');
   body.innerHTML = '';
   const discovered = new Set(state.discoveredDefIds || []);
-  const sorted = [...FIGHTERS].sort((a, b) => a.family.localeCompare(b.family) || rarityIndex(a.rarity) - rarityIndex(b.rarity));
-  const discoveredCount = sorted.filter(def => discovered.has(def.id)).length;
-  body.appendChild(el('h3', null, `📖 Pokédex ${discoveredCount}/${sorted.length}`));
-  body.appendChild(el('p', 'settings-info', 'Todas las criaturas jugables que existen en Texel. Se desbloquean para siempre la primera vez que las invocas.'));
-  const grid = el('div', 'creature-grid pokedex-grid');
-  sorted.forEach(def => grid.appendChild(pokedexCard(def, discovered.has(def.id))));
+
+  const headerRow = el('div', 'panel-title-row');
+  headerRow.appendChild(el('h3', null, `📖 Pokédex ${FIGHTERS.filter(d => discovered.has(d.id)).length}/${FIGHTERS.length}`));
+  const gridBtn = el('button', 'mini-btn' + (UI.pokedexViewMode === 'grid' ? ' active' : ''), '▦ Cuadrícula');
+  const treeBtn = el('button', 'mini-btn' + (UI.pokedexViewMode === 'tree' ? ' active' : ''), '🌳 Árbol genealógico');
+  gridBtn.addEventListener('click', () => { UI.pokedexViewMode = 'grid'; UI.openPokedex(state); });
+  treeBtn.addEventListener('click', () => { UI.pokedexViewMode = 'tree'; UI.openPokedex(state); });
+  headerRow.appendChild(gridBtn); headerRow.appendChild(treeBtn);
+  body.appendChild(headerRow);
+  body.appendChild(el('p', 'settings-info', UI.pokedexViewMode === 'tree'
+    ? 'Todas las criaturas jugables que existen en Texel, agrupadas por familia — la cadena de evolución completa de un vistazo.'
+    : 'Todas las criaturas jugables que existen en Texel. Se desbloquean para siempre la primera vez que las invocas.'));
+  const grid = el('div', UI.pokedexViewMode === 'tree' ? 'pokedex-tree' : 'creature-grid pokedex-grid');
+  if (UI.pokedexViewMode === 'tree') renderPokedexTree(grid, FIGHTERS, discovered);
+  else renderPokedexGrid(grid, FIGHTERS, discovered);
   body.appendChild(grid);
 
   // Mobs y jefes solo se consiguen ganando su nivel en la Torre Batalla
   // (ver TORRE_LEVELS en data.js) — se listan aparte porque son un sistema
   // de desbloqueo totalmente distinto al de invocación, no porque cuenten
   // para el mismo porcentaje de arriba.
-  const torreSorted = [...MOBS, ...BOSSES].sort((a, b) => a.family.localeCompare(b.family) || rarityIndex(a.rarity) - rarityIndex(b.rarity));
-  const torreDiscoveredCount = torreSorted.filter(def => discovered.has(def.id)).length;
-  body.appendChild(el('h3', null, `🗼 Torre Batalla ${torreDiscoveredCount}/${torreSorted.length}`));
-  body.appendChild(el('p', 'settings-info', 'Mobs y jefes del mapa, jugables al derrotarlos en la Torre Batalla (ver la pestaña Torre).'));
-  const torreGrid = el('div', 'creature-grid pokedex-grid');
-  torreSorted.forEach(def => torreGrid.appendChild(pokedexCard(def, discovered.has(def.id))));
+  const torreList = [...MOBS, ...BOSSES];
+  const torreDiscoveredCount = torreList.filter(def => discovered.has(def.id)).length;
+  body.appendChild(el('h3', null, `🗼 Torre Batalla ${torreDiscoveredCount}/${torreList.length}`));
+  body.appendChild(el('p', 'settings-info', 'Mobs y jefes del mapa, jugables al derrotarlos en la Torre Batalla (ver la pestaña Torre). Los jefes no evolucionan, así que en el árbol genealógico aparecen como una familia de 1 sola forma.'));
+  const torreGrid = el('div', UI.pokedexViewMode === 'tree' ? 'pokedex-tree' : 'creature-grid pokedex-grid');
+  if (UI.pokedexViewMode === 'tree') renderPokedexTree(torreGrid, torreList, discovered);
+  else renderPokedexGrid(torreGrid, torreList, discovered);
   body.appendChild(torreGrid);
 
   $('pokedexModal').classList.remove('hidden');
@@ -776,7 +820,12 @@ UI.openGuide = function () {
     botas, amuleto), cada uno con 3 tipos distintos que reparten sus bonificaciones entre dos
     estadísticas de forma diferente (p.ej. un hacha da mucho Ataque y algo de Vida; una lanza da
     Ataque y Agilidad). Cada pieza tiene su propia rareza (igual escalera que los luchadores) y se
-    puede mejorar con Texel para subir su bonificación un poco más en cada nivel.</p>`));
+    puede mejorar con Texel para subir su bonificación un poco más en cada nivel.</p>
+    <p class="settings-info"><b>Forja</b>: con "Selección múltiple" activada, elige exactamente 2
+    piezas del MISMO hueco+tipo+rareza (p.ej. 2 hachas Épicas) para combinarlas en 1 sola pieza —
+    su nivel resultante es la suma de los dos niveles +1 de bonus. Gratis, sin gastar Texel: la
+    forma de sacarle partido a piezas duplicadas de bajo nivel que de otro modo solo servirían
+    para vender.</p>`));
 
   body.appendChild(guideSection('🌋 Mazmorra Elemental', `
     <p class="settings-info">Reto de mitad de partida: se desbloquea al completar las primeras
@@ -4507,7 +4556,7 @@ function renderGearBulkActionBar(state) {
   if (uids.length !== UI.gearBulkSelection.size) UI.gearBulkSelection = new Set(uids);
   const gears = uids.map(uid => gearItem(state, uid));
   bar.appendChild(el('p', 'settings-info', gears.length === 0
-    ? 'Toca piezas de equipo para seleccionarlas, o usa "Seleccionar todos".'
+    ? 'Toca piezas de equipo para seleccionarlas, o usa "Seleccionar todos". Elige exactamente 2 del mismo hueco+tipo+rareza para forjarlas juntas en 1 sola de más nivel, gratis.'
     : `${gears.length} pieza${gears.length === 1 ? '' : 's'} seleccionada${gears.length === 1 ? '' : 's'}.`));
 
   const selectAllBtn = el('button', 'mini-btn', `☑️ Seleccionar todos (${visibleGearEntries(state).length})`);
@@ -4534,6 +4583,27 @@ function renderGearBulkActionBar(state) {
     else UI.showToast(`⬆️ ${count} piezas mejoradas por 🪙 ${spent}`);
   });
   bar.appendChild(upgradeBtn);
+
+  // Forja: combina EXACTAMENTE 2 piezas seleccionadas del mismo hueco+tipo+
+  // rareza en 1 sola de más nivel (ver forgeGear/canForgeGear, state.js) —
+  // gratis, a diferencia de Mejorar (que gasta Texel). Solo se activa con
+  // selección de 2 y compatibles, para no liar el botón con combinaciones
+  // ambiguas de 3+ piezas.
+  const canForge = gears.length === 2 && canForgeGear(gears[0], gears[1]);
+  const forgeResultLevel = canForge ? gears[0].level + gears[1].level + 1 : null;
+  const forgeBtn = el('button', 'primary-btn', canForge ? `🔨 Forjar (→ Nv.${forgeResultLevel})` : '🔨 Forjar (elige 2 piezas iguales)');
+  forgeBtn.disabled = !canForge;
+  forgeBtn.addEventListener('click', () => {
+    if (!canForge) return;
+    const result = forgeGear(state, gears[0].uid, gears[1].uid);
+    if (!result) return;
+    UI.gearBulkSelection.clear();
+    saveGame(state);
+    UI.renderTopbar(state);
+    UI.renderEquipo(state);
+    UI.showToast(`🔨 Forjadas en 1 pieza Nv.${result.level}`);
+  });
+  bar.appendChild(forgeBtn);
 
   // Vender: solo sobre la parte de la selección que NO está equipada,
   // igual que antes.
