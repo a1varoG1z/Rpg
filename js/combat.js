@@ -1472,7 +1472,7 @@ function performTurn(log, unit, ownRow, enemyRow) {
       applyDamage(log, unit, target, amount, isCrit, skill.name);
       if (target.alive) {
         const tick = Math.max(1, Math.round(target.maxHp * skill.dotPct));
-        target.dots.push({ amount: tick, turnsLeft: skill.dotTurns, label: skill.name });
+        target.dots.push({ amount: tick, turnsLeft: skill.dotTurns, label: skill.name, kind: 'dot' });
       }
       break;
     }
@@ -1486,7 +1486,7 @@ function performTurn(log, unit, ownRow, enemyRow) {
       applyDamage(log, unit, target, amount, isCrit, skill.name);
       if (target.alive) {
         const tick = Math.max(1, Math.round(target.maxHp * skill.dotPct));
-        target.dots.push({ amount: tick, turnsLeft: skill.dotTurns, label: skill.name });
+        target.dots.push({ amount: tick, turnsLeft: skill.dotTurns, label: skill.name, kind: 'burn' });
         target.debuffs.push({ stat: 'atk', pct: skill.burnAtkPct, turnsLeft: skill.dotTurns });
         log.push({ type: 'debuff', unitId: unit.id, targetId: target.id, stat: 'atk', pct: skill.burnAtkPct });
       }

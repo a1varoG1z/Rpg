@@ -7018,6 +7018,42 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       reparto sin duplicados hasta agotar los 65); Guía y Objetivos
       muestran 65/65 correctamente. Sanity check general limpio
       (642/102/45/45).
+- [x] **Halo de estado en combate** (petición explícita: "cuando un
+      personaje se refuerza la defensa, el ataque, está quemado,
+      congelado o cualquier efecto de buff o debuff, añade un halo al
+      personaje para que se sepa que tiene un efecto"). No es una
+      mecánica nueva — reutiliza exactamente los mismos datos que ya leía
+      `battleUnitStatusPanel` (buffs/debuffs/dots/stunTurns/shield) para
+      la ficha de combate, ahora también como aviso visual permanente
+      sobre la propia tarjeta, sin tener que tocarla.
+      `STATUS_HALO_CATEGORIES` (ui.js): 7 categorías con su icono y color
+      propio — 🥶 congelado, 😵 aturdido, 🔥 quemado, ☠️ envenenado, ⬇️
+      debilitado, ⬆️ reforzado, 🛡️ escudo. `renderStatusHalo` pinta un aro
+      luminoso pulsante alrededor del retrato (color de la categoría MÁS
+      severa activa, por si hay varias a la vez) y apila debajo TODOS los
+      iconos de las categorías activas (no solo la más severa), para
+      distinguir de un vistazo exactamente qué tiene encima. Como los
+      dots no diferenciaban veneno de quemadura más que por el nombre,
+      añadido un campo `kind` ('dot'/'burn') al empujarlos en combat.js.
+      **Detalle importante encontrado durante el desarrollo**: el estado
+      real de un luchador solo queda al día en el objeto EN VIVO justo
+      DESPUÉS de sincronizar cada ronda (`syncUnitFromClone`/
+      `UI.onClashDone`) — durante la reproducción evento a evento de esa
+      misma ronda el dato todavía es el de la ronda anterior (se simula
+      sobre un clon aparte). Por eso el halo se refresca ahí (una vez por
+      ronda, para todas las unidades sincronizadas), no disperso por cada
+      caso de `UI.applyBattleEvent` — así queda correcto incluso para
+      buffs/debuffs que caducan en silencio (sin ningún evento de log)
+      simplemente por agotar sus turnos. Probado con Playwright: cada
+      categoría (incluidas combinaciones simultáneas, como quemadura+su
+      debuff de Ataque, o congelación+su debuff de Agilidad) pinta el
+      color/icono correcto; sin ningún efecto activo no hay halo ni
+      insignias; la prioridad de color (congelado > aturdido > quemado >
+      envenenado > debilitado > reforzado > escudo) se respeta con las 7
+      categorías activas a la vez; y en un combate real de principio a
+      fin, aplicar Quemadura de verdad sobre un jefe hace aparecer el
+      halo con 🔥⬇️ justo al terminar esa ronda. Sanity check general
+      limpio (642/102/45/45).
 
 ## Notas
 

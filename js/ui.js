@@ -5354,6 +5354,7 @@ UI.battleUnitCard = function (u) {
   const canvasWrap = el('div', 'battle-unit-canvas-wrap');
   canvasWrap.appendChild(creatureCanvas(u.defId, 76));
   canvasWrap.appendChild(el('div', 'ult-turns', ultTurnsText(u)));
+  renderStatusHalo(canvasWrap, u);
   card.appendChild(canvasWrap);
   const hpBar = el('div', 'hp-bar small');
   const fill = el('div', 'hp-fill');
@@ -5371,6 +5372,54 @@ function ultTurnsText(u) {
   const t = estimatedTurnsToUlt(u);
   return t === 0 ? '⚡ ¡LISTA!' : '⚡ ' + t;
 }
+
+// ---------- Halo de estado en combate ----------
+// Petición explícita del usuario: "cuando un personaje se refuerza la
+// defensa, el ataque, está quemado, congelado o cualquier efecto de buff
+// o debuff, añade un halo al personaje para que se sepa que tiene un
+// efecto". Misma fuente de datos que battleUnitStatusPanel de aquí abajo
+// (buffs/debuffs/dots/stunTurns/shield) — esto no es una mecánica nueva,
+// solo la hace VISIBLE sin tener que tocar la tarjeta para abrir la ficha.
+// Orden de prioridad (de más a menos severo): decide de qué color se
+// pinta el aro luminoso cuando hay varios efectos a la vez, siempre el
+// más urgente de notar. Los iconos, en cambio, se apilan TODOS los que
+// estén activos a la vez (no solo el prioritario), para poder distinguir
+// de un vistazo exactamente qué tiene encima sin necesidad de abrir nada.
+const STATUS_HALO_CATEGORIES = [
+  { icon: '🥶', color: '#7fd6ff', test: u => u.stunTurns > 0 && u.stunReason === 'freeze' },
+  { icon: '😵', color: '#b0b0b0', test: u => u.stunTurns > 0 && u.stunReason !== 'freeze' },
+  { icon: '🔥', color: '#ff8a3c', test: u => (u.dots || []).some(d => d.kind === 'burn') },
+  { icon: '☠️', color: '#7fd15f', test: u => (u.dots || []).some(d => d.kind !== 'burn') },
+  { icon: '⬇️', color: '#d968d9', test: u => (u.debuffs || []).length > 0 },
+  { icon: '⬆️', color: '#e8c23c', test: u => (u.buffs || []).length > 0 },
+  { icon: '🛡️', color: '#5fa8f0', test: u => !!u.shield },
+];
+// Pinta (o quita) el halo sobre el envoltorio del retrato de una tarjeta
+// de combate — recibe el elemento directamente (en vez de buscarlo) para
+// poder usarse tanto al crear la tarjeta por primera vez como al
+// refrescarla más tarde (ver UI.updateUnitCardStatusHalo).
+function renderStatusHalo(wrapEl, u) {
+  const active = STATUS_HALO_CATEGORIES.filter(c => c.test(u));
+  wrapEl.classList.toggle('status-halo', active.length > 0);
+  let badges = wrapEl.querySelector('.status-halo-badges');
+  if (!active.length) { if (badges) badges.remove(); return; }
+  wrapEl.style.setProperty('--halo-c', active[0].color);
+  if (!badges) { badges = el('div', 'status-halo-badges'); wrapEl.appendChild(badges); }
+  badges.textContent = active.map(c => c.icon).join('');
+}
+// El estado real de un luchador (buffs/debuffs/dots/stunTurns/shield) solo
+// queda al día en el objeto EN VIVO justo después de sincronizar cada
+// ronda (ver syncUnitFromClone/UI.onClashDone) — durante la reproducción
+// evento a evento de esa misma ronda todavía lee los valores de la ronda
+// ANTERIOR (la ronda en curso se simula sobre un clon aparte). Por eso el
+// halo se refresca ahí, no en cada evento suelto de UI.applyBattleEvent:
+// es el único punto en el que el dato ya es fiable Y el momento exacto en
+// el que termina de reproducirse la ronda que lo dejó así.
+UI.updateUnitCardStatusHalo = function (u) {
+  const cardEl = document.querySelector(`.battle-unit[data-unit-id="${u.id}"]`);
+  const wrap = cardEl && cardEl.querySelector('.battle-unit-canvas-wrap');
+  if (wrap) renderStatusHalo(wrap, u);
+};
 
 // Panel de estado (buffs/debuffs/veneno-quemadura/aturdimiento/escudo) de un
 // luchador EN COMBATE — petición explícita del usuario ("al hacer click en
@@ -5516,7 +5565,7 @@ UI.onClashDone = function (view) {
   if (view.pendingSync) {
     [...view.pendingSync.p, ...view.pendingSync.e].forEach(cloned => {
       const live = view.unitById[cloned.id];
-      if (live) syncUnitFromClone(live, cloned);
+      if (live) { syncUnitFromClone(live, cloned); UI.updateUnitCardStatusHalo(live); }
     });
     view.pendingSync = null;
   }
