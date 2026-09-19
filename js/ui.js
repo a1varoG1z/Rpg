@@ -690,6 +690,19 @@ UI.showBossEntry = function (entry) {
   skillPanel.innerHTML = `<h3>⚡ ${skill.name} (Ulti)</h3><p class="settings-info">${skill.desc}</p><p class="settings-info"><b>Efecto exacto:</b> ${skillMechanicsText(skill)}</p>`;
   body.appendChild(skillPanel);
 
+  // Fases de jefe (piloto, ver BOSS_PHASES en data.js): solo los 5 jefes
+  // de zona finales del Mapa las tienen — se muestran aquí por adelantado
+  // (antes de entrar al combate) para poder anticiparlas y probarlas.
+  if (unit.bossPhases && unit.bossPhases.length) {
+    const phasePanel = el('div', 'panel');
+    phasePanel.innerHTML = '<h3>🌀 Fases de combate</h3><p class="settings-info">Al cruzar cada umbral de vida, cambia de fase para el resto del combate: gana Ataque/Sabiduría y se vuelve resistente a un elemento concreto (la mitad de daño de ese elemento, en vez del normal).</p>';
+    unit.bossPhases.forEach(phase => {
+      const el_ = ELEMENT_INFO[phase.immuneElement];
+      phasePanel.appendChild(el('div', 'stat-row', `<span>❤️ &lt;${Math.round(phase.hpPct * 100)}% — ${phase.name}</span><span>×${phase.statMult} ATK/SAB, resiste ${el_.icon} ${el_.label}</span>`));
+    });
+    body.appendChild(phasePanel);
+  }
+
   $('bossEntryModal').classList.remove('hidden');
 };
 
@@ -5489,6 +5502,14 @@ function syncUnitFromClone(live, cloned) {
   live.wis = cloned.wis;
   live.enraged = cloned.enraged;
   live.bossAtkCount = cloned.bossAtkCount;
+  // Fases de jefe (piloto, ver BOSS_PHASES en data.js): sin esto, cada
+  // ronda se simula sobre un clon nuevo que siempre partía de phaseIdx=-1
+  // e immuneElement=null (los de la última vez que se sincronizó live),
+  // así que una fase ya cruzada se "olvidaba" en la ronda siguiente —
+  // mismo fallo de fondo que ya tuvieron buffs/debuffs/veneno/aturdimiento
+  // antes de que existiera esta función.
+  live.phaseIdx = cloned.phaseIdx;
+  live.immuneElement = cloned.immuneElement;
 }
 
 UI.onClashDone = function (view) {
@@ -5540,6 +5561,10 @@ UI.applyBattleEvent = function (view, ev) {
     case 'enrage':
       triggerBattleAnim(u.id, 'hit-shake', 400);
       UI.logLine(`🔥 ¡${u.name} entra en FURIA! (+25% ataque y sabiduría)`);
+      break;
+    case 'bossphase':
+      triggerBattleAnim(u.id, 'hit-shake', 400);
+      UI.logLine(`🌀 ¡${u.name} cambia de fase: ${ev.phaseName}! Ahora resiste el elemento ${ELEMENT_INFO[ev.immuneElement].icon} ${ELEMENT_INFO[ev.immuneElement].label}.`);
       break;
     case 'bossattack':
       UI.logLine(`💢 ¡${u.name} prepara un Golpe Devastador!`);

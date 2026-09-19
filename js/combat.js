@@ -175,12 +175,24 @@ function makeBossUnit(defId, level, extraMult) {
   const u = makeUnit('enemy', defId, level, extraMult);
   u.maxHp = Math.round(u.maxHp * 2.4);
   u.hp = u.maxHp;
-  // Marca de jefe: habilita sus dos mecánicas exclusivas (ver
-  // maybeTriggerEnrage y el "Golpe Devastador" en performTurn) — ningún
-  // rival normal las tiene, solo afectan al camino de combate del jefe.
+  // Marca de jefe: habilita sus mecánicas exclusivas (ver
+  // maybeTriggerBossPhase/maybeTriggerEnrage y el "Golpe Devastador" en
+  // performTurn) — ningún rival normal las tiene, solo afectan al camino
+  // de combate del jefe.
   u.isBoss = true;
   u.enraged = false;
   u.bossAtkCount = 0;
+  // Fases de jefe (piloto, ver BOSS_PHASES en data.js — solo 5 jefes de
+  // zona la tienen, el resto queda en null y usa el enrage único de
+  // siempre). baseAtk/baseWis guardan el Ataque/Sabiduría de ANTES de
+  // cualquier fase, para que cada transición sustituya el valor entero en
+  // vez de multiplicarlo encima del de la fase anterior (evita que 2
+  // fases seguidas se compongan en un ×1.15×1.35 no calibrado).
+  u.bossPhases = BOSS_PHASES[defId] || null;
+  u.phaseIdx = -1;
+  u.baseAtk = u.atk;
+  u.baseWis = u.wis;
+  u.immuneElement = null;
   return u;
 }
 
@@ -1142,16 +1154,27 @@ function roguelikeActRewards(actIdx) {
 
 
 // --- Motor de turnos ---
-function elementDamageMult(a, d) { return elementMultiplier(a, d); }
+// immuneElement (fases de jefe, ver BOSS_PHASES en data.js): si el
+// atacante ataca precisamente con el elemento al que el objetivo es
+// puntualmente inmune en su fase actual, el multiplicador se sustituye
+// por BOSS_PHASE_IMMUNE_MULT en vez de calcularse con la rueda normal —
+// ningún jefe sin fases propias tiene nunca `immuneElement`, así que para
+// el resto del roster esto es exactamente lo mismo que antes.
+function elementDamageMult(a, d, immuneElement) {
+  if (immuneElement && a === immuneElement) return BOSS_PHASE_IMMUNE_MULT;
+  return elementMultiplier(a, d);
+}
 
 // Ventaja elemental media de un luchador contra los rivales vivos de la
 // fila enemiga activa — 1.0 = neutro, >1 = ventaja, <1 = desventaja (mismos
 // umbrales que elementMultiplier: ±25%/-20%). Usado por el aviso visual
-// (▲/▼) del selector manual de línea.
+// (▲/▼) del selector manual de línea — tiene en cuenta la inmunidad
+// elemental puntual de fase (si la hay) para que la flecha nunca prometa
+// una ventaja que la fase actual del jefe ya ha neutralizado.
 function unitElementScore(unit, enemyRow) {
   const aliveEnemy = enemyRow.filter(u => u.alive);
   if (!aliveEnemy.length) return 1;
-  return aliveEnemy.reduce((sum, e) => sum + elementMultiplier(unit.element, e.element), 0) / aliveEnemy.length;
+  return aliveEnemy.reduce((sum, e) => sum + elementDamageMult(unit.element, e.element, e.immuneElement), 0) / aliveEnemy.length;
 }
 
 // Daño total estimado que causaría esta línea contra la fila enemiga activa
@@ -1201,6 +1224,38 @@ function maybeTriggerEnrage(log, target) {
   log.push({ type: 'enrage', unitId: target.id });
 }
 
+// Fases de jefe (piloto, ver BOSS_PHASES en data.js): mismo punto de
+// enganche que maybeTriggerEnrage (cada golpe recibido en applyDamage, y
+// cada tick de veneno/quemadura en tickTimers), pero con VARIOS umbrales
+// de vida en vez de uno solo, y con inmunidad elemental puntual además
+// del bonus de stats. Un jefe SIN fases propias (los 40 restantes de los
+// 45) cae directo al enrage único de siempre — cero cambio de
+// comportamiento para ellos.
+//
+// target.phaseIdx guarda la última fase ya aplicada (-1 = ninguna
+// todavía); el bucle busca la fase MÁS AVANZADA cuyo umbral ya se haya
+// cruzado (por si un golpe grande salta de golpe de la fase 0 a la fase
+// 2 sin pasar visualmente por la 1) y la aplica de una sola vez,
+// sustituyendo Ataque/Sabiduría desde baseAtk/baseWis (nunca multiplicando
+// sobre el valor ya modificado de una fase anterior).
+function maybeTriggerBossPhase(log, target) {
+  if (!target.isBoss || !target.alive) return;
+  if (!target.bossPhases || !target.bossPhases.length) { maybeTriggerEnrage(log, target); return; }
+  const hpPct = target.hp / target.maxHp;
+  let nextIdx = target.phaseIdx;
+  for (let i = target.phaseIdx + 1; i < target.bossPhases.length; i++) {
+    if (hpPct <= target.bossPhases[i].hpPct) nextIdx = i;
+    else break;
+  }
+  if (nextIdx === target.phaseIdx) return;
+  const phase = target.bossPhases[nextIdx];
+  target.phaseIdx = nextIdx;
+  target.atk = Math.round(target.baseAtk * phase.statMult);
+  target.wis = Math.round(target.baseWis * phase.statMult);
+  target.immuneElement = phase.immuneElement;
+  log.push({ type: 'bossphase', unitId: target.id, phaseName: phase.name, immuneElement: phase.immuneElement });
+}
+
 // Escudo (Barrera de Piedra, ver SKILL_TYPES): absorbe daño ANTES que la
 // vida, hasta agotarse o hasta que expiren sus turnos (ver tickTimers). Un
 // golpe totalmente absorbido no llega a tocar la vida ni a cargar la ulti
@@ -1224,7 +1279,7 @@ function applyDamage(log, attacker, target, rawAmount, isCrit, label) {
   } else if (target.alive) {
     target.ultCharge = Math.min(ULT_CHARGE_MAX, target.ultCharge + ULT_CHARGE_ON_HIT);
     log.push({ type: 'charge', unitId: target.id, value: target.ultCharge });
-    maybeTriggerEnrage(log, target);
+    maybeTriggerBossPhase(log, target);
   }
 }
 
@@ -1257,7 +1312,7 @@ function computeDamage(attacker, target, mult, useWis, forceCrit, ignoreDef) {
   const defBuff = target.buffs.find(b => b.stat === 'def');
   let defVal = target.def * (1 + (defBuff ? defBuff.pct : 0)) * (1 - (defDebuff ? defDebuff.pct : 0));
   const base = Math.max(1, power2 - (ignoreDef ? 0 : defVal * 0.5));
-  const elMult = elementDamageMult(attacker.element, target.element);
+  const elMult = elementDamageMult(attacker.element, target.element, target.immuneElement);
   const vulnMult = typeVulnerabilityMult(target.class, useWis);
   const variance = 0.9 + Math.random() * 0.2;
   const critChance = Math.min(40, 5 + effectiveAgi(attacker) * 0.15);
@@ -1304,7 +1359,7 @@ function tickTimers(unit, log) {
       unit.hp = Math.max(0, unit.hp - d.amount);
       log.push({ type: 'dot', unitId: unit.id, amount: d.amount, label: d.label });
       if (before > 0 && unit.hp <= 0) { unit.alive = false; log.push({ type: 'faint', unitId: unit.id, side: unit.side }); }
-      else maybeTriggerEnrage(log, unit);
+      else maybeTriggerBossPhase(log, unit);
       d.turnsLeft--;
     });
     unit.dots = unit.dots.filter(d => d.turnsLeft > 0);

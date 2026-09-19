@@ -1075,6 +1075,62 @@ addBoss('grendel', 'tierra', 'campeon', 'furia', 'Grendel, el Devorador de Salon
 addBoss('jerseydevil', 'viento', 'brujo', 'debilitar', 'El Jersey Devil', 'Nadie que ha escuchado su chillido en mitad del bosque ha vuelto a dormir tranquilo.', 'legendario', true, { hp: 1210, atk: 304, def: 275, agi: 297, wis: 242 });
 addBoss('gashadokuro', 'tierra', 'campeon', 'furia', 'Gashadokuro, Devorador de Caminantes', 'Formado por los huesos de miles de muertos olvidados, ningún caminante nocturno lo ve llegar hasta que ya es tarde.', 'legendario', true, { hp: 2000, atk: 255, def: 420, agi: 100, wis: 50 });
 
+// ---------- Fases de jefe + inmunidad elemental (piloto) ----------
+// Petición explícita del usuario: "las fases de jefe e inmunidad elemental
+// implementalo para los jefes de las últimas 5 zonas, para probarlo" —
+// tras haberlo explicado antes solo como ejemplo de diseño. Piloto
+// deliberadamente acotado a los 5 jefes de zona FINALES del Mapa (los
+// mismos 5 de la respuesta anterior): boss_jormungandr, boss_kaiju,
+// boss_titancolosal, boss_balrog, boss_tifon. El resto de los 45 jefes NO
+// están en este diccionario y siguen exactamente con el único "Furia de
+// jefe" de siempre (maybeTriggerEnrage, combat.js) — cero cambio de
+// comportamiento ni de balance para ellos.
+//
+// Cada jefe piloto tiene 2 fases (además de la "fase 0" inicial, sin
+// nombre ni efecto): se activan la primera vez que su vida cruza el
+// umbral `hpPct` indicado (comprobado en maybeTriggerBossPhase, combat.js
+// — mismo punto de enganche que ya usaba el enrage único, tras cada golpe
+// recibido y cada tick de veneno/quemadura). `statMult` sustituye (no
+// multiplica encima del anterior) su Ataque/Sabiduría BASE — igual efecto
+// que el enrage de siempre (×1.25 fijo a partir del 30% de vida) pero en
+// dos escalones progresivos en vez de uno solo. `immuneElement` es la
+// "inmunidad elemental puntual": durante esa fase, el daño que reciba de
+// ATAQUES de ese elemento concreto se reduce a BOSS_PHASE_IMMUNE_MULT
+// (0.5×, ver combat.js) en vez del multiplicador normal de la rueda —
+// siempre el elemento que en la rueda normal LE GANA a este jefe (su
+// única debilidad elemental posible con solo 5 elementos), así que el
+// efecto narrativo es "el jefe deja de ser vulnerable a su contraelemento
+// de siempre según avanza el combate", coherente con cada lore.
+const BOSS_PHASE_IMMUNE_MULT = 0.5;
+const BOSS_PHASES = {
+  // Jörmungandr y Kaiju (ambos Agua): su única debilidad elemental es
+  // Rayo (rayo.beats === 'agua' en ELEMENT_INFO) — a partir de la mitad
+  // del combate dejan de sufrir el extra de daño de Rayo.
+  boss_jormungandr: [
+    { hpPct: 0.6, statMult: 1.15, immuneElement: 'rayo', name: 'Enrosque de las Profundidades' },
+    { hpPct: 0.25, statMult: 1.35, immuneElement: 'rayo', name: 'Furia del Océano sin Fondo' },
+  ],
+  boss_kaiju: [
+    { hpPct: 0.6, statMult: 1.15, immuneElement: 'rayo', name: 'Piel de Escamas Abisales' },
+    { hpPct: 0.25, statMult: 1.35, immuneElement: 'rayo', name: 'Despertar del Kaiju' },
+  ],
+  // Titán Colosal (Tierra): débil a Viento (viento.beats === 'tierra').
+  boss_titancolosal: [
+    { hpPct: 0.6, statMult: 1.15, immuneElement: 'viento', name: 'Coraza de Piedra Ancestral' },
+    { hpPct: 0.25, statMult: 1.35, immuneElement: 'viento', name: 'Ira del Titán' },
+  ],
+  // Balrog (Fuego): débil a Agua (agua.beats === 'fuego').
+  boss_balrog: [
+    { hpPct: 0.6, statMult: 1.15, immuneElement: 'agua', name: 'Llama que No se Apaga' },
+    { hpPct: 0.25, statMult: 1.35, immuneElement: 'agua', name: 'Sombra y Fuego Desatados' },
+  ],
+  // Tifón (Rayo, jefe final del Mapa): débil a Tierra (tierra.beats === 'rayo').
+  boss_tifon: [
+    { hpPct: 0.6, statMult: 1.15, immuneElement: 'tierra', name: 'Padre de los Monstruos Despierta' },
+    { hpPct: 0.25, statMult: 1.35, immuneElement: 'tierra', name: 'Caos Primordial' },
+  ],
+};
+
 // ---------- Dificultades del Mapa ----------
 // Petición explícita del usuario: "quiero que el mapa se pueda jugar en 4
 // dificultades: fácil (equivalente a dificultad 100% actual), normal

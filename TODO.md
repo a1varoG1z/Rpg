@@ -6929,6 +6929,42 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       dueño correcto; la ficha de objeto muestra su lore/restricción y
       oculta el botón de Vender. Sanity check general limpio
       (642/102/45/45).
+- [x] **Fases de jefe + inmunidad elemental** (petición explícita:
+      "las fases de jefe e inmunidad elemental implementalo para los
+      jefes de las últimas 5 zonas, para probarlo" — piloto acotado, tras
+      haberlo explicado antes solo como ejemplo). `BOSS_PHASES` (data.js):
+      los 5 jefes de zona FINALES del Mapa (Jörmungandr, Kaiju, Titán
+      Colosal, Balrog, Tifón) tienen ahora 2 fases (además de la inicial)
+      que se activan al cruzar el 60% y el 25% de su vida — cada una sube
+      su Ataque/Sabiduría (×1.15/×1.35 sobre el valor BASE, sin componer
+      entre fases) y lo vuelve resistente (mitad de daño, en vez del
+      multiplicador normal de la rueda) al elemento que en la rueda normal
+      le gana — su única debilidad elemental posible. El resto de los 45
+      jefes NO tiene fases propias y sigue exactamente con el único
+      "Furia de jefe" de siempre (`maybeTriggerEnrage`), cero cambio de
+      comportamiento para ellos. Aviso en el log de combate al cambiar de
+      fase, y panel "🌀 Fases de combate" en la ficha del jefe (antes de
+      entrar a pelear) para poder anticiparlas.
+      **Bug real encontrado y corregido en el propio desarrollo**: cada
+      ronda de combate se simula sobre un CLON del jefe (`UI.commitGroup`)
+      y luego se sincroniza de vuelta al objeto real (`syncUnitFromClone`)
+      — la lista de campos a sincronizar no incluía los dos nuevos
+      (`phaseIdx`/`immuneElement`), así que una fase ya cruzada se
+      "olvidaba" en la ronda siguiente (mismo fallo de fondo que ya
+      tuvieron en su día buffs/debuffs/veneno/aturdimiento antes de que
+      existiera esa función). Añadidos ambos a `syncUnitFromClone`.
+      Probado con Playwright: los 5 jefes piloto referencian su debilidad
+      elemental real; `makeBossUnit` inicializa fases/baseAtk/baseWis
+      correctamente; las transiciones se disparan exactamente en los
+      umbrales, nunca se repiten, y saltan directo a la fase más avanzada
+      si un golpe cruza dos umbrales de golpe; un jefe SIN fases sigue
+      con el enrage único intacto; `computeDamage` reduce exactamente a
+      la mitad el daño del elemento inmune sin tocar los demás; la flecha
+      de ventaja elemental (▲/▼) de la UI respeta la inmunidad; y —tras
+      el fix del bug de sincronización— una fase y su inmunidad
+      persisten correctamente ronda tras ronda a lo largo de todo un
+      combate multi-ronda real (antes del fix se reseteaban cada ronda).
+      Sanity check general limpio (642/102/45/45).
 
 ## Notas
 
