@@ -314,6 +314,13 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
 .stats-record-group:first-child { margin-top: 0; }
 
 /* ---------- Mapa ---------- */
+.map-difficulty-tabs { display: flex; gap: 6px; padding: 10px 12px 0; flex-wrap: wrap; }
+.map-difficulty-tab {
+  flex: 1 1 0; min-width: 0; padding: 8px 4px; background: var(--panel); border: 1px solid var(--gold-dim);
+  border-radius: 8px; color: var(--gold); font-size: 0.72rem; font-weight: bold; text-align: center;
+}
+.map-difficulty-tab.active { background: var(--gold); color: #1c140b; border-color: var(--gold); }
+.map-difficulty-tab.locked { opacity: 0.45; }
 .loc-card { margin-top: 12px; }
 .loc-card-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
 .loc-card-emoji { font-size: 1.8rem; }

@@ -6856,6 +6856,40 @@ Cinco puntos más, con capturas de pantalla reales del usuario jugando:
       éxito (forzado con `Math.random`), con el motivo correcto en el log;
       Purificar limpia ambos estados de un aliado sucio. Sanity check
       general limpio (642/102/45/45).
+- [x] **4 dificultades de Mapa** (petición explícita: "quiero que el mapa
+      se pueda jugar en 4 dificultades: fácil (100% actual), normal (110%),
+      difícil (120%), muy difícil (130%)... una vez que superes todo el
+      mapa en ese nivel, se desbloquea poder jugarlo en el siguiente, con
+      recompensas mejores y sobre todo aumento de los cristales
+      obtenidos"). `MAP_DIFFICULTIES` (data.js): 4 tiers con `enemyMult`
+      (100/110/120/130%, se combina con TODO lo que ya afecta a
+      mobAdaptiveMult/bossAdaptiveMult — tu banda, el ajuste manual de
+      Ajustes, el tramo final del Mapa...), `rewardMult` (Texel/XP,
+      1/1.15/1.3/1.5×) y `gemsMult` (bonus de Gemas al completar zona,
+      1/1.6/2.3/3.2× — el que más sube, tal como pidió el usuario).
+      Selector de pestañas en la pantalla Mapa (bloqueadas con 🔒 hasta
+      desbloquearlas); cada dificultad tiene su PROPIO progreso de zonas y
+      etapas, totalmente independiente de las demás (`tierProgressKey` en
+      state.js: la dificultad 0/Fácil sigue usando las claves de siempre —
+      ninguna partida guardada necesita migración, es directamente su
+      progreso ya guardado en Fácil; el resto vive en claves con sufijo
+      `#t<tier>`). Al derrotar al jefe de la ÚLTIMA zona del Mapa en la
+      dificultad actual se desbloquea la siguiente para siempre
+      (`unlockNextMapDifficulty`), con aviso en la pantalla de victoria.
+      Torre Batalla y Mazmorra Elemental siguen desbloqueándose SIEMPRE al
+      completar el Mapa en Fácil exclusivamente (fijado a `tier=0`
+      explícitamente en `torreUnlocked`/`elementalDungeonUnlocked`), sin
+      volver a "bloquearse" solo por tener otra dificultad seleccionada.
+      Nueva sección en la Guía explicando el sistema. Probado con
+      Playwright: los multiplicadores de enemigos/recompensas/Gemas dan
+      exactamente 1.1×/1.2×/1.3× y 1.6×/2.3×/3.2× respecto a Fácil; el
+      progreso de una misma zona en dos dificultades distintas es
+      completamente independiente; completar las 45 zonas de Fácil de
+      un tirón desbloquea Normal; Torre/Mazmorra Elemental no se bloquean
+      al cambiar de pestaña de dificultad; una partida guardada antigua
+      (sin los campos nuevos) migra a Fácil con su progreso intacto;
+      combate real de principio a fin en Fácil sin errores. Sanity check
+      general limpio (642/102/45/45).
 
 ## Notas
 

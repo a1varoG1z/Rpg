@@ -939,6 +939,24 @@ UI.openGuide = function () {
     él, con las estadísticas reforzadas respecto a la primera vez, apostando Texel — ganas
     y te devuelve el doble, pierdes y lo pierdes.</p>`));
 
+  body.appendChild(guideSection('🗺️ Dificultades del Mapa', `
+    <p class="settings-info">El Mapa se puede jugar en 4 dificultades, elegibles con las pestañas de
+    arriba del todo de la pantalla Mapa:</p>
+    <p class="settings-info">🟢 <b>Fácil</b> — la de siempre, sin ningún cambio.<br>
+    🟡 <b>Normal</b> — enemigos al 110%, recompensas ×1.15, Gemas ×1.6.<br>
+    🟠 <b>Difícil</b> — enemigos al 120%, recompensas ×1.3, Gemas ×2.3.<br>
+    🔴 <b>Muy Difícil</b> — enemigos al 130%, recompensas ×1.5, Gemas ×3.2.</p>
+    <p class="settings-info">Cada dificultad tiene su PROPIO progreso de zonas y etapas, totalmente
+    independiente de las demás — pasar el Mapa entero en Fácil no adelanta nada en Normal, hay que
+    volver a superarlo zona a zona. Al derrotar al jefe de la ÚLTIMA zona en la dificultad que tengas
+    puesta, se desbloquea la siguiente para siempre (se puede volver a las ya desbloqueadas cuando
+    quieras, sin perder nada). El multiplicador de dificultad se combina con todo lo demás que ya
+    afecta a los rivales (tu propia banda, el ajuste manual de Ajustes, el tramo final del Mapa...),
+    y las Gemas de bonificación por completar una zona por primera vez son las que más suben con la
+    dificultad, muy por encima de Texel/XP.</p>
+    <p class="settings-info">Torre Batalla y la Mazmorra Elemental se desbloquean SIEMPRE al completar
+    el Mapa en Fácil, sin depender de qué dificultad tengas seleccionada en cada momento.</p>`));
+
   body.appendChild(guideSection('🎯 Progreso', `
     <p class="settings-info">📖 <b>Pokédex</b> (en Colección): registro de todas las formas
     jugables que has conseguido alguna vez, y de los mobs/jefes conseguidos en la Torre Batalla.<br>
@@ -1193,6 +1211,32 @@ UI.renderScreen = function (name, state) {
 };
 
 // ---------- Mapa ----------
+// Selector de dificultad del Mapa (MAP_DIFFICULTIES, data.js) — petición
+// explícita del usuario ("quiero que el mapa se pueda jugar en 4
+// dificultades... una vez que superes todo el mapa en ese nivel, se
+// desbloquea poder jugarlo en el siguiente"). Cada pestaña bloqueada
+// muestra un candado; la desbloqueada más alta se puede elegir en
+// cualquier momento (no hace falta terminar la actual para VOLVER a una ya
+// superada, solo para avanzar a la siguiente). Cambiar de pestaña solo
+// cambia qué progreso de zonas/etapas se lee y escribe (ver
+// tierProgressKey en state.js) — no reinicia nada de la dificultad actual.
+function renderMapDifficultyTabs(state, container) {
+  const tabs = el('div', 'map-difficulty-tabs');
+  MAP_DIFFICULTIES.forEach((diff, idx) => {
+    const unlocked = isMapDifficultyUnlocked(state, idx);
+    const active = mapDifficultyIdx(state) === idx;
+    const tab = el('button', 'map-difficulty-tab' + (active ? ' active' : '') + (unlocked ? '' : ' locked'));
+    tab.innerHTML = unlocked ? diff.shortName : '🔒 ' + diff.shortName;
+    if (unlocked && !active) tab.addEventListener('click', () => { state.progress.mapDifficulty = idx; saveGame(state); UI.renderMapa(state); });
+    else if (!unlocked) tab.disabled = true;
+    tabs.appendChild(tab);
+  });
+  container.appendChild(tabs);
+  if (mapDifficultyIdx(state) > 0) {
+    const info = MAP_DIFFICULTIES[mapDifficultyIdx(state)];
+    container.appendChild(el('p', 'settings-info', `Enemigos al ${Math.round(info.enemyMult * 100)}% de dificultad · recompensas ×${info.rewardMult} · Gemas ×${info.gemsMult} al completar cada zona por primera vez en esta dificultad.`));
+  }
+}
 UI.renderMapa = function (state) {
   mapaZoneIdx = null;
   $('stageList').classList.add('hidden');
@@ -1200,6 +1244,7 @@ UI.renderMapa = function (state) {
   $('zoneList').classList.remove('hidden');
   const list = $('zoneList');
   list.innerHTML = '';
+  renderMapDifficultyTabs(state, list);
   ZONES.forEach((zone, idx) => {
     const unlocked = isZoneUnlocked(state, zone.id);
     const best = highestClearedStage(state, zone.id);
@@ -1225,7 +1270,8 @@ UI.openZoneStages = function (state, zoneIdx) {
   const back = el('button', 'mini-btn', '« Volver al mapa');
   back.addEventListener('click', () => UI.renderMapa(state));
   wrap.appendChild(back);
-  wrap.appendChild(el('h3', null, zone.emoji + ' ' + zone.name));
+  const tierInfo = MAP_DIFFICULTIES[mapDifficultyIdx(state)];
+  wrap.appendChild(el('h3', null, zone.emoji + ' ' + zone.name + (mapDifficultyIdx(state) > 0 ? ` · ${tierInfo.shortName}` : '')));
   const grid = el('div', 'stage-grid');
   for (let i = 0; i < STAGES_PER_ZONE; i++) {
     const isBoss = i === STAGES_PER_ZONE - 1;
@@ -1362,20 +1408,27 @@ UI.startStageBattle = function (state, zoneIdx, stageIdx) {
     saveGame(state);
     UI.renderTopbar(state);
   }
+  // mapTier: la dificultad de Mapa seleccionada AHORA, guardada en el
+  // recorrido para que toda la etapa (mobs, jefe, recompensas, registro de
+  // progreso al superarla) se resuelva siempre contra la misma dificultad
+  // con la que se empezó, aunque por lo que sea cambiara la seleccionada
+  // mientras tanto (ver MAP_DIFFICULTIES en data.js).
+  const mapTier = mapDifficultyIdx(state);
   // El multiplicador adaptativo del jefe se BLOQUEA la primera vez que se
-  // entra a esta zona (ver lockedBossAdaptiveMult en state.js) — evita que
-  // perder, mejorar la banda y reintentar suba el jefe al mismo ritmo que
-  // tú y lo vuelva imposible de ganar para siempre. Los mobs normales usan
-  // el mismo bloqueo, pero dentro de buildEnemyBand (combat.js), ya que ahí
-  // se calcula por zona sin pasar por un parámetro aparte como el jefe.
-  const { rows, isBoss } = buildEnemyBand(state, zoneIdx, stageIdx, lockedBossAdaptiveMult(state, zoneIdx));
+  // entra a esta zona EN ESTA DIFICULTAD (ver lockedBossAdaptiveMult en
+  // state.js) — evita que perder, mejorar la banda y reintentar suba el
+  // jefe al mismo ritmo que tú y lo vuelva imposible de ganar para
+  // siempre. Los mobs normales usan el mismo bloqueo, pero dentro de
+  // buildEnemyBand (combat.js), ya que ahí se calcula por zona sin pasar
+  // por un parámetro aparte como el jefe.
+  const { rows, isBoss } = buildEnemyBand(state, zoneIdx, stageIdx, lockedBossAdaptiveMult(state, zoneIdx, mapTier), mapTier);
   const encounters = rows.filter(r => r.length > 0);
   // hpMap/faintedSet/chargeMap llevan la cuenta de la vida, los desmayos y la
   // carga de ulti de cada luchador durante TODA la etapa (entre nodos del
   // recorrido) — ya no se cura ni se reinicia la ulti sola al pasar de
   // encuentro, de ahí que la Tienda venda pociones y plumas fénix.
   window.__championRun = null;
-  window.__stageRun = { zoneIdx, stageIdx, isBoss, encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {} };
+  window.__stageRun = { zoneIdx, stageIdx, isBoss, encounters, nodeIdx: 0, failed: false, hpMap: {}, faintedSet: new Set(), chargeMap: {}, mapTier };
   UI.renderStageRun(state);
 };
 
@@ -1782,8 +1835,8 @@ UI.fightStageRunNode = function (state) {
         saveGame(state);
         return { rewards: { ...rewards, fighterXp: waveXp }, leveled };
       }
-      const isFirstClear = run.stageIdx > highestClearedStage(state, ZONES[run.zoneIdx].id);
-      const rewards = stageRewards(run.zoneIdx, run.stageIdx, run.isBoss, isFirstClear);
+      const isFirstClear = run.stageIdx > highestClearedStage(state, ZONES[run.zoneIdx].id, run.mapTier);
+      const rewards = stageRewards(run.zoneIdx, run.stageIdx, run.isBoss, isFirstClear, run.mapTier);
       state.currencies.texel += rewards.texel;
       if (rewards.drops.pixite) state.currencies.pixite += rewards.drops.pixite;
       if (rewards.drops.voxite) state.currencies.voxite += rewards.drops.voxite;
@@ -1794,9 +1847,9 @@ UI.fightStageRunNode = function (state) {
         const entry = rosterEntry(state, uid);
         if (entry && fighterAddXp(entry, rewards.fighterXp)) leveled.push(fighterDef(entry.defId).name);
       });
-      const { unlockedZone, zoneGemsBonus } = recordStageClear(state, run.zoneIdx, run.stageIdx);
+      const { unlockedZone, zoneGemsBonus, newMapDifficulty } = recordStageClear(state, run.zoneIdx, run.stageIdx, run.mapTier);
       saveGame(state);
-      return { rewards, leveled, unlockedZone, zoneGemsBonus };
+      return { rewards, leveled, unlockedZone, zoneGemsBonus, newMapDifficulty };
     },
   });
 };
@@ -5730,6 +5783,7 @@ UI.endBattle = function (view, result) {
     if (outcome && outcome.leveled && outcome.leveled.length) html += `<p class="settings-info">¡Subieron de nivel!: ${outcome.leveled.join(', ')}</p>`;
     if (outcome && outcome.zoneGemsBonus) html += `<div class="stat-row"><span>🎉 Zona completada</span><span>+${outcome.zoneGemsBonus} 💎</span></div>`;
     if (outcome && outcome.unlockedZone) html += `<p class="settings-info">🗺️ ¡Nueva zona desbloqueada: ${outcome.unlockedZone.name}!</p>`;
+    if (outcome && outcome.newMapDifficulty) html += `<p class="settings-info">🏆 ¡Mapa completado! Nueva dificultad desbloqueada: <b>${outcome.newMapDifficulty.name}</b>. Cámbiala desde la parte de arriba del Mapa cuando quieras jugarlo de nuevo con más reto y mejores recompensas.</p>`;
     if (outcome && outcome.capturedCopy) html += `<div class="stat-row"><span>${outcome.capturedIsNew ? '🆕' : '🔁'} ${outcome.capturedCopy.name}</span><span>+1 copia</span></div>`;
     if (outcome && outcome.repeatBoss) html += `<p class="settings-info">👑 Ya tienes su carta — no da otra copia, pero la recompensa es mejor.</p>`;
   } else {

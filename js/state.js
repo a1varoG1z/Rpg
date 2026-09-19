@@ -32,7 +32,7 @@ function createNewState() {
     [null, null, null],
     [null, null, null],
   ];
-  const progress = { unlockedZones: ['bosque'], zoneStage: {}, daysPlayed: [], bossDifficultyLock: {}, mobDifficultyLock: {} };
+  const progress = { unlockedZones: ['bosque'], zoneStage: {}, daysPlayed: [], bossDifficultyLock: {}, mobDifficultyLock: {}, mapDifficulty: 0, unlockedMapDifficulties: [0], unlockedZonesByTier: {} };
   ZONES.forEach(z => { progress.zoneStage[z.id] = -1; });
   return {
     version: 2,
@@ -917,7 +917,7 @@ const BOSS_EARLY_BOOST = 1.9, MIN_BAND_FOR_BOOST = 6;
 // y cada paso de ±10% (ver DIFFICULTY_MULT_MIN/MAX/STEP en main.js) se
 // aleja gradualmente de ahí en cualquiera de las dos direcciones.
 function playerDifficultyMult(state) { return (state.settings && state.settings.difficultyMult) || 1; }
-function bossAdaptiveMult(state, zoneIdx) {
+function bossAdaptiveMult(state, zoneIdx, tier) {
   const zone = ZONES[zoneIdx];
   const level = zoneEnemyLevel(zoneIdx);
   // Corrige el desfase de fixedStats frente a la nueva curva de nivel (ver
@@ -960,7 +960,7 @@ function bossAdaptiveMult(state, zoneIdx) {
   // FINAL_STRETCH_ZONES zonas — petición explícita del usuario tras
   // notar que las 2 últimas zonas no se sentían más duras que las
   // anteriores.
-  return result * finalStretchMult(zoneIdx) * playerDifficultyMult(state);
+  return result * finalStretchMult(zoneIdx) * playerDifficultyMult(state) * mapDifficultyInfo(state, tier).enemyMult;
 }
 
 // Mismo concepto que bossAdaptiveMult pero para los MOBS de una etapa
@@ -977,7 +977,7 @@ function bossAdaptiveMult(state, zoneIdx) {
 // 0.85/×4.5) — el mismo exceso de stats pesa más acumulado a lo largo de
 // varias oleadas que en un jefe de un único encuentro.
 const MOB_EARLY_BOOST = 1.6, MOB_OVERPOWER_EXP = 0.7, MOB_OVERPOWER_CAP = 3;
-function mobAdaptiveMult(state, zoneIdx) {
+function mobAdaptiveMult(state, zoneIdx, tier) {
   const zone = ZONES[zoneIdx];
   const level = zoneEnemyLevel(zoneIdx);
   const bandUids = state.band.flat().filter(Boolean);
@@ -999,7 +999,7 @@ function mobAdaptiveMult(state, zoneIdx) {
       if (overpower > 1) result = boosted * Math.min(MOB_OVERPOWER_CAP * lateZoneMult(zoneIdx), Math.pow(overpower, MOB_OVERPOWER_EXP));
     }
   }
-  return result * playerDifficultyMult(state);
+  return result * playerDifficultyMult(state) * mapDifficultyInfo(state, tier).enemyMult;
 }
 
 // mobAdaptiveMult/bossAdaptiveMult miden la banda EN EL MOMENTO de cada
@@ -1026,21 +1026,21 @@ function mobAdaptiveMult(state, zoneIdx) {
 // su propio comentario) porque ahí el objetivo es justo el contrario —
 // impedir que se vuelva Texel gratis repetible según el jugador se hace más
 // fuerte, no protegerlo de un muro imposible.
-function lockedBossAdaptiveMult(state, zoneIdx) {
-  const zoneId = ZONES[zoneIdx].id;
+function lockedBossAdaptiveMult(state, zoneIdx, tier) {
+  const key = tierProgressKey(state, ZONES[zoneIdx].id, tier);
   if (!state.progress.bossDifficultyLock) state.progress.bossDifficultyLock = {};
-  if (state.progress.bossDifficultyLock[zoneId] === undefined) {
-    state.progress.bossDifficultyLock[zoneId] = bossAdaptiveMult(state, zoneIdx) / playerDifficultyMult(state);
+  if (state.progress.bossDifficultyLock[key] === undefined) {
+    state.progress.bossDifficultyLock[key] = bossAdaptiveMult(state, zoneIdx, tier) / playerDifficultyMult(state);
   }
-  return state.progress.bossDifficultyLock[zoneId] * playerDifficultyMult(state);
+  return state.progress.bossDifficultyLock[key] * playerDifficultyMult(state);
 }
-function lockedMobAdaptiveMult(state, zoneIdx) {
-  const zoneId = ZONES[zoneIdx].id;
+function lockedMobAdaptiveMult(state, zoneIdx, tier) {
+  const key = tierProgressKey(state, ZONES[zoneIdx].id, tier);
   if (!state.progress.mobDifficultyLock) state.progress.mobDifficultyLock = {};
-  if (state.progress.mobDifficultyLock[zoneId] === undefined) {
-    state.progress.mobDifficultyLock[zoneId] = mobAdaptiveMult(state, zoneIdx) / playerDifficultyMult(state);
+  if (state.progress.mobDifficultyLock[key] === undefined) {
+    state.progress.mobDifficultyLock[key] = mobAdaptiveMult(state, zoneIdx, tier) / playerDifficultyMult(state);
   }
-  return state.progress.mobDifficultyLock[zoneId] * playerDifficultyMult(state);
+  return state.progress.mobDifficultyLock[key] * playerDifficultyMult(state);
 }
 
 // Habilidad de líder de banda: solo está activa si el luchador que la tiene
@@ -1057,6 +1057,42 @@ function activeLeaderSkill(state) {
   return Object.assign({ leaderName: def.name }, LEADER_SKILLS[def.leaderSkillId]);
 }
 
+// --- Dificultades del Mapa (ver MAP_DIFFICULTIES en data.js) ---
+// state.progress.mapDifficulty: qué dificultad tiene seleccionada AHORA el
+// jugador en el Mapa (índice sobre MAP_DIFFICULTIES). Todo lo de más abajo
+// (zoneStage/unlockedZones/bossDifficultyLock/mobDifficultyLock) queda
+// separado POR DIFICULTAD mediante tierProgressKey: la 0 (Fácil) sigue
+// usando exactamente las mismas claves de siempre (zoneId a secas), así que
+// cualquier partida guardada de antes de esta feature sigue funcionando sin
+// migración — es, ni más ni menos, su progreso ya guardado en Fácil.
+function mapDifficultyIdx(state) { return state.progress.mapDifficulty || 0; }
+function mapDifficultyInfo(state, tier) { return MAP_DIFFICULTIES[tier === undefined ? mapDifficultyIdx(state) : tier]; }
+function tierProgressKey(state, zoneId, tier) {
+  const t = tier === undefined ? mapDifficultyIdx(state) : tier;
+  return t === 0 ? zoneId : zoneId + '#t' + t;
+}
+// unlockedZones (tier 0) es el array de siempre; el resto de dificultades
+// vive en unlockedZonesByTier[tier], creado con la primera zona ya
+// desbloqueada la primera vez que se pisa esa dificultad.
+function unlockedZonesForTier(state, tier) {
+  if (tier === 0) return state.progress.unlockedZones;
+  if (!state.progress.unlockedZonesByTier) state.progress.unlockedZonesByTier = {};
+  if (!state.progress.unlockedZonesByTier[tier]) state.progress.unlockedZonesByTier[tier] = [ZONES[0].id];
+  return state.progress.unlockedZonesByTier[tier];
+}
+function isMapDifficultyUnlocked(state, tier) { return (state.progress.unlockedMapDifficulties || [0]).includes(tier); }
+// Se llama SOLO al superar el jefe de la ÚLTIMA zona de una dificultad
+// (ver recordStageClear) — desbloquea la siguiente si existe y aún no lo
+// estaba, devolviendo su info (o null si no hay dificultad siguiente o ya
+// estaba desbloqueada).
+function unlockNextMapDifficulty(state, clearedTier) {
+  if (!state.progress.unlockedMapDifficulties) state.progress.unlockedMapDifficulties = [0];
+  const nextTier = clearedTier + 1;
+  if (nextTier >= MAP_DIFFICULTIES.length || state.progress.unlockedMapDifficulties.includes(nextTier)) return null;
+  state.progress.unlockedMapDifficulties.push(nextTier);
+  return MAP_DIFFICULTIES[nextTier];
+}
+
 // --- Progreso de zonas ---
 // Capado a STAGES_PER_ZONE-1: una partida guardada de cuando STAGES_PER_ZONE
 // era mayor (33, antes de bajarlo a 25) puede tener un índice de etapa por
@@ -1065,41 +1101,67 @@ function activeLeaderSkill(state) {
 // migrateState también reescribe el valor guardado (ver más abajo) para
 // que quede limpio de una vez, pero este tope se deja aquí también para
 // que ninguna lectura futura pueda volver a mostrar un valor imposible.
-function highestClearedStage(state, zoneId) {
-  const v = state.progress.zoneStage[zoneId];
+// `tier` es opcional en las tres funciones de progreso (por defecto, la
+// dificultad ACTUALMENTE seleccionada) — así ningún llamador que ya
+// existía antes de las 4 dificultades necesita tocarse: automáticamente
+// pasa a leer/escribir el progreso de "la dificultad que tengas puesta
+// ahora mismo", que es justo lo que ya hacían cuando solo existía Fácil.
+function highestClearedStage(state, zoneId, tier) {
+  const v = state.progress.zoneStage[tierProgressKey(state, zoneId, tier)];
   return v === undefined ? -1 : Math.min(v, STAGES_PER_ZONE - 1);
 }
-function isZoneUnlocked(state, zoneId) { return state.progress.unlockedZones.includes(zoneId); }
-function isStageUnlocked(state, zoneId, stageIdx) {
-  if (!isZoneUnlocked(state, zoneId)) return false;
-  return stageIdx <= highestClearedStage(state, zoneId) + 1;
+function isZoneUnlocked(state, zoneId, tier) {
+  const t = tier === undefined ? mapDifficultyIdx(state) : tier;
+  return unlockedZonesForTier(state, t).includes(zoneId);
 }
-// Devuelve { unlockedZone, zoneGemsBonus }: la zona siguiente si se acaba
-// de desbloquear (null si no), y las Gemas de bonificación por completar
-// esta zona por primera vez (0 si ya se había derrotado antes a este jefe
-// — la bonificación es un premio de una sola vez, no se repite al rejugar
-// la etapa). El bono crece con la zona (15 + 3 por cada zona de distancia
-// al inicio) para que las últimas, mucho más difíciles, den bastante más.
-function recordStageClear(state, zoneIdx, stageIdx) {
+function isStageUnlocked(state, zoneId, stageIdx, tier) {
+  if (!isZoneUnlocked(state, zoneId, tier)) return false;
+  return stageIdx <= highestClearedStage(state, zoneId, tier) + 1;
+}
+// Devuelve { unlockedZone, zoneGemsBonus, newMapDifficulty }: la zona
+// siguiente si se acaba de desbloquear (null si no), las Gemas de
+// bonificación por completar esta zona por primera vez EN ESTA DIFICULTAD
+// (0 si ya se había derrotado antes a este jefe en ella — la bonificación
+// es un premio de una sola vez por dificultad, no se repite al rejugar la
+// etapa), y la siguiente dificultad si se acaba de desbloquear al derrotar
+// al jefe de la ÚLTIMA zona del Mapa en la dificultad actual (null si no).
+// El bono base crece con la zona (15 + 3 por cada zona de distancia al
+// inicio) y se multiplica por el gemsMult de la dificultad — a propósito
+// el que más sube de las tres recompensas, el "sobre todo aumento de los
+// cristales obtenidos" que pidió el usuario al subir de dificultad.
+function recordStageClear(state, zoneIdx, stageIdx, tier) {
+  const t = tier === undefined ? mapDifficultyIdx(state) : tier;
   const zone = ZONES[zoneIdx];
-  const wasAlreadyCleared = stageIdx <= highestClearedStage(state, zone.id);
-  if (!wasAlreadyCleared) state.progress.zoneStage[zone.id] = stageIdx;
+  const wasAlreadyCleared = stageIdx <= highestClearedStage(state, zone.id, t);
+  if (!wasAlreadyCleared) state.progress.zoneStage[tierProgressKey(state, zone.id, t)] = stageIdx;
   let unlockedZone = null;
   let zoneGemsBonus = 0;
+  let newMapDifficulty = null;
   if (stageIdx === STAGES_PER_ZONE - 1) {
     if (!wasAlreadyCleared) {
-      zoneGemsBonus = 15 + zoneIdx * 3;
+      zoneGemsBonus = Math.round((15 + zoneIdx * 3) * mapDifficultyInfo(state, t).gemsMult);
       state.currencies.gemas += zoneGemsBonus;
     }
     const next = ZONES[zoneIdx + 1];
-    if (next && !isZoneUnlocked(state, next.id)) { state.progress.unlockedZones.push(next.id); unlockedZone = next; }
+    if (next) {
+      if (!isZoneUnlocked(state, next.id, t)) { unlockedZonesForTier(state, t).push(next.id); unlockedZone = next; }
+    } else if (!wasAlreadyCleared) {
+      newMapDifficulty = unlockNextMapDifficulty(state, t);
+    }
   }
-  return { unlockedZone, zoneGemsBonus };
+  return { unlockedZone, zoneGemsBonus, newMapDifficulty };
 }
 
 // --- Torre Batalla (ver TORRE_LEVELS en data.js) ---
-function mapFullyCleared(state) { return ZONES.every(z => highestClearedStage(state, z.id) >= STAGES_PER_ZONE - 1); }
-function torreUnlocked(state) { return !!state.settings.enableTorreBatalla || mapFullyCleared(state); }
+// Fijado SIEMPRE a la dificultad 0 (Fácil): torreUnlocked es un
+// desbloqueo permanente de toda la partida, no debe "volver a bloquearse"
+// solo porque el jugador esté mirando el Mapa en Normal/Difícil/Muy
+// Difícil sin haberlo completado aún en esa dificultad más alta.
+function mapFullyCleared(state, tier) {
+  const t = tier === undefined ? mapDifficultyIdx(state) : tier;
+  return ZONES.every(z => highestClearedStage(state, z.id, t) >= STAGES_PER_ZONE - 1);
+}
+function torreUnlocked(state) { return !!state.settings.enableTorreBatalla || mapFullyCleared(state, 0); }
 function torreClearCount(state, level) { return state.torre.clears[level.key] || 0; }
 // Escalera secuencial, igual que las etapas de una zona: el nivel 0
 // siempre está abierto; cada uno más se abre en cuanto se supera el
@@ -1177,7 +1239,10 @@ function recordFamilyTrialClear(state, trial) {
 // Se desbloquea al completar las 6 zonas originales del mapa (contenido de
 // mitad de partida, mucho antes que Torre Batalla, que pide el mapa
 // entero) — ver el comentario de ELEMENTAL_DUNGEON_ZONE_ID en data.js.
-function elementalDungeonUnlocked(state) { return !!state.settings.enableElementalDungeon || isZoneUnlocked(state, ELEMENTAL_DUNGEON_ZONE_ID); }
+// Fijado a la dificultad 0 (Fácil) por el mismo motivo que torreUnlocked
+// más arriba: es un desbloqueo permanente, no debe depender de qué
+// dificultad tenga el jugador seleccionada ahora mismo en el Mapa.
+function elementalDungeonUnlocked(state) { return !!state.settings.enableElementalDungeon || isZoneUnlocked(state, ELEMENTAL_DUNGEON_ZONE_ID, 0); }
 function recordElementalClear(state, elementId) { state.elementalClears[elementId] = (state.elementalClears[elementId] || 0) + 1; }
 // Mazmorra Elemental (Formación) — ver state.elementalFullClears más
 // arriba: mismo desbloqueo y mismas fórmulas de dificultad/recompensa que
@@ -1538,6 +1603,9 @@ function migrateState(state) {
     }
     if (!state.progress.bossDifficultyLock) state.progress.bossDifficultyLock = {};
     if (!state.progress.mobDifficultyLock) state.progress.mobDifficultyLock = {};
+    if (state.progress.mapDifficulty === undefined) state.progress.mapDifficulty = 0;
+    if (!state.progress.unlockedMapDifficulties) state.progress.unlockedMapDifficulties = [0];
+    if (!state.progress.unlockedZonesByTier) state.progress.unlockedZonesByTier = {};
     if (!state.settings) state.settings = { infiniteEnergy: false, showMedallion: true };
     if (state.settings.showMedallion === undefined) state.settings.showMedallion = true;
     if (state.settings.enableTorreBatalla === undefined) state.settings.enableTorreBatalla = false;

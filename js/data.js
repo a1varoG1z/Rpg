@@ -1067,6 +1067,27 @@ addBoss('grendel', 'tierra', 'campeon', 'furia', 'Grendel, el Devorador de Salon
 addBoss('jerseydevil', 'viento', 'brujo', 'debilitar', 'El Jersey Devil', 'Nadie que ha escuchado su chillido en mitad del bosque ha vuelto a dormir tranquilo.', 'legendario', true, { hp: 1210, atk: 304, def: 275, agi: 297, wis: 242 });
 addBoss('gashadokuro', 'tierra', 'campeon', 'furia', 'Gashadokuro, Devorador de Caminantes', 'Formado por los huesos de miles de muertos olvidados, ningún caminante nocturno lo ve llegar hasta que ya es tarde.', 'legendario', true, { hp: 2000, atk: 255, def: 420, agi: 100, wis: 50 });
 
+// ---------- Dificultades del Mapa ----------
+// Petición explícita del usuario: "quiero que el mapa se pueda jugar en 4
+// dificultades: fácil (equivalente a dificultad 100% actual), normal
+// (110%), difícil (120%), muy difícil (130%)... una vez que superes todo
+// el mapa en ese nivel, se desbloquea poder jugarlo en el siguiente nivel
+// de dificultad, con recompensas mejores y sobre todo aumento de los
+// cristales obtenidos". Fácil es exactamente el Mapa de siempre (mult 1,
+// sin cambios de ningún tipo) — las 3 siguientes son la misma zona/etapa/
+// jefe pero con `enemyMult` extra (se combina con playerDifficultyMult, el
+// ajuste manual de Ajustes, y con toda la escalada adaptativa ya existente
+// — ver mapDifficultyMult en state.js) y con `rewardMult`/`gemsMult` por
+// encima de las recompensas normales de esa etapa (`gemsMult` sube mucho
+// más rápido que `rewardMult`: el usuario pidió explícitamente que el
+// premio de cristales sea el que más destaque al subir de dificultad).
+const MAP_DIFFICULTIES = [
+  { id: 'facil', name: 'Fácil', shortName: 'Fácil', enemyMult: 1.0, rewardMult: 1.0, gemsMult: 1.0 },
+  { id: 'normal', name: 'Normal', shortName: 'Normal', enemyMult: 1.1, rewardMult: 1.15, gemsMult: 1.6 },
+  { id: 'dificil', name: 'Difícil', shortName: 'Difícil', enemyMult: 1.2, rewardMult: 1.3, gemsMult: 2.3 },
+  { id: 'muydificil', name: 'Muy Difícil', shortName: 'Muy Difícil', enemyMult: 1.3, rewardMult: 1.5, gemsMult: 3.2 },
+];
+
 const ZONES = [
   { id: 'bosque', name: 'Linde del Bosque', emoji: '🌲', color: '#2f4f2f', pool: ['goblin_comun', 'arana_comun', 'boss_guardianbosque'] },
   { id: 'pantano', name: 'Pantano Oscuro', emoji: '🐊', color: '#3a4a2f', pool: ['sapo_infrecuente', 'babosa_infrecuente', 'boss_brujapantano'] },

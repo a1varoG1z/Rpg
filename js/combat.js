@@ -224,7 +224,7 @@ const MOB_POWER_MULT = 0.65;
 // banda que ya iba sobrada de Épicos/Legendarios por Fusión normal (sin
 // grindear ni equipar nada) los arrasaba sin recibir apenas daño incluso
 // en las primeras zonas — ver TODO.md para la simulación completa.
-function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
+function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult, tier) {
   const zone = ZONES[zoneIdx];
   const isBoss = stageIdx === STAGES_PER_ZONE - 1;
   // El nivel del rival depende SOLO de la zona (zoneEnemyLevel, data.js) —
@@ -254,7 +254,7 @@ function buildEnemyBand(state, zoneIdx, stageIdx, bossExtraMult) {
   // aquí desde una etapa de mobs real (UI.startStageBattle); el Duelo por
   // apuesta siempre pasa stageIdx = etapa del jefe, así que nunca entra en
   // esta rama.
-  const mobMult = MOB_POWER_MULT * lateZoneMult(zoneIdx) * lockedMobAdaptiveMult(state, zoneIdx);
+  const mobMult = MOB_POWER_MULT * lateZoneMult(zoneIdx) * lockedMobAdaptiveMult(state, zoneIdx, tier);
   for (let r = 0; r < rowCount; r++) {
     const row = [];
     for (let i = 0; i < 3; i++) {
@@ -593,7 +593,7 @@ function elementalDungeonRewards(isFirstClear, iteration) {
 // caros gratis sin límite y rompía la escasez del gacha. Las repeticiones
 // (rejugar la etapa, o el Duelo por apuesta) usan en su lugar una
 // probabilidad baja, del mismo orden que una etapa normal.
-function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
+function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear, tier) {
   const zTexel = zoneTexelTotal(zoneIdx), zXp = zoneXpTotal(zoneIdx);
   // El jefe (una sola oleada) se lleva una porción fija del total de la
   // zona (35% Texel / 30% XP) — el resto se reparte a partes iguales
@@ -648,6 +648,13 @@ function stageRewards(zoneIdx, stageIdx, isBoss, isFirstClear) {
     if (Math.random() < ZONE_DOXITE_CHANCE_TOTAL / MOB_STAGES_PER_ZONE) drops.doxite = 1;
     if (Math.random() < ZONE_GEAR_CHANCE_TOTAL / MOB_STAGES_PER_ZONE) drops.gear = generateGear(randomGearSlot(), gearDropRarity(zoneIdx));
   }
+  // rewardMult (MAP_DIFFICULTIES, data.js): Texel/XP suben algo con la
+  // dificultad del Mapa seleccionada, aparte del bonus de Gemas propio
+  // (mucho mayor, ver recordStageClear en state.js) al completar cada
+  // zona por primera vez en esa dificultad.
+  const rewardMult = MAP_DIFFICULTIES[tier || 0].rewardMult;
+  texel = Math.round(texel * rewardMult);
+  fighterXp = Math.round(fighterXp * rewardMult);
   return { texel, fighterXp, drops };
 }
 
