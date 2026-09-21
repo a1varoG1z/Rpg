@@ -312,6 +312,33 @@ se indica explícitamente.
       (redondeado) en los 37 `addBoss` cuyo `skillId` no es `arrasar`; los
       8 `arrasar` (Tifón, Balrog, Jörmungandr, Kaiju, Quimera, Tiamat,
       Apofis, Cthulhu) se quedan igual
+- [x] **Reajuste del ranking de poder de 8 Legendarios** (petición
+      explícita, tras análisis de reparto y lore de las 65 familias
+      Legendario) — ajustado el `setStatMult` (multiplicador uniforme sobre
+      las 5 stats de cada familia, mecanismo ya existente que calibra el
+      power score, `fighterPowerScore`, de cada Legendario) para moverlos a
+      un puesto concreto del ranking, sin tocar ningún otro personaje:
+      - Miguel Arcángel #30 → **#13** (derrota al mismísimo Lucifer, tier de
+        Zeus/Odín/Ra, no de Pele/Huitzilopochtli)
+      - Shango #36 → **#16** (dios del trueno yoruba, mismo arquetipo que
+        Zeus/Thor/Susanoo, estaba muy por debajo de los tres)
+      - Aquiles #31 → **#18** ("el casi invencible", semi-divino por el
+        baño en la Estigia, no un mortal cualquiera)
+      - Ragnar Lothbrok #48 → **#28** (rey legendario nórdico, mismo
+        arquetipo que Arturo/Beowulf, injustificadamente muy por debajo)
+      - Sansón #44 → **#33** (icono de fuerza sobrehumana)
+      - Gran Shinigami #52 → **#35** (siega "mil mundos", escala cósmica)
+      - Afrodita #64 → **#45** (olímpica de pleno derecho, no tiene sentido
+        por debajo de monstruos genéricos sin nombre)
+      - Leviatán #17 → **#50** (es un monstruo, no una deidad — estaba muy
+        por encima de su equivalente directo, el Kraken, #65)
+      - Verificado con test dedicado que cada uno cae EXACTAMENTE en su
+        puesto objetivo del ranking de 65 (`fighterPowerScore` ordenado
+        descendente) — el mecanismo de `setStatMult` no escala el power
+        score de forma perfectamente lineal (cada stat se redondea a
+        entero antes de sumarse), así que 2 de los 8 (Shango, Afrodita)
+        necesitaron un segundo ajuste fino tras el primer cálculo para
+        despegarse del todo de su vecino de ranking
 
 ## Pendiente — de la ronda de 14 preguntas/peticiones del usuario (26/08)
 
