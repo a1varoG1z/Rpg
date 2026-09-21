@@ -339,6 +339,23 @@ se indica explícitamente.
         entero antes de sumarse), así que 2 de los 8 (Shango, Afrodita)
         necesitaron un segundo ajuste fino tras el primer cálculo para
         despegarse del todo de su vecino de ranking
+- [x] **Segunda ronda de reajuste del ranking de 6 Legendarios más**
+      (misma mecánica de `setStatMult` que la ronda anterior):
+      - Sun Wukong #6 → **#4** (resistió al ejército celestial entero,
+        solo Buda logró detenerlo)
+      - Beowulf #10 → **#24** (rey mortal, no un dios — iba muy por
+        encima de otros héroes legendarios de su mismo arquetipo)
+      - Ragnar Lothbrok #28 → **#22** (rey legendario nórdico, mismo tier
+        que Arturo/Beowulf)
+      - Tyr #29 → **#27** (ajuste menor)
+      - Sansón #33 → **#32** (ajuste menor)
+      - Atenea #42 → **#33** (olímpica de primera fila, ganó Troya para
+        los griegos)
+      - Verificado de nuevo con test dedicado que los 6 caen EXACTAMENTE
+        en su puesto objetivo — Tyr y Ragnar necesitaron el mismo ajuste
+        fino por redondeo que Shango/Afrodita en la ronda anterior (target
+        inicial calculado por interpolación lineal caía justo del lado
+        equivocado de un vecino con power casi idéntico)
 
 ## Pendiente — de la ronda de 14 preguntas/peticiones del usuario (26/08)
 
