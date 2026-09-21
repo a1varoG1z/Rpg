@@ -356,6 +356,14 @@ se indica explícitamente.
         fino por redondeo que Shango/Afrodita en la ronda anterior (target
         inicial calculado por interpolación lineal caía justo del lado
         equivocado de un vecino con power casi idéntico)
+- [x] **Retrato del boss el doble de grande en combate** (petición
+      explícita) — `UI.battleUnitCard` (ui.js) pasa 152px a `creatureCanvas`
+      para `u.isBoss` en vez de los 76px normales, y `.battle-unit.rarity-jefe`
+      (style.css) ensancha la tarjeta entera (176px) para que quepa sin
+      recortarse. El resto de la tarjeta (halo de estado, barra de vida,
+      nombre) ya escalaba solo al ancho real del contenedor. Un boss
+      SIEMPRE pelea solo en su fila (`buildEnemyBand`, combat.js), así que
+      no hay conflicto de layout con otros rivales más pequeños al lado
 
 ## Pendiente — de la ronda de 14 preguntas/peticiones del usuario (26/08)
 

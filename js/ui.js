@@ -5368,7 +5368,11 @@ UI.battleUnitCard = function (u) {
   const canvasWrap = el('div', 'battle-unit-canvas-wrap');
   const halo = el('div', 'status-halo-ring');
   canvasWrap.appendChild(halo);
-  canvasWrap.appendChild(creatureCanvas(u.defId, 76));
+  // El boss se ve el doble de grande que el resto de peleadores en combate
+  // (petición explícita del usuario) — un único cambio de tamaño en
+  // creatureCanvas, el resto de la tarjeta (barra de vida, halo, insignias)
+  // ya escala solo con el ancho real de .battle-unit.rarity-jefe (CSS).
+  canvasWrap.appendChild(creatureCanvas(u.defId, u.isBoss ? 152 : 76));
   canvasWrap.appendChild(el('div', 'ult-turns', ultTurnsText(u)));
   card.appendChild(canvasWrap);
   const hpBar = el('div', 'hp-bar small');

@@ -275,6 +275,12 @@ body.hide-medallion .creature-canvas-wrap::before { display: none; }
    de la variable. */
 .battle-unit.rarity-jefe { border: 2px solid #e0392b; border-radius: 10px; box-shadow: 0 0 12px rgba(224,57,43,0.75); }
 .battle-unit.rarity-jefe .battle-unit-name { color: #ff6b57; font-weight: bold; }
+/* Retrato del boss el doble de grande que el resto de peleadores en
+   combate (petición explícita del usuario) — creatureCanvas ya recibe
+   152px en vez de 76px (ver UI.battleUnitCard); aquí solo se ensancha la
+   tarjeta entera (por defecto 100px) para que quepa sin recortarse ni
+   quedar apretada contra la barra de vida/nombre. */
+.battle-unit.rarity-jefe { width: 176px; }
 
 .creature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 12px 16px; }
 
