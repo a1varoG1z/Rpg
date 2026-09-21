@@ -298,6 +298,20 @@ se indica explícitamente.
       (`UI.openFighterModal`, ui.js), NO añade ninguna estadística ni
       efecto de combate. Verificado que los 26 `skillId` del juego caen en
       una categoría (ninguno queda "Sin clasificar")
+- [x] **ATK +10% en los 37 bosses de zona sin ulti de fila** (petición
+      explícita tras análisis de reparto: "¿no crees que de base, los
+      bosses (exceptuando los que tienen ulti de pegar a toda la fila)
+      deberían tener más ataque?") — análisis previo: en proporción de su
+      presupuesto de stats total (`fighterPowerScore`), los bosses de
+      objetivo único YA invertían más en ATK (22.5% del presupuesto) que
+      los `arrasar` en WIS (18-20%), así que no era un fallo de reparto —
+      pero un boss `arrasar` sigue golpeando con su ulti a TODA la fila
+      rival mientras sus turnos normales siguen dependiendo de ATK igual
+      que el resto, un extra que la comparación de presupuesto no
+      compensaba del todo. Subido el `atk` de `fixedStats` un 10%
+      (redondeado) en los 37 `addBoss` cuyo `skillId` no es `arrasar`; los
+      8 `arrasar` (Tifón, Balrog, Jörmungandr, Kaiju, Quimera, Tiamat,
+      Apofis, Cthulhu) se quedan igual
 
 ## Pendiente — de la ronda de 14 preguntas/peticiones del usuario (26/08)
 

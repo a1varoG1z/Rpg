@@ -824,43 +824,43 @@ addMobFamily("gollum", 2, "tierra", "picaro", "sabotaje", ["Criatura Consumida",
 // (la última zona de todas) es ligeramente más fuerte que Balrog (penúltima).
 addBoss('tifon', 'rayo', 'brujo', 'arrasar', 'Tifón, Padre de los Monstruos', 'El monstruo más temible de todos, capaz de desafiar a los propios dioses.', 'epico', true, { hp: 2850, atk: 480, def: 500, agi: 430, wis: 480 });
 addBoss('quimera', 'fuego', 'campeon', 'arrasar', 'Quimera, la Bestia de Tres Cabezas', 'León, cabra y serpiente en un solo cuerpo, y fuego en cada aliento.', 'epico', true, { hp: 2041, atk: 187, def: 348, agi: 137, wis: 68 });
-addBoss('garn', 'tierra', 'campeon', 'golpe', 'Garn, el Devorador de Piedra', 'Se alimenta de roca y escupe fragmentos capaces de atravesar una armadura.', 'raro', true, { hp: 1758, atk: 166, def: 210, agi: 54, wis: 47 });
-addBoss('nian', 'fuego', 'campeon', 'furia', 'Nian, la Bestia del Año Nuevo', 'Solo el ruido y el color rojo lo mantienen alejado de los pueblos.', 'raro', true, { hp: 1558, atk: 168, def: 173, agi: 65, wis: 44 });
+addBoss('garn', 'tierra', 'campeon', 'golpe', 'Garn, el Devorador de Piedra', 'Se alimenta de roca y escupe fragmentos capaces de atravesar una armadura.', 'raro', true, { hp: 1758, atk: 183, def: 210, agi: 54, wis: 47 });
+addBoss('nian', 'fuego', 'campeon', 'furia', 'Nian, la Bestia del Año Nuevo', 'Solo el ruido y el color rojo lo mantienen alejado de los pueblos.', 'raro', true, { hp: 1558, atk: 185, def: 173, agi: 65, wis: 44 });
 addBoss('tiamat', 'agua', 'brujo', 'arrasar', 'Tiamat, Madre del Caos', 'De su furia nacieron los primeros monstruos del mundo.', 'epico', true, { hp: 1410, atk: 261, def: 248, agi: 190, wis: 301 });
-addBoss('surtr', 'fuego', 'campeon', 'golpe', 'Surtr, Señor de las Llamas de Muspelheim', 'Su espada ardiente se dice que incendiará los nueve mundos al final de los tiempos.', 'epico', true, { hp: 1944, atk: 161, def: 419, agi: 176, wis: 63 });
-addBoss('behemoth', 'tierra', 'campeon', 'golpe', 'Behemoth, la Bestia Primigenia', 'Tan grande y antiguo que su sola existencia desafía toda lógica.', 'epico', true, { hp: 1398, atk: 186, def: 476, agi: 185, wis: 66 });
-addBoss('medusa', 'tierra', 'brujo', 'paralisis', 'Medusa, la Gorgona de Mirada Pétrea', 'Una sola mirada a sus ojos convierte a cualquiera en piedra.', 'raro', true, { hp: 1498, atk: 245, def: 156, agi: 86, wis: 189 });
+addBoss('surtr', 'fuego', 'campeon', 'golpe', 'Surtr, Señor de las Llamas de Muspelheim', 'Su espada ardiente se dice que incendiará los nueve mundos al final de los tiempos.', 'epico', true, { hp: 1944, atk: 177, def: 419, agi: 176, wis: 63 });
+addBoss('behemoth', 'tierra', 'campeon', 'golpe', 'Behemoth, la Bestia Primigenia', 'Tan grande y antiguo que su sola existencia desafía toda lógica.', 'epico', true, { hp: 1398, atk: 205, def: 476, agi: 185, wis: 66 });
+addBoss('medusa', 'tierra', 'brujo', 'paralisis', 'Medusa, la Gorgona de Mirada Pétrea', 'Una sola mirada a sus ojos convierte a cualquiera en piedra.', 'raro', true, { hp: 1498, atk: 270, def: 156, agi: 86, wis: 189 });
 addBoss('apofis', 'tierra', 'brujo', 'arrasar', 'Apofis, la Serpiente del Caos', 'Cada noche intenta devorar al sol, y cada noche es derrotado — por poco.', 'epico', true, { hp: 1688, atk: 297, def: 288, agi: 187, wis: 294 });
-addBoss('ammit', 'tierra', 'campeon', 'furia', 'Ammit, Devoradora de Corazones', 'Devora el corazón de quien no es digno de pasar al más allá.', 'raro', true, { hp: 1286, atk: 169, def: 254, agi: 64, wis: 48 });
+addBoss('ammit', 'tierra', 'campeon', 'furia', 'Ammit, Devoradora de Corazones', 'Devora el corazón de quien no es digno de pasar al más allá.', 'raro', true, { hp: 1286, atk: 186, def: 254, agi: 64, wis: 48 });
 addBoss('cthulhu', 'agua', 'brujo', 'arrasar', 'Cthulhu, el que Duerme en las Profundidades', 'Su despertar traería la locura a cualquiera que lo presencie.', 'epico', true, { hp: 1884, atk: 254, def: 343, agi: 281, wis: 324 });
 addBoss('balrog', 'fuego', 'brujo', 'arrasar', 'Balrog, Demonio de Sombra y Fuego', 'Envuelto en llamas y sombra, ningún pasillo es lo bastante estrecho para detenerlo.', 'epico', true, { hp: 2700, atk: 475, def: 490, agi: 410, wis: 460 });
-addBoss('leondenemea', 'tierra', 'campeon', 'golpe', 'León de Nemea, Piel Impenetrable', 'Ningún arma forjada por mortales ha logrado atravesar su piel.', 'raro', true, { hp: 1422, atk: 174, def: 228, agi: 83, wis: 57 });
-addBoss('pajaroroc', 'viento', 'explorador', 'furia', 'Roc, el Ave que Oscurece el Cielo', 'Sus alas al abrirse tapan el sol entero sobre el desierto.', 'raro', true, { hp: 1212, atk: 207, def: 183, agi: 191, wis: 115 });
-addBoss('torodecreta', 'tierra', 'campeon', 'furia', 'Toro de Creta, Furia Desatada', 'Arrasó campos enteros antes de que nadie lograra domarlo.', 'raro', true, { hp: 1616, atk: 165, def: 260, agi: 80, wis: 60 });
-addBoss('basilisco', 'tierra', 'brujo', 'debilitar', 'Basilisco, Rey de las Serpientes', 'Su mirada mata, y su veneno no perdona ni a la piedra.', 'epico', true, { hp: 2276, atk: 395, def: 194, agi: 109, wis: 239 });
-addBoss('ettin', 'tierra', 'campeon', 'golpe', 'Ettin, el Gigante de Dos Cabezas', 'Dos cabezas significan el doble de mal genio... y el doble de fuerza.', 'epico', true, { hp: 2020, atk: 248, def: 367, agi: 94, wis: 69 });
-addBoss('gorgonas', 'tierra', 'brujo', 'debilitar', 'Las Gorgonas, Hermanas de Piedra', 'Donde una gorgona falla, sus hermanas terminan el trabajo.', 'epico', true, { hp: 2054, atk: 359, def: 229, agi: 109, wis: 300 });
-addBoss('rakshasa', 'fuego', 'brujo', 'debilitar', 'Rakshasa, el Cambiante Maldito', 'Puede tomar cualquier forma para acercarse a su presa sin ser detectado.', 'epico', true, { hp: 902, atk: 353, def: 388, agi: 216, wis: 287 });
-addBoss('manticora', 'fuego', 'picaro', 'furia', 'Mantícora, la Devoradora de Hombres', 'Su cola de escorpión dispara espinas tan letales como su mordida.', 'epico', true, { hp: 1254, atk: 376, def: 149, agi: 276, wis: 87 });
-addBoss('liche', 'rayo', 'brujo', 'debilitar', 'Liche, Señor de los No-Muertos', 'Selló su alma en un objeto oculto para no morir jamás de verdad.', 'epico', true, { hp: 1826, atk: 298, def: 333, agi: 204, wis: 346 });
-addBoss('magooscuro', 'rayo', 'brujo', 'debilitar', 'El Mago Oscuro sin Nombre', 'Su nombre se ha borrado del recuerdo — pero su sombra sigue creciendo.', 'epico', true, { hp: 1861, atk: 379, def: 205, agi: 159, wis: 348 });
-addBoss('loki', 'rayo', 'brujo', 'debilitar', 'Loki, el Dios del Engaño', 'Nunca se sabe si su ayuda es un regalo o el inicio de una trampa.', 'epico', true, { hp: 1831, atk: 361, def: 276, agi: 228, wis: 358 });
-addBoss('joker', 'viento', 'picaro', 'aturdir', 'El Bufón de la Locura', 'Nadie entiende su chiste hasta que ya es demasiado tarde para reírse.', 'epico', true, { hp: 1335, atk: 361, def: 137, agi: 231, wis: 73 });
-addBoss('acromantula', 'tierra', 'picaro', 'aturdir', 'Acromántula, Madre de la Colonia', 'Donde hay una, hay cientos más esperando entre las sombras.', 'epico', true, { hp: 1425, atk: 384, def: 153, agi: 365, wis: 91 });
-addBoss('wendigo', 'viento', 'brujo', 'furia', 'Wendigo, Hambre sin Fin', 'Cuanto más devora, más hambriento se vuelve — nunca se sacia.', 'epico', true, { hp: 1720, atk: 404, def: 267, agi: 143, wis: 309 });
-addBoss('mantisreligiosa', 'viento', 'picaro', 'furia', 'Mantis, la Segadora Silenciosa', 'Espera inmóvil durante horas... y ataca en una fracción de segundo.', 'epico', true, { hp: 1097, atk: 435, def: 173, agi: 405, wis: 101 });
+addBoss('leondenemea', 'tierra', 'campeon', 'golpe', 'León de Nemea, Piel Impenetrable', 'Ningún arma forjada por mortales ha logrado atravesar su piel.', 'raro', true, { hp: 1422, atk: 191, def: 228, agi: 83, wis: 57 });
+addBoss('pajaroroc', 'viento', 'explorador', 'furia', 'Roc, el Ave que Oscurece el Cielo', 'Sus alas al abrirse tapan el sol entero sobre el desierto.', 'raro', true, { hp: 1212, atk: 228, def: 183, agi: 191, wis: 115 });
+addBoss('torodecreta', 'tierra', 'campeon', 'furia', 'Toro de Creta, Furia Desatada', 'Arrasó campos enteros antes de que nadie lograra domarlo.', 'raro', true, { hp: 1616, atk: 182, def: 260, agi: 80, wis: 60 });
+addBoss('basilisco', 'tierra', 'brujo', 'debilitar', 'Basilisco, Rey de las Serpientes', 'Su mirada mata, y su veneno no perdona ni a la piedra.', 'epico', true, { hp: 2276, atk: 435, def: 194, agi: 109, wis: 239 });
+addBoss('ettin', 'tierra', 'campeon', 'golpe', 'Ettin, el Gigante de Dos Cabezas', 'Dos cabezas significan el doble de mal genio... y el doble de fuerza.', 'epico', true, { hp: 2020, atk: 273, def: 367, agi: 94, wis: 69 });
+addBoss('gorgonas', 'tierra', 'brujo', 'debilitar', 'Las Gorgonas, Hermanas de Piedra', 'Donde una gorgona falla, sus hermanas terminan el trabajo.', 'epico', true, { hp: 2054, atk: 395, def: 229, agi: 109, wis: 300 });
+addBoss('rakshasa', 'fuego', 'brujo', 'debilitar', 'Rakshasa, el Cambiante Maldito', 'Puede tomar cualquier forma para acercarse a su presa sin ser detectado.', 'epico', true, { hp: 902, atk: 388, def: 388, agi: 216, wis: 287 });
+addBoss('manticora', 'fuego', 'picaro', 'furia', 'Mantícora, la Devoradora de Hombres', 'Su cola de escorpión dispara espinas tan letales como su mordida.', 'epico', true, { hp: 1254, atk: 414, def: 149, agi: 276, wis: 87 });
+addBoss('liche', 'rayo', 'brujo', 'debilitar', 'Liche, Señor de los No-Muertos', 'Selló su alma en un objeto oculto para no morir jamás de verdad.', 'epico', true, { hp: 1826, atk: 328, def: 333, agi: 204, wis: 346 });
+addBoss('magooscuro', 'rayo', 'brujo', 'debilitar', 'El Mago Oscuro sin Nombre', 'Su nombre se ha borrado del recuerdo — pero su sombra sigue creciendo.', 'epico', true, { hp: 1861, atk: 417, def: 205, agi: 159, wis: 348 });
+addBoss('loki', 'rayo', 'brujo', 'debilitar', 'Loki, el Dios del Engaño', 'Nunca se sabe si su ayuda es un regalo o el inicio de una trampa.', 'epico', true, { hp: 1831, atk: 397, def: 276, agi: 228, wis: 358 });
+addBoss('joker', 'viento', 'picaro', 'aturdir', 'El Bufón de la Locura', 'Nadie entiende su chiste hasta que ya es demasiado tarde para reírse.', 'epico', true, { hp: 1335, atk: 397, def: 137, agi: 231, wis: 73 });
+addBoss('acromantula', 'tierra', 'picaro', 'aturdir', 'Acromántula, Madre de la Colonia', 'Donde hay una, hay cientos más esperando entre las sombras.', 'epico', true, { hp: 1425, atk: 422, def: 153, agi: 365, wis: 91 });
+addBoss('wendigo', 'viento', 'brujo', 'furia', 'Wendigo, Hambre sin Fin', 'Cuanto más devora, más hambriento se vuelve — nunca se sacia.', 'epico', true, { hp: 1720, atk: 444, def: 267, agi: 143, wis: 309 });
+addBoss('mantisreligiosa', 'viento', 'picaro', 'furia', 'Mantis, la Segadora Silenciosa', 'Espera inmóvil durante horas... y ataca en una fracción de segundo.', 'epico', true, { hp: 1097, atk: 479, def: 173, agi: 405, wis: 101 });
 
 // Jefes de las 6 zonas ORIGINALES: al principio usaban luchadores jugables
 // (topo_infrecuente, nigro_raro, lagarto_epico, etc.) como jefe de zona, lo
 // que violaba la regla de "ni jefes ni enemigos de mapa pueden ser
 // criaturas jugables". Estos 6 los sustituyen, uno por zona, con la misma
 // rareza aproximada que tenían antes.
-addBoss('guardianbosque', 'tierra', 'campeon', 'escudo', 'Guardián del Bosque Ancestral', 'Un espíritu milenario que protege cada árbol de la Linde del Bosque.', 'comun', true, { hp: 715, atk: 26, def: 14, agi: 44, wis: 31 });
-addBoss('brujapantano', 'agua', 'brujo', 'ceguera', 'Bruja del Pantano Eterno', 'Conoce cada raíz y cada sombra del Pantano Oscuro, y las usa contra los intrusos.', 'infrecuente', true, { hp: 501, atk: 79, def: 74, agi: 54, wis: 86 });
-addBoss('colosocristal', 'tierra', 'campeon', 'golpe', 'Coloso de Cristal', 'Sus puños de cuarzo han sepultado a más de un intruso en las Cuevas de Cristal.', 'raro', true, { hp: 704, atk: 65, def: 143, agi: 45, wis: 19 });
-addBoss('titanhielo', 'agua', 'campeon', 'escudo', 'Titán de Hielo Eterno', 'Ni la escalada más dura prepara a nadie para enfrentarse a él en la cima de los Picos Helados.', 'raro', true, { hp: 1458, atk: 142, def: 175, agi: 53, wis: 37 });
-addBoss('reyruinas', 'tierra', 'brujo', 'debilitar', 'Rey Espectral de las Ruinas', 'Gobierna las Ruinas Abisales desde un trono que se desmorona junto con su reino.', 'raro', true, { hp: 1659, atk: 276, def: 131, agi: 63, wis: 138 });
-addBoss('dragonguarida', 'fuego', 'campeon', 'escudo', 'Dracorex, Señor de la Guarida', 'El dragón más temido de Texel, dueño absoluto de su Guarida.', 'epico', true, { hp: 2441, atk: 256, def: 237, agi: 58, wis: 40 });
+addBoss('guardianbosque', 'tierra', 'campeon', 'escudo', 'Guardián del Bosque Ancestral', 'Un espíritu milenario que protege cada árbol de la Linde del Bosque.', 'comun', true, { hp: 715, atk: 29, def: 14, agi: 44, wis: 31 });
+addBoss('brujapantano', 'agua', 'brujo', 'ceguera', 'Bruja del Pantano Eterno', 'Conoce cada raíz y cada sombra del Pantano Oscuro, y las usa contra los intrusos.', 'infrecuente', true, { hp: 501, atk: 87, def: 74, agi: 54, wis: 86 });
+addBoss('colosocristal', 'tierra', 'campeon', 'golpe', 'Coloso de Cristal', 'Sus puños de cuarzo han sepultado a más de un intruso en las Cuevas de Cristal.', 'raro', true, { hp: 704, atk: 72, def: 143, agi: 45, wis: 19 });
+addBoss('titanhielo', 'agua', 'campeon', 'escudo', 'Titán de Hielo Eterno', 'Ni la escalada más dura prepara a nadie para enfrentarse a él en la cima de los Picos Helados.', 'raro', true, { hp: 1458, atk: 156, def: 175, agi: 53, wis: 37 });
+addBoss('reyruinas', 'tierra', 'brujo', 'debilitar', 'Rey Espectral de las Ruinas', 'Gobierna las Ruinas Abisales desde un trono que se desmorona junto con su reino.', 'raro', true, { hp: 1659, atk: 304, def: 131, agi: 63, wis: 138 });
+addBoss('dragonguarida', 'fuego', 'campeon', 'escudo', 'Dracorex, Señor de la Guarida', 'El dragón más temido de Texel, dueño absoluto de su Guarida.', 'epico', true, { hp: 2441, atk: 282, def: 237, agi: 58, wis: 40 });
 
 // Homúnculos: no luchan nunca (no entran en FIGHTERS ni en la Formación).
 // Sirven solo como material de experiencia — se fusionan con cualquier
@@ -1122,15 +1122,15 @@ setStatMult('kraken_legendario', { hp: 0.911876, atk: 0.911876, def: 0.911876, a
 // Devorador quedan en la media-alta; Grendel en la media; Jersey Devil
 // deliberadamente bajo, como amenaza de folclore moderno más que divina.
 addBoss('jormungandr', 'agua', 'brujo', 'arrasar', 'Jörmungandr, la Serpiente que Rodea el Mundo', 'Tan grande que su cuerpo entero rodea el océano y se muerde su propia cola — el día que la suelte, los nueve mundos temblarán.', 'legendario', true, { hp: 2600, atk: 420, def: 380, agi: 220, wis: 425 });
-addBoss('hades', 'tierra', 'brujo', 'debilitar', 'Hades, Señor del Inframundo', 'Gobierna el reino de los muertos con una justicia fría que ni los propios dioses se atreven a cuestionar.', 'legendario', true, { hp: 1750, atk: 380, def: 410, agi: 210, wis: 400 });
-addBoss('hel', 'agua', 'brujo', 'maldicion', 'Hel, Soberana de los Muertos sin Honor', 'Mitad rostro de viva, mitad de cadáver, decide el destino de quienes no cayeron con gloria en la batalla.', 'legendario', true, { hp: 1700, atk: 365, def: 390, agi: 200, wis: 390 });
-addBoss('set', 'tierra', 'brujo', 'sabotaje', 'Set, Señor de las Tormentas y el Caos', 'Asesinó a su propio hermano por el trono, y desde entonces el caos que siembra no conoce límites.', 'legendario', true, { hp: 1650, atk: 347, def: 355, agi: 200, wis: 345 });
-addBoss('fafnir', 'fuego', 'campeon', 'golpe', 'Fafnir, el Dragón de la Avaricia', 'Su codicia por un tesoro maldito lo transformó en el dragón más temido de su época.', 'legendario', true, { hp: 1780, atk: 230, def: 420, agi: 110, wis: 70 });
-addBoss('anzu', 'viento', 'brujo', 'aturdir', 'Anzu, el Ave-Demonio de la Tormenta', 'Robó la Tablilla de los Destinos a los propios dioses, y desde entonces el trueno le obedece.', 'legendario', true, { hp: 1350, atk: 295, def: 250, agi: 230, wis: 270 });
-addBoss('simbionte', 'rayo', 'brujo', 'perforar', 'El Simbionte Devorador', 'Cayó de otro mundo y se fusionó con el primer cuerpo que encontró — ya no se sabe dónde termina la bestia y empieza su portador.', 'legendario', true, { hp: 1200, atk: 335, def: 270, agi: 250, wis: 260 });
-addBoss('titancolosal', 'tierra', 'campeon', 'golpe', 'El Titán Colosal', 'Ninguna muralla construida por manos mortales ha resistido jamás su avance.', 'legendario', true, { hp: 3350, atk: 280, def: 650, agi: 140, wis: 90 });
+addBoss('hades', 'tierra', 'brujo', 'debilitar', 'Hades, Señor del Inframundo', 'Gobierna el reino de los muertos con una justicia fría que ni los propios dioses se atreven a cuestionar.', 'legendario', true, { hp: 1750, atk: 418, def: 410, agi: 210, wis: 400 });
+addBoss('hel', 'agua', 'brujo', 'maldicion', 'Hel, Soberana de los Muertos sin Honor', 'Mitad rostro de viva, mitad de cadáver, decide el destino de quienes no cayeron con gloria en la batalla.', 'legendario', true, { hp: 1700, atk: 402, def: 390, agi: 200, wis: 390 });
+addBoss('set', 'tierra', 'brujo', 'sabotaje', 'Set, Señor de las Tormentas y el Caos', 'Asesinó a su propio hermano por el trono, y desde entonces el caos que siembra no conoce límites.', 'legendario', true, { hp: 1650, atk: 382, def: 355, agi: 200, wis: 345 });
+addBoss('fafnir', 'fuego', 'campeon', 'golpe', 'Fafnir, el Dragón de la Avaricia', 'Su codicia por un tesoro maldito lo transformó en el dragón más temido de su época.', 'legendario', true, { hp: 1780, atk: 253, def: 420, agi: 110, wis: 70 });
+addBoss('anzu', 'viento', 'brujo', 'aturdir', 'Anzu, el Ave-Demonio de la Tormenta', 'Robó la Tablilla de los Destinos a los propios dioses, y desde entonces el trueno le obedece.', 'legendario', true, { hp: 1350, atk: 324, def: 250, agi: 230, wis: 270 });
+addBoss('simbionte', 'rayo', 'brujo', 'perforar', 'El Simbionte Devorador', 'Cayó de otro mundo y se fusionó con el primer cuerpo que encontró — ya no se sabe dónde termina la bestia y empieza su portador.', 'legendario', true, { hp: 1200, atk: 369, def: 270, agi: 250, wis: 260 });
+addBoss('titancolosal', 'tierra', 'campeon', 'golpe', 'El Titán Colosal', 'Ninguna muralla construida por manos mortales ha resistido jamás su avance.', 'legendario', true, { hp: 3350, atk: 308, def: 650, agi: 140, wis: 90 });
 addBoss('kaiju', 'agua', 'campeon', 'arrasar', 'El Kaiju de las Profundidades', 'Emergió del fondo del océano una sola vez, y esa vez bastó para borrar una costa entera del mapa.', 'legendario', true, { hp: 3200, atk: 355, def: 550, agi: 130, wis: 100 });
-addBoss('grendel', 'tierra', 'campeon', 'furia', 'Grendel, el Devorador de Salones', 'Ningún salón de guerreros, por bien custodiado que esté, ha sobrevivido intacto a una de sus visitas nocturnas.', 'legendario', true, { hp: 1580, atk: 180, def: 280, agi: 90, wis: 40 });
+addBoss('grendel', 'tierra', 'campeon', 'furia', 'Grendel, el Devorador de Salones', 'Ningún salón de guerreros, por bien custodiado que esté, ha sobrevivido intacto a una de sus visitas nocturnas.', 'legendario', true, { hp: 1580, atk: 198, def: 280, agi: 90, wis: 40 });
 // Fix: fixedStats se habían quedado con una magnitud de zona muy temprana
 // (hp 550, ~1/3 de sus vecinos Liche/Gashadokuro con 1580-2000) a pesar de
 // estar marcado 'legendario' como ellos y aparecer en la zona 31 de 44 —
@@ -1140,8 +1140,8 @@ addBoss('grendel', 'tierra', 'campeon', 'furia', 'Grendel, el Devorador de Salon
 // ágil y distinto de Liche/Gashadokuro, no una copia de su perfil), solo
 // corrigiendo la magnitud para encajar con el resto de jefes legendarios
 // de alrededor.
-addBoss('jerseydevil', 'viento', 'brujo', 'debilitar', 'El Jersey Devil', 'Nadie que ha escuchado su chillido en mitad del bosque ha vuelto a dormir tranquilo.', 'legendario', true, { hp: 1210, atk: 304, def: 275, agi: 297, wis: 242 });
-addBoss('gashadokuro', 'tierra', 'campeon', 'furia', 'Gashadokuro, Devorador de Caminantes', 'Formado por los huesos de miles de muertos olvidados, ningún caminante nocturno lo ve llegar hasta que ya es tarde.', 'legendario', true, { hp: 2000, atk: 255, def: 420, agi: 100, wis: 50 });
+addBoss('jerseydevil', 'viento', 'brujo', 'debilitar', 'El Jersey Devil', 'Nadie que ha escuchado su chillido en mitad del bosque ha vuelto a dormir tranquilo.', 'legendario', true, { hp: 1210, atk: 334, def: 275, agi: 297, wis: 242 });
+addBoss('gashadokuro', 'tierra', 'campeon', 'furia', 'Gashadokuro, Devorador de Caminantes', 'Formado por los huesos de miles de muertos olvidados, ningún caminante nocturno lo ve llegar hasta que ya es tarde.', 'legendario', true, { hp: 2000, atk: 280, def: 420, agi: 100, wis: 50 });
 
 // ---------- Fases de jefe + inmunidad elemental (piloto) ----------
 // Petición explícita del usuario: "las fases de jefe e inmunidad elemental
